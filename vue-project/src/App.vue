@@ -50,9 +50,18 @@
         </dl>
       </div>
 
-      <!-- Chart Section -->
+      <!-- Chart Sections -->
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <DataChart ref="chartRef" />
+        <!-- Animated Bubble Chart -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <h2 class="text-xl font-semibold text-wego-gray mb-4">Market Performance Over Time</h2>
+          <AnimatedBubbleChart />
+        </div>
+
+        <!-- Static Chart -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <DataChart ref="chartRef" />
+        </div>
       </div>
 
       <!-- Recent activity -->
@@ -124,6 +133,7 @@ import {
 } from '@heroicons/vue/20/solid'
 import { BellIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import DataChart from './components/DataChart.vue'
+import AnimatedBubbleChart from './components/AnimatedBubbleChart.vue'
 
 const chartRef = ref(null)
 const mobileMenuOpen = ref(false)
@@ -194,3 +204,7 @@ const handleFileUpload = (event) => {
   }
 }
 </script>
+
+<style>
+@import './style.css';
+</style>
