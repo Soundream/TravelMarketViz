@@ -392,76 +392,81 @@ const initChart = () => {
         .data(yearData, d => d.company);
 
       // Enter new bubbles
-      const bubblesEnter = bubbles.enter()
+      bubbles.enter()
         .append('circle')
         .attr('class', 'bubble')
         .attr('r', 8)
         .attr('fill', d => colorDict[d.company])
-        .attr('cx', d => xScale(d.ebitdaMargin)) // Use EBITDA margin for x-axis
-        .attr('cy', height); // Start from bottom
+        .attr('cx', d => xScale(d.ebitdaMargin))
+        .attr('cy', d => yScale(d.revenueGrowth));
 
-      // Update existing bubbles
-      bubbles.merge(bubblesEnter)
+      // Update all bubbles (both existing and new)
+      g.selectAll('.bubble')
         .transition()
         .duration(750)
-        .attr('cx', d => xScale(d.ebitdaMargin)) // Use EBITDA margin for x-axis
-        .attr('cy', d => yScale(d.revenueGrowth)) // Use revenue growth for y-axis
+        .ease(d3.easeCubicInOut)
+        .attr('cx', d => xScale(d.ebitdaMargin))
+        .attr('cy', d => yScale(d.revenueGrowth))
         .attr('fill', d => colorDict[d.company]);
 
       // Remove old bubbles
-      bubbles.exit()
-        .transition()
-        .duration(750)
-        .attr('cy', height)
-        .remove();
+      bubbles.exit().remove();
 
       // Update logos with proper transitions
       const logos = g.selectAll('.logo')
         .data(yearData, d => d.company);
 
       // Enter new logos
-      const logosEnter = logos.enter()
+      logos.enter()
         .append('image')
         .attr('class', 'logo')
-        .attr('width', 30)
-        .attr('height', 30)
+        .attr('width', 50)
+        .attr('height', 50)
         .attr('xlink:href', d => logoDict[d.company])
-        .attr('x', d => xScale(d.ebitdaMargin) - 15) // Use EBITDA margin for x-axis
-        .attr('y', height - 35)
+        .attr('x', d => xScale(d.ebitdaMargin) - 25)
+        .attr('y', d => yScale(d.revenueGrowth) - 55)
         .call(dragLogo);
 
-      // Update existing logos
-      logos.merge(logosEnter)
+      // Update all logos (both existing and new)
+      g.selectAll('.logo')
         .transition()
         .duration(750)
-        .attr('x', d => xScale(d.ebitdaMargin) - 15) // Use EBITDA margin for x-axis
-        .attr('y', d => yScale(d.revenueGrowth) - 35); // Use revenue growth for y-axis
+        .ease(d3.easeCubicInOut)
+        .attr('x', d => xScale(d.ebitdaMargin) - 25)
+        .attr('y', d => yScale(d.revenueGrowth) - 55);
 
       // Remove old logos
-      logos.exit()
-        .transition()
-        .duration(750)
-        .attr('y', height - 35)
-        .remove();
+      logos.exit().remove();
 
       // Update trend indicators
       const trends = g.selectAll('.trend')
         .data(yearData, d => d.company);
 
       // Enter new trends
-      const trendsEnter = trends.enter()
+      trends.enter()
         .append('text')
         .attr('class', 'trend')
         .attr('text-anchor', 'middle')
-        .attr('x', d => xScale(d.ebitdaMargin)) // Use EBITDA margin for x-axis
-        .attr('y', height + 20);
+        .attr('x', d => xScale(d.ebitdaMargin))
+        .attr('y', d => yScale(d.revenueGrowth) + 20)
+        .text(d => {
+          if (d.revenueTrend === 'increase') return '↑';
+          if (d.revenueTrend === 'decrease') return '↓';
+          return '→';
+        })
+        .attr('fill', d => {
+          if (d.revenueTrend === 'increase') return '#4CAF50';
+          if (d.revenueTrend === 'decrease') return '#F44336';
+          return '#9E9E9E';
+        });
 
-      // Update existing trends
-      trends.merge(trendsEnter)
+      // Update all trends (both existing and new)
+      g.selectAll('.trend')
         .transition()
         .duration(750)
-        .attr('x', d => xScale(d.ebitdaMargin)) // Use EBITDA margin for x-axis
-        .attr('y', d => yScale(d.revenueGrowth) + 20) // Use revenue growth for y-axis
+        .ease(d3.easeCubicInOut)
+        .attr('x', d => xScale(d.ebitdaMargin))
+        .attr('y', d => yScale(d.revenueGrowth) + 20)
         .text(d => {
           if (d.revenueTrend === 'increase') return '↑';
           if (d.revenueTrend === 'decrease') return '↓';
@@ -474,11 +479,7 @@ const initChart = () => {
         });
 
       // Remove old trends
-      trends.exit()
-        .transition()
-        .duration(750)
-        .attr('y', height + 20)
-        .remove();
+      trends.exit().remove();
 
       // Update year label
       g.selectAll('.year-label').remove();
