@@ -86,8 +86,8 @@ let years = [];
 
 // Add these as component-level variables to maintain consistent scales
 let xScale, yScale;
-let globalXDomain = [-60, 60];  // Fixed domain for EBITDA margin
-let globalYDomain = [-40, 110]; // Fixed domain for revenue growth
+let globalXDomain = [-0.5, 1.0];  // EBITDA margin range: -50% to 100% in decimal form
+let globalYDomain = [-0.1, 1.0]; // Revenue growth range: -10% to 100% in decimal form
 
 // Function to process XLSX data
 const processExcelData = (file) => {
@@ -103,48 +103,118 @@ const processExcelData = (file) => {
       return;
     }
 
-    // Convert sheet to JSON
+    // Convert sheet to JSON with headers
     const jsonData = XLSX.utils.sheet_to_json(ttmSheet, { header: 1 });
     
     // First row contains company names (headers)
     const headers = jsonData[0];
     
-    // Process data for each year
+    // Process data for each year/quarter
     const processedData = [];
     years = []; // Reset years array
     
-    for (let i = 1; i < jsonData.length; i++) {
+    // Create maps to store revenue growth and EBITDA margin data
+    const revenueGrowthData = new Map(); // key: 'company_quarter', value: growth value
+    const ebitdaMarginData = new Map(); // key: 'company_quarter', value: margin value
+    
+    // Process revenue growth data (first half)
+    for (let i = 2; i < 113; i++) {
       const row = jsonData[i];
-      const year = row[0]; // First column is year
-      if (!years.includes(year)) {
-        years.push(year);
+      const yearQuarter = row[0];
+      if (yearQuarter && !years.includes(yearQuarter)) {
+        years.push(yearQuarter);
       }
       
-      // Process each company's data
+      // Process each company's revenue growth
       for (let j = 1; j < headers.length; j++) {
         const company = headers[j];
+        if (!company) continue;
+        
         const value = row[j];
-        
-        // Skip if no value or company
-        if (!company || value === undefined) continue;
-        
-        // Determine if it's an increase or decrease
-        const prevValue = i > 1 ? jsonData[i-1][j] : null;
-        let trend = null;
-        if (prevValue !== null && value !== null) {
-          trend = value > prevValue ? 'increase' : value < prevValue ? 'decrease' : 'neutral';
+        if (value !== undefined) {
+          // Convert to decimal if it's a number
+          const numValue = typeof value === 'number' ? value : parseFloat(value);
+          if (!isNaN(numValue)) {
+            revenueGrowthData.set(`${company}_${yearQuarter}`, numValue);
+          }
         }
-        
-        processedData.push({
-          year: year,
-          company: company,
-          value: value,
-          trend: trend,
-          x: value, // Store original position
-          y: value  // Store original position
-        });
       }
     }
+    
+    // Process EBITDA margin data (second half)
+    for (let i = 116; i < jsonData.length; i++) {
+      const row = jsonData[i];
+      const yearQuarter = row[0];
+      if (!yearQuarter) continue;
+      
+      // Process each company's EBITDA margin
+      for (let j = 1; j < 227; j++) {
+        const company = headers[j];
+        if (!company) continue;
+        
+        const value = row[j];
+        if (value !== undefined) {
+          // Convert to decimal if it's a number
+          const numValue = typeof value === 'number' ? value : parseFloat(value);
+          if (!isNaN(numValue)) {
+            ebitdaMarginData.set(`${company}_${yearQuarter}`, numValue);
+          }
+        }
+      }
+    }
+    
+    // Combine the data
+    years.forEach(yearQuarter => {
+      headers.slice(1).forEach(company => {
+        if (!company) return;
+        
+        const revenueGrowth = revenueGrowthData.get(`${company}_${yearQuarter}`);
+        const ebitdaMargin = ebitdaMarginData.get(`${company}_${yearQuarter}`);
+        
+        // Only add if we have both values and they're within our domain ranges
+        if (revenueGrowth !== undefined && ebitdaMargin !== undefined &&
+            revenueGrowth >= globalYDomain[0] && revenueGrowth <= globalYDomain[1] &&
+            ebitdaMargin >= globalXDomain[0] && ebitdaMargin <= globalXDomain[1]) {
+          
+          // Find previous quarter's data for trend calculation
+          const quarterIndex = years.indexOf(yearQuarter);
+          let revenueTrend = null;
+          let ebitdaTrend = null;
+          
+          if (quarterIndex > 0) {
+            const prevQuarter = years[quarterIndex - 1];
+            const prevRevenueGrowth = revenueGrowthData.get(`${company}_${prevQuarter}`);
+            const prevEbitdaMargin = ebitdaMarginData.get(`${company}_${prevQuarter}`);
+            
+            if (prevRevenueGrowth !== undefined) {
+              revenueTrend = revenueGrowth > prevRevenueGrowth ? 'increase' : 
+                            revenueGrowth < prevRevenueGrowth ? 'decrease' : 'neutral';
+            }
+            
+            if (prevEbitdaMargin !== undefined) {
+              ebitdaTrend = ebitdaMargin > prevEbitdaMargin ? 'increase' : 
+                           ebitdaMargin < prevEbitdaMargin ? 'decrease' : 'neutral';
+            }
+          }
+          
+          processedData.push({
+            year: yearQuarter,
+            company: company,
+            ebitdaMargin: ebitdaMargin,
+            revenueGrowth: revenueGrowth,
+            ebitdaTrend: ebitdaTrend,
+            revenueTrend: revenueTrend
+          });
+        }
+      });
+    });
+
+    // Sort years chronologically
+    years.sort((a, b) => {
+      const [aYear, aQ] = a.split('Q').map(n => parseInt(n));
+      const [bYear, bQ] = b.split('Q').map(n => parseInt(n));
+      return aYear !== bYear ? aYear - bYear : aQ - bQ;
+    });
 
     // Update the data
     mergedData.value = processedData;
@@ -271,15 +341,15 @@ const initChart = () => {
         .attr('class', 'bubble')
         .attr('r', 8)
         .attr('fill', d => colorDict[d.company])
-        .attr('cx', d => xScale(d.value))
+        .attr('cx', d => xScale(d.ebitdaMargin)) // Use EBITDA margin for x-axis
         .attr('cy', height); // Start from bottom
 
       // Update existing bubbles
       bubbles.merge(bubblesEnter)
         .transition()
         .duration(750)
-        .attr('cx', d => xScale(d.value))
-        .attr('cy', d => yScale(d.value))
+        .attr('cx', d => xScale(d.ebitdaMargin)) // Use EBITDA margin for x-axis
+        .attr('cy', d => yScale(d.revenueGrowth)) // Use revenue growth for y-axis
         .attr('fill', d => colorDict[d.company]);
 
       // Remove old bubbles
@@ -300,7 +370,7 @@ const initChart = () => {
         .attr('width', 30)
         .attr('height', 30)
         .attr('xlink:href', d => logoDict[d.company])
-        .attr('x', d => xScale(d.value) - 15)
+        .attr('x', d => xScale(d.ebitdaMargin) - 15) // Use EBITDA margin for x-axis
         .attr('y', height - 35)
         .call(dragLogo);
 
@@ -308,8 +378,8 @@ const initChart = () => {
       logos.merge(logosEnter)
         .transition()
         .duration(750)
-        .attr('x', d => xScale(d.value) - 15)
-        .attr('y', d => yScale(d.value) - 35);
+        .attr('x', d => xScale(d.ebitdaMargin) - 15) // Use EBITDA margin for x-axis
+        .attr('y', d => yScale(d.revenueGrowth) - 35); // Use revenue growth for y-axis
 
       // Remove old logos
       logos.exit()
@@ -327,23 +397,23 @@ const initChart = () => {
         .append('text')
         .attr('class', 'trend')
         .attr('text-anchor', 'middle')
-        .attr('x', d => xScale(d.value))
+        .attr('x', d => xScale(d.ebitdaMargin)) // Use EBITDA margin for x-axis
         .attr('y', height + 20);
 
       // Update existing trends
       trends.merge(trendsEnter)
         .transition()
         .duration(750)
-        .attr('x', d => xScale(d.value))
-        .attr('y', d => yScale(d.value) + 20)
+        .attr('x', d => xScale(d.ebitdaMargin)) // Use EBITDA margin for x-axis
+        .attr('y', d => yScale(d.revenueGrowth) + 20) // Use revenue growth for y-axis
         .text(d => {
-          if (d.trend === 'increase') return '↑';
-          if (d.trend === 'decrease') return '↓';
+          if (d.revenueTrend === 'increase') return '↑';
+          if (d.revenueTrend === 'decrease') return '↓';
           return '→';
         })
         .attr('fill', d => {
-          if (d.trend === 'increase') return '#4CAF50';
-          if (d.trend === 'decrease') return '#F44336';
+          if (d.revenueTrend === 'increase') return '#4CAF50';
+          if (d.revenueTrend === 'decrease') return '#F44336';
           return '#9E9E9E';
         });
 
