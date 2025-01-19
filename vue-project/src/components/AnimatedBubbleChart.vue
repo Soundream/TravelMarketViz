@@ -32,67 +32,142 @@
   pointer-events: none;
   user-select: none;
 }
+
+.active {
+  stroke: #000;
+  stroke-width: 2px;
+}
 </style>
 
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue';
 import * as d3 from 'd3';
-import { revenueGrowthData, ebitdaMarginData } from '../data/marketData';
+import * as XLSX from 'xlsx';
 
 // Company colors
 const colorDict = {
-  'abnb': '#FF5A5F',
-  'bkng': '#003580',
-  'expe': '#00355F',
-  'tcom': '#003580',
-  'sabr': '#E31837',
-  'trip': '#34E0A1'
+  'ABNB': '#FF5A5F',
+  'BKNG': '#003580',
+  'EXPE': '#00355F',
+  'TCOM': '#003580',
+  'TRIP': '#34E0A1',
+  'Almosafer': '#bb5387',
+  'Cleartrip': '#e74c3c',
+  'EaseMyTrip': '#00a0e2',
+  'Ixigo': '#e74c3c',
+  'MMYT': '#e74c3c',
+  'Skyscanner': '#0770e3',
+  'Wego': '#4e843d',
+  'Yatra': '#e74c3c'
 };
 
 // Company logos
 const logoDict = {
-  'abnb': '/logos/airbnb.png',
-  'bkng': '/logos/booking.png',
-  'expe': '/logos/expedia.png',
-  'tcom': '/logos/trip-com.png',
-  'sabr': '/logos/sabre.png',
-  'trip': '/logos/tripadvisor.png'
+  'ABNB': '/logos/ABNB_logo.png',
+  'BKNG': '/logos/BKNG_logo.png',
+  'EXPE': '/logos/EXPE_logo.png',
+  'TCOM': '/logos/TCOM_logo.png',
+  'TRIP': '/logos/TRIP_logo.png',
+  'Almosafer': '/logos/Almosafer_logo.png',
+  'Cleartrip': '/logos/Cleartrip_logo.png',
+  'EaseMyTrip': '/logos/EASEMYTRIP_logo.png',
+  'Ixigo': '/logos/IXIGO_logo.png',
+  'MMYT': '/logos/MMYT_logo.png',
+  'Skyscanner': '/logos/Skyscanner_logo.png',
+  'Wego': '/logos/Wego_logo.png',
+  'Yatra': '/logos/YTRA_logo.png'
 };
 
-// Function to process local data
-const processData = () => {
-  const merged = [];
-  const quarters = ['2024 q2', '2024 q3'];
-  const companies = ['abnb', 'bkng', 'expe', 'trip', 'tcom', 'wego'];
+let mergedData = ref([]);
+let isPlaying = ref(false);
+let animationInterval = null;
+let currentYearIndex = 0;
+let years = [];
 
-  quarters.forEach(quarter => {
-    const revenueData = revenueGrowthData.find(d => d.quarter.toLowerCase() === quarter.toLowerCase());
-    const ebitdaData = ebitdaMarginData.find(d => d.quarter.toLowerCase() === quarter.toLowerCase());
+// Add these as component-level variables to maintain consistent scales
+let xScale, yScale;
+let globalXDomain = [-60, 60];  // Fixed domain for EBITDA margin
+let globalYDomain = [-40, 110]; // Fixed domain for revenue growth
 
-    if (revenueData && ebitdaData) {
-      companies.forEach(company => {
-        if (revenueData[company] !== undefined && ebitdaData[company] !== undefined) {
-          merged.push({
-            company: company,
-            quarter: quarter.toLowerCase(),
-            revenueGrowth: revenueData[company] / 100,
-            ebitdaMargin: ebitdaData[company] / 100,
-          });
-        }
-      });
+// Function to process XLSX data
+const processExcelData = (file) => {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    
+    // Get the TTM sheet
+    const ttmSheet = workbook.Sheets['TTM (bounded)'];
+    if (!ttmSheet) {
+      console.error('TTM (bounded) sheet not found');
+      return;
     }
-  });
 
-  return merged;
+    // Convert sheet to JSON
+    const jsonData = XLSX.utils.sheet_to_json(ttmSheet, { header: 1 });
+    
+    // First row contains company names (headers)
+    const headers = jsonData[0];
+    
+    // Process data for each year
+    const processedData = [];
+    years = []; // Reset years array
+    
+    for (let i = 1; i < jsonData.length; i++) {
+      const row = jsonData[i];
+      const year = row[0]; // First column is year
+      if (!years.includes(year)) {
+        years.push(year);
+      }
+      
+      // Process each company's data
+      for (let j = 1; j < headers.length; j++) {
+        const company = headers[j];
+        const value = row[j];
+        
+        // Skip if no value or company
+        if (!company || value === undefined) continue;
+        
+        // Determine if it's an increase or decrease
+        const prevValue = i > 1 ? jsonData[i-1][j] : null;
+        let trend = null;
+        if (prevValue !== null && value !== null) {
+          trend = value > prevValue ? 'increase' : value < prevValue ? 'decrease' : 'neutral';
+        }
+        
+        processedData.push({
+          year: year,
+          company: company,
+          value: value,
+          trend: trend,
+          x: value, // Store original position
+          y: value  // Store original position
+        });
+      }
+    }
+
+    // Update the data
+    mergedData.value = processedData;
+    currentYearIndex = 0;
+    
+    // Initialize the visualization
+    initChart();
+  };
+  reader.readAsArrayBuffer(file);
 };
 
 // Initialize chart
 const initChart = () => {
   try {
+    // Clear previous chart
+    d3.select('#additional-chart').selectAll('*').remove();
+    
     // Create SVG
     const svg = d3.select('#additional-chart').append('svg')
-      .attr('width', 1200)
-      .attr('height', 840);
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .attr('viewBox', '0 0 1200 840')
+      .attr('preserveAspectRatio', 'xMidYMid meet');
 
     const margin = { top: 40, right: 20, bottom: 50, left: 60 };
     const width = 1200 - margin.left - margin.right;
@@ -101,175 +176,237 @@ const initChart = () => {
     const g = svg.append("g")
       .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-    let mergedData = processData();
-    console.log('Processed Data:', mergedData);
-
-    // Compute min and max values for the scales
-    const ebitdaMargins = mergedData.map(d => d.ebitdaMargin);
-    const revenueGrowths = mergedData.map(d => d.revenueGrowth);
-
-    const xMin = d3.min(ebitdaMargins);
-    const xMax = d3.max(ebitdaMargins);
-    const yMin = d3.min(revenueGrowths);
-    const yMax = d3.max(revenueGrowths);
-
-    // Add padding to the domains
-    const xPadding = (xMax - xMin) * 0.1 || 0.1;
-    const yPadding = (yMax - yMin) * 0.1 || 0.1;
-
-    // Adjust the domains to include 0% for x and y axes
-    const xDomain = [
-      Math.min(xMin - xPadding, 0),
-      Math.max(xMax + xPadding, 0)
-    ];
-
-    const yDomain = [
-      Math.min(yMin - yPadding, 0),
-      Math.max(yMax + yPadding, 0)
-    ];
-
-    // Create scales
-    const xScale = d3.scaleLinear()
-      .domain(xDomain)
+    // Initialize scales with fixed domains
+    xScale = d3.scaleLinear()
+      .domain(globalXDomain)
       .range([0, width]);
 
-    const yScale = d3.scaleLinear()
-      .domain(yDomain)
+    yScale = d3.scaleLinear()
+      .domain(globalYDomain)
       .range([height, 0]);
 
     // Create axes
-    const xAxis = d3.axisBottom(xScale)
-      .tickFormat(d3.format(".0%"));
+    const xAxis = d3.axisBottom(xScale).tickFormat(d3.format('.0%'));
+    const yAxis = d3.axisLeft(yScale).tickFormat(d3.format('.0%'));
 
-    const yAxis = d3.axisLeft(yScale)
-      .tickFormat(d3.format(".0%"));
+    // Add axes
+    g.append('g')
+      .attr('class', 'x-axis')
+      .attr('transform', `translate(0,${height})`)
+      .call(xAxis);
 
-    // Draw axes
-    g.append("g")
-      .attr("class", "x-axis")
-      .attr("transform", `translate(0, ${height})`)
-      .call(xAxis)
-      .selectAll(".tick text")
-      .style("font-family", "Open Sans")
-      .style("font-size", 14);
-
-    g.append("g")
-      .attr("class", "y-axis")
-      .call(yAxis)
-      .selectAll(".tick text")
-      .style("font-family", "Open Sans")
-      .style("font-size", 14);
+    g.append('g')
+      .attr('class', 'y-axis')
+      .call(yAxis);
 
     // Add axis labels
-    g.append("text")
-      .attr("class", "x-label")
-      .attr("text-anchor", "middle")
-      .attr("x", width / 2)
-      .attr("y", height + 40)
-      .text("EBITDA Margin")
-      .style("font-family", "Open Sans")
-      .style("font-size", 20);
+    g.append('text')
+      .attr('class', 'x-label')
+      .attr('text-anchor', 'middle')
+      .attr('x', width / 2)
+      .attr('y', height + 40)
+      .text('EBITDA Margin')
+      .style('font-size', '14px');
 
-    g.append("text")
-      .attr("class", "y-label")
-      .attr("text-anchor", "middle")
-      .attr("transform", `rotate(-90)`)
-      .attr("y", -65)
-      .attr("x", -height / 2)
-      .attr("dy", "1em")
-      .text("Revenue Growth YoY")
-      .style("font-family", "Open Sans")
-      .style("font-size", 20);
+    g.append('text')
+      .attr('class', 'y-label')
+      .attr('text-anchor', 'middle')
+      .attr('transform', 'rotate(-90)')
+      .attr('y', -45)
+      .attr('x', -height / 2)
+      .text('Revenue Growth YoY')
+      .style('font-size', '14px');
 
     // Add zero lines
-    if (yScale(0) >= 0 && yScale(0) <= height) {
-      g.append("line")
-        .attr("class", "zero-line")
-        .attr("x1", 0)
-        .attr("y1", yScale(0))
-        .attr("x2", width)
-        .attr("y2", yScale(0))
-        .attr("stroke", "green")
-        .attr("stroke-width", 1)
-        .attr("stroke-dasharray", "4,2");
+    g.append('line')
+      .attr('class', 'zero-line')
+      .attr('x1', xScale(0))
+      .attr('y1', 0)
+      .attr('x2', xScale(0))
+      .attr('y2', height)
+      .attr('stroke', '#ccc')
+      .attr('stroke-dasharray', '4,4');
+
+    g.append('line')
+      .attr('class', 'zero-line')
+      .attr('x1', 0)
+      .attr('y1', yScale(0))
+      .attr('x2', width)
+      .attr('y2', yScale(0))
+      .attr('stroke', '#ccc')
+      .attr('stroke-dasharray', '4,4');
+
+    // Define drag behaviors
+    const dragLogo = d3.drag()
+      .on('start', dragStarted)
+      .on('drag', dragged)
+      .on('end', dragEnded);
+
+    function dragStarted(event, d) {
+      d3.select(this).raise().classed('active', true);
     }
 
-    if (xScale(0) >= 0 && xScale(0) <= width) {
-      g.append("line")
-        .attr("class", "zero-line")
-        .attr("x1", xScale(0))
-        .attr("y1", 0)
-        .attr("x2", xScale(0))
-        .attr("y2", height)
-        .attr("stroke", "green")
-        .attr("stroke-width", 1)
-        .attr("stroke-dasharray", "4,2");
+    function dragged(event, d) {
+      d3.select(this)
+        .attr('x', d.x = event.x)
+        .attr('y', d.y = event.y);
     }
 
-    // Separate data for Q2 and Q3
-    const dataQ3 = mergedData.filter(d => d.quarter === '2024 q3');
-    const dataQ2 = mergedData.filter(d => d.quarter === '2024 q2');
+    function dragEnded(event, d) {
+      d3.select(this).classed('active', false);
+    }
 
-    // Draw Q3 dots with logos
-    const dotsQ3 = g.selectAll(".dot.q3")
-      .data(dataQ3)
-      .enter()
-      .append("circle")
-      .attr("class", "dot q3")
-      .attr("r", 5)
-      .attr("cx", d => xScale(d.ebitdaMargin))
-      .attr("cy", d => yScale(d.revenueGrowth))
-      .attr("fill", d => colorDict[d.company] || '#000000');
+    // Function to update chart with animation
+    function updateChart(yearIndex) {
+      const currentYear = years[yearIndex];
+      const yearData = mergedData.value.filter(d => d.year === currentYear);
 
-    // Draw Q2 crosses
-    const symbolCross = d3.symbol().type(d3.symbolCross).size(100);
+      // Update bubbles with proper transitions
+      const bubbles = g.selectAll('.bubble')
+        .data(yearData, d => d.company);
 
-    const crossesQ2 = g.selectAll(".cross.q2")
-      .data(dataQ2)
-      .enter()
-      .append("path")
-      .attr("class", "cross q2")
-      .attr("d", symbolCross)
-      .attr("transform", d => `translate(${xScale(d.ebitdaMargin)},${yScale(d.revenueGrowth)})`)
-      .attr("fill", d => colorDict[d.company] || '#000000');
+      // Enter new bubbles
+      const bubblesEnter = bubbles.enter()
+        .append('circle')
+        .attr('class', 'bubble')
+        .attr('r', 8)
+        .attr('fill', d => colorDict[d.company])
+        .attr('cx', d => xScale(d.value))
+        .attr('cy', height); // Start from bottom
 
-    // Add quarter labels
-    g.selectAll(".quarter-label")
-      .data(mergedData)
-      .enter()
-      .append("text")
-      .attr("class", "quarter-label")
-      .text(d => d.quarter.toUpperCase().replace('2024 ', ''))
-      .attr("x", d => xScale(d.ebitdaMargin) + 8)
-      .attr("y", d => yScale(d.revenueGrowth) + 4)
-      .style("font-size", "12px")
-      .style("font-family", "Open Sans")
-      .style("fill", "black");
+      // Update existing bubbles
+      bubbles.merge(bubblesEnter)
+        .transition()
+        .duration(750)
+        .attr('cx', d => xScale(d.value))
+        .attr('cy', d => yScale(d.value))
+        .attr('fill', d => colorDict[d.company]);
 
-    // Add company logos for Q3 data
-    g.selectAll(".logo")
-      .data(dataQ3)
-      .enter()
-      .append("image")
-      .attr("class", "logo")
-      .attr("xlink:href", d => logoDict[d.company] || '')
-      .attr("width", 80)
-      .attr("height", 80)
-      .attr("x", d => xScale(d.ebitdaMargin) - 40)
-      .attr("y", d => yScale(d.revenueGrowth) - 62);
+      // Remove old bubbles
+      bubbles.exit()
+        .transition()
+        .duration(750)
+        .attr('cy', height)
+        .remove();
+
+      // Update logos with proper transitions
+      const logos = g.selectAll('.logo')
+        .data(yearData, d => d.company);
+
+      // Enter new logos
+      const logosEnter = logos.enter()
+        .append('image')
+        .attr('class', 'logo')
+        .attr('width', 30)
+        .attr('height', 30)
+        .attr('xlink:href', d => logoDict[d.company])
+        .attr('x', d => xScale(d.value) - 15)
+        .attr('y', height - 35)
+        .call(dragLogo);
+
+      // Update existing logos
+      logos.merge(logosEnter)
+        .transition()
+        .duration(750)
+        .attr('x', d => xScale(d.value) - 15)
+        .attr('y', d => yScale(d.value) - 35);
+
+      // Remove old logos
+      logos.exit()
+        .transition()
+        .duration(750)
+        .attr('y', height - 35)
+        .remove();
+
+      // Update trend indicators
+      const trends = g.selectAll('.trend')
+        .data(yearData, d => d.company);
+
+      // Enter new trends
+      const trendsEnter = trends.enter()
+        .append('text')
+        .attr('class', 'trend')
+        .attr('text-anchor', 'middle')
+        .attr('x', d => xScale(d.value))
+        .attr('y', height + 20);
+
+      // Update existing trends
+      trends.merge(trendsEnter)
+        .transition()
+        .duration(750)
+        .attr('x', d => xScale(d.value))
+        .attr('y', d => yScale(d.value) + 20)
+        .text(d => {
+          if (d.trend === 'increase') return '↑';
+          if (d.trend === 'decrease') return '↓';
+          return '→';
+        })
+        .attr('fill', d => {
+          if (d.trend === 'increase') return '#4CAF50';
+          if (d.trend === 'decrease') return '#F44336';
+          return '#9E9E9E';
+        });
+
+      // Remove old trends
+      trends.exit()
+        .transition()
+        .duration(750)
+        .attr('y', height + 20)
+        .remove();
+
+      // Update year label
+      g.selectAll('.year-label').remove();
+      g.append('text')
+        .attr('class', 'year-label')
+        .attr('x', width / 2)
+        .attr('y', -10)
+        .attr('text-anchor', 'middle')
+        .style('font-size', '24px')
+        .text(currentYear);
+    }
+
+    // Initial update
+    updateChart(currentYearIndex);
+
+    // Animation control methods
+    const togglePlay = () => {
+      isPlaying.value = !isPlaying.value;
+      if (isPlaying.value) {
+        animationInterval = setInterval(() => {
+          currentYearIndex = (currentYearIndex + 1) % years.length;
+          updateChart(currentYearIndex);
+        }, 1000);
+      } else {
+        clearInterval(animationInterval);
+      }
+    };
+
+    // Cleanup
+    onUnmounted(() => {
+      if (animationInterval) {
+        clearInterval(animationInterval);
+      }
+    });
 
   } catch (error) {
     console.error('Error initializing chart:', error);
   }
 };
 
-// Lifecycle hooks
-onMounted(() => {
-  initChart();
-});
-
-onUnmounted(() => {
-  // Cleanup
-  d3.select('#additional-chart').selectAll('*').remove();
+// Expose methods
+defineExpose({
+  processExcelData,
+  togglePlay: () => {
+    isPlaying.value = !isPlaying.value;
+    if (isPlaying.value) {
+      animationInterval = setInterval(() => {
+        currentYearIndex = (currentYearIndex + 1) % years.length;
+        initChart();
+      }, 1000);
+    } else {
+      clearInterval(animationInterval);
+    }
+  },
+  isPlaying
 });
 </script> 

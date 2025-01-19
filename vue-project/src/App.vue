@@ -54,8 +54,15 @@
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <!-- Animated Bubble Chart -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <h2 class="text-xl font-semibold text-wego-gray mb-4">Market Performance Over Time</h2>
-          <AnimatedBubbleChart />
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-wego-gray">Market Performance Over Time</h2>
+            <button 
+              @click="toggleBubbleAnimation"
+              class="px-4 py-2 bg-wego-green text-white rounded hover:bg-wego-green-dark">
+              Play/Pause
+            </button>
+          </div>
+          <AnimatedBubbleChart ref="bubbleChartRef" />
         </div>
 
         <!-- Static Chart -->
@@ -136,6 +143,7 @@ import DataChart from './components/DataChart.vue'
 import AnimatedBubbleChart from './components/AnimatedBubbleChart.vue'
 
 const chartRef = ref(null)
+const bubbleChartRef = ref(null)
 const mobileMenuOpen = ref(false)
 
 const navigation = [
@@ -200,8 +208,15 @@ const days = [
 const handleFileUpload = (event) => {
   const file = event.target.files[0]
   if (file) {
+    // Process the file for both charts
     chartRef.value.processExcelData(file)
+    bubbleChartRef.value.processExcelData(file)
   }
+}
+
+// Add play/pause control for bubble chart
+const toggleBubbleAnimation = () => {
+  bubbleChartRef.value.togglePlay()
 }
 </script>
 
