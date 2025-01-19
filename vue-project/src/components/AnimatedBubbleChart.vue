@@ -46,19 +46,33 @@ import * as XLSX from 'xlsx';
 
 // Company colors
 const colorDict = {
-  'ABNB': '#FF5A5F',
-  'BKNG': '#003580',
-  'EXPE': '#00355F',
-  'TCOM': '#003580',
-  'TRIP': '#34E0A1',
+  'ABNB': '#ff5895',
   'Almosafer': '#bb5387',
-  'Cleartrip': '#e74c3c',
+  'BKNG': '#003480',
+  'DESP': '#755bd8',
+  'EXPE': '#fbcc33',
   'EaseMyTrip': '#00a0e2',
   'Ixigo': '#e74c3c',
   'MMYT': '#e74c3c',
-  'Skyscanner': '#0770e3',
+  'TRIP': '#00af87',
+  'TRVG': '#e74c3c',
   'Wego': '#4e843d',
-  'Yatra': '#e74c3c'
+  'Yatra': '#e74c3c',
+  'TCOM': '#2577e3',
+  'EDR': '#2577e3',
+  'LMN': '#fc03b1',
+  'Webjet': '#e74c3c',
+  'SEERA': '#750808',
+  'PCLN': '#003480',
+  'Orbitz': '#8edbfa',
+  'Travelocity': '#1d3e5c',
+  'Skyscanner': '#0770e3',
+  'Etraveli': '#b2e9ff',
+  'Kiwi': '#e5fdd4',
+  'Cleartrip': '#e74c3c',
+  'Traveloka': '#38a0e2',
+  'FLT': '#d2b6a8',
+  'Webjet OTA': '#e74c3c'
 };
 
 // Company logos
@@ -68,14 +82,56 @@ const logoDict = {
   'EXPE': '/logos/EXPE_logo.png',
   'TCOM': '/logos/TCOM_logo.png',
   'TRIP': '/logos/TRIP_logo.png',
-  'Almosafer': '/logos/Almosafer_logo.png',
-  'Cleartrip': '/logos/Cleartrip_logo.png',
-  'EaseMyTrip': '/logos/EASEMYTRIP_logo.png',
-  'Ixigo': '/logos/IXIGO_logo.png',
+  'TRVG': '/logos/TRVG_logo.png',
+  'EDR': '/logos/EDR_logo.png',
+  'DESP': '/logos/DESP_logo.png',
   'MMYT': '/logos/MMYT_logo.png',
-  'Skyscanner': '/logos/Skyscanner_logo.png',
+  'Ixigo': '/logos/IXIGO_logo.png',
+  'SEERA': '/logos/SEERA_logo.png',
+  'Webjet': '/logos/WEB_logo.png',
+  'LMN': '/logos/LMN_logo.png',
+  'Yatra': '/logos/YTRA_logo.png',
+  'Orbitz': '/logos/OWW_logo.png',
+  'Travelocity': '/logos/Travelocity_logo.png',
+  'EaseMyTrip': '/logos/EASEMYTRIP_logo.png',
   'Wego': '/logos/Wego_logo.png',
-  'Yatra': '/logos/YTRA_logo.png'
+  'Skyscanner': '/logos/Skyscanner_logo.png',
+  'Etraveli': '/logos/Etraveli_logo.png',
+  'Kiwi': '/logos/Kiwi_logo.png',
+  'Cleartrip': '/logos/Cleartrip_logo.png',
+  'Traveloka': '/logos/Traveloka_logo.png',
+  'FLT': '/logos/FlightCentre_logo.png',
+  'Almosafer': '/logos/Almosafer_logo.png',
+  'Webjet OTA': '/logos/OTA_logo.png'
+};
+
+// Add company names mapping
+const companyNames = {
+  'ABNB': 'Airbnb',
+  'BKNG': 'Booking.com',
+  'EXPE': 'Expedia',
+  'TCOM': 'Trip.com',
+  'TRIP': 'TripAdvisor',
+  'TRVG': 'Trivago',
+  'EDR': 'Edreams',
+  'DESP': 'Despegar',
+  'MMYT': 'MakeMyTrip',
+  'Ixigo': 'Ixigo',
+  'SEERA': 'Seera Group',
+  'Webjet': 'Webjet',
+  'LMN': 'Lastminute',
+  'Yatra': 'Yatra.com',
+  'Orbitz': 'Orbitz',
+  'Travelocity': 'Travelocity',
+  'EaseMyTrip': 'EaseMyTrip',
+  'Wego': 'Wego',
+  'Skyscanner': 'Skyscanner',
+  'Etraveli': 'Etraveli',
+  'Kiwi': 'Kiwi',
+  'Cleartrip': 'Cleartrip',
+  'FLT': 'Flight Centre',
+  'Almosafer': 'Almosafer',
+  'Webjet OTA': 'Webjet OTA'
 };
 
 let mergedData = ref([]);
@@ -86,8 +142,8 @@ let years = [];
 
 // Add these as component-level variables to maintain consistent scales
 let xScale, yScale;
-let globalXDomain = [-0.5, 1.0];  // EBITDA margin range: -50% to 100% in decimal form
-let globalYDomain = [-0.1, 1.0]; // Revenue growth range: -10% to 100% in decimal form
+let globalXDomain = [-0.7, 1.2];  // EBITDA margin range: -50% to 100% in decimal form
+let globalYDomain = [-0.3, 1.2]; // Revenue growth range: -10% to 100% in decimal form
 
 // Function to process XLSX data
 const processExcelData = (file) => {
