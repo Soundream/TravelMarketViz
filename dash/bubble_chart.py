@@ -83,7 +83,16 @@ def process_excel_file():
 # Get initial data
 df, quarters = process_excel_file()
 quarters_sorted = sorted(quarters)
-quarter_marks = {i: q for i, q in enumerate(quarters_sorted)}
+
+# Create two-row quarter marks
+quarter_marks = {}
+for i, q in enumerate(quarters_sorted):
+    if i < len(quarters_sorted) // 2:
+        # First row - place at normal position
+        quarter_marks[i] = {'label': q, 'style': {'transform': 'rotate(45deg)', 'margin-top': '5px'}}
+    else:
+        # Second row - place below using CSS
+        quarter_marks[i] = {'label': q, 'style': {'transform': 'rotate(45deg)', 'margin-top': '30px'}}
 
 # Define the app layout
 app.layout = html.Div([
@@ -92,15 +101,18 @@ app.layout = html.Div([
     # The graph
     dcc.Graph(id='bubble-chart'),
     
-    # Year slider
-    dcc.Slider(
-        id='year-slider',
-        min=0,
-        max=len(quarters_sorted)-1,
-        step=1,
-        value=0,
-        marks=quarter_marks
-    )
+    # Container for slider with extra padding for two rows of labels
+    html.Div([
+        # Year slider
+        dcc.Slider(
+            id='year-slider',
+            min=0,
+            max=len(quarters_sorted)-1,
+            step=1,
+            value=0,
+            marks=quarter_marks
+        )
+    ], style={'padding-bottom': '50px', 'padding-top': '20px'})
 ])
 
 @app.callback(
