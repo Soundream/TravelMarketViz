@@ -25,7 +25,6 @@ app.layout = html.Div([
     Input('year-slider', 'value'))
 def update_figure(selected_year):
     filtered_df = df[df.year == selected_year]
-
     fig = px.scatter(filtered_df, x="gdpPercap", y="lifeExp",
                      size="pop", color="continent", hover_name="country",
                      log_x=True, size_max=55)
