@@ -3,10 +3,8 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 
-# Initialize the Dash app
 app = Dash(__name__)
 
-# Add company names mapping
 company_names = {
     "ABNB": "Airbnb",
     "BKNG": "Booking.com",
