@@ -111,7 +111,8 @@ app.layout = html.Div([
                 max=third_point-1,
                 step=1,
                 value=0,
-                marks=first_third_marks
+                marks=first_third_marks,
+                included=True
             )
         ], style={'margin-bottom': '40px'}),
         
@@ -123,7 +124,8 @@ app.layout = html.Div([
                 max=third_point-1,
                 step=1,
                 value=0,
-                marks=second_third_marks
+                marks=second_third_marks,
+                included=True
             )
         ], style={'margin-bottom': '40px'}),
         
@@ -135,7 +137,8 @@ app.layout = html.Div([
                 max=len(quarters_sorted[two_thirds_point:])-1,
                 step=1,
                 value=0,
-                marks=last_third_marks
+                marks=last_third_marks,
+                included=True
             )
         ])
     ], style={'padding': '20px 0px 50px 0px'})
@@ -159,9 +162,11 @@ def sync_sliders(first_value, second_value, last_value, prev_first, prev_second,
     if trigger_id == 'slider-first-third':
         return first_value, 0, 0
     elif trigger_id == 'slider-second-third':
-        return 0, second_value, 0
+        # When second slider is moved, set first slider to max
+        return third_point-1, second_value, 0
     else:
-        return 0, 0, last_value
+        # When last slider is moved, set both previous sliders to max
+        return third_point-1, third_point-1, last_value
 
 @app.callback(
     Output('bubble-chart', 'figure'),
@@ -173,13 +178,13 @@ def update_figure(first_value, second_value, last_value):
     if df is None:
         return {}
     
-    # Determine which slider is active (non-zero)
-    if first_value > 0:
-        selected_quarter = quarters_sorted[first_value]
+    # Determine which slider is active (highest non-zero value)
+    if last_value > 0:
+        selected_quarter = quarters_sorted[two_thirds_point + last_value]
     elif second_value > 0:
         selected_quarter = quarters_sorted[third_point + second_value]
     else:
-        selected_quarter = quarters_sorted[two_thirds_point + last_value]
+        selected_quarter = quarters_sorted[first_value]
     
     filtered_df = df[df['year'] == selected_quarter]
     
@@ -191,7 +196,7 @@ def update_figure(first_value, second_value, last_value):
         color='company',
         color_discrete_sequence=filtered_df['color'].unique(),
         hover_name='company',
-        size=[40] * len(filtered_df),  # Fixed size for now
+        size=[40] * len(filtered_df),
         size_max=50,
         labels={
             'ebitda_margin': 'EBITDA Margin',
@@ -205,7 +210,7 @@ def update_figure(first_value, second_value, last_value):
         xaxis=dict(
             title='EBITDA Margin',
             tickformat='.0%',
-            range=[-0.7, 1.2],  # Same range as Vue chart
+            range=[-0.7, 1.2],
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
@@ -214,7 +219,7 @@ def update_figure(first_value, second_value, last_value):
         yaxis=dict(
             title='Revenue Growth YoY',
             tickformat='.0%',
-            range=[-0.3, 1.2],  # Same range as Vue chart
+            range=[-0.3, 1.2],
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
@@ -223,7 +228,7 @@ def update_figure(first_value, second_value, last_value):
         plot_bgcolor='white',
         paper_bgcolor='white',
         showlegend=True,
-        height=840  # Same height as Vue chart
+        height=840
     )
 
     return fig
