@@ -214,12 +214,7 @@ def update_figure(slider_value):
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
-            zerolinewidth=1,
-            title_standoff=30,  # Increased space
-            tickangle=0,  # Horizontal labels
-            dtick=0.5,  # Set tick interval to reduce density
-            title_font=dict(size=12),  # Smaller title font
-            tickfont=dict(size=10)  # Smaller tick font
+            zerolinewidth=1
         ),
         yaxis=dict(
             title='Revenue Growth YoY',
@@ -228,29 +223,14 @@ def update_figure(slider_value):
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
-            zerolinewidth=1,
-            title_standoff=30,  # Increased space
-            dtick=0.5,  # Set tick interval to reduce density
-            title_font=dict(size=12),  # Smaller title font
-            tickfont=dict(size=10)  # Smaller tick font
+            zerolinewidth=1
         ),
         plot_bgcolor='white',
         paper_bgcolor='white',
         showlegend=True,
-        margin=dict(l=100, r=50, t=30, b=100),  # Further increased margins
-        height=600,
-        legend=dict(
-            yanchor="top",
-            y=0.99,
-            xanchor="right",
-            x=0.99,
-            font=dict(size=10)
-        )
+        margin=dict(l=50, r=50, t=30, b=50),
+        height=600
     )
-
-    # Adjust axis label positions to prevent overlap
-    fig.update_xaxes(automargin=True, layer='above')
-    fig.update_yaxes(automargin=True, layer='above')
 
     return fig
 
