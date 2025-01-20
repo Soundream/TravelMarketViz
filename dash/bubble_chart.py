@@ -2,23 +2,79 @@ from dash import Dash, dcc, html, Input, Output, State, callback_context
 import plotly.express as px
 import pandas as pd
 import numpy as np
-import os
 
 # Initialize the Dash app
 app = Dash(__name__)
-server = app.server  # Expose the server variable for Vercel
+
+# Add company names mapping
+company_names = {
+    "ABNB": "Airbnb",
+    "BKNG": "Booking.com",
+    "EXPE": "Expedia",
+    "TCOM": "Trip.com",
+    "TRIP": "TripAdvisor",
+    "TRVG": "Trivago",
+    "EDR": "Edreams",
+    "DESP": "Despegar",
+    "MMYT": "MakeMyTrip",
+    "Ixigo": "Ixigo",
+    "SEERA": "Seera Group",
+    "Webjet": "Webjet",
+    "LMN": "Lastminute",
+    "Yatra": "Yatra.com",
+    "Orbitz": "Orbitz",
+    "Travelocity": "Travelocity",
+    "EaseMyTrip": "EaseMyTrip",
+    "Wego": "Wego",
+    "Skyscanner": "Skyscanner",
+    "Etraveli": "Etraveli",
+    "Kiwi": "Kiwi",
+    "Cleartrip": "Cleartrip",
+    "FLT": "Flight Centre",
+    "Almosafer": "Almosafer",
+    "Traveloka": "Traveloka",
+    "Webjet OTA": "Webjet OTA"
+}
+
+# Update color dictionary
+color_dict = {
+    'ABNB': '#ff5895',
+    'Almosafer': '#ba0d86',
+    'BKNG': '#003480',
+    'DESP': '#755bd8',
+    'EXPE': '#fbcc33',
+    'EaseMyTrip': '#00a0e2',
+    'Ixigo': '#e74c3c',
+    'MMYT': '#e74c3c',
+    'TRIP': '#00af87',
+    'TRVG': '#e74c3c',
+    'Wego': '#4e843d',
+    'Yatra': '#e74c3c',
+    'TCOM': '#2577e3',
+    'EDR': '#2577e3',
+    'LMN': '#fc03b1',
+    'Webjet': '#e74c3c',
+    'SEERA': '#750808',
+    'PCLN': '#003480',
+    'Orbitz': '#8edbfa',
+    'Travelocity': '#1d3e5c',
+    'Skyscanner': '#0770e3',
+    'Etraveli': '#b2e9ff',
+    'Kiwi': '#e5fdd4',
+    'Cleartrip': '#e74c3c',
+    'Traveloka': '#38a0e2',
+    'FLT': '#d2b6a8',
+    'Webjet OTA': '#e74c3c'
+}
 
 def process_excel_file():
     try:
-        # Update the file path to be relative to the script location
-        file_path = os.path.join(os.path.dirname(__file__), '..', 'Animated Bubble Chart_ Historic Financials Online Travel Industry.xlsx')
-        
         # Read both sheets from the Excel file
-        df_raw = pd.read_excel(file_path, 
+        df_raw = pd.read_excel('Animated Bubble Chart_ Historic Financials Online Travel Industry.xlsx', 
                              sheet_name='TTM (bounded)', 
                              header=0)
         
-        df_revenue = pd.read_excel(file_path,
+        df_revenue = pd.read_excel('Animated Bubble Chart_ Historic Financials Online Travel Industry.xlsx',
                                  sheet_name='Quarterly Revenue&EBITDA',
                                  header=0)
         
@@ -66,17 +122,20 @@ def process_excel_file():
                     ebitda_marg = quarter_ebitda[company].iloc[0]
                     raw_rev = raw_revenue[company].iloc[0]
                     
-                    # Normalize
+                    # Normalize revenue for bubble size (log scale to handle large variations)
                     if pd.notna(raw_rev) and raw_rev > 0:
                         normalized_size = np.log(raw_rev / revenue_min) / np.log(revenue_max / revenue_min)
+                        # Scale to reasonable bubble sizes (between 20 and 100)
                         bubble_size = 20 + normalized_size * 80
                     else:
-                        bubble_size = 20  
+                        bubble_size = 20  # Minimum size for companies with no revenue data
                     
+                    # Check if values are within domain ranges (-0.7 to 1.2 for EBITDA, -0.3 to 1.2 for Revenue)
                     if (-0.7 <= ebitda_marg <= 1.2) and (-0.3 <= rev_growth <= 1.2):
                         processed_data.append({
                             'year': quarter,
                             'company': company,
+                            'company_full_name': company_names.get(company, company),  # Add full name
                             'ebitda_margin': ebitda_marg,
                             'revenue_growth': rev_growth,
                             'revenue': raw_rev,
@@ -84,28 +143,11 @@ def process_excel_file():
                         })
                 except:
                     continue
+        
+        # Convert to DataFrame
         df = pd.DataFrame(processed_data)
         
-        color_dict = {
-            'ABNB': '#ff5895',
-            'BKNG': '#003480',
-            'EXPE': '#fbcc33',
-            'TCOM': '#2577e3',
-            'TRIP': '#00af87',
-            'TRVG': '#e74c3c',
-            'EDR': '#2577e3',
-            'DESP': '#755bd8',
-            'MMYT': '#e74c3c',
-            'Ixigo': '#e74c3c',
-            'SEERA': '#750808',
-            'Webjet': '#e74c3c',
-            'LMN': '#fc03b1',
-            'Yatra': '#e74c3c',
-            'EaseMyTrip': '#00a0e2',
-            'Wego': '#4e843d',
-            'Almosafer': '#bb5387'
-        }
-        
+        # Add colors
         df['color'] = df['company'].map(color_dict)
         
         return df, quarters
@@ -195,15 +237,22 @@ def update_figure(slider_value):
     
     selected_quarter = quarters_sorted[slider_value]
     filtered_df = df[df['year'] == selected_quarter]
+    
+    # Create the bubble chart
     fig = px.scatter(
         filtered_df,
         x='ebitda_margin',
         y='revenue_growth',
         color='company',
         color_discrete_sequence=filtered_df['color'].unique(),
-        hover_name='company',
+        hover_name='company_full_name',  # Use full company name for hover
         size='size',
-        hover_data=['revenue'],
+        hover_data={
+            'company': False,  # Hide the company symbol
+            'revenue': True,
+            'ebitda_margin': ':.1%',  # Format as percentage
+            'revenue_growth': ':.1%'  # Format as percentage
+        },
         labels={
             'ebitda_margin': 'EBITDA Margin',
             'revenue_growth': 'Revenue Growth YoY',
@@ -211,11 +260,12 @@ def update_figure(slider_value):
         }
     )
     
+    # Update layout with wider ranges
     fig.update_layout(
         xaxis=dict(
             title='EBITDA Margin',
             tickformat='.0%',
-            range=[-1.0, 1.5], 
+            range=[-1.0, 1.5],  # Wider range
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
@@ -224,7 +274,7 @@ def update_figure(slider_value):
         yaxis=dict(
             title='Revenue Growth YoY',
             tickformat='.0%',
-            range=[-0.5, 1.5], 
+            range=[-0.5, 1.5],  # Wider range
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
@@ -233,17 +283,11 @@ def update_figure(slider_value):
         plot_bgcolor='white',
         paper_bgcolor='white',
         showlegend=True,
-        margin=dict(l=50, r=50, t=30, b=50),
-        height=600
+        margin=dict(l=50, r=50, t=30, b=50),  # Reduced margins
+        height=600  # Reduced height
     )
 
     return fig
 
-# Add this at the end of the file
-app.title = 'Travel Market Visualization'  # Set the browser tab title
-
-# This is for Vercel deployment
 if __name__ == '__main__':
-    # Use PORT environment variable if it exists
-    port = int(os.environ.get('PORT', 8080))
-    app.run_server(host='0.0.0.0', port=port, debug=False) 
+    app.run_server(debug=True) 
