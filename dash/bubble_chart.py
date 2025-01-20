@@ -117,6 +117,9 @@ def process_excel_file():
 # Get initial data
 df, quarters = process_excel_file()
 quarters_sorted = sorted(quarters)
+
+# Comment out three sliders code
+'''
 third_point = len(quarters_sorted) // 3
 two_thirds_point = 2 * third_point
 
@@ -127,57 +130,39 @@ second_third_marks = {i: {'label': q, 'style': {'transform': 'rotate(45deg)'}}
                      for i, q in enumerate(quarters_sorted[third_point:two_thirds_point])}
 last_third_marks = {i: {'label': q, 'style': {'transform': 'rotate(45deg)'}} 
                    for i, q in enumerate(quarters_sorted[two_thirds_point:])}
+'''
 
 # Define the app layout
 app.layout = html.Div([
     html.H1('Travel Market Visualization', style={'textAlign': 'center'}),
     
     # The graph
-    dcc.Graph(id='bubble-chart'),
+    dcc.Graph(id='bubble-chart', style={'height': '600px'}),  # Reduced height
     
-    # Container for sliders
+    # Container for single slider
     html.Div([
-        # First third slider
-        html.Div([
-            dcc.Slider(
-                id='slider-first-third',
-                min=0,
-                max=third_point-1,
-                step=1,
-                value=0,
-                marks=first_third_marks,
-                included=True
-            )
-        ], style={'margin-bottom': '40px'}),
+        # Quarter display
+        html.Div(id='quarter-display', style={
+            'textAlign': 'center',
+            'fontSize': '18px',
+            'margin': '10px 0'
+        }),
         
-        # Second third slider
-        html.Div([
-            dcc.Slider(
-                id='slider-second-third',
-                min=0,
-                max=third_point-1,
-                step=1,
-                value=0,
-                marks=second_third_marks,
-                included=True
-            )
-        ], style={'margin-bottom': '40px'}),
-        
-        # Last third slider
-        html.Div([
-            dcc.Slider(
-                id='slider-last-third',
-                min=0,
-                max=len(quarters_sorted[two_thirds_point:])-1,
-                step=1,
-                value=0,
-                marks=last_third_marks,
-                included=True
-            )
-        ])
-    ], style={'padding': '20px 0px 50px 0px'})
+        # Single slider
+        dcc.Slider(
+            id='quarter-slider',
+            min=0,
+            max=len(quarters_sorted)-1,
+            step=1,
+            value=0,
+            marks=None,  # Remove marks
+            included=True
+        )
+    ], style={'padding': '20px 0px 50px 0px', 'margin': '0 40px'})
 ])
 
+'''
+# Comment out three sliders callback
 @app.callback(
     [Output('slider-first-third', 'value'),
      Output('slider-second-third', 'value'),
@@ -190,36 +175,33 @@ app.layout = html.Div([
      State('slider-last-third', 'value')]
 )
 def sync_sliders(first_value, second_value, last_value, prev_first, prev_second, prev_last):
-    # Determine which slider triggered the callback
     trigger_id = callback_context.triggered[0]['prop_id'].split('.')[0]
     
     if trigger_id == 'slider-first-third':
         return first_value, 0, 0
     elif trigger_id == 'slider-second-third':
-        # When second slider is moved, set first slider to max
         return third_point-1, second_value, 0
     else:
-        # When last slider is moved, set both previous sliders to max
         return third_point-1, third_point-1, last_value
+'''
+
+# Add callback to update quarter display
+@app.callback(
+    Output('quarter-display', 'children'),
+    Input('quarter-slider', 'value')
+)
+def update_quarter_display(slider_value):
+    return f'Quarter: {quarters_sorted[slider_value]}'
 
 @app.callback(
     Output('bubble-chart', 'figure'),
-    [Input('slider-first-third', 'value'),
-     Input('slider-second-third', 'value'),
-     Input('slider-last-third', 'value')]
+    Input('quarter-slider', 'value')
 )
-def update_figure(first_value, second_value, last_value):
+def update_figure(slider_value):
     if df is None:
         return {}
     
-    # Determine which slider is active (highest non-zero value)
-    if last_value > 0:
-        selected_quarter = quarters_sorted[two_thirds_point + last_value]
-    elif second_value > 0:
-        selected_quarter = quarters_sorted[third_point + second_value]
-    else:
-        selected_quarter = quarters_sorted[first_value]
-    
+    selected_quarter = quarters_sorted[slider_value]
     filtered_df = df[df['year'] == selected_quarter]
     
     # Create the bubble chart
@@ -230,22 +212,21 @@ def update_figure(first_value, second_value, last_value):
         color='company',
         color_discrete_sequence=filtered_df['color'].unique(),
         hover_name='company',
-        size='size',  # Use the normalized revenue for bubble size
-        hover_data=['revenue'],  # Show actual revenue in hover tooltip
+        size='size',
+        hover_data=['revenue'],
         labels={
             'ebitda_margin': 'EBITDA Margin',
             'revenue_growth': 'Revenue Growth YoY',
             'revenue': 'Revenue'
-        },
-        title=f'Quarter: {selected_quarter}'
+        }
     )
     
-    # Update layout
+    # Update layout with wider ranges
     fig.update_layout(
         xaxis=dict(
             title='EBITDA Margin',
             tickformat='.0%',
-            range=[-0.7, 1.2],
+            range=[-1.0, 1.5],  # Wider range
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
@@ -254,7 +235,7 @@ def update_figure(first_value, second_value, last_value):
         yaxis=dict(
             title='Revenue Growth YoY',
             tickformat='.0%',
-            range=[-0.3, 1.2],
+            range=[-0.5, 1.5],  # Wider range
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
@@ -263,7 +244,8 @@ def update_figure(first_value, second_value, last_value):
         plot_bgcolor='white',
         paper_bgcolor='white',
         showlegend=True,
-        height=840
+        margin=dict(l=50, r=50, t=30, b=50),  # Reduced margins
+        height=600  # Reduced height
     )
 
     return fig
