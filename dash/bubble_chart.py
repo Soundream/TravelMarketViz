@@ -1,40 +1,9 @@
 from dash import Dash, dcc, html, Input, Output
 import plotly.express as px
-import plotly.graph_objects as go
 import pandas as pd
 
 # Initialize the Dash app
 app = Dash(__name__)
-
-# Company logos dictionary
-logo_dict = {
-    'ABNB': '../logos/ABNB_logo.png',
-    'BKNG': '../logos/BKNG_logo.png',
-    'EXPE': '../logos/EXPE_logo.png',
-    'TCOM': '../logos/TCOM_logo.png',
-    'TRIP': '../logos/TRIP_logo.png',
-    'TRVG': '../logos/TRVG_logo.png',
-    'EDR': '../logos/EDR_logo.png',
-    'DESP': '../logos/DESP_logo.png',
-    'MMYT': '../logos/MMYT_logo.png',
-    'Ixigo': '../logos/IXIGO_logo.png',
-    'SEERA': '../logos/SEERA_logo.png',
-    'Webjet': '../logos/WEB_logo.png',
-    'LMN': '../logos/LMN_logo.png',
-    'Yatra': '../logos/YTRA_logo.png',
-    'Orbitz': '../logos/OWW_logo.png',
-    'Travelocity': '../logos/Travelocity_logo.png',
-    'EaseMyTrip': '../logos/EASEMYTRIP_logo.png',
-    'Wego': '../logos/Wego_logo.png',
-    'Skyscanner': '../logos/Skyscanner_logo.png',
-    'Etraveli': '../logos/Etraveli_logo.png',
-    'Kiwi': '../logos/Kiwi_logo.png',
-    'Cleartrip': '../logos/Cleartrip_logo.png',
-    'Traveloka': '../logos/Traveloka_logo.png',
-    'FLT': '../logos/FlightCentre_logo.png',
-    'Almosafer': '../logos/Almosafer_logo.png',
-    'Webjet OTA': '../logos/OTA_logo.png'
-}
 
 def process_excel_file():
     try:
@@ -74,8 +43,7 @@ def process_excel_file():
                             'year': quarter,
                             'company': company,
                             'ebitda_margin': ebitda_marg,
-                            'revenue_growth': rev_growth,
-                            'logo': logo_dict.get(company, '')  # Add logo path
+                            'revenue_growth': rev_growth
                         })
                 except:
                     continue
@@ -146,49 +114,29 @@ def update_figure(selected_year_index):
     selected_quarter = quarters_sorted[selected_year_index]
     filtered_df = df[df['year'] == selected_quarter]
     
-    # Create the bubble chart base
-    fig = go.Figure()
-    
-    # Add dots
-    fig.add_trace(go.Scatter(
-        x=filtered_df['ebitda_margin'],
-        y=filtered_df['revenue_growth'],
-        mode='markers',
-        marker=dict(
-            size=16,
-            color=filtered_df['color']
-        ),
-        name='',
-        hovertext=filtered_df['company'],
-        hoverinfo='text'
-    ))
-    
-    # Add images above dots
-    for _, row in filtered_df.iterrows():
-        if row['logo']:
-            fig.add_layout_image(
-                dict(
-                    source=row['logo'],
-                    xref="x",
-                    yref="y",
-                    x=row['ebitda_margin'],
-                    y=row['revenue_growth'],
-                    sizex=0.1,
-                    sizey=0.1,
-                    xanchor="center",
-                    yanchor="bottom",
-                    sizing="contain",
-                    layer="above"
-                )
-            )
+    # Create the bubble chart
+    fig = px.scatter(
+        filtered_df,
+        x='ebitda_margin',
+        y='revenue_growth',
+        color='company',
+        color_discrete_sequence=filtered_df['color'].unique(),
+        hover_name='company',
+        size=[40] * len(filtered_df),  # Fixed size for now
+        size_max=50,
+        labels={
+            'ebitda_margin': 'EBITDA Margin',
+            'revenue_growth': 'Revenue Growth YoY'
+        },
+        title=f'Quarter: {selected_quarter}'
+    )
     
     # Update layout
     fig.update_layout(
-        title=f'Quarter: {selected_quarter}',
         xaxis=dict(
             title='EBITDA Margin',
             tickformat='.0%',
-            range=[-0.7, 1.2],
+            range=[-0.7, 1.2],  # Same range as Vue chart
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
@@ -197,7 +145,7 @@ def update_figure(selected_year_index):
         yaxis=dict(
             title='Revenue Growth YoY',
             tickformat='.0%',
-            range=[-0.3, 1.2],
+            range=[-0.3, 1.2],  # Same range as Vue chart
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
@@ -205,20 +153,8 @@ def update_figure(selected_year_index):
         ),
         plot_bgcolor='white',
         paper_bgcolor='white',
-        showlegend=False,
-        height=840,
-        images=[dict(
-            source=logo,
-            xref="paper",
-            yref="paper",
-            x=1,
-            y=1,
-            sizex=0.1,
-            sizey=0.1,
-            xanchor="right",
-            yanchor="bottom",
-            layer="above"
-        ) for logo in filtered_df['logo']]
+        showlegend=True,
+        height=840  # Same height as Vue chart
     )
 
     return fig
