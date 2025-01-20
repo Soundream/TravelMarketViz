@@ -1,22 +1,30 @@
 from dash import Dash, dcc, html, Input, Output, State, callback_context
 import plotly.express as px
 import pandas as pd
+import numpy as np
 
 # Initialize the Dash app
 app = Dash(__name__)
 
 def process_excel_file():
     try:
-        # Read the Excel file directly from root folder
+        # Read both sheets from the Excel file
         df_raw = pd.read_excel('Animated Bubble Chart_ Historic Financials Online Travel Industry.xlsx', 
                              sheet_name='TTM (bounded)', 
                              header=0)
         
-        # Process the data similar to Vue implementation
+        df_revenue = pd.read_excel('Animated Bubble Chart_ Historic Financials Online Travel Industry.xlsx',
+                                 sheet_name='Quarterly Revenue&EBITDA',
+                                 header=0)
+        
+        # Process the TTM data similar to Vue implementation
         # First part is revenue growth (rows 2-113)
         revenue_growth = df_raw.iloc[1:113].copy()
         # Second part is EBITDA margin (rows 116 onwards)
         ebitda_margin = df_raw.iloc[115:].copy()
+        
+        # Process quarterly revenue data (rows 2-113)
+        quarterly_revenue = df_revenue.iloc[2:113].copy()
         
         # Get all quarters (from first column)
         quarters = revenue_growth.iloc[:, 0].dropna().unique()
@@ -32,10 +40,34 @@ def process_excel_file():
             quarter_revenue = revenue_growth[revenue_growth.iloc[:, 0] == quarter].iloc[:, 1:]
             quarter_ebitda = ebitda_margin[ebitda_margin.iloc[:, 0] == quarter].iloc[:, 1:]
             
+            # Get quarterly revenue for size
+            raw_revenue = quarterly_revenue[quarterly_revenue.iloc[:, 0] == quarter].iloc[:, 1:]
+            
+            # Get all revenue values for this quarter for normalization
+            quarter_revenues = raw_revenue.values.flatten()
+            quarter_revenues = quarter_revenues[~np.isnan(quarter_revenues)]  # Remove NaN values
+            
+            # Calculate min and max for normalization (excluding zeros and NaN)
+            if len(quarter_revenues) > 0:
+                revenue_min = np.min(quarter_revenues[quarter_revenues > 0]) if any(quarter_revenues > 0) else 1
+                revenue_max = np.max(quarter_revenues) if len(quarter_revenues) > 0 else 1
+            else:
+                revenue_min = 1
+                revenue_max = 1
+            
             for company in companies:
                 try:
                     rev_growth = quarter_revenue[company].iloc[0]
                     ebitda_marg = quarter_ebitda[company].iloc[0]
+                    raw_rev = raw_revenue[company].iloc[0]
+                    
+                    # Normalize revenue for bubble size (log scale to handle large variations)
+                    if pd.notna(raw_rev) and raw_rev > 0:
+                        normalized_size = np.log(raw_rev / revenue_min) / np.log(revenue_max / revenue_min)
+                        # Scale to reasonable bubble sizes (between 20 and 100)
+                        bubble_size = 20 + normalized_size * 80
+                    else:
+                        bubble_size = 20  # Minimum size for companies with no revenue data
                     
                     # Check if values are within domain ranges (-0.7 to 1.2 for EBITDA, -0.3 to 1.2 for Revenue)
                     if (-0.7 <= ebitda_marg <= 1.2) and (-0.3 <= rev_growth <= 1.2):
@@ -43,7 +75,9 @@ def process_excel_file():
                             'year': quarter,
                             'company': company,
                             'ebitda_margin': ebitda_marg,
-                            'revenue_growth': rev_growth
+                            'revenue_growth': rev_growth,
+                            'revenue': raw_rev,
+                            'size': bubble_size
                         })
                 except:
                     continue
@@ -196,11 +230,12 @@ def update_figure(first_value, second_value, last_value):
         color='company',
         color_discrete_sequence=filtered_df['color'].unique(),
         hover_name='company',
-        size=[40] * len(filtered_df),
-        size_max=50,
+        size='size',  # Use the normalized revenue for bubble size
+        hover_data=['revenue'],  # Show actual revenue in hover tooltip
         labels={
             'ebitda_margin': 'EBITDA Margin',
-            'revenue_growth': 'Revenue Growth YoY'
+            'revenue_growth': 'Revenue Growth YoY',
+            'revenue': 'Revenue'
         },
         title=f'Quarter: {selected_quarter}'
     )
