@@ -1,60 +1,16 @@
-from dash import Dash, dcc, html, Input, Output, State
+from dash import Dash, dcc, html, Input, Output
 import plotly.express as px
 import pandas as pd
-import base64
-import io
 
 # Initialize the Dash app
 app = Dash(__name__)
 
-# Define the app layout
-app.layout = html.Div([
-    html.H1('Travel Market Visualization', style={'textAlign': 'center'}),
-    
-    # File upload component
-    dcc.Upload(
-        id='upload-data',
-        children=html.Div([
-            'Drag and Drop or ',
-            html.A('Select Files')
-        ]),
-        style={
-            'width': '100%',
-            'height': '60px',
-            'lineHeight': '60px',
-            'borderWidth': '1px',
-            'borderStyle': 'dashed',
-            'borderRadius': '5px',
-            'textAlign': 'center',
-            'margin': '10px'
-        },
-        multiple=False
-    ),
-    
-    # The graph
-    dcc.Graph(id='bubble-chart'),
-    
-    # Year slider (will be populated after file upload)
-    dcc.Slider(
-        id='year-slider',
-        min=2023,
-        max=2024,
-        step=0.25,  # For quarters
-        value=2023,
-        marks={},
-    ),
-    
-    # Store component to save processed data
-    dcc.Store(id='processed-data')
-])
-
-def process_excel_content(contents, filename):
-    content_type, content_string = contents.split(',')
-    decoded = base64.b64decode(content_string)
-    
+def process_excel_file():
     try:
-        # Read the Excel file
-        df_raw = pd.read_excel(io.BytesIO(decoded), sheet_name='TTM (bounded)', header=0)
+        # Read the Excel file directly from root folder
+        df_raw = pd.read_excel('Animated Bubble Chart_ Historic Financials Online Travel Industry.xlsx', 
+                             sheet_name='TTM (bounded)', 
+                             header=0)
         
         # Process the data similar to Vue implementation
         # First part is revenue growth (rows 2-113)
@@ -124,41 +80,38 @@ def process_excel_content(contents, filename):
         print(f'Error processing file: {e}')
         return None, None
 
-@app.callback(
-    [Output('processed-data', 'data'),
-     Output('year-slider', 'marks'),
-     Output('year-slider', 'min'),
-     Output('year-slider', 'max'),
-     Output('year-slider', 'value')],
-    Input('upload-data', 'contents'),
-    State('upload-data', 'filename')
-)
-def update_output(contents, filename):
-    if contents is None:
-        return None, {}, 2023, 2024, 2023
+# Get initial data
+df, quarters = process_excel_file()
+quarters_sorted = sorted(quarters)
+quarter_marks = {i: q for i, q in enumerate(quarters_sorted)}
+
+# Define the app layout
+app.layout = html.Div([
+    html.H1('Travel Market Visualization', style={'textAlign': 'center'}),
     
-    df, quarters = process_excel_content(contents, filename)
-    if df is None:
-        return None, {}, 2023, 2024, 2023
+    # The graph
+    dcc.Graph(id='bubble-chart'),
     
-    # Create marks for slider
-    marks = {i: q for i, q in enumerate(sorted(quarters))}
-    
-    return df.to_dict('records'), marks, 0, len(quarters)-1, 0
+    # Year slider
+    dcc.Slider(
+        id='year-slider',
+        min=0,
+        max=len(quarters_sorted)-1,
+        step=1,
+        value=0,
+        marks=quarter_marks
+    )
+])
 
 @app.callback(
     Output('bubble-chart', 'figure'),
-    [Input('processed-data', 'data'),
-     Input('year-slider', 'value')]
+    Input('year-slider', 'value')
 )
-def update_figure(data, selected_year_index):
-    if not data or selected_year_index is None:
+def update_figure(selected_year_index):
+    if df is None or selected_year_index is None:
         return {}
     
-    df = pd.DataFrame(data)
-    quarters = sorted(df['year'].unique())
-    selected_quarter = quarters[int(selected_year_index)]
-    
+    selected_quarter = quarters_sorted[selected_year_index]
     filtered_df = df[df['year'] == selected_quarter]
     
     # Create the bubble chart
