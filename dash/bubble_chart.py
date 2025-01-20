@@ -127,7 +127,6 @@ def process_excel_file():
                 except:
                     continue
         
-        # Convert to DataFrame
         df = pd.DataFrame(processed_data)
         
         # Add colors
