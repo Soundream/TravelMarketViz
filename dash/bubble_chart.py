@@ -243,29 +243,33 @@ def update_figure(slider_value):
         filtered_df,
         x='ebitda_margin',
         y='revenue_growth',
-        color='company',
-        color_discrete_sequence=filtered_df['color'].unique(),
-        hover_name='company_full_name',  # Use full company name for hover
+        color='company_full_name',  # Use full name for legend
+        hover_name='company_full_name',
         size='size',
         hover_data={
-            'company': False,  # Hide the company symbol
+            'company': False,
             'revenue': True,
-            'ebitda_margin': ':.1%',  # Format as percentage
-            'revenue_growth': ':.1%'  # Format as percentage
+            'ebitda_margin': ':.1%',
+            'revenue_growth': ':.1%'
         },
         labels={
             'ebitda_margin': 'EBITDA Margin',
             'revenue_growth': 'Revenue Growth YoY',
-            'revenue': 'Revenue'
+            'revenue': 'Revenue',
+            'company_full_name': 'Company'  # Legend label
         }
     )
+    
+    # Update traces to use exact colors from color dictionary
+    for i, company in enumerate(filtered_df['company']):
+        fig.data[i].marker.color = color_dict[company]
     
     # Update layout with wider ranges
     fig.update_layout(
         xaxis=dict(
             title='EBITDA Margin',
             tickformat='.0%',
-            range=[-1.0, 1.5],  # Wider range
+            range=[-1.0, 1.5],
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
@@ -274,7 +278,7 @@ def update_figure(slider_value):
         yaxis=dict(
             title='Revenue Growth YoY',
             tickformat='.0%',
-            range=[-0.5, 1.5],  # Wider range
+            range=[-0.5, 1.5],
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
@@ -283,8 +287,15 @@ def update_figure(slider_value):
         plot_bgcolor='white',
         paper_bgcolor='white',
         showlegend=True,
-        margin=dict(l=50, r=50, t=30, b=50),  # Reduced margins
-        height=600  # Reduced height
+        margin=dict(l=50, r=50, t=30, b=50),
+        height=600,
+        legend=dict(
+            itemsizing='constant',  # Make legend markers the same size
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=1.02
+        )
     )
 
     return fig
