@@ -61,15 +61,13 @@ def process_excel_file():
                     ebitda_marg = quarter_ebitda[company].iloc[0]
                     raw_rev = raw_revenue[company].iloc[0]
                     
-                    # Normalize revenue for bubble size (log scale to handle large variations)
+                    # Normalize
                     if pd.notna(raw_rev) and raw_rev > 0:
                         normalized_size = np.log(raw_rev / revenue_min) / np.log(revenue_max / revenue_min)
-                        # Scale to reasonable bubble sizes (between 20 and 100)
                         bubble_size = 20 + normalized_size * 80
                     else:
-                        bubble_size = 20  # Minimum size for companies with no revenue data
+                        bubble_size = 20  
                     
-                    # Check if values are within domain ranges (-0.7 to 1.2 for EBITDA, -0.3 to 1.2 for Revenue)
                     if (-0.7 <= ebitda_marg <= 1.2) and (-0.3 <= rev_growth <= 1.2):
                         processed_data.append({
                             'year': quarter,
@@ -81,11 +79,8 @@ def process_excel_file():
                         })
                 except:
                     continue
-        
-        # Convert to DataFrame
         df = pd.DataFrame(processed_data)
         
-        # Add company colors
         color_dict = {
             'ABNB': '#ff5895',
             'BKNG': '#003480',
@@ -114,11 +109,9 @@ def process_excel_file():
         print(f'Error processing file: {e}')
         return None, None
 
-# Get initial data
 df, quarters = process_excel_file()
 quarters_sorted = sorted(quarters)
 
-# Comment out three sliders code
 '''
 third_point = len(quarters_sorted) // 3
 two_thirds_point = 2 * third_point
@@ -132,30 +125,25 @@ last_third_marks = {i: {'label': q, 'style': {'transform': 'rotate(45deg)'}}
                    for i, q in enumerate(quarters_sorted[two_thirds_point:])}
 '''
 
-# Define the app layout
 app.layout = html.Div([
     html.H1('Travel Market Visualization', style={'textAlign': 'center'}),
     
-    # The graph
     dcc.Graph(id='bubble-chart', style={'height': '600px'}),  # Reduced height
     
-    # Container for single slider
     html.Div([
-        # Quarter display
         html.Div(id='quarter-display', style={
             'textAlign': 'center',
             'fontSize': '18px',
             'margin': '10px 0'
         }),
         
-        # Single slider
         dcc.Slider(
             id='quarter-slider',
             min=0,
             max=len(quarters_sorted)-1,
             step=1,
             value=0,
-            marks=None,  # Remove marks
+            marks=None, 
             included=True
         )
     ], style={'padding': '20px 0px 50px 0px', 'margin': '0 40px'})
@@ -185,7 +173,6 @@ def sync_sliders(first_value, second_value, last_value, prev_first, prev_second,
         return third_point-1, third_point-1, last_value
 '''
 
-# Add callback to update quarter display
 @app.callback(
     Output('quarter-display', 'children'),
     Input('quarter-slider', 'value')
@@ -203,8 +190,6 @@ def update_figure(slider_value):
     
     selected_quarter = quarters_sorted[slider_value]
     filtered_df = df[df['year'] == selected_quarter]
-    
-    # Create the bubble chart
     fig = px.scatter(
         filtered_df,
         x='ebitda_margin',
@@ -221,32 +206,51 @@ def update_figure(slider_value):
         }
     )
     
-    # Update layout with wider ranges
     fig.update_layout(
         xaxis=dict(
             title='EBITDA Margin',
             tickformat='.0%',
-            range=[-1.0, 1.5],  # Wider range
+            range=[-1.0, 1.5], 
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
-            zerolinewidth=1
+            zerolinewidth=1,
+            title_standoff=30,  # Increased space
+            tickangle=0,  # Horizontal labels
+            dtick=0.5,  # Set tick interval to reduce density
+            title_font=dict(size=12),  # Smaller title font
+            tickfont=dict(size=10)  # Smaller tick font
         ),
         yaxis=dict(
             title='Revenue Growth YoY',
             tickformat='.0%',
-            range=[-0.5, 1.5],  # Wider range
+            range=[-0.5, 1.5], 
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
-            zerolinewidth=1
+            zerolinewidth=1,
+            title_standoff=30,  # Increased space
+            dtick=0.5,  # Set tick interval to reduce density
+            title_font=dict(size=12),  # Smaller title font
+            tickfont=dict(size=10)  # Smaller tick font
         ),
         plot_bgcolor='white',
         paper_bgcolor='white',
         showlegend=True,
-        margin=dict(l=50, r=50, t=30, b=50),  # Reduced margins
-        height=600  # Reduced height
+        margin=dict(l=100, r=50, t=30, b=100),  # Further increased margins
+        height=600,
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="right",
+            x=0.99,
+            font=dict(size=10)
+        )
     )
+
+    # Adjust axis label positions to prevent overlap
+    fig.update_xaxes(automargin=True, layer='above')
+    fig.update_yaxes(automargin=True, layer='above')
 
     return fig
 
