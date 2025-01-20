@@ -76,37 +76,25 @@ def process_excel_file():
                                  sheet_name='Quarterly Revenue&EBITDA',
                                  header=0)
         
-        # Process the TTM data similar to Vue implementation
-        # First part is revenue growth (rows 2-113)
         revenue_growth = df_raw.iloc[1:113].copy()
-        # Second part is EBITDA margin (rows 116 onwards)
         ebitda_margin = df_raw.iloc[115:].copy()
-        
-        # Process quarterly revenue data (rows 2-113)
         quarterly_revenue = df_revenue.iloc[2:113].copy()
         
-        # Get all quarters (from first column)
         quarters = revenue_growth.iloc[:, 0].dropna().unique()
         
-        # Get company names (from header)
         companies = df_raw.columns[1:]
         
-        # Initialize processed data list
         processed_data = []
         
-        # Process data for each quarter and company
         for quarter in quarters:
             quarter_revenue = revenue_growth[revenue_growth.iloc[:, 0] == quarter].iloc[:, 1:]
             quarter_ebitda = ebitda_margin[ebitda_margin.iloc[:, 0] == quarter].iloc[:, 1:]
             
-            # Get quarterly revenue for size
             raw_revenue = quarterly_revenue[quarterly_revenue.iloc[:, 0] == quarter].iloc[:, 1:]
             
-            # Get all revenue values for this quarter for normalization
             quarter_revenues = raw_revenue.values.flatten()
-            quarter_revenues = quarter_revenues[~np.isnan(quarter_revenues)]  # Remove NaN values
+            quarter_revenues = quarter_revenues[~np.isnan(quarter_revenues)]  
             
-            # Calculate min and max for normalization (excluding zeros and NaN)
             if len(quarter_revenues) > 0:
                 revenue_min = np.min(quarter_revenues[quarter_revenues > 0]) if any(quarter_revenues > 0) else 1
                 revenue_max = np.max(quarter_revenues) if len(quarter_revenues) > 0 else 1
@@ -120,20 +108,17 @@ def process_excel_file():
                     ebitda_marg = quarter_ebitda[company].iloc[0]
                     raw_rev = raw_revenue[company].iloc[0]
                     
-                    # Normalize revenue for bubble size (log scale to handle large variations)
                     if pd.notna(raw_rev) and raw_rev > 0:
                         normalized_size = np.log(raw_rev / revenue_min) / np.log(revenue_max / revenue_min)
-                        # Scale to reasonable bubble sizes (between 20 and 100)
                         bubble_size = 20 + normalized_size * 80
                     else:
-                        bubble_size = 20  # Minimum size for companies with no revenue data
+                        bubble_size = 20  
                     
-                    # Check if values are within domain ranges (-0.7 to 1.2 for EBITDA, -0.3 to 1.2 for Revenue)
                     if (-0.7 <= ebitda_marg <= 1.2) and (-0.3 <= rev_growth <= 1.2):
                         processed_data.append({
                             'year': quarter,
                             'company': company,
-                            'company_full_name': company_names.get(company, company),  # Add full name
+                            'company_full_name': company_names.get(company, company), 
                             'ebitda_margin': ebitda_marg,
                             'revenue_growth': rev_growth,
                             'revenue': raw_rev,
@@ -173,7 +158,7 @@ last_third_marks = {i: {'label': q, 'style': {'transform': 'rotate(45deg)'}}
 app.layout = html.Div([
     html.H1('Travel Market Visualization', style={'textAlign': 'center'}),
     
-    dcc.Graph(id='bubble-chart', style={'height': '600px'}),  # Reduced height
+    dcc.Graph(id='bubble-chart', style={'height': '600px'}),  
     
     html.Div([
         html.Div(id='quarter-display', style={
@@ -258,11 +243,9 @@ def update_figure(slider_value):
         }
     )
     
-    # Update traces to use exact colors from color dictionary
     for i, company in enumerate(filtered_df['company']):
         fig.data[i].marker.color = color_dict[company]
     
-    # Update layout with wider ranges
     fig.update_layout(
         xaxis=dict(
             title='EBITDA Margin',
