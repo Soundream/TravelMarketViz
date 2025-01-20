@@ -1,4 +1,4 @@
-from dash import Dash, dcc, html, Input, Output
+from dash import Dash, dcc, html, Input, Output, State, callback_context
 import plotly.express as px
 import pandas as pd
 
@@ -83,16 +83,13 @@ def process_excel_file():
 # Get initial data
 df, quarters = process_excel_file()
 quarters_sorted = sorted(quarters)
+mid_point = len(quarters_sorted) // 2
 
-# Create two-row quarter marks
-quarter_marks = {}
-for i, q in enumerate(quarters_sorted):
-    if i < len(quarters_sorted) // 2:
-        # First row - place at normal position
-        quarter_marks[i] = {'label': q, 'style': {'transform': 'rotate(45deg)', 'margin-top': '5px'}}
-    else:
-        # Second row - place below using CSS
-        quarter_marks[i] = {'label': q, 'style': {'transform': 'rotate(45deg)', 'margin-top': '30px'}}
+# Create marks for both sliders
+first_half_marks = {i: {'label': q, 'style': {'transform': 'rotate(45deg)'}} 
+                   for i, q in enumerate(quarters_sorted[:mid_point])}
+second_half_marks = {i: {'label': q, 'style': {'transform': 'rotate(45deg)'}} 
+                    for i, q in enumerate(quarters_sorted[mid_point:])}
 
 # Define the app layout
 app.layout = html.Div([
@@ -101,29 +98,66 @@ app.layout = html.Div([
     # The graph
     dcc.Graph(id='bubble-chart'),
     
-    # Container for slider with extra padding for two rows of labels
+    # Container for sliders
     html.Div([
-        # Year slider
-        dcc.Slider(
-            id='year-slider',
-            min=0,
-            max=len(quarters_sorted)-1,
-            step=1,
-            value=0,
-            marks=quarter_marks
-        )
-    ], style={'padding-bottom': '50px', 'padding-top': '20px'})
+        # First half slider
+        html.Div([
+            dcc.Slider(
+                id='slider-first-half',
+                min=0,
+                max=mid_point-1,
+                step=1,
+                value=0,
+                marks=first_half_marks
+            )
+        ], style={'margin-bottom': '40px'}),
+        
+        # Second half slider
+        html.Div([
+            dcc.Slider(
+                id='slider-second-half',
+                min=0,
+                max=len(quarters_sorted[mid_point:])-1,
+                step=1,
+                value=0,
+                marks=second_half_marks
+            )
+        ])
+    ], style={'padding': '20px 0px 50px 0px'})
 ])
 
 @app.callback(
-    Output('bubble-chart', 'figure'),
-    Input('year-slider', 'value')
+    [Output('slider-first-half', 'value'),
+     Output('slider-second-half', 'value')],
+    [Input('slider-first-half', 'value'),
+     Input('slider-second-half', 'value')],
+    [State('slider-first-half', 'value'),
+     State('slider-second-half', 'value')]
 )
-def update_figure(selected_year_index):
-    if df is None or selected_year_index is None:
+def sync_sliders(first_half_value, second_half_value, prev_first, prev_second):
+    # Determine which slider triggered the callback
+    trigger_id = callback_context.triggered[0]['prop_id'].split('.')[0]
+    
+    if trigger_id == 'slider-first-half':
+        return first_half_value, 0
+    else:
+        return 0, second_half_value
+
+@app.callback(
+    Output('bubble-chart', 'figure'),
+    [Input('slider-first-half', 'value'),
+     Input('slider-second-half', 'value')]
+)
+def update_figure(first_half_value, second_half_value):
+    if df is None:
         return {}
     
-    selected_quarter = quarters_sorted[selected_year_index]
+    # Determine which slider is active (non-zero)
+    if first_half_value > 0:
+        selected_quarter = quarters_sorted[first_half_value]
+    else:
+        selected_quarter = quarters_sorted[mid_point + second_half_value]
+    
     filtered_df = df[df['year'] == selected_quarter]
     
     # Create the bubble chart
