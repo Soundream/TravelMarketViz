@@ -1,10 +1,40 @@
 from dash import Dash, dcc, html, Input, Output
 import plotly.express as px
-import pandas as pd
 import plotly.graph_objects as go
+import pandas as pd
 
 # Initialize the Dash app
 app = Dash(__name__)
+
+# Company logos dictionary
+logo_dict = {
+    'ABNB': '../logos/ABNB_logo.png',
+    'BKNG': '../logos/BKNG_logo.png',
+    'EXPE': '../logos/EXPE_logo.png',
+    'TCOM': '../logos/TCOM_logo.png',
+    'TRIP': '../logos/TRIP_logo.png',
+    'TRVG': '../logos/TRVG_logo.png',
+    'EDR': '../logos/EDR_logo.png',
+    'DESP': '../logos/DESP_logo.png',
+    'MMYT': '../logos/MMYT_logo.png',
+    'Ixigo': '../logos/IXIGO_logo.png',
+    'SEERA': '../logos/SEERA_logo.png',
+    'Webjet': '../logos/WEB_logo.png',
+    'LMN': '../logos/LMN_logo.png',
+    'Yatra': '../logos/YTRA_logo.png',
+    'Orbitz': '../logos/OWW_logo.png',
+    'Travelocity': '../logos/Travelocity_logo.png',
+    'EaseMyTrip': '../logos/EASEMYTRIP_logo.png',
+    'Wego': '../logos/Wego_logo.png',
+    'Skyscanner': '../logos/Skyscanner_logo.png',
+    'Etraveli': '../logos/Etraveli_logo.png',
+    'Kiwi': '../logos/Kiwi_logo.png',
+    'Cleartrip': '../logos/Cleartrip_logo.png',
+    'Traveloka': '../logos/Traveloka_logo.png',
+    'FLT': '../logos/FlightCentre_logo.png',
+    'Almosafer': '../logos/Almosafer_logo.png',
+    'Webjet OTA': '../logos/OTA_logo.png'
+}
 
 def process_excel_file():
     try:
@@ -44,7 +74,8 @@ def process_excel_file():
                             'year': quarter,
                             'company': company,
                             'ebitda_margin': ebitda_marg,
-                            'revenue_growth': rev_growth
+                            'revenue_growth': rev_growth,
+                            'logo': logo_dict.get(company, '')  # Add logo path
                         })
                 except:
                     continue
@@ -52,7 +83,7 @@ def process_excel_file():
         # Convert to DataFrame
         df = pd.DataFrame(processed_data)
         
-        # Add company colors and logos
+        # Add company colors
         color_dict = {
             'ABNB': '#ff5895',
             'BKNG': '#003480',
@@ -72,50 +103,8 @@ def process_excel_file():
             'Wego': '#4e843d',
             'Almosafer': '#bb5387'
         }
-
-        logo_dict = {
-            'ABNB': '../logos/ABNB_logo.png',
-            'BKNG': '../logos/BKNG_logo.png',
-            'EXPE': '../logos/EXPE_logo.png',
-            'TCOM': '../logos/TCOM_logo.png',
-            'TRIP': '../logos/TRIP_logo.png',
-            'TRVG': '../logos/TRVG_logo.png',
-            'EDR': '../logos/EDR_logo.png',
-            'DESP': '../logos/DESP_logo.png',
-            'MMYT': '../logos/MMYT_logo.png',
-            'Ixigo': '../logos/IXIGO_logo.png',
-            'SEERA': '../logos/SEERA_logo.png',
-            'Webjet': '../logos/WEB_logo.png',
-            'LMN': '../logos/LMN_logo.png',
-            'Yatra': '../logos/YTRA_logo.png',
-            'EaseMyTrip': '../logos/EASEMYTRIP_logo.png',
-            'Wego': '../logos/Wego_logo.png',
-            'Almosafer': '../logos/Almosafer_logo.png'
-        }
-
-        company_names = {
-            'ABNB': 'Airbnb',
-            'BKNG': 'Booking.com',
-            'EXPE': 'Expedia',
-            'TCOM': 'Trip.com',
-            'TRIP': 'TripAdvisor',
-            'TRVG': 'Trivago',
-            'EDR': 'Edreams',
-            'DESP': 'Despegar',
-            'MMYT': 'MakeMyTrip',
-            'Ixigo': 'Ixigo',
-            'SEERA': 'Seera Group',
-            'Webjet': 'Webjet',
-            'LMN': 'Lastminute',
-            'Yatra': 'Yatra.com',
-            'EaseMyTrip': 'EaseMyTrip',
-            'Wego': 'Wego',
-            'Almosafer': 'Almosafer'
-        }
         
         df['color'] = df['company'].map(color_dict)
-        df['logo'] = df['company'].map(logo_dict)
-        df['company_name'] = df['company'].map(company_names)
         
         return df, quarters
         
@@ -157,31 +146,41 @@ def update_figure(selected_year_index):
     selected_quarter = quarters_sorted[selected_year_index]
     filtered_df = df[df['year'] == selected_quarter]
     
-    # Create the bubble chart using graph_objects for more control
+    # Create the bubble chart base
     fig = go.Figure()
-
-    # Add scatter plot
-    fig.add_trace(
-        go.Scatter(
-            x=filtered_df['ebitda_margin'],
-            y=filtered_df['revenue_growth'],
-            mode='markers',
-            marker=dict(
-                size=40,
-                color=filtered_df['color'],
-                line=dict(width=2, color='white')
-            ),
-            text=filtered_df['company_name'],
-            hovertemplate=(
-                "<img src='%{customdata[0]}' width='100'><br>" +
-                "<b>%{text}</b><br>" +
-                "EBITDA Margin: %{x:.1%}<br>" +
-                "Revenue Growth: %{y:.1%}<br>" +
-                "<extra></extra>"
-            ),
-            customdata=filtered_df[['logo']].values
-        )
-    )
+    
+    # Add dots
+    fig.add_trace(go.Scatter(
+        x=filtered_df['ebitda_margin'],
+        y=filtered_df['revenue_growth'],
+        mode='markers',
+        marker=dict(
+            size=16,
+            color=filtered_df['color']
+        ),
+        name='',
+        hovertext=filtered_df['company'],
+        hoverinfo='text'
+    ))
+    
+    # Add images above dots
+    for _, row in filtered_df.iterrows():
+        if row['logo']:
+            fig.add_layout_image(
+                dict(
+                    source=row['logo'],
+                    xref="x",
+                    yref="y",
+                    x=row['ebitda_margin'],
+                    y=row['revenue_growth'],
+                    sizex=0.1,
+                    sizey=0.1,
+                    xanchor="center",
+                    yanchor="bottom",
+                    sizing="contain",
+                    layer="above"
+                )
+            )
     
     # Update layout
     fig.update_layout(
@@ -208,11 +207,18 @@ def update_figure(selected_year_index):
         paper_bgcolor='white',
         showlegend=False,
         height=840,
-        hoverlabel=dict(
-            bgcolor="white",
-            font_size=14,
-            font_family="Arial"
-        )
+        images=[dict(
+            source=logo,
+            xref="paper",
+            yref="paper",
+            x=1,
+            y=1,
+            sizex=0.1,
+            sizey=0.1,
+            xanchor="right",
+            yanchor="bottom",
+            layer="above"
+        ) for logo in filtered_df['logo']]
     )
 
     return fig
