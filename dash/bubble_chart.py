@@ -1,6 +1,7 @@
 from dash import Dash, dcc, html, Input, Output
 import plotly.express as px
 import pandas as pd
+import plotly.graph_objects as go
 
 # Initialize the Dash app
 app = Dash(__name__)
@@ -51,7 +52,7 @@ def process_excel_file():
         # Convert to DataFrame
         df = pd.DataFrame(processed_data)
         
-        # Add company colors
+        # Add company colors and logos
         color_dict = {
             'ABNB': '#ff5895',
             'BKNG': '#003480',
@@ -71,8 +72,50 @@ def process_excel_file():
             'Wego': '#4e843d',
             'Almosafer': '#bb5387'
         }
+
+        logo_dict = {
+            'ABNB': '../logos/ABNB_logo.png',
+            'BKNG': '../logos/BKNG_logo.png',
+            'EXPE': '../logos/EXPE_logo.png',
+            'TCOM': '../logos/TCOM_logo.png',
+            'TRIP': '../logos/TRIP_logo.png',
+            'TRVG': '../logos/TRVG_logo.png',
+            'EDR': '../logos/EDR_logo.png',
+            'DESP': '../logos/DESP_logo.png',
+            'MMYT': '../logos/MMYT_logo.png',
+            'Ixigo': '../logos/IXIGO_logo.png',
+            'SEERA': '../logos/SEERA_logo.png',
+            'Webjet': '../logos/WEB_logo.png',
+            'LMN': '../logos/LMN_logo.png',
+            'Yatra': '../logos/YTRA_logo.png',
+            'EaseMyTrip': '../logos/EASEMYTRIP_logo.png',
+            'Wego': '../logos/Wego_logo.png',
+            'Almosafer': '../logos/Almosafer_logo.png'
+        }
+
+        company_names = {
+            'ABNB': 'Airbnb',
+            'BKNG': 'Booking.com',
+            'EXPE': 'Expedia',
+            'TCOM': 'Trip.com',
+            'TRIP': 'TripAdvisor',
+            'TRVG': 'Trivago',
+            'EDR': 'Edreams',
+            'DESP': 'Despegar',
+            'MMYT': 'MakeMyTrip',
+            'Ixigo': 'Ixigo',
+            'SEERA': 'Seera Group',
+            'Webjet': 'Webjet',
+            'LMN': 'Lastminute',
+            'Yatra': 'Yatra.com',
+            'EaseMyTrip': 'EaseMyTrip',
+            'Wego': 'Wego',
+            'Almosafer': 'Almosafer'
+        }
         
         df['color'] = df['company'].map(color_dict)
+        df['logo'] = df['company'].map(logo_dict)
+        df['company_name'] = df['company'].map(company_names)
         
         return df, quarters
         
@@ -114,29 +157,39 @@ def update_figure(selected_year_index):
     selected_quarter = quarters_sorted[selected_year_index]
     filtered_df = df[df['year'] == selected_quarter]
     
-    # Create the bubble chart
-    fig = px.scatter(
-        filtered_df,
-        x='ebitda_margin',
-        y='revenue_growth',
-        color='company',
-        color_discrete_sequence=filtered_df['color'].unique(),
-        hover_name='company',
-        size=[40] * len(filtered_df),  # Fixed size for now
-        size_max=50,
-        labels={
-            'ebitda_margin': 'EBITDA Margin',
-            'revenue_growth': 'Revenue Growth YoY'
-        },
-        title=f'Quarter: {selected_quarter}'
+    # Create the bubble chart using graph_objects for more control
+    fig = go.Figure()
+
+    # Add scatter plot
+    fig.add_trace(
+        go.Scatter(
+            x=filtered_df['ebitda_margin'],
+            y=filtered_df['revenue_growth'],
+            mode='markers',
+            marker=dict(
+                size=40,
+                color=filtered_df['color'],
+                line=dict(width=2, color='white')
+            ),
+            text=filtered_df['company_name'],
+            hovertemplate=(
+                "<img src='%{customdata[0]}' width='100'><br>" +
+                "<b>%{text}</b><br>" +
+                "EBITDA Margin: %{x:.1%}<br>" +
+                "Revenue Growth: %{y:.1%}<br>" +
+                "<extra></extra>"
+            ),
+            customdata=filtered_df[['logo']].values
+        )
     )
     
     # Update layout
     fig.update_layout(
+        title=f'Quarter: {selected_quarter}',
         xaxis=dict(
             title='EBITDA Margin',
             tickformat='.0%',
-            range=[-0.7, 1.2],  # Same range as Vue chart
+            range=[-0.7, 1.2],
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
@@ -145,7 +198,7 @@ def update_figure(selected_year_index):
         yaxis=dict(
             title='Revenue Growth YoY',
             tickformat='.0%',
-            range=[-0.3, 1.2],  # Same range as Vue chart
+            range=[-0.3, 1.2],
             showgrid=True,
             zeroline=True,
             zerolinecolor='#ccc',
@@ -153,8 +206,13 @@ def update_figure(selected_year_index):
         ),
         plot_bgcolor='white',
         paper_bgcolor='white',
-        showlegend=True,
-        height=840  # Same height as Vue chart
+        showlegend=False,
+        height=840,
+        hoverlabel=dict(
+            bgcolor="white",
+            font_size=14,
+            font_family="Arial"
+        )
     )
 
     return fig
