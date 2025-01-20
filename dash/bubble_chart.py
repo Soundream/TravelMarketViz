@@ -2,18 +2,23 @@ from dash import Dash, dcc, html, Input, Output, State, callback_context
 import plotly.express as px
 import pandas as pd
 import numpy as np
+import os
 
 # Initialize the Dash app
 app = Dash(__name__)
+server = app.server  # Expose the server variable for Vercel
 
 def process_excel_file():
     try:
+        # Update the file path to be relative to the script location
+        file_path = os.path.join(os.path.dirname(__file__), '..', 'Animated Bubble Chart_ Historic Financials Online Travel Industry.xlsx')
+        
         # Read both sheets from the Excel file
-        df_raw = pd.read_excel('Animated Bubble Chart_ Historic Financials Online Travel Industry.xlsx', 
+        df_raw = pd.read_excel(file_path, 
                              sheet_name='TTM (bounded)', 
                              header=0)
         
-        df_revenue = pd.read_excel('Animated Bubble Chart_ Historic Financials Online Travel Industry.xlsx',
+        df_revenue = pd.read_excel(file_path,
                                  sheet_name='Quarterly Revenue&EBITDA',
                                  header=0)
         
@@ -234,5 +239,11 @@ def update_figure(slider_value):
 
     return fig
 
+# Add this at the end of the file
+app.title = 'Travel Market Visualization'  # Set the browser tab title
+
+# This is for Vercel deployment
 if __name__ == '__main__':
-    app.run_server(debug=True) 
+    # Use PORT environment variable if it exists
+    port = int(os.environ.get('PORT', 8080))
+    app.run_server(host='0.0.0.0', port=port, debug=False) 

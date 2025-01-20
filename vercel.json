@@ -1,0 +1,14 @@
+{
+    "builds": [
+        {
+            "src": "dash/bubble_chart.py",
+            "use": "@vercel/python"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "dash/bubble_chart.py"
+        }
+    ]
+} 
