@@ -83,13 +83,16 @@ def process_excel_file():
 # Get initial data
 df, quarters = process_excel_file()
 quarters_sorted = sorted(quarters)
-mid_point = len(quarters_sorted) // 2
+third_point = len(quarters_sorted) // 3
+two_thirds_point = 2 * third_point
 
-# Create marks for both sliders
-first_half_marks = {i: {'label': q, 'style': {'transform': 'rotate(45deg)'}} 
-                   for i, q in enumerate(quarters_sorted[:mid_point])}
-second_half_marks = {i: {'label': q, 'style': {'transform': 'rotate(45deg)'}} 
-                    for i, q in enumerate(quarters_sorted[mid_point:])}
+# Create marks for three sliders
+first_third_marks = {i: {'label': q, 'style': {'transform': 'rotate(45deg)'}} 
+                    for i, q in enumerate(quarters_sorted[:third_point])}
+second_third_marks = {i: {'label': q, 'style': {'transform': 'rotate(45deg)'}} 
+                     for i, q in enumerate(quarters_sorted[third_point:two_thirds_point])}
+last_third_marks = {i: {'label': q, 'style': {'transform': 'rotate(45deg)'}} 
+                   for i, q in enumerate(quarters_sorted[two_thirds_point:])}
 
 # Define the app layout
 app.layout = html.Div([
@@ -100,63 +103,83 @@ app.layout = html.Div([
     
     # Container for sliders
     html.Div([
-        # First half slider
+        # First third slider
         html.Div([
             dcc.Slider(
-                id='slider-first-half',
+                id='slider-first-third',
                 min=0,
-                max=mid_point-1,
+                max=third_point-1,
                 step=1,
                 value=0,
-                marks=first_half_marks
+                marks=first_third_marks
             )
         ], style={'margin-bottom': '40px'}),
         
-        # Second half slider
+        # Second third slider
         html.Div([
             dcc.Slider(
-                id='slider-second-half',
+                id='slider-second-third',
                 min=0,
-                max=len(quarters_sorted[mid_point:])-1,
+                max=third_point-1,
                 step=1,
                 value=0,
-                marks=second_half_marks
+                marks=second_third_marks
+            )
+        ], style={'margin-bottom': '40px'}),
+        
+        # Last third slider
+        html.Div([
+            dcc.Slider(
+                id='slider-last-third',
+                min=0,
+                max=len(quarters_sorted[two_thirds_point:])-1,
+                step=1,
+                value=0,
+                marks=last_third_marks
             )
         ])
     ], style={'padding': '20px 0px 50px 0px'})
 ])
 
 @app.callback(
-    [Output('slider-first-half', 'value'),
-     Output('slider-second-half', 'value')],
-    [Input('slider-first-half', 'value'),
-     Input('slider-second-half', 'value')],
-    [State('slider-first-half', 'value'),
-     State('slider-second-half', 'value')]
+    [Output('slider-first-third', 'value'),
+     Output('slider-second-third', 'value'),
+     Output('slider-last-third', 'value')],
+    [Input('slider-first-third', 'value'),
+     Input('slider-second-third', 'value'),
+     Input('slider-last-third', 'value')],
+    [State('slider-first-third', 'value'),
+     State('slider-second-third', 'value'),
+     State('slider-last-third', 'value')]
 )
-def sync_sliders(first_half_value, second_half_value, prev_first, prev_second):
+def sync_sliders(first_value, second_value, last_value, prev_first, prev_second, prev_last):
     # Determine which slider triggered the callback
     trigger_id = callback_context.triggered[0]['prop_id'].split('.')[0]
     
-    if trigger_id == 'slider-first-half':
-        return first_half_value, 0
+    if trigger_id == 'slider-first-third':
+        return first_value, 0, 0
+    elif trigger_id == 'slider-second-third':
+        return 0, second_value, 0
     else:
-        return 0, second_half_value
+        return 0, 0, last_value
 
 @app.callback(
     Output('bubble-chart', 'figure'),
-    [Input('slider-first-half', 'value'),
-     Input('slider-second-half', 'value')]
+    [Input('slider-first-third', 'value'),
+     Input('slider-second-third', 'value'),
+     Input('slider-last-third', 'value')]
 )
-def update_figure(first_half_value, second_half_value):
+def update_figure(first_value, second_value, last_value):
     if df is None:
         return {}
     
     # Determine which slider is active (non-zero)
-    if first_half_value > 0:
-        selected_quarter = quarters_sorted[first_half_value]
+    if first_value > 0:
+        selected_quarter = quarters_sorted[first_value]
+    elif second_value > 0:
+        selected_quarter = quarters_sorted[third_point + second_value]
     else:
-        selected_quarter = quarters_sorted[mid_point + second_half_value]
+        selected_quarter = quarters_sorted[two_thirds_point + last_value]
     
     filtered_df = df[df['year'] == selected_quarter]
     
