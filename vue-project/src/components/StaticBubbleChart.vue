@@ -292,11 +292,11 @@ const initChart = () => {
       // Add company logo
       g.append('image')
         .attr('class', 'logo')
-        .attr('width', 50)
-        .attr('height', 50)
+        .attr('width', 80)
+        .attr('height', 80)
         .attr('xlink:href', logoDict[d.company])
-        .attr('x', xScale(d.ebitdaMargin) - 25)
-        .attr('y', yScale(d.revenueGrowth) - 25);  // Adjusted y position since we don't have dots anymore
+        .attr('x', xScale(d.ebitdaMargin) - 40)  // Adjusted to center the larger logo
+        .attr('y', yScale(d.revenueGrowth) - 40);  // Adjusted to center the larger logo
     });
 
   } catch (error) {
