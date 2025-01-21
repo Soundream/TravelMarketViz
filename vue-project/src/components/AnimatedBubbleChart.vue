@@ -350,7 +350,7 @@ const initChart = () => {
       .attr('y1', 0)
       .attr('x2', xScale(0))
       .attr('y2', height)
-      .attr('stroke', '#ccc')
+      .attr('stroke', '#4e843d')
       .attr('stroke-dasharray', '4,4');
 
     g.append('line')
@@ -359,7 +359,7 @@ const initChart = () => {
       .attr('y1', yScale(0))
       .attr('x2', width)
       .attr('y2', yScale(0))
-      .attr('stroke', '#ccc')
+      .attr('stroke', '#4e843d')
       .attr('stroke-dasharray', '4,4');
 
     // Define drag behaviors
