@@ -65,6 +65,14 @@
           <AnimatedBubbleChart ref="bubbleChartRef" />
         </div>
 
+        <!-- Static 2024Q3 Chart -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-wego-gray">2024 Q3 Market Performance</h2>
+          </div>
+          <StaticBubbleChart ref="staticBubbleChartRef" />
+        </div>
+
         <!-- Static Chart -->
         <div class="bg-white rounded-lg shadow-lg p-6">
           <DataChart ref="chartRef" />
@@ -141,9 +149,11 @@ import {
 import { BellIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import DataChart from './components/DataChart.vue'
 import AnimatedBubbleChart from './components/AnimatedBubbleChart.vue'
+import StaticBubbleChart from './components/StaticBubbleChart.vue'
 
 const chartRef = ref(null)
 const bubbleChartRef = ref(null)
+const staticBubbleChartRef = ref(null)
 const mobileMenuOpen = ref(false)
 
 const navigation = [
@@ -211,6 +221,7 @@ const handleFileUpload = (event) => {
     // Process the file for both charts
     chartRef.value.processExcelData(file)
     bubbleChartRef.value.processExcelData(file)
+    staticBubbleChartRef.value.processExcelData(file)
   }
 }
 

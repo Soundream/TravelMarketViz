@@ -1,0 +1,319 @@
+<template>
+  <div class="chart-container">
+    <div id="static-chart" class="w-full h-full"></div>
+  </div>
+</template>
+
+<style scoped>
+.chart-container {
+  width: 100%;
+  height: 100%;
+  min-height: 840px;
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.zero-line {
+  opacity: 0.5;
+}
+
+.dot, .cross {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dot:hover, .cross:hover {
+  transform: scale(1.5);
+}
+
+.quarter-label {
+  pointer-events: none;
+  user-select: none;
+}
+
+.active {
+  stroke: #000;
+  stroke-width: 2px;
+}
+</style>
+
+<script setup>
+import { onMounted, ref } from 'vue';
+import * as d3 from 'd3';
+import * as XLSX from 'xlsx';
+
+// Company colors and logos (reuse from AnimatedBubbleChart)
+const colorDict = {
+  'ABNB': '#ff5895',
+  'Almosafer': '#bb5387',
+  'BKNG': '#003480',
+  'DESP': '#755bd8',
+  'EXPE': '#fbcc33',
+  'EaseMyTrip': '#00a0e2',
+  'Ixigo': '#e74c3c',
+  'MMYT': '#e74c3c',
+  'TRIP': '#00af87',
+  'TRVG': '#e74c3c',
+  'Wego': '#4e843d',
+  'Yatra': '#e74c3c',
+  'TCOM': '#2577e3',
+  'EDR': '#2577e3',
+  'LMN': '#fc03b1',
+  'Webjet': '#e74c3c',
+  'SEERA': '#750808',
+  'PCLN': '#003480',
+  'Orbitz': '#8edbfa',
+  'Travelocity': '#1d3e5c',
+  'Skyscanner': '#0770e3',
+  'Etraveli': '#b2e9ff',
+  'Kiwi': '#e5fdd4',
+  'Cleartrip': '#e74c3c',
+  'Traveloka': '#38a0e2',
+  'FLT': '#d2b6a8',
+  'Webjet OTA': '#e74c3c'
+};
+
+const logoDict = {
+  'ABNB': '/logos/ABNB_logo.png',
+  'BKNG': '/logos/BKNG_logo.png',
+  'EXPE': '/logos/EXPE_logo.png',
+  'TCOM': '/logos/TCOM_logo.png',
+  'TRIP': '/logos/TRIP_logo.png',
+  'TRVG': '/logos/TRVG_logo.png',
+  'EDR': '/logos/EDR_logo.png',
+  'DESP': '/logos/DESP_logo.png',
+  'MMYT': '/logos/MMYT_logo.png',
+  'Ixigo': '/logos/IXIGO_logo.png',
+  'SEERA': '/logos/SEERA_logo.png',
+  'Webjet': '/logos/WEB_logo.png',
+  'LMN': '/logos/LMN_logo.png',
+  'Yatra': '/logos/YTRA_logo.png',
+  'Orbitz': '/logos/OWW_logo.png',
+  'Travelocity': '/logos/Travelocity_logo.png',
+  'EaseMyTrip': '/logos/EASEMYTRIP_logo.png',
+  'Wego': '/logos/Wego_logo.png',
+  'Skyscanner': '/logos/Skyscanner_logo.png',
+  'Etraveli': '/logos/Etraveli_logo.png',
+  'Kiwi': '/logos/Kiwi_logo.png',
+  'Cleartrip': '/logos/Cleartrip_logo.png',
+  'Traveloka': '/logos/Traveloka_logo.png',
+  'FLT': '/logos/FlightCentre_logo.png',
+  'Almosafer': '/logos/Almosafer_logo.png',
+  'Webjet OTA': '/logos/OTA_logo.png'
+};
+
+const companyNames = {
+  'ABNB': 'Airbnb',
+  'BKNG': 'Booking.com',
+  'EXPE': 'Expedia',
+  'TCOM': 'Trip.com',
+  'TRIP': 'TripAdvisor',
+  'TRVG': 'Trivago',
+  'EDR': 'Edreams',
+  'DESP': 'Despegar',
+  'MMYT': 'MakeMyTrip',
+  'Ixigo': 'Ixigo',
+  'SEERA': 'Seera Group',
+  'Webjet': 'Webjet',
+  'LMN': 'Lastminute',
+  'Yatra': 'Yatra.com',
+  'Orbitz': 'Orbitz',
+  'Travelocity': 'Travelocity',
+  'EaseMyTrip': 'EaseMyTrip',
+  'Wego': 'Wego',
+  'Skyscanner': 'Skyscanner',
+  'Etraveli': 'Etraveli',
+  'Kiwi': 'Kiwi',
+  'Cleartrip': 'Cleartrip',
+  'FLT': 'Flight Centre',
+  'Almosafer': 'Almosafer',
+  'Webjet OTA': 'Webjet OTA'
+};
+
+let chartData = ref([]);
+
+// Fixed domains for consistent scaling
+const globalXDomain = [-0.7, 1.2];  // EBITDA margin range
+const globalYDomain = [-0.3, 1.2];  // Revenue growth range
+
+// Function to process XLSX data
+const processExcelData = (file) => {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    
+    // Get the TTM sheet
+    const ttmSheet = workbook.Sheets['TTM (bounded)'];
+    if (!ttmSheet) {
+      console.error('TTM (bounded) sheet not found');
+      return;
+    }
+
+    // Convert sheet to JSON with headers
+    const jsonData = XLSX.utils.sheet_to_json(ttmSheet, { header: 1 });
+    
+    // First row contains company names (headers)
+    const headers = jsonData[0];
+    
+    // Process data for 2024Q3
+    const processedData = [];
+    const targetQuarter = '2024\'Q3';
+    
+    // Find the row index for 2024Q3
+    const q3RowIndex = jsonData.findIndex(row => row[0] === targetQuarter);
+    const q3MarginRowIndex = jsonData.findIndex((row, index) => index > 115 && row[0] === targetQuarter);
+    
+    if (q3RowIndex !== -1 && q3MarginRowIndex !== -1) {
+      const revenueGrowthRow = jsonData[q3RowIndex];
+      const ebitdaMarginRow = jsonData[q3MarginRowIndex];
+      
+      // Process each company's data
+      headers.forEach((company, index) => {
+        if (!company || index === 0) return;
+        
+        const revenueGrowth = revenueGrowthRow[index];
+        const ebitdaMargin = ebitdaMarginRow[index];
+        
+        if (revenueGrowth !== undefined && ebitdaMargin !== undefined &&
+            revenueGrowth >= globalYDomain[0] && revenueGrowth <= globalYDomain[1] &&
+            ebitdaMargin >= globalXDomain[0] && ebitdaMargin <= globalXDomain[1]) {
+          
+          processedData.push({
+            company: company,
+            ebitdaMargin: ebitdaMargin,
+            revenueGrowth: revenueGrowth
+          });
+        }
+      });
+    }
+
+    // Update chart data and redraw
+    chartData.value = processedData;
+    initChart();
+  };
+  reader.readAsArrayBuffer(file);
+};
+
+// Initialize chart
+const initChart = () => {
+  try {
+    // Clear previous chart
+    d3.select('#static-chart').selectAll('*').remove();
+    
+    // Create SVG
+    const svg = d3.select('#static-chart').append('svg')
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .attr('viewBox', '0 0 1200 840')
+      .attr('preserveAspectRatio', 'xMidYMid meet');
+
+    const margin = { top: 40, right: 20, bottom: 50, left: 60 };
+    const width = 1200 - margin.left - margin.right;
+    const height = 840 - margin.top - margin.bottom;
+
+    const g = svg.append("g")
+      .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+    // Initialize scales with fixed domains
+    const xScale = d3.scaleLinear()
+      .domain(globalXDomain)
+      .range([0, width]);
+
+    const yScale = d3.scaleLinear()
+      .domain(globalYDomain)
+      .range([height, 0]);
+
+    // Create axes
+    const xAxis = d3.axisBottom(xScale).tickFormat(d3.format('.0%'));
+    const yAxis = d3.axisLeft(yScale).tickFormat(d3.format('.0%'));
+
+    // Add axes
+    g.append('g')
+      .attr('class', 'x-axis')
+      .attr('transform', `translate(0,${height})`)
+      .call(xAxis);
+
+    g.append('g')
+      .attr('class', 'y-axis')
+      .call(yAxis);
+
+    // Add axis labels
+    g.append('text')
+      .attr('class', 'x-label')
+      .attr('text-anchor', 'middle')
+      .attr('x', width / 2)
+      .attr('y', height + 40)
+      .text('EBITDA Margin')
+      .style('font-size', '14px');
+
+    g.append('text')
+      .attr('class', 'y-label')
+      .attr('text-anchor', 'middle')
+      .attr('transform', 'rotate(-90)')
+      .attr('y', -45)
+      .attr('x', -height / 2)
+      .text('Revenue Growth YoY')
+      .style('font-size', '14px');
+
+    // Add zero lines
+    g.append('line')
+      .attr('class', 'zero-line')
+      .attr('x1', xScale(0))
+      .attr('y1', 0)
+      .attr('x2', xScale(0))
+      .attr('y2', height)
+      .attr('stroke', '#4e843d')
+      .attr('stroke-dasharray', '4,4');
+
+    g.append('line')
+      .attr('class', 'zero-line')
+      .attr('x1', 0)
+      .attr('y1', yScale(0))
+      .attr('x2', width)
+      .attr('y2', yScale(0))
+      .attr('stroke', '#4e843d')
+      .attr('stroke-dasharray', '4,4');
+
+    // Add title
+    g.append('text')
+      .attr('class', 'chart-title')
+      .attr('text-anchor', 'middle')
+      .attr('x', width / 2)
+      .attr('y', -10)
+      .text('2024 Q3 Market Performance')
+      .style('font-size', '24px')
+      .style('font-weight', 'bold');
+
+    // Add bubbles and logos
+    chartData.value.forEach(d => {
+      // Add bubble
+      g.append('circle')
+        .attr('class', 'bubble')
+        .attr('r', 8)
+        .attr('cx', xScale(d.ebitdaMargin))
+        .attr('cy', yScale(d.revenueGrowth))
+        .attr('fill', colorDict[d.company]);
+
+      // Add company logo
+      g.append('image')
+        .attr('class', 'logo')
+        .attr('width', 50)
+        .attr('height', 50)
+        .attr('xlink:href', logoDict[d.company])
+        .attr('x', xScale(d.ebitdaMargin) - 25)
+        .attr('y', yScale(d.revenueGrowth) - 55);
+    });
+
+  } catch (error) {
+    console.error('Error initializing chart:', error);
+  }
+};
+
+// Expose methods
+defineExpose({
+  processExcelData
+});
+</script> 
