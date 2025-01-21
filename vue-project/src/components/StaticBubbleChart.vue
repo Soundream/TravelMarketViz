@@ -1,5 +1,17 @@
 <template>
   <div class="chart-container">
+    <div class="flex justify-end mb-4">
+      <button 
+        @click="saveChart"
+        class="px-4 py-2 bg-wego-green text-white rounded hover:bg-wego-green-dark flex items-center gap-2"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h-2v5.586l-1.293-1.293z" />
+          <path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
+        </svg>
+        Save Chart
+      </button>
+    </div>
     <div id="static-chart" class="w-full h-full"></div>
   </div>
 </template>
@@ -277,26 +289,23 @@ const initChart = () => {
       .attr('stroke', '#4e843d')
       .attr('stroke-dasharray', '4,4');
 
-    // Add title
-    g.append('text')
-      .attr('class', 'chart-title')
-      .attr('text-anchor', 'middle')
-      .attr('x', width / 2)
-      .attr('y', -10)
-      .text('2024 Q3 Market Performance')
-      .style('font-size', '24px')
-      .style('font-weight', 'bold');
-
     // Add bubbles and logos
     chartData.value.forEach(d => {
-      // Add company logo
-      g.append('image')
-        .attr('class', 'logo')
-        .attr('width', 80)
-        .attr('height', 80)
-        .attr('xlink:href', logoDict[d.company])
-        .attr('x', xScale(d.ebitdaMargin) - 40)  // Adjusted to center the larger logo
-        .attr('y', yScale(d.revenueGrowth) - 40);  // Adjusted to center the larger logo
+      // Check if logo exists for this company
+      if (logoDict[d.company]) {
+        // Add company logo with error handling
+        const img = new Image();
+        img.onload = () => {
+          g.append('image')
+            .attr('class', 'logo')
+            .attr('width', 80)
+            .attr('height', 80)
+            .attr('xlink:href', logoDict[d.company])
+            .attr('x', xScale(d.ebitdaMargin) - 40)
+            .attr('y', yScale(d.revenueGrowth) - 40);
+        };
+        img.src = logoDict[d.company];
+      }
     });
 
   } catch (error) {
@@ -304,8 +313,64 @@ const initChart = () => {
   }
 };
 
+// Add save chart function
+const saveChart = async () => {
+  try {
+    const svgNode = document.querySelector('#static-chart svg');
+    
+    // First, load all images
+    const images = svgNode.querySelectorAll('image');
+    await Promise.all(Array.from(images).map(async (image) => {
+      try {
+        const url = image.getAttribute('href') || image.getAttribute('xlink:href');
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Image load failed');
+        const blob = await response.blob();
+        const base64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+        image.setAttribute('href', base64);
+      } catch (error) {
+        // If image fails to load, remove it from the SVG
+        image.remove();
+      }
+    }));
+    
+    const svgData = new XMLSerializer().serializeToString(svgNode);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    // Set canvas size to match SVG
+    canvas.width = 1200;
+    canvas.height = 840;
+    
+    img.onload = () => {
+      // Fill white background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw the image
+      ctx.drawImage(img, 0, 0);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.download = '2024Q3_Market_Performance.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    };
+    
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  } catch (error) {
+    console.error('Error saving chart:', error);
+  }
+};
+
 // Expose methods
 defineExpose({
-  processExcelData
+  processExcelData,
+  saveChart
 });
 </script> 
