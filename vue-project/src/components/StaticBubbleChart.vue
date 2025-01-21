@@ -49,6 +49,11 @@
   stroke: #000;
   stroke-width: 2px;
 }
+
+.logo {
+  cursor: move;
+  user-select: none;
+}
 </style>
 
 <script setup>
@@ -149,6 +154,25 @@ let chartData = ref([]);
 // Fixed domains for consistent scaling
 const globalXDomain = [-0.7, 1.2];  // EBITDA margin range
 const globalYDomain = [-0.3, 1.2];  // Revenue growth range
+
+// Add state to store adjusted positions
+const logoPositions = ref({});
+
+// Add drag behavior function
+const createDragBehavior = (xScale, yScale) => {
+  return d3.drag()
+    .on('drag', (event, d) => {
+      const logo = d3.select(event.sourceEvent.target);
+      const newX = parseFloat(logo.attr('x')) + event.dx;
+      const newY = parseFloat(logo.attr('y')) + event.dy;
+      
+      logo.attr('x', newX)
+          .attr('y', newY);
+      
+      // Store the adjusted position
+      logoPositions.value[d.company] = { x: newX, y: newY };
+    });
+};
 
 // Function to process XLSX data
 const processExcelData = (file) => {
@@ -296,13 +320,31 @@ const initChart = () => {
         // Add company logo with error handling
         const img = new Image();
         img.onload = () => {
+          // Calculate initial position
+          const initialX = xScale(d.ebitdaMargin) - 40;
+          const initialY = yScale(d.revenueGrowth) - 40;
+          
+          // Use stored position if available
+          const storedPosition = logoPositions.value[d.company];
+          const x = storedPosition ? storedPosition.x : initialX;
+          const y = storedPosition ? storedPosition.y : initialY;
+          
+          // Add the logo
           g.append('image')
+            .datum(d)  // Attach data to the element
             .attr('class', 'logo')
             .attr('width', 80)
             .attr('height', 80)
             .attr('xlink:href', logoDict[d.company])
-            .attr('x', xScale(d.ebitdaMargin) - 40)
-            .attr('y', yScale(d.revenueGrowth) - 40);
+            .attr('x', x)
+            .attr('y', y)
+            .style('cursor', 'move')
+            .call(createDragBehavior(xScale, yScale));
+          
+          // Store initial position if not already stored
+          if (!logoPositions.value[d.company]) {
+            logoPositions.value[d.company] = { x: initialX, y: initialY };
+          }
         };
         img.src = logoDict[d.company];
       }
