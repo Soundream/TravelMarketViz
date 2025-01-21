@@ -289,14 +289,6 @@ const initChart = () => {
 
     // Add bubbles and logos
     chartData.value.forEach(d => {
-      // Add bubble
-      g.append('circle')
-        .attr('class', 'bubble')
-        .attr('r', 8)
-        .attr('cx', xScale(d.ebitdaMargin))
-        .attr('cy', yScale(d.revenueGrowth))
-        .attr('fill', colorDict[d.company]);
-
       // Add company logo
       g.append('image')
         .attr('class', 'logo')
@@ -304,7 +296,7 @@ const initChart = () => {
         .attr('height', 50)
         .attr('xlink:href', logoDict[d.company])
         .attr('x', xScale(d.ebitdaMargin) - 25)
-        .attr('y', yScale(d.revenueGrowth) - 55);
+        .attr('y', yScale(d.revenueGrowth) - 25);  // Adjusted y position since we don't have dots anymore
     });
 
   } catch (error) {
