@@ -11,6 +11,9 @@
         </svg>
         Save Chart
       </button>
+      <button>
+        Delete Icon
+      </button>
     </div>
     <div id="static-chart" class="w-full h-full"></div>
   </div>
