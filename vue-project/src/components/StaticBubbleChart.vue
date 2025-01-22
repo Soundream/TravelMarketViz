@@ -18,7 +18,8 @@
     <div id="static-chart" class="w-full h-full"></div>
   </div>
 </template>
-
+<!-- TODO: detect null value and delete it from the chart -->
+ <!-- TODO: add delete method for delete the logo on teh page -->
 <style scoped>
 .chart-container {
   width: 100%;
@@ -176,7 +177,9 @@ const createDragBehavior = (xScale, yScale) => {
       logoPositions.value[d.company] = { x: newX, y: newY };
     });
 };
-
+const deleteLogo = () => {
+  return d3.dis
+}
 // Function to process XLSX data
 const processExcelData = (file) => {
   const reader = new FileReader();
@@ -402,7 +405,7 @@ const saveChart = async () => {
       
       // Create download link
       const link = document.createElement('a');
-      link.download = '2024Q3_Market_Performance.png';
+      link.download = '2024Q4_Market_Performance.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
     };
