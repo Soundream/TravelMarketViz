@@ -104,9 +104,10 @@ def process_excel_file():
             
             for company in companies:
                 try:
+                    
                     rev_growth = quarter_revenue[company].iloc[0]
                     ebitda_marg = quarter_ebitda[company].iloc[0]
-                    raw_rev = raw_revenue[company].iloc[0]
+                    raw_rev = raw_revenue[company].iloc[0] # add a function here to develop better revenue number(sometimes they are just too large)
                     
                     if pd.notna(raw_rev) and raw_rev > 0:
                         normalized_size = np.log(raw_rev / revenue_min) / np.log(revenue_max / revenue_min)
