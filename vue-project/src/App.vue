@@ -11,19 +11,10 @@
       <nav class="hidden md:flex md:gap-x-11 md:text-sm/6 md:font-semibold md:text-wego-gray">
         <a v-for="(item, itemIdx) in navigation" :key="itemIdx" :href="item.href">{{ item.name }}</a>
       </nav>
-      <div class="flex flex-1 items-center justify-end gap-x-8">
-        <button type="button" class="-m-2.5 p-2.5 text-wego-gray hover:text-wego-gray-dark">
-          <span class="sr-only">View notifications</span>
-          <BellIcon class="size-6" aria-hidden="true" />
-        </button>
-        <a href="#" class="-m-1.5 p-1.5">
-          <span class="sr-only">Your profile</span>
-          <img class="size-8 rounded-full bg-wego-green" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="" />
-        </a>
-      </div>
+      
     </div>
   </header>
-
+  <!-- TODO: - make the page more elegant + add a sidebar and figure out the filtering conditions + add filtering sections in the front end page -->
   <main class="pt-16">
     <div class="relative isolate overflow-hidden">
       <!-- Secondary navigation -->
@@ -150,6 +141,7 @@ import { BellIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import DataChart from './components/DataChart.vue'
 import AnimatedBubbleChart from './components/AnimatedBubbleChart.vue'
 import StaticBubbleChart from './components/StaticBubbleChart.vue'
+
 
 const chartRef = ref(null)
 const bubbleChartRef = ref(null)
