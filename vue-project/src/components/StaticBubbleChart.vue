@@ -168,10 +168,6 @@ const createDragBehavior = (xScale, yScale) => {
         .attr('x', newX)
         .attr('y', newY);
       
-      logoGroup.select('.data-label')
-        .attr('x', newX + 60)
-        .attr('y', newY + 80);
-      
       // Store the adjusted position
       logoPositions.value[d.company] = { x: newX, y: newY };
     });
@@ -319,7 +315,23 @@ const initChart = () => {
       .attr('stroke', '#4e843d')
       .attr('stroke-dasharray', '4,4');
 
-    // Add bubbles and logos
+    // Add data points first (so they appear behind logos)
+    chartData.value.forEach(d => {
+      // Skip SEERA and points at (0,0)
+      if (d.company !== 'SEERA' && !(d.revenueGrowth === 0 && d.ebitdaMargin === 0)) {
+        // Add data point as a dot at exact data position
+        g.append('circle')
+          .attr('class', 'data-dot')
+          .attr('cx', xScale(d.ebitdaMargin))
+          .attr('cy', yScale(d.revenueGrowth))
+          .attr('r', 4)
+          .style('fill', colorDict[d.company])
+          .style('stroke', 'white')
+          .style('stroke-width', '1px');
+      }
+    });
+
+    // Then add logos
     chartData.value.forEach(d => {
       // Check if logo exists for this company
       if (logoDict[d.company]) {
@@ -335,7 +347,7 @@ const initChart = () => {
           const x = storedPosition ? storedPosition.x : initialX;
           const y = storedPosition ? storedPosition.y : initialY;
           
-          // Create a group for the logo and its label
+          // Create a group for the logo
           const logoGroup = g.append('g')
             .attr('class', 'logo-group');
           
@@ -350,16 +362,6 @@ const initChart = () => {
             .attr('y', y)
             .style('cursor', 'move')
             .call(createDragBehavior(xScale, yScale));
-
-          // Add data point values
-          logoGroup.append('text')
-            .attr('class', 'data-label')
-            .attr('x', x + 60)
-            .attr('y', y + 100)
-            .attr('text-anchor', 'middle')
-            .style('font-size', '12px')
-            .style('fill', '#666')
-            .text(`${(d.revenueGrowth * 100).toFixed(1)}% / ${(d.ebitdaMargin * 100).toFixed(1)}%`);
           
           // Store initial position if not already stored
           if (!logoPositions.value[d.company]) {
