@@ -156,8 +156,8 @@ const companyNames = {
 let chartData = ref([]);
 
 // Fixed domains for consistent scaling
-const globalXDomain = [-0.7, 1.2];  // EBITDA margin range
-const globalYDomain = [-0.3, 1.2];  // Revenue growth range
+const globalXDomain = [-0.7, 1.0];  // EBITDA margin range
+const globalYDomain = [-0.2, 0.9];  // Revenue growth range
 
 // Add state to store adjusted positions
 const logoPositions = ref({});

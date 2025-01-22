@@ -39,19 +39,17 @@
         </div>
       </header>
 
-      <!-- Stats -->
-      <div class="border-b border-b-gray-900/10 lg:border-t lg:border-t-gray-900/5">
-        <dl class="mx-auto grid max-w-7xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:px-2 xl:px-0">
-          <div v-for="(stat, statIdx) in stats" :key="stat.name" :class="[statIdx % 2 === 1 ? 'sm:border-l' : statIdx === 2 ? 'lg:border-l' : '', 'flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-t border-gray-900/5 px-4 py-10 sm:px-6 lg:border-t-0 xl:px-8']">
-            <dt class="text-sm/6 font-medium text-wego-gray">{{ stat.name }}</dt>
-            <dd :class="[stat.changeType === 'negative' ? 'text-rose-600' : 'text-wego-green', 'text-xs font-medium']">{{ stat.change }}</dd>
-            <dd class="w-full flex-none text-3xl/10 font-medium tracking-tight text-wego-gray-dark">{{ stat.value }}</dd>
-          </div>
-        </dl>
-      </div>
+      
 
       <!-- Chart Sections -->
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Static 2024Q3 Chart -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-wego-gray">2024 Q3 Market Performance</h2>
+          </div>
+          <StaticBubbleChart ref="staticBubbleChartRef" />
+        </div>
         <!-- Animated Bubble Chart -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div class="flex justify-between items-center mb-4">
@@ -65,20 +63,22 @@
           <AnimatedBubbleChart ref="bubbleChartRef" />
         </div>
 
-        <!-- Static 2024Q3 Chart -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-wego-gray">2024 Q3 Market Performance</h2>
-          </div>
-          <StaticBubbleChart ref="staticBubbleChartRef" />
-        </div>
-
-        <!-- Static Chart -->
+        <!-- Static Chart: cannot be deleted or it will cause some problem -->
         <div class="bg-white rounded-lg shadow-lg p-6">
           <DataChart ref="chartRef" />
         </div>
       </div>
-
+      <!-- Stats -->
+      <div class="border-b border-b-gray-900/10 lg:border-t lg:border-t-gray-900/5">
+        <dl class="mx-auto grid max-w-7xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:px-2 xl:px-0">
+          <div v-for="(stat, statIdx) in stats" :key="stat.name" :class="[statIdx % 2 === 1 ? 'sm:border-l' : statIdx === 2 ? 'lg:border-l' : '', 'flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-t border-gray-900/5 px-4 py-10 sm:px-6 lg:border-t-0 xl:px-8']">
+            <dt class="text-sm/6 font-medium text-wego-gray">{{ stat.name }}</dt>
+            <dd :class="[stat.changeType === 'negative' ? 'text-rose-600' : 'text-wego-green', 'text-xs font-medium']">{{ stat.change }}</dd>
+            <dd class="w-full flex-none text-3xl/10 font-medium tracking-tight text-wego-gray-dark">{{ stat.value }}</dd>
+          </div>
+        </dl>
+      </div>
+      
       <!-- Recent activity -->
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-8">
         <h2 class="text-base font-semibold text-wego-gray">Recent activity</h2>
