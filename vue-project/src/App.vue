@@ -164,10 +164,10 @@ const navigation = [
 ]
 
 const stats = [
-  { name: 'Market Cap', value: '$405.09B', change: '+4.75%', changeType: 'positive' },
-  { name: 'Volume 24h', value: '$12.78B', change: '+54.02%', changeType: 'negative' },
-  { name: 'Total Value', value: '$245.98B', change: '-1.39%', changeType: 'positive' },
-  { name: 'Active Traders', value: '30,156', change: '+10.18%', changeType: 'negative' },
+  { name: 'Market Cap', value: 'tbd', change: '+4.75%', changeType: 'positive' },
+  { name: 'Volume 24h', value: 'tbd', change: '+54.02%', changeType: 'negative' },
+  { name: 'Total Value', value: 'tbd', change: '-1.39%', changeType: 'positive' },
+  { name: 'Active users', value: 'tbd', change: '+10.18%', changeType: 'negative' },
 ]
 
 const statuses = {
