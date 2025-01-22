@@ -82,8 +82,6 @@ const colorDict = {
   'TCOM': '#2577e3',
   'EDR': '#2577e3',
   'LMN': '#fc03b1',
-  'Webjet': '#e74c3c',
-  'SEERA': '#750808',
   'PCLN': '#003480',
   'Orbitz': '#8edbfa',
   'Travelocity': '#1d3e5c',
@@ -107,8 +105,6 @@ const logoDict = {
   'DESP': '/logos/DESP_logo.png',
   'MMYT': '/logos/MMYT_logo.png',
   'Ixigo': '/logos/IXIGO_logo.png',
-  'SEERA': '/logos/SEERA_logo.png',
-  'Webjet': '/logos/WEB_logo.png',
   'LMN': '/logos/LMN_logo.png',
   'Yatra': '/logos/YTRA_logo.png',
   'Orbitz': '/logos/OWW_logo.png',
@@ -136,8 +132,6 @@ const companyNames = {
   'DESP': 'Despegar',
   'MMYT': 'MakeMyTrip',
   'Ixigo': 'Ixigo',
-  'SEERA': 'Seera Group',
-  'Webjet': 'Webjet',
   'LMN': 'Lastminute',
   'Yatra': 'Yatra.com',
   'Orbitz': 'Orbitz',
@@ -156,8 +150,8 @@ const companyNames = {
 let chartData = ref([]);
 
 // Fixed domains for consistent scaling
-const globalXDomain = [-0.7, 1.0];  // EBITDA margin range
-const globalYDomain = [-0.2, 0.9];  // Revenue growth range
+const globalXDomain = [-0.15, 0.60];  // EBITDA margin range
+const globalYDomain = [-0.15, 0.85];  // Revenue growth range
 
 // Add state to store adjusted positions
 const logoPositions = ref({});
@@ -166,20 +160,23 @@ const logoPositions = ref({});
 const createDragBehavior = (xScale, yScale) => {
   return d3.drag()
     .on('drag', (event, d) => {
-      const logo = d3.select(event.sourceEvent.target);
-      const newX = parseFloat(logo.attr('x')) + event.dx;
-      const newY = parseFloat(logo.attr('y')) + event.dy;
+      const logoGroup = d3.select(event.sourceEvent.target.parentNode);
+      const newX = parseFloat(logoGroup.select('image').attr('x')) + event.dx;
+      const newY = parseFloat(logoGroup.select('image').attr('y')) + event.dy;
       
-      logo.attr('x', newX)
-          .attr('y', newY);
+      logoGroup.select('image')
+        .attr('x', newX)
+        .attr('y', newY);
+      
+      logoGroup.select('.data-label')
+        .attr('x', newX + 60)
+        .attr('y', newY + 80);
       
       // Store the adjusted position
       logoPositions.value[d.company] = { x: newX, y: newY };
     });
 };
-const deleteLogo = () => {
-  return d3.dis
-}
+
 // Function to process XLSX data
 const processExcelData = (file) => {
   const reader = new FileReader();
@@ -202,7 +199,7 @@ const processExcelData = (file) => {
     
     // Process data for 2024Q3
     const processedData = [];
-    const targetQuarter = '2024\'Q3';
+    const targetQuarter = '2024\'Q4';
     
     // Find the row index for 2024Q3
     const q3RowIndex = jsonData.findIndex(row => row[0] === targetQuarter);
@@ -219,7 +216,10 @@ const processExcelData = (file) => {
         const revenueGrowth = revenueGrowthRow[index];
         const ebitdaMargin = ebitdaMarginRow[index];
         
-        if (revenueGrowth !== undefined && ebitdaMargin !== undefined &&
+        if (revenueGrowth !== undefined && ebitdaMargin !== undefined && 
+            revenueGrowth !== null && ebitdaMargin !== null &&
+            !isNaN(revenueGrowth) && !isNaN(ebitdaMargin) &&
+            !(revenueGrowth === 0 && ebitdaMargin === 0) &&  // Skip (0,0) points
             revenueGrowth >= globalYDomain[0] && revenueGrowth <= globalYDomain[1] &&
             ebitdaMargin >= globalXDomain[0] && ebitdaMargin <= globalXDomain[1]) {
           
@@ -288,7 +288,7 @@ const initChart = () => {
       .attr('text-anchor', 'middle')
       .attr('x', width / 2)
       .attr('y', height + 40)
-      .text('EBITDA Margin')
+      .text('EBITDA Margin TTM')
       .style('font-size', '14px');
 
     g.append('text')
@@ -297,7 +297,7 @@ const initChart = () => {
       .attr('transform', 'rotate(-90)')
       .attr('y', -45)
       .attr('x', -height / 2)
-      .text('Revenue Growth YoY')
+      .text('Revenue Growth YoY TTM')
       .style('font-size', '14px');
 
     // Add zero lines
@@ -327,25 +327,39 @@ const initChart = () => {
         const img = new Image();
         img.onload = () => {
           // Calculate initial position
-          const initialX = xScale(d.ebitdaMargin) - 40;
-          const initialY = yScale(d.revenueGrowth) - 40;
+          const initialX = xScale(d.ebitdaMargin) - 60;
+          const initialY = yScale(d.revenueGrowth) - 60;
           
           // Use stored position if available
           const storedPosition = logoPositions.value[d.company];
           const x = storedPosition ? storedPosition.x : initialX;
           const y = storedPosition ? storedPosition.y : initialY;
           
+          // Create a group for the logo and its label
+          const logoGroup = g.append('g')
+            .attr('class', 'logo-group');
+          
           // Add the logo
-          g.append('image')
-            .datum(d)  // Attach data to the element
+          logoGroup.append('image')
+            .datum(d)
             .attr('class', 'logo')
-            .attr('width', 80)
-            .attr('height', 80)
+            .attr('width', 120)
+            .attr('height', 120)
             .attr('xlink:href', logoDict[d.company])
             .attr('x', x)
             .attr('y', y)
             .style('cursor', 'move')
             .call(createDragBehavior(xScale, yScale));
+
+          // Add data point values
+          logoGroup.append('text')
+            .attr('class', 'data-label')
+            .attr('x', x + 60)
+            .attr('y', y + 100)
+            .attr('text-anchor', 'middle')
+            .style('font-size', '12px')
+            .style('fill', '#666')
+            .text(`${(d.revenueGrowth * 100).toFixed(1)}% / ${(d.ebitdaMargin * 100).toFixed(1)}%`);
           
           // Store initial position if not already stored
           if (!logoPositions.value[d.company]) {
@@ -365,6 +379,8 @@ const initChart = () => {
 const saveChart = async () => {
   try {
     const svgNode = document.querySelector('#static-chart svg');
+    const svgWidth = svgNode.viewBox.baseVal.width || 1200;
+    const svgHeight = svgNode.viewBox.baseVal.height || 840;
     
     // First, load all images
     const images = svgNode.querySelectorAll('image');
@@ -381,7 +397,6 @@ const saveChart = async () => {
         });
         image.setAttribute('href', base64);
       } catch (error) {
-        // If image fails to load, remove it from the SVG
         image.remove();
       }
     }));
@@ -391,26 +406,39 @@ const saveChart = async () => {
     const ctx = canvas.getContext('2d');
     const img = new Image();
     
-    // Set canvas size to match SVG
-    canvas.width = 1200;
-    canvas.height = 840;
+    // Set high resolution scale (increased for better quality with larger logos)
+    const scale = 4;  // Increased from 3 to 4 for even higher quality
+    canvas.width = svgWidth * scale;
+    canvas.height = svgHeight * scale;
     
+    // Enable high quality image rendering
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
+    // Set image source with proper SVG dimensions
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+    img.src = svgUrl;
+    
+    // Clean up the object URL after loading
     img.onload = () => {
+      URL.revokeObjectURL(svgUrl);
       // Fill white background
       ctx.fillStyle = 'white';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Draw the image
-      ctx.drawImage(img, 0, 0);
+      // Scale the context while maintaining aspect ratio
+      ctx.scale(scale, scale);
       
-      // Create download link
+      // Draw the image at the correct size
+      ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
+      
+      // Create download link with high quality PNG
       const link = document.createElement('a');
       link.download = '2024Q4_Market_Performance.png';
-      link.href = canvas.toDataURL('image/png');
+      link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
     };
-    
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   } catch (error) {
     console.error('Error saving chart:', error);
   }
