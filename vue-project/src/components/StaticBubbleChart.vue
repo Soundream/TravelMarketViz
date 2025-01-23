@@ -1,6 +1,12 @@
 <template>
   <div class="chart-container">
-    <div class="flex justify-end mb-4">
+    <div class="flex justify-end mb-4 gap-4">
+      <button 
+        @click="toggleDataDisplay"
+        class="px-4 py-2 bg-wego-green text-white rounded hover:bg-wego-green-dark flex items-center gap-2"
+      >
+        {{ showLabels ? 'Show Dots' : 'Show Labels' }}
+      </button>
       <button 
         @click="saveChart"
         class="px-4 py-2 bg-wego-green text-white rounded hover:bg-wego-green-dark flex items-center gap-2"
@@ -173,6 +179,15 @@ const createDragBehavior = (xScale, yScale) => {
     });
 };
 
+// Add state for display toggle
+const showLabels = ref(false);
+
+// Add toggle function
+const toggleDataDisplay = () => {
+  showLabels.value = !showLabels.value;
+  initChart(); // Redraw chart with new display type
+};
+
 // Function to process XLSX data
 const processExcelData = (file) => {
   const reader = new FileReader();
@@ -193,29 +208,29 @@ const processExcelData = (file) => {
     // First row contains company names (headers)
     const headers = jsonData[0];
     
-    // Process data for 2024Q3
+    // Process data for 2024Q4
     const processedData = [];
     const targetQuarter = '2024\'Q4';
     
-    // Find the row index for 2024Q3
-    const q3RowIndex = jsonData.findIndex(row => row[0] === targetQuarter);
-    const q3MarginRowIndex = jsonData.findIndex((row, index) => index > 115 && row[0] === targetQuarter);
+    // Find the row indices
+    const growthRowIndex = jsonData.findIndex(row => row[0] === targetQuarter);
+    const marginRowIndex = jsonData.findIndex((row, index) => index > 115 && row[0] === targetQuarter);
     
-    if (q3RowIndex !== -1 && q3MarginRowIndex !== -1) {
-      const revenueGrowthRow = jsonData[q3RowIndex];
-      const ebitdaMarginRow = jsonData[q3MarginRowIndex];
+    if (growthRowIndex !== -1 && marginRowIndex !== -1) {
+      const revenueGrowthRow = jsonData[growthRowIndex];
+      const ebitdaMarginRow = jsonData[marginRowIndex];
       
       // Process each company's data
       headers.forEach((company, index) => {
         if (!company || index === 0) return;
         
-        const revenueGrowth = revenueGrowthRow[index];
-        const ebitdaMargin = ebitdaMarginRow[index];
+        const revenueGrowth = parseFloat(revenueGrowthRow[index]);
+        const ebitdaMargin = parseFloat(ebitdaMarginRow[index]);
         
         if (revenueGrowth !== undefined && ebitdaMargin !== undefined && 
             revenueGrowth !== null && ebitdaMargin !== null &&
             !isNaN(revenueGrowth) && !isNaN(ebitdaMargin) &&
-            !(revenueGrowth === 0 && ebitdaMargin === 0) &&  // Skip (0,0) points
+            !(revenueGrowth === 0 && ebitdaMargin === 0) &&
             revenueGrowth >= globalYDomain[0] && revenueGrowth <= globalYDomain[1] &&
             ebitdaMargin >= globalXDomain[0] && ebitdaMargin <= globalXDomain[1]) {
           
@@ -235,11 +250,22 @@ const processExcelData = (file) => {
   reader.readAsArrayBuffer(file);
 };
 
+// Add mounted hook to initialize chart when component mounts
+onMounted(() => {
+  initChart();
+});
+
 // Initialize chart
 const initChart = () => {
   try {
     // Clear previous chart
     d3.select('#static-chart').selectAll('*').remove();
+    
+    // Skip if no data
+    if (!chartData.value || chartData.value.length === 0) {
+      console.log('No data to display');
+      return;
+    }
     
     // Create SVG
     const svg = d3.select('#static-chart').append('svg')
@@ -319,15 +345,28 @@ const initChart = () => {
     chartData.value.forEach(d => {
       // Skip SEERA and points at (0,0)
       if (d.company !== 'SEERA' && !(d.revenueGrowth === 0 && d.ebitdaMargin === 0)) {
-        // Add data point as a dot at exact data position
-        g.append('circle')
-          .attr('class', 'data-dot')
-          .attr('cx', xScale(d.ebitdaMargin))
-          .attr('cy', yScale(d.revenueGrowth))
-          .attr('r', 4)
-          .style('fill', colorDict[d.company])
-          .style('stroke', 'white')
-          .style('stroke-width', '1px');
+        if (showLabels.value) {
+          // Add data point as text at exact data position
+          g.append('text')
+            .attr('class', 'data-label')
+            .attr('x', xScale(d.ebitdaMargin))
+            .attr('y', yScale(d.revenueGrowth))
+            .attr('text-anchor', 'middle')
+            .attr('dy', '0.35em')  // Vertically center text
+            .style('font-size', '12px')
+            .style('fill', colorDict[d.company])
+            .text(`${(d.revenueGrowth * 100).toFixed(1)}% / ${(d.ebitdaMargin * 100).toFixed(1)}%`);
+        } else {
+          // Add data point as a dot at exact data position
+          g.append('circle')
+            .attr('class', 'data-dot')
+            .attr('cx', xScale(d.ebitdaMargin))
+            .attr('cy', yScale(d.revenueGrowth))
+            .attr('r', 4)
+            .style('fill', colorDict[d.company])
+            .style('stroke', 'white')
+            .style('stroke-width', '1px');
+        }
       }
     });
 

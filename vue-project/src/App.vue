@@ -60,7 +60,7 @@
         </div>
       </div>
       <!-- Stats -->
-      <div class="border-b border-b-gray-900/10 lg:border-t lg:border-t-gray-900/5">
+      <!-- <div class="border-b border-b-gray-900/10 lg:border-t lg:border-t-gray-900/5">
         <dl class="mx-auto grid max-w-7xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:px-2 xl:px-0">
           <div v-for="(stat, statIdx) in stats" :key="stat.name" :class="[statIdx % 2 === 1 ? 'sm:border-l' : statIdx === 2 ? 'lg:border-l' : '', 'flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-t border-gray-900/5 px-4 py-10 sm:px-6 lg:border-t-0 xl:px-8']">
             <dt class="text-sm/6 font-medium text-wego-gray">{{ stat.name }}</dt>
@@ -68,16 +68,16 @@
             <dd class="w-full flex-none text-3xl/10 font-medium tracking-tight text-wego-gray-dark">{{ stat.value }}</dd>
           </div>
         </dl>
-      </div>
+      </div> -->
       
-      <!-- Recent activity -->
+      <!-- Recent activity
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-8">
         <h2 class="text-base font-semibold text-wego-gray">Recent activity</h2>
         <div class="mt-6 overflow-hidden border-t border-gray-100">
           <div class="mx-auto max-w-7xl">
             <table class="w-full text-left">
-              <thead class="sr-only">
-                <tr>
+              <thead class="sr-only"> -->
+                <!-- <tr>
                   <th>Amount</th>
                   <th class="hidden sm:table-cell">Client</th>
                   <th>More details</th>
@@ -91,8 +91,8 @@
                       <div class="absolute inset-y-0 right-full -z-10 w-screen border-b border-gray-200 bg-gray-50" />
                       <div class="absolute inset-y-0 left-0 -z-10 w-screen border-b border-gray-200 bg-gray-50" />
                     </th>
-                  </tr>
-                  <tr v-for="transaction in day.transactions" :key="transaction.id">
+                  </tr> -->
+                  <!-- <tr v-for="transaction in day.transactions" :key="transaction.id">
                     <td class="relative py-5 pr-6">
                       <div class="flex gap-x-6">
                         <component :is="transaction.icon" class="hidden h-6 w-5 flex-none text-gray-400 sm:block" aria-hidden="true" />
@@ -107,8 +107,8 @@
                       </div>
                     </td>
                     <td class="hidden py-5 pr-6 sm:table-cell">
-                      <div class="text-sm/6 text-gray-900">{{ transaction.client }}</div>
-                      <div class="mt-1 text-xs/5 text-gray-500">{{ transaction.description }}</div>
+                      <div class="text-sm/6 text-gray-900">{{ transaction.client }}</div> -->
+                      <!-- <div class="mt-1 text-xs/5 text-gray-500">{{ transaction.description }}</div>
                     </td>
                     <td class="py-5 text-right">
                       <div class="flex justify-end">
@@ -123,7 +123,7 @@
             </table>
           </div>
         </div>
-      </div>
+      </div> -->
     </div>
   </main>
 </template>
