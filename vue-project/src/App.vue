@@ -190,7 +190,7 @@ import AnimatedBubbleChart from './components/AnimatedBubbleChart.vue'
 import StaticBubbleChart from './components/StaticBubbleChart.vue'
 import * as XLSX from 'xlsx'
 import WEGO_LOGO from '/logos/Wego_logo.png'
-import { Analytics } from '@vercel/analytics/vue'
+import { inject } from '@vercel/analytics'
 
 const chartRef = ref(null)
 const bubbleChartRef = ref(null)
@@ -346,6 +346,8 @@ const importFromGoogleSheet = async () => {
     alert('Failed to import data from Google Sheet. Please make sure the sheet is publicly accessible and try again.');
   }
 };
+
+inject();
 </script>
 
 <style>
