@@ -44,6 +44,31 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import * as d3 from 'd3';
 import * as XLSX from 'xlsx';
 
+// Import all logos
+import ABNB_LOGO from '/logos/ABNB_logo.png'
+import BKNG_LOGO from '/logos/BKNG_logo.png'
+import EXPE_LOGO from '/logos/EXPE_logo.png'
+import TCOM_LOGO from '/logos/TCOM_logo.png'
+import TRIP_LOGO from '/logos/TRIP_logo.png'
+import TRVG_LOGO from '/logos/TRVG_logo.png'
+import EDR_LOGO from '/logos/EDR_logo.png'
+import DESP_LOGO from '/logos/DESP_logo.png'
+import MMYT_LOGO from '/logos/MMYT_logo.png'
+import IXIGO_LOGO from '/logos/IXIGO_logo.png'
+import LMN_LOGO from '/logos/LMN_logo.png'
+import YTRA_LOGO from '/logos/YTRA_logo.png'
+import OWW_LOGO from '/logos/OWW_logo.png'
+import TRAVELOCITY_LOGO from '/logos/Travelocity_logo.png'
+import EASEMYTRIP_LOGO from '/logos/EASEMYTRIP_logo.png'
+import WEGO_LOGO from '/logos/Wego_logo.png'
+import SKYSCANNER_LOGO from '/logos/Skyscanner_logo.png'
+import ETRAVELI_LOGO from '/logos/Etraveli_logo.png'
+import KIWI_LOGO from '/logos/Kiwi_logo.png'
+import CLEARTRIP_LOGO from '/logos/Cleartrip_logo.png'
+import TRAVELOKA_LOGO from '/logos/Traveloka_logo.png'
+import FLIGHTCENTRE_LOGO from '/logos/FlightCentre_logo.png'
+import SEERA_LOGO from '/logos/SEERA_logo.png'
+
 // Company colors
 const colorDict = {
   'ABNB': '#ff5895',
@@ -77,32 +102,31 @@ const colorDict = {
 
 // Company logos
 const logoDict = {
-  'ABNB': '/logos/ABNB_logo.png',
-  'BKNG': '/logos/BKNG_logo.png',
-  'EXPE': '/logos/EXPE_logo.png',
-  'TCOM': '/logos/TCOM_logo.png',
-  'TRIP': '/logos/TRIP_logo.png',
-  'TRVG': '/logos/TRVG_logo.png',
-  'EDR': '/logos/EDR_logo.png',
-  'DESP': '/logos/DESP_logo.png',
-  'MMYT': '/logos/MMYT_logo.png',
-  'Ixigo': '/logos/IXIGO_logo.png',
-  'SEERA': '/logos/SEERA_logo.png',
-  'Webjet': '/logos/WEB_logo.png',
-  'LMN': '/logos/LMN_logo.png',
-  'Yatra': '/logos/YTRA_logo.png',
-  'Orbitz': '/logos/OWW_logo.png',
-  'Travelocity': '/logos/Travelocity_logo.png',
-  'EaseMyTrip': '/logos/EASEMYTRIP_logo.png',
-  'Wego': '/logos/Wego_logo.png',
-  'Skyscanner': '/logos/Skyscanner_logo.png',
-  'Etraveli': '/logos/Etraveli_logo.png',
-  'Kiwi': '/logos/Kiwi_logo.png',
-  'Cleartrip': '/logos/Cleartrip_logo.png',
-  'Traveloka': '/logos/Traveloka_logo.png',
-  'FLT': '/logos/FlightCentre_logo.png',
-  'Almosafer': '/logos/Almosafer_logo.png',
-  'Webjet OTA': '/logos/OTA_logo.png'
+  'ABNB': ABNB_LOGO,
+  'BKNG': BKNG_LOGO,
+  'EXPE': EXPE_LOGO,
+  'TCOM': TCOM_LOGO,
+  'TRIP': TRIP_LOGO,
+  'TRVG': TRVG_LOGO,
+  'EDR': EDR_LOGO,
+  'DESP': DESP_LOGO,
+  'MMYT': MMYT_LOGO,
+  'Ixigo': IXIGO_LOGO,
+  'SEERA': SEERA_LOGO,
+  'LMN': LMN_LOGO,
+  'Yatra': YTRA_LOGO,
+  'Orbitz': OWW_LOGO,
+  'Travelocity': TRAVELOCITY_LOGO,
+  'EaseMyTrip': EASEMYTRIP_LOGO,
+  'Wego': WEGO_LOGO,
+  'Skyscanner': SKYSCANNER_LOGO,
+  'Etraveli': ETRAVELI_LOGO,
+  'Kiwi': KIWI_LOGO,
+  'Cleartrip': CLEARTRIP_LOGO,
+  'Traveloka': TRAVELOKA_LOGO,
+  'FLT': FLIGHTCENTRE_LOGO,
+  'Almosafer': SEERA_LOGO,
+  'Webjet OTA': SEERA_LOGO
 };
 
 // Add company names mapping

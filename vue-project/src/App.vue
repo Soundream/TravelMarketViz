@@ -7,7 +7,7 @@
           <Bars3Icon class="size-5 text-wego-gray" aria-hidden="true" />
         </button>
         <div class="flex items-center gap-x-4">
-          <img class="h-8 w-auto" src="../logos/Wego_logo.png" alt="Wego" />
+          <img class="h-8 w-auto" :src="WEGO_LOGO" alt="Wego" />
           <span class="text-wego-gray font-semibold text-lg px-2">|</span>
           <span class="text-wego-gray font-semibold">Strategy team</span>
         </div>
@@ -189,6 +189,7 @@ import DataChart from './components/DataChart.vue'
 import AnimatedBubbleChart from './components/AnimatedBubbleChart.vue'
 import StaticBubbleChart from './components/StaticBubbleChart.vue'
 import * as XLSX from 'xlsx'
+import WEGO_LOGO from '/logos/Wego_logo.png'
 
 const chartRef = ref(null)
 const bubbleChartRef = ref(null)
