@@ -1,4 +1,5 @@
 <template>
+  <Analytics />
   <header class="absolute inset-x-0 top-0 z-50 flex h-16 border-b border-gray-900/10">
     <div class="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
       <div class="flex flex-1 items-center gap-x-6">
@@ -189,6 +190,7 @@ import AnimatedBubbleChart from './components/AnimatedBubbleChart.vue'
 import StaticBubbleChart from './components/StaticBubbleChart.vue'
 import * as XLSX from 'xlsx'
 import WEGO_LOGO from '/logos/Wego_logo.png'
+import { Analytics } from '@vercel/analytics/vue'
 
 const chartRef = ref(null)
 const bubbleChartRef = ref(null)
