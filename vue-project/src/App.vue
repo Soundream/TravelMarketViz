@@ -16,10 +16,6 @@
         <a v-for="(item, itemIdx) in navigation" :key="itemIdx" :href="item.href">{{ item.name }}</a>
       </nav>
       <div class="flex items-center gap-x-4">
-        <label class="px-4 py-2 bg-wego-green text-white rounded hover:bg-wego-green-dark cursor-pointer">
-          Upload XLSX
-          <input type="file" accept=".xlsx,.xls" @change="handleFileUpload" class="hidden">
-        </label>
       </div>
     </div>
   </header>
@@ -29,7 +25,11 @@
       <!-- Secondary navigation -->
       <header class="pb-4 pt-6 sm:pb-6">
         <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-6 px-4 sm:flex-nowrap sm:px-6 lg:px-8">
-          <h1 class="text-base/7 font-semibold text-wego-gray">Market Performance</h1>
+          <h1 class="text-base/7 font-semibold text-wego-gray">Bubble Chart</h1>
+          <label class="px-4 py-2 bg-wego-green text-white rounded hover:bg-wego-green-dark cursor-pointer">
+            Upload XLSX(for the animated chart)
+            <input type="file" accept=".xlsx,.xls" @change="handleFileUpload" class="hidden">
+          </label>
         </div>
       </header>
 

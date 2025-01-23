@@ -93,6 +93,10 @@ import TRAVELOKA_LOGO from '/logos/Traveloka_logo.png'
 import FLIGHTCENTRE_LOGO from '/logos/FlightCentre_logo.png'
 import SEERA_LOGO from '/logos/SEERA_logo.png'
 
+// Add new logo imports after existing imports
+import ALMOSAFER_LOGO from '/logos/Almosafer_logo.png'
+import OTA_LOGO from '/logos/OTA_logo.png'
+
 const colorDict = {
   'ABNB': '#ff5895',
   'Almosafer': '#bb5387',
@@ -143,7 +147,9 @@ const logoDict = {
   'Kiwi': KIWI_LOGO,
   'Cleartrip': CLEARTRIP_LOGO,
   'Traveloka': TRAVELOKA_LOGO,
-  'FLT': FLIGHTCENTRE_LOGO
+  'FLT': FLIGHTCENTRE_LOGO,
+  'Almosafer': ALMOSAFER_LOGO,
+  'Webjet OTA': OTA_LOGO
 };
 
 const companyNames = {
