@@ -6,7 +6,11 @@
           <span class="sr-only">Open main menu</span>
           <Bars3Icon class="size-5 text-wego-gray" aria-hidden="true" />
         </button>
-        <img class="h-8 w-auto" src="../logos/Wego_logo.png" alt="Wego" />
+        <div class="flex items-center gap-x-4">
+          <img class="h-8 w-auto" src="../logos/Wego_logo.png" alt="Wego" />
+          <span class="text-wego-gray font-semibold text-lg px-2">|</span>
+          <span class="text-wego-gray font-semibold">Strategy team</span>
+        </div>
       </div>
       <nav class="hidden md:flex md:gap-x-11 md:text-sm/6 md:font-semibold md:text-wego-gray">
         <a v-for="(item, itemIdx) in navigation" :key="itemIdx" :href="item.href">{{ item.name }}</a>
@@ -20,7 +24,7 @@
       <!-- Secondary navigation -->
       <header class="pb-4 pt-6 sm:pb-6">
         <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-6 px-4 sm:flex-nowrap sm:px-6 lg:px-8">
-          <h1 class="text-base/7 font-semibold text-wego-gray">Market Analysis</h1>
+          <h1 class="text-base/7 font-semibold text-wego-gray">Bubble Chart</h1>
           <div class="order-last flex w-full gap-x-8 text-sm/6 font-semibold sm:order-none sm:w-auto sm:border-l sm:border-gray-200 sm:pl-6 sm:text-sm/7">
             <label class="relative cursor-pointer bg-wego-green text-white px-4 py-2 rounded-md hover:bg-wego-green-dark">
               Upload XLSX
