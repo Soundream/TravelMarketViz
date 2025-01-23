@@ -76,13 +76,13 @@
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold text-wego-gray">Raw Data</h2>
           </div>
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
+          <div class="overflow-auto max-h-[600px]">
+            <table class="min-w-full divide-y divide-gray-200 table-fixed">
+              <thead class="bg-gray-50 sticky top-0 z-10">
                 <tr>
                   <th v-for="(header, index) in excelData[0]" 
                       :key="index"
-                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     {{ header }}
                   </th>
                 </tr>
@@ -91,8 +91,9 @@
                 <tr v-for="(row, rowIndex) in excelData.slice(1)" :key="rowIndex">
                   <td v-for="(cell, cellIndex) in row" 
                       :key="cellIndex"
-                      class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {{ cell }}
+                      class="px-4 py-2 text-sm whitespace-nowrap"
+                      :class="getCellStyle(cell, cellIndex)">
+                    {{ formatCell(cell) }}
                   </td>
                 </tr>
               </tbody>
@@ -286,6 +287,32 @@ const handleFileUpload = (event) => {
 const toggleBubbleAnimation = () => {
   bubbleChartRef.value.togglePlay()
 }
+
+const formatCell = (value) => {
+  if (typeof value === 'number') {
+    // Format as percentage if it's likely a percentage value (between -1 and 1)
+    if (value >= -1 && value <= 1) {
+      return `${(value * 100).toFixed(1)}%`;
+    }
+    // Otherwise format with 2 decimal places
+    return value.toFixed(2);
+  }
+  return value;
+};
+
+const getCellStyle = (value, columnIndex) => {
+  // Skip styling for the first column (quarter names)
+  if (columnIndex === 0) return 'text-gray-900';
+  
+  // Style numerical values
+  if (typeof value === 'number') {
+    if (value > 0) return 'text-green-600 font-medium';
+    if (value < 0) return 'text-red-600 font-medium';
+    return 'text-gray-600';
+  }
+  
+  return 'text-gray-900';
+};
 </script>
 
 <style>
