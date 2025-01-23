@@ -34,14 +34,27 @@
         </div>
       </header>
 
-      
+      <!-- File Format Description -->
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 class="text-lg font-semibold text-blue-800 mb-2">Excel File Requirements:</h3>
+          <ul class="list-disc list-inside text-blue-700 space-y-1">
+            <li>File must be in .xlsx or .xls format</li>
+            <li>Must contain a sheet named 'TTM (bounded)'</li>
+            <li>First row should contain company names as headers</li>
+            <li>First column should contain quarter information (e.g., '2024'Q4')</li>
+            <li>Data should include revenue growth and EBITDA margin values</li>
+            <li>Values should be in decimal format (e.g., 0.15 for 15%)</li>
+          </ul>
+        </div>
+      </div>
 
       <!-- Chart Sections -->
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <!-- Static 2024Q3 Chart -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-wego-gray">2024 Q3 Market Performance</h2>
+            <h2 class="text-xl font-semibold text-wego-gray">2024 Q4 Market Performance</h2>
           </div>
           <StaticBubbleChart ref="staticBubbleChartRef" />
         </div>
@@ -56,6 +69,35 @@
             </button>
           </div>
           <AnimatedBubbleChart ref="bubbleChartRef" />
+        </div>
+
+        <!-- Excel Data Table -->
+        <div v-if="excelData.length" class="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-wego-gray">Raw Data</h2>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th v-for="(header, index) in excelData[0]" 
+                      :key="index"
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {{ header }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr v-for="(row, rowIndex) in excelData.slice(1)" :key="rowIndex">
+                  <td v-for="(cell, cellIndex) in row" 
+                      :key="cellIndex"
+                      class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {{ cell }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Static Chart: cannot be deleted or it will cause some problem -->
@@ -145,12 +187,13 @@ import { BellIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import DataChart from './components/DataChart.vue'
 import AnimatedBubbleChart from './components/AnimatedBubbleChart.vue'
 import StaticBubbleChart from './components/StaticBubbleChart.vue'
-
+import * as XLSX from 'xlsx'
 
 const chartRef = ref(null)
 const bubbleChartRef = ref(null)
 const staticBubbleChartRef = ref(null)
 const mobileMenuOpen = ref(false)
+const excelData = ref([])
 
 const navigation = [
   { name: 'Dashboard', href: '#' },
@@ -214,10 +257,28 @@ const days = [
 const handleFileUpload = (event) => {
   const file = event.target.files[0]
   if (file) {
-    // Process the file for both charts
-    chartRef.value.processExcelData(file)
-    bubbleChartRef.value.processExcelData(file)
-    staticBubbleChartRef.value.processExcelData(file)
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target.result)
+      const workbook = XLSX.read(data, { type: 'array' })
+      
+      // Get the TTM sheet
+      const ttmSheet = workbook.Sheets['TTM (bounded)']
+      if (!ttmSheet) {
+        console.error('TTM (bounded) sheet not found')
+        return
+      }
+
+      // Convert sheet to JSON with headers
+      const jsonData = XLSX.utils.sheet_to_json(ttmSheet, { header: 1 })
+      excelData.value = jsonData
+
+      // Process the file for both charts
+      chartRef.value.processExcelData(file)
+      bubbleChartRef.value.processExcelData(file)
+      staticBubbleChartRef.value.processExcelData(file)
+    }
+    reader.readAsArrayBuffer(file)
   }
 }
 
