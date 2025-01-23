@@ -15,7 +15,12 @@
       <nav class="hidden md:flex md:gap-x-11 md:text-sm/6 md:font-semibold md:text-wego-gray">
         <a v-for="(item, itemIdx) in navigation" :key="itemIdx" :href="item.href">{{ item.name }}</a>
       </nav>
-      
+      <div class="flex items-center gap-x-4">
+        <label class="px-4 py-2 bg-wego-green text-white rounded hover:bg-wego-green-dark cursor-pointer">
+          Upload XLSX
+          <input type="file" accept=".xlsx,.xls" @change="handleFileUpload" class="hidden">
+        </label>
+      </div>
     </div>
   </header>
   <!-- TODO: - make the page more elegant + add a sidebar and figure out the filtering conditions + add filtering sections in the front end page -->
@@ -24,13 +29,7 @@
       <!-- Secondary navigation -->
       <header class="pb-4 pt-6 sm:pb-6">
         <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-6 px-4 sm:flex-nowrap sm:px-6 lg:px-8">
-          <h1 class="text-base/7 font-semibold text-wego-gray">Bubble Chart</h1>
-          <div class="order-last flex w-full gap-x-8 text-sm/6 font-semibold sm:order-none sm:w-auto sm:border-l sm:border-gray-200 sm:pl-6 sm:text-sm/7">
-            <label class="relative cursor-pointer bg-wego-green text-white px-4 py-2 rounded-md hover:bg-wego-green-dark">
-              Upload XLSX
-              <input type="file" class="hidden" accept=".xlsx,.xls" @change="handleFileUpload" />
-            </label>
-          </div>
+          <h1 class="text-base/7 font-semibold text-wego-gray">Market Performance</h1>
         </div>
       </header>
 
@@ -256,33 +255,46 @@ const days = [
   },
 ]
 
-const handleFileUpload = (event) => {
-  const file = event.target.files[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const data = new Uint8Array(e.target.result)
-      const workbook = XLSX.read(data, { type: 'array' })
+const handleFileUpload = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  console.log('File selected:', file.name);
+  
+  try {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
       
       // Get the TTM sheet
-      const ttmSheet = workbook.Sheets['TTM (bounded)']
+      const ttmSheet = workbook.Sheets['TTM (bounded)'];
       if (!ttmSheet) {
-        console.error('TTM (bounded) sheet not found')
-        return
+        console.error('TTM (bounded) sheet not found');
+        return;
       }
 
       // Convert sheet to JSON with headers
-      const jsonData = XLSX.utils.sheet_to_json(ttmSheet, { header: 1 })
-      excelData.value = jsonData
-
-      // Process the file for both charts
-      chartRef.value.processExcelData(file)
-      bubbleChartRef.value.processExcelData(file)
-      staticBubbleChartRef.value.processExcelData(file)
-    }
-    reader.readAsArrayBuffer(file)
+      const jsonData = XLSX.utils.sheet_to_json(ttmSheet, { header: 1 });
+      console.log('Loaded data:', jsonData.slice(0, 5));
+      excelData.value = jsonData;
+      
+      // Only process for animated chart
+      if (bubbleChartRef.value) {
+        console.log('Processing for animated chart');
+        await bubbleChartRef.value.processExcelData(file);
+      }
+    };
+    
+    reader.onerror = (error) => {
+      console.error('Error reading file:', error);
+    };
+    
+    reader.readAsArrayBuffer(file);
+  } catch (error) {
+    console.error('Error processing file:', error);
   }
-}
+};
 
 // Add play/pause control for bubble chart
 const toggleBubbleAnimation = () => {
@@ -313,6 +325,24 @@ const getCellStyle = (value, columnIndex) => {
   }
   
   return 'text-gray-900';
+};
+
+const importFromGoogleSheet = async () => {
+  const sheetId = '1qXhRP5xwMfyV3ghcRmYAKhM1R619GDD9';
+  const sheetName = 'TTM (bounded)';
+  
+  try {
+    // Update all chart components with the Google Sheet data
+    const success = await staticBubbleChartRef.value.fetchGoogleSheetData(sheetId, sheetName);
+    if (success) {
+      // Only update other components if the static chart was updated successfully
+      await bubbleChartRef.value.fetchGoogleSheetData(sheetId, sheetName);
+      await chartRef.value.fetchGoogleSheetData(sheetId, sheetName);
+    }
+  } catch (error) {
+    console.error('Error importing from Google Sheet:', error);
+    alert('Failed to import data from Google Sheet. Please make sure the sheet is publicly accessible and try again.');
+  }
 };
 </script>
 

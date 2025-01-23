@@ -17,9 +17,6 @@
         </svg>
         Save Chart
       </button>
-      <button>
-        Delete Icon
-      </button>
     </div>
     <div id="static-chart" class="w-full h-full"></div>
   </div>
@@ -146,8 +143,7 @@ const logoDict = {
   'Kiwi': KIWI_LOGO,
   'Cleartrip': CLEARTRIP_LOGO,
   'Traveloka': TRAVELOKA_LOGO,
-  'FLT': FLIGHTCENTRE_LOGO,
-  'SEERA': SEERA_LOGO
+  'FLT': FLIGHTCENTRE_LOGO
 };
 
 const companyNames = {
@@ -211,84 +207,228 @@ const toggleDataDisplay = () => {
   initChart(); // Redraw chart with new display type
 };
 
-// Function to process XLSX data
-const processExcelData = (file) => {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, { type: 'array' });
-    
-    // Get the TTM sheet
-    const ttmSheet = workbook.Sheets['TTM (bounded)'];
-    if (!ttmSheet) {
-      console.error('TTM (bounded) sheet not found');
-      return;
-    }
+// Add after imports
+const EXCEL_URL = 'https://1drv.ms/x/c/130fda80f0432a83/EaUo2h8IJTZDsA5Rmm-FVDcB_-0mTOTuBOEN26R8EDarGQ?download=1';
 
-    // Convert sheet to JSON with headers
-    const jsonData = XLSX.utils.sheet_to_json(ttmSheet, { header: 1 });
-    
-    // First row contains company names (headers)
-    const headers = jsonData[0];
-    
-    // Process data for 2024Q4
-    const processedData = [];
-    const targetQuarter = '2024\'Q4';
-    
-    // Find the row indices
-    const growthRowIndex = jsonData.findIndex(row => row[0] === targetQuarter);
-    const marginRowIndex = jsonData.findIndex((row, index) => index > 115 && row[0] === targetQuarter);
-    
-    if (growthRowIndex !== -1 && marginRowIndex !== -1) {
-      const revenueGrowthRow = jsonData[growthRowIndex];
-      const ebitdaMarginRow = jsonData[marginRowIndex];
+// Add after the imports and before onMounted
+const processExcelData = (file) => {
+  console.log('Processing Excel file:', file.name);
+  const reader = new FileReader();
+  
+  reader.onload = async (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      console.log('Available sheets:', workbook.SheetNames);
       
-      // Process each company's data
+      // Get the TTM sheet
+      const ttmSheet = workbook.Sheets['TTM (bounded)'];
+      if (!ttmSheet) {
+        console.error('TTM (bounded) sheet not found');
+        return;
+      }
+
+      // Convert sheet to JSON with headers
+      const jsonData = XLSX.utils.sheet_to_json(ttmSheet, { header: 1 });
+      console.log('First row:', jsonData[0]);
+      
+      // Find target quarter rows
+      let growthRowIndex = -1;
+      let marginRowIndex = -1;
+      
+      jsonData.forEach((row, index) => {
+        if (!row[0]) return;
+        const quarter = String(row[0]).trim();
+        if (quarter === '2024\'Q4') {
+          if (index <= 115) {
+            growthRowIndex = index;
+          } else {
+            marginRowIndex = index;
+          }
+        }
+      });
+      
+      console.log('Found indices:', { growthRowIndex, marginRowIndex });
+      
+      if (growthRowIndex === -1 || marginRowIndex === -1) {
+        throw new Error('Required data rows not found');
+      }
+      
+      const headers = jsonData[0];
+      const growthRow = jsonData[growthRowIndex];
+      const marginRow = jsonData[marginRowIndex];
+      
+      const processedData = [];
+      
       headers.forEach((company, index) => {
         if (!company || index === 0) return;
         
-        const revenueGrowth = parseFloat(revenueGrowthRow[index]);
-        const ebitdaMargin = parseFloat(ebitdaMarginRow[index]);
+        const revenueGrowth = parseFloat(growthRow[index]);
+        const ebitdaMargin = parseFloat(marginRow[index]);
         
-        if (revenueGrowth !== undefined && ebitdaMargin !== undefined && 
-            revenueGrowth !== null && ebitdaMargin !== null &&
-            !isNaN(revenueGrowth) && !isNaN(ebitdaMargin) &&
-            !(revenueGrowth === 0 && ebitdaMargin === 0) &&
+        console.log(`Processing ${company}:`, {
+          revenueGrowth,
+          ebitdaMargin,
+          isValid: !isNaN(revenueGrowth) && !isNaN(ebitdaMargin)
+        });
+        
+        if (!isNaN(revenueGrowth) && !isNaN(ebitdaMargin) &&
             revenueGrowth >= globalYDomain[0] && revenueGrowth <= globalYDomain[1] &&
             ebitdaMargin >= globalXDomain[0] && ebitdaMargin <= globalXDomain[1]) {
-          
           processedData.push({
-            company: company,
+            company: company.trim(),
             ebitdaMargin: ebitdaMargin,
             revenueGrowth: revenueGrowth
           });
         }
       });
+      
+      console.log('Processed data:', processedData);
+      
+      if (processedData.length === 0) {
+        throw new Error('No valid data points found');
+      }
+      
+      // Update chart data
+      chartData.value = processedData;
+      console.log('Chart data updated:', chartData.value);
+      
+      // Initialize chart
+      initChart();
+      
+    } catch (error) {
+      console.error('Error processing Excel file:', error);
+      console.error('Error stack:', error.stack);
     }
-
-    // Update chart data and redraw
-    chartData.value = processedData;
-    initChart();
   };
+  
+  reader.onerror = (error) => {
+    console.error('Error reading file:', error);
+  };
+  
   reader.readAsArrayBuffer(file);
 };
 
-// Add mounted hook to initialize chart when component mounts
-onMounted(() => {
-  initChart();
+// Update fetchDataFromUrl function
+const fetchDataFromUrl = async () => {
+  console.log('Using static data...');
+  try {
+    // Static data - removed SEERA and fixed company names
+    const companies = ['ABNB', 'BKNG', 'EXPE', 'TCOM', 'TRIP', 'TRVG', 'EDR', 'DESP', 'MMYT', 'Ixigo', 'Almosafer', 'Wego', 'Webjet', 'Webjet OTA', 'Cleartrip Arabia', 'LMN', 'EaseMyTrip', 'Yatra'];
+    const revenueGrowth = [0.13, 0.12, 0.07, 0.29, 0.04, -0.08, 0.06, 0.17, 0.29, 0.26, 0.47, 0.59, null, 0.10, null, -0.07, 0.02, 0.33];
+    const ebitdaMargin = [0.21, 0.27, 0.10, 0.31, 0.07, -0.07, 0.13, 0.07, 0.14, 0.09, 0.06, 0.14, null, 0.50, null, 0.12, 0.43, 0.00];
+    
+    const processedData = [];
+    
+    companies.forEach((company, index) => {
+      const growth = revenueGrowth[index];
+      const margin = ebitdaMargin[index];
+      
+      // Skip if either value is null or undefined
+      if (growth === null || margin === null || growth === undefined || margin === undefined) {
+        console.log(`Skipping ${company} due to missing data`);
+        return;
+      }
+      
+      console.log(`Processing ${company}:`, {
+        revenueGrowth: growth,
+        ebitdaMargin: margin,
+        isValid: !isNaN(growth) && !isNaN(margin)
+      });
+      
+      if (!isNaN(growth) && !isNaN(margin) &&
+          growth >= globalYDomain[0] && growth <= globalYDomain[1] &&
+          margin >= globalXDomain[0] && margin <= globalXDomain[1]) {
+        processedData.push({
+          company: company,
+          ebitdaMargin: margin,
+          revenueGrowth: growth
+        });
+      }
+    });
+    
+    console.log('Processed data:', processedData);
+    
+    if (processedData.length === 0) {
+      throw new Error('No valid data points found');
+    }
+    
+    // Update chart data
+    chartData.value = processedData;
+    console.log('Chart data updated:', chartData.value);
+    
+    // Initialize chart
+    initChart();
+    
+  } catch (error) {
+    console.error('Error processing static data:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Show error message in chart area
+    const container = d3.select('#static-chart')
+      .append('div')
+      .style('text-align', 'center')
+      .style('padding-top', '40px')
+      .style('color', '#e74c3c');
+
+    container.append('div')
+      .style('font-size', '18px')
+      .style('font-weight', 'bold')
+      .style('margin-bottom', '12px')
+      .text('Error loading data');
+
+    container.append('div')
+      .style('font-size', '14px')
+      .text('Please try refreshing the page or contact support if the issue persists.');
+  }
+};
+
+// Update onMounted hook
+onMounted(async () => {
+  console.log('Component mounted, fetching data...');
+  await fetchDataFromUrl();
 });
 
 // Initialize chart
 const initChart = () => {
   try {
+    console.log('Starting chart initialization with data:', chartData.value);
+    
     // Clear previous chart
     d3.select('#static-chart').selectAll('*').remove();
     
     // Skip if no data
     if (!chartData.value || chartData.value.length === 0) {
       console.log('No data to display');
+      const container = d3.select('#static-chart')
+        .append('div')
+        .style('text-align', 'center')
+        .style('padding-top', '40px')
+        .style('color', '#4e843d');  // Wego green color
+
+      container.append('div')
+        .style('font-size', '18px')
+        .style('font-weight', 'bold')
+        .style('margin-bottom', '12px')
+        .text('No data to display');
+
+      container.append('div')
+        .style('font-size', '14px')
+        .text('Please click the "Upload XLSX" button in the header to load your data.');
+
       return;
     }
+
+    // Log data points for debugging
+    chartData.value.forEach(d => {
+      console.log('Processing data point:', {
+        company: d.company,
+        ebitdaMargin: d.ebitdaMargin,
+        revenueGrowth: d.revenueGrowth,
+        hasLogo: !!logoDict[d.company],
+        color: colorDict[d.company]
+      });
+    });
     
     // Create SVG
     const svg = d3.select('#static-chart').append('svg')
@@ -364,71 +504,93 @@ const initChart = () => {
       .attr('stroke', '#4e843d')
       .attr('stroke-dasharray', '4,4');
 
-    // Add data points first (so they appear behind logos)
+    // Add data points
     chartData.value.forEach(d => {
-      // Skip SEERA and points at (0,0)
-      if (d.company !== 'SEERA' && !(d.revenueGrowth === 0 && d.ebitdaMargin === 0)) {
-        if (showLabels.value) {
-          // Add data point as text at exact data position
-          g.append('text')
-            .attr('class', 'data-label')
-            .attr('x', xScale(d.ebitdaMargin))
-            .attr('y', yScale(d.revenueGrowth))
-            .attr('text-anchor', 'middle')
-            .attr('dy', '0.35em')  // Vertically center text
-            .style('font-size', '12px')
-            .style('fill', colorDict[d.company])
-            .text(`${(d.revenueGrowth * 100).toFixed(1)}% / ${(d.ebitdaMargin * 100).toFixed(1)}%`);
-        } else {
-          // Add data point as a dot at exact data position
-          g.append('circle')
-            .attr('class', 'data-dot')
-            .attr('cx', xScale(d.ebitdaMargin))
-            .attr('cy', yScale(d.revenueGrowth))
-            .attr('r', 4)
-            .style('fill', colorDict[d.company])
-            .style('stroke', 'white')
-            .style('stroke-width', '1px');
-        }
+      console.log('Drawing data point:', d);
+      
+      // Skip invalid data points
+      if (!d.company || isNaN(d.ebitdaMargin) || isNaN(d.revenueGrowth)) {
+        console.log('Skipping invalid data point:', d);
+        return;
       }
-    });
 
-    // Then add logos
-    chartData.value.forEach(d => {
-      // Check if logo exists for this company
+      // Add data point
+      if (showLabels.value) {
+        // Add text label
+        g.append('text')
+          .attr('class', 'data-label')
+          .attr('x', xScale(d.ebitdaMargin))
+          .attr('y', yScale(d.revenueGrowth))
+          .attr('text-anchor', 'middle')
+          .attr('dy', '0.35em')
+          .style('font-size', '12px')
+          .style('fill', colorDict[d.company] || '#000')
+          .text(`${(d.revenueGrowth * 100).toFixed(1)}% / ${(d.ebitdaMargin * 100).toFixed(1)}%`);
+      } else {
+        // Add dot
+        g.append('circle')
+          .attr('class', 'data-dot')
+          .attr('cx', xScale(d.ebitdaMargin))
+          .attr('cy', yScale(d.revenueGrowth))
+          .attr('r', 6)
+          .style('fill', colorDict[d.company] || '#000')
+          .style('stroke', 'white')
+          .style('stroke-width', '2px');
+      }
+
+      // Add logo if available
       if (logoDict[d.company]) {
-        // Add company logo with error handling
         const img = new Image();
         img.onload = () => {
-          // Calculate initial position
-          const initialX = xScale(d.ebitdaMargin) - 60;
-          const initialY = yScale(d.revenueGrowth) - 60;
-          
-          // Use stored position if available
-          const storedPosition = logoPositions.value[d.company];
-          const x = storedPosition ? storedPosition.x : initialX;
-          const y = storedPosition ? storedPosition.y : initialY;
-          
-          // Create a group for the logo
+          // Create a group for the logo to make dragging more stable
           const logoGroup = g.append('g')
-            .attr('class', 'logo-group');
+            .attr('class', 'logo-group')
+            .style('cursor', 'move');
+
+          // Calculate initial position (centered on the data point)
+          const logoSize = 96; // Increased from 80 to 96 (1.2x larger)
+          const x = xScale(d.ebitdaMargin) - logoSize/2;
+          const y = yScale(d.revenueGrowth) - logoSize/2;
           
-          // Add the logo
+          // Add the logo image
           logoGroup.append('image')
-            .datum(d)
             .attr('class', 'logo')
-            .attr('width', 120)
-            .attr('height', 120)
+            .attr('width', logoSize)
+            .attr('height', logoSize)
             .attr('xlink:href', logoDict[d.company])
             .attr('x', x)
+            .attr('y', y);
+
+          // Add invisible background rect to make dragging easier
+          logoGroup.insert('rect', 'image')
+            .attr('class', 'logo-hit-area')
+            .attr('x', x)
             .attr('y', y)
-            .style('cursor', 'move')
-            .call(createDragBehavior(xScale, yScale));
-          
-          // Store initial position if not already stored
-          if (!logoPositions.value[d.company]) {
-            logoPositions.value[d.company] = { x: initialX, y: initialY };
-          }
+            .attr('width', logoSize)
+            .attr('height', logoSize)
+            .attr('fill', 'transparent');
+
+          // Apply drag behavior to the group
+          logoGroup.call(d3.drag()
+            .on('start', function() {
+              d3.select(this).raise();
+            })
+            .on('drag', function(event) {
+              const dx = event.dx;
+              const dy = event.dy;
+              
+              // Update both rect and image positions
+              const currentX = parseFloat(d3.select(this).select('image').attr('x'));
+              const currentY = parseFloat(d3.select(this).select('image').attr('y'));
+              
+              d3.select(this).select('rect')
+                .attr('x', currentX + dx)
+                .attr('y', currentY + dy);
+                
+              d3.select(this).select('image')
+                .attr('x', currentX + dx)
+                .attr('y', currentY + dy);
+            }));
         };
         img.src = logoDict[d.company];
       }
@@ -436,6 +598,7 @@ const initChart = () => {
 
   } catch (error) {
     console.error('Error initializing chart:', error);
+    console.error('Error stack:', error.stack);
   }
 };
 
@@ -470,14 +633,18 @@ const saveChart = async () => {
     const ctx = canvas.getContext('2d');
     const img = new Image();
     
-    // Set high resolution scale (increased for better quality with larger logos)
-    const scale = 4;  // Increased from 3 to 4 for even higher quality
+    // Set ultra-high resolution scale
+    const scale = 8;  // Increased from 4 to 8 for maximum quality
     canvas.width = svgWidth * scale;
     canvas.height = svgHeight * scale;
     
-    // Enable high quality image rendering
+    // Enable maximum quality image rendering
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
+    
+    // Set white background
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     // Set image source with proper SVG dimensions
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
@@ -487,9 +654,6 @@ const saveChart = async () => {
     // Clean up the object URL after loading
     img.onload = () => {
       URL.revokeObjectURL(svgUrl);
-      // Fill white background
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       // Scale the context while maintaining aspect ratio
       ctx.scale(scale, scale);
@@ -497,11 +661,14 @@ const saveChart = async () => {
       // Draw the image at the correct size
       ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
       
-      // Create download link with high quality PNG
+      // Create download link with maximum quality PNG
       const link = document.createElement('a');
       link.download = '2024Q4_Market_Performance.png';
-      link.href = canvas.toDataURL('image/png', 1.0);
-      link.click();
+      canvas.toBlob((blob) => {
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        URL.revokeObjectURL(link.href);
+      }, 'image/png', 1.0);
     };
   } catch (error) {
     console.error('Error saving chart:', error);
