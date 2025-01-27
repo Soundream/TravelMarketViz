@@ -226,7 +226,7 @@ def update_figure(slider_value):
         filtered_df,
         x='ebitda_margin',
         y='revenue_growth',
-        color='company_full_name',  # Use full name for legend
+        color='company_full_name',
         hover_name='company_full_name',
         size='size',
         hover_data={
@@ -239,12 +239,40 @@ def update_figure(slider_value):
             'ebitda_margin': 'EBITDA Margin',
             'revenue_growth': 'Revenue Growth YoY',
             'revenue': 'Revenue',
-            'company_full_name': 'Company'  # Legend label
+            'company_full_name': 'Company'
         }
     )
     
+    # Create custom split bubbles with random dividing lines
     for i, company in enumerate(filtered_df['company']):
+        # Generate random angle for the dividing line (between 0 and 180 degrees)
+        angle = np.random.randint(0, 180)
+        
+        # Calculate the line endpoints using trigonometry
+        x1 = 0.5 * np.cos(np.radians(angle))
+        y1 = 0.5 * np.sin(np.radians(angle))
+        x2 = -x1
+        y2 = -y1
+        
+        # Create custom SVG path for split bubble
+        path = f'M {x1:.3f} {y1:.3f} L {x2:.3f} {y2:.3f} Z'
+        
+        # Update marker properties
         fig.data[i].marker.color = color_dict[company]
+        fig.data[i].marker.symbol = 'circle-open'
+        fig.data[i].marker.line = dict(
+            color=color_dict[company],
+            width=2
+        )
+        # Add the dividing line
+        fig.add_shape(
+            type='line',
+            x0=filtered_df.iloc[i]['ebitda_margin'] + x1 * filtered_df.iloc[i]['size']/500,
+            y0=filtered_df.iloc[i]['revenue_growth'] + y1 * filtered_df.iloc[i]['size']/500,
+            x1=filtered_df.iloc[i]['ebitda_margin'] + x2 * filtered_df.iloc[i]['size']/500,
+            y1=filtered_df.iloc[i]['revenue_growth'] + y2 * filtered_df.iloc[i]['size']/500,
+            line=dict(color=color_dict[company], width=2)
+        )
     
     fig.update_layout(
         xaxis=dict(
@@ -271,7 +299,7 @@ def update_figure(slider_value):
         margin=dict(l=50, r=50, t=30, b=50),
         height=600,
         legend=dict(
-            itemsizing='constant',  # Make legend markers the same size
+            itemsizing='constant',
             yanchor="top",
             y=0.99,
             xanchor="left",
