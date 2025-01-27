@@ -20,7 +20,6 @@ df = df[~((df['Online Bookings'] == 0) &
 # Get sorted unique years for the slider
 years_sorted = sorted(df['Year'].unique())
 
-# Define color scheme for regions
 color_map = {
     'APAC': '#FF6B6B',           # Coral Red
     'Eastern Europe': '#4ECDC4',  # Turquoise
@@ -39,16 +38,13 @@ app.layout = html.Div([
     # Main chart
     dcc.Graph(id='bubble-chart', style={'height': '600px'}),
     
-    # Year display and slider
     html.Div([
-        # Year display
         html.Div(id='year-display', style={
             'textAlign': 'center',
             'fontSize': '18px',
             'margin': '10px 0'
         }),
         
-        # Slider
         dcc.Slider(
             id='year-slider',
             min=0,
