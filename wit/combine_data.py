@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 
-# Define input files
 files = {
     'Country Overview': 'country-gross-booking.xlsx',
     'Region Overview': 'region-gross-booking.xlsx',
@@ -11,31 +10,17 @@ files = {
     'Region Detailed': 'region-breakdown.xlsx'
 }
 
-# Create Excel writer object
 writer = pd.ExcelWriter('travel_market_summary.xlsx', engine='openpyxl')
 
-# Dictionary to store dataframes for summary
 all_dfs = {}
 
-# Read each file and save to new workbook
 for sheet_name, file in files.items():
     df = pd.read_excel(file)
+    df.columns = [col.strip() for col in df.columns]
     all_dfs[sheet_name] = df
-    
-    # Save to sheet in new workbook
-    df.to_excel(writer, sheet_name=sheet_name, index=False)
 
-# Create summary sheet
-# Start with the most detailed country data
-summary_df = all_dfs['Country Detailed'].copy()
+country_df = all_dfs['Country Detailed'].copy()
 
-# Standardize column names
-summary_df.columns = [col.strip() for col in summary_df.columns]
-
-# Ensure numeric values are properly formatted
-summary_df['Total Market Gross Bookings'] = pd.to_numeric(summary_df['Total Market Gross Bookings'], errors='coerce')
-
-# Standardize Channel/Breakdown classification
 def get_channel_type(channel):
     if pd.isna(channel):
         return 'Unknown'
@@ -66,13 +51,84 @@ def get_online_offline(channel):
     else:
         return 'Other'
 
-# Add standardized breakdown and channel type columns
-summary_df['Breakdown'] = summary_df['Channel'].apply(get_channel_type)
-summary_df['Channel Type'] = summary_df['Channel'].apply(get_online_offline)
+country_to_region = {
+    # APAC
+    'Australia-New Zealand': 'APAC',
+    'China': 'APAC',
+    'Hong Kong': 'APAC',
+    'India': 'APAC',
+    'Indonesia': 'APAC',
+    'Japan': 'APAC',
+    'Macau': 'APAC',
+    'Malaysia': 'APAC',
+    'Singapore': 'APAC',
+    'South Korea': 'APAC',
+    'Taiwan': 'APAC',
+    'Thailand': 'APAC',
+    
+    # Eastern Europe
+    'Bulgaria': 'Eastern Europe',
+    'Czech Republic': 'Eastern Europe',
+    'Greece': 'Eastern Europe',
+    'Hungary': 'Eastern Europe',
+    'Poland': 'Eastern Europe',
+    'Rest of Eastern Europe': 'Eastern Europe',
+    'Romania': 'Eastern Europe',
+    'Russia': 'Eastern Europe',
+    'Ukraine': 'Eastern Europe',
+    
+    # Europe
+    'France': 'Europe',
+    'Germany': 'Europe',
+    'Italy': 'Europe',
+    'Rest of Europe': 'Europe',
+    'Scandinavia': 'Europe',
+    'Spain': 'Europe',
+    'U.K.': 'Europe',
+    
+    # LATAM
+    'Argentina': 'LATAM',
+    'Brazil': 'LATAM',
+    'Chile': 'LATAM',
+    'Colombia': 'LATAM',
+    'Mexico': 'LATAM',
+    
+    # Middle East
+    'Egypt': 'Middle East',
+    'Qatar': 'Middle East',
+    'Rest of Middle East': 'Middle East',
+    'Saudi Arabia': 'Middle East',
+    'U.A.E.': 'Middle East',
+    
+    # North America
+    'Canada': 'North America',
+    'U.S.': 'North America'
+}
 
-# Reorder columns
-final_columns = [
+country_df['Breakdown'] = country_df['Channel'].apply(get_channel_type)
+country_df['Channel Type'] = country_df['Channel'].apply(get_online_offline)
+country_df['Total Market Gross Bookings'] = pd.to_numeric(country_df['Total Market Gross Bookings'], errors='coerce')
+country_df['Data Level'] = 'Country'
+
+country_df = country_df[country_df['Market'].isin(country_to_region.keys())]
+country_df['Region'] = country_df['Market'].map(country_to_region)
+summary_df = country_df.copy()
+
+print("Available columns:", summary_df.columns.tolist())
+print("\nUnique Markets:", sorted(summary_df['Market'].unique().tolist()))
+
+column_mapping = {
+    'Interval: - Year': 'Year',
+    'First ExchangeRatesV4[Currency]': "First 'ExchangeRatesV4'[Currency]"
+}
+
+for old_name, new_name in column_mapping.items():
+    if old_name in summary_df.columns:
+        summary_df = summary_df.rename(columns={old_name: new_name})
+
+desired_columns = [
     'Year',
+    'Data Level',
     'Region',
     'Market',
     'Channel Type',
@@ -81,14 +137,15 @@ final_columns = [
     "First 'ExchangeRatesV4'[Currency]"
 ]
 
-# Select and reorder columns that exist
-existing_columns = [col for col in final_columns if col in summary_df.columns]
+existing_columns = [col for col in desired_columns if col in summary_df.columns]
 summary_df = summary_df[existing_columns]
 
-# Write summary sheet
+sort_columns = [col for col in ['Year', 'Data Level', 'Region', 'Market', 'Channel Type', 'Breakdown'] 
+                if col in summary_df.columns]
+summary_df = summary_df.sort_values(sort_columns)
+
 summary_df.to_excel(writer, sheet_name='Summary', index=False)
 
-# Save the workbook
 writer.close()
 
-print("Combined Excel file has been created as 'travel_market_summary.xlsx'") 
+print("\nCombined Excel file has been created as 'travel_market_summary.xlsx' with summary sheet only") 
