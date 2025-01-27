@@ -9,6 +9,14 @@ app = Dash(__name__)
 # Read the visualization data
 df = pd.read_excel('travel_market_summary.xlsx', sheet_name='Visualization Data')
 
+# Convert Online Penetration to decimal format (if it's in percentage)
+df['Online Penetration'] = df['Online Penetration'] / 100
+
+# Remove rows where all numeric values are 0
+df = df[~((df['Online Bookings'] == 0) & 
+          (df['Gross Bookings'] == 0) & 
+          (df['Online Penetration'] == 0))]
+
 # Get sorted unique years for the slider
 years_sorted = sorted(df['Year'].unique())
 
@@ -70,6 +78,11 @@ def update_figure(slider_value):
     selected_year = years_sorted[slider_value]
     filtered_df = df[df['Year'] == selected_year]
     
+    # Remove rows where values are 0
+    filtered_df = filtered_df[~((filtered_df['Online Bookings'] == 0) & 
+                               (filtered_df['Gross Bookings'] == 0) & 
+                               (filtered_df['Online Penetration'] == 0))]
+    
     # Create the bubble chart
     fig = px.scatter(
         filtered_df,
@@ -79,7 +92,6 @@ def update_figure(slider_value):
         color='Region',
         color_discrete_map=color_map,
         hover_name='Market',
-        text='Market',
         size_max=60
     )
     
@@ -98,8 +110,8 @@ def update_figure(slider_value):
             gridcolor='LightGray',
             zeroline=True,
             zerolinecolor='LightGray',
-            tickformat='.0%',
-            range=[0, df['Online Penetration'].max() * 1.1]
+            tickformat=',.0%',
+            range=[0, max(df['Online Penetration'].max() * 1.1, 0.6)]
         ),
         yaxis=dict(
             title=dict(
@@ -138,7 +150,7 @@ def update_figure(slider_value):
         hovertemplate="<br>".join([
             "<b>%{hovertext}</b>",
             "Region: %{customdata[0]}",
-            "Online Penetration: %{x:.1f}%",
+            "Online Penetration: %{x:.1%}",
             "Online Bookings: $%{y:,.0f}",
             "Total Market Size: $%{customdata[1]:,.0f}",
             "<extra></extra>"
