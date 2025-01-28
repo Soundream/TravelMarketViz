@@ -16,11 +16,8 @@ df['Online Penetration'] = df['Online Penetration'] / 100
 df = df[~((df['Online Bookings'] == 0) & 
           (df['Gross Bookings'] == 0) & 
           (df['Online Penetration'] == 0))]
-
-# Filter to only include APAC region
 df = df[df['Region'] == 'APAC']
 
-# Apply square root transformation to Online Bookings for moderate scaling
 df['Transformed Online Bookings'] = np.sqrt(df['Online Bookings'])
 
 # Get sorted unique years for the slider
