@@ -76,67 +76,96 @@ def update_figure(slider_value):
                                (filtered_df['Gross Bookings'] == 0) & 
                                (filtered_df['Online Penetration'] == 0))]
     
+    # 更鲜艳的配色方案
+    color_sequence = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFBE0B', '#FF006E']
+    
+    # 创建主图表
     fig = px.scatter(
         filtered_df,
         x='Online Penetration',
-        y='Transformed Online Bookings',  # Use transformed y-axis data
-        size='Gross Bookings',  # Keep original bubble size
+        y='Transformed Online Bookings',
+        size='Gross Bookings',
         color='Market',
         hover_name='Market',
-        size_max=60
+        size_max=60,
+        color_discrete_sequence=color_sequence
     )
     
-    # Update layout
+    # 更新气泡样式
+    fig.update_traces(
+        marker=dict(
+            opacity=0.8,  # 略微提高不透明度
+            line=dict(width=1.5, color='white')  # 加粗白色边框
+        )
+    )
+    
+    # 添加年份水印（作为普通注释）
+    fig.add_annotation(
+        text=str(selected_year),
+        xref="paper",
+        yref="paper",
+        x=0.5,
+        y=0.5,
+        showarrow=False,
+        font=dict(
+            size=200,
+            color='rgba(180, 180, 180, 0.3)'  # 调整颜色和透明度，使其更明显
+        ),
+        textangle=0,
+        opacity=0.3  # 略微提高整体不透明度
+    )
+    
     fig.update_layout(
         plot_bgcolor='white',
         paper_bgcolor='white',
-        font=dict(size=12),
+        font=dict(
+            family="Arial, sans-serif",
+            size=12,
+            color="#444"
+        ),
         xaxis=dict(
             title=dict(
-                text='Online Penetration (%)',
+                text='Online Penetration',
                 font=dict(size=14)
             ),
             showgrid=True,
             gridwidth=1,
-            gridcolor='LightGray',
-            zeroline=True,
-            zerolinecolor='LightGray',
+            gridcolor='rgba(200, 200, 200, 0.2)',  # 更淡的网格线
+            zeroline=False,
             tickformat=',.0%',
-            range=[0, max(df['Online Penetration'].max() * 1.1, 0.6)]
+            range=[0, max(df['Online Penetration'].max() * 1.1, 0.6)],
+            showline=True,
+            linewidth=1,
+            linecolor='#444'
         ),
         yaxis=dict(
             title=dict(
-                text='Square Root of Online Bookings ($)',
+                text='Online Bookings Volume',
                 font=dict(size=14)
             ),
             showgrid=True,
             gridwidth=1,
-            gridcolor='LightGray',
-            zeroline=True,
-            zerolinecolor='LightGray',
+            gridcolor='rgba(200, 200, 200, 0.2)',  # 更淡的网格线
+            zeroline=False,
             tickprefix='$',
             tickformat=',',
-            range=[y_min, y_max]  
+            range=[y_min, y_max],
+            showline=True,
+            linewidth=1,
+            linecolor='#444'
         ),
         showlegend=True,
         legend=dict(
-            title=dict(text='Country'),
+            title=dict(text='Markets'),
             yanchor="top",
             y=0.99,
             xanchor="left",
             x=1.02,
-            bgcolor='rgba(255, 255, 255, 0.8)'
+            bgcolor='rgba(255, 255, 255, 0.8)',
+            bordercolor='#444',
+            borderwidth=1
         ),
         margin=dict(l=80, r=150, t=50, b=80)
-    )
-    
-    # Add annotation for bubble size explanation
-    fig.add_annotation(
-        text="Bubble size represents Total Market Size (Gross Bookings)",
-        xref="paper", yref="paper",
-        x=0, y=-0.15,
-        showarrow=False,
-        font=dict(size=12)
     )
     
     return fig
