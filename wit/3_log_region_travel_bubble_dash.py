@@ -32,11 +32,9 @@ y_max = df['Transformed Online Bookings'].max() + 60000
 
 # Create the app layout
 app.layout = html.Div([
-    # Title
     html.H1('APAC Travel Market Evolution', 
             style={'textAlign': 'center', 'padding': '20px'}),
     
-    # Main chart
     dcc.Graph(id='bubble-chart', style={'height': '600px'}),
     
     html.Div([
@@ -71,16 +69,13 @@ def update_year_display(slider_value):
     Input('year-slider', 'value')
 )
 def update_figure(slider_value):
-    # Get data for the selected year
     selected_year = years_sorted[slider_value]
     filtered_df = df[df['Year'] == selected_year]
     
-    # Remove rows where values are 0
     filtered_df = filtered_df[~((filtered_df['Online Bookings'] == 0) & 
                                (filtered_df['Gross Bookings'] == 0) & 
                                (filtered_df['Online Penetration'] == 0))]
     
-    # Create the bubble chart
     fig = px.scatter(
         filtered_df,
         x='Online Penetration',
@@ -121,7 +116,7 @@ def update_figure(slider_value):
             zerolinecolor='LightGray',
             tickprefix='$',
             tickformat=',',
-            range=[y_min, y_max]  # Fix y-axis range
+            range=[y_min, y_max]  
         ),
         showlegend=True,
         legend=dict(
