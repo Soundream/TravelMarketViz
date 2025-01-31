@@ -19,6 +19,7 @@
       </div>
     </div>
   </header>
+  <!-- TODO: share the data to the front end -->
   <!-- TODO: - make the page more elegant + add a sidebar and figure out the filtering conditions + add filtering sections in the front end page -->
   <main class="pt-16">
     <div class="relative isolate overflow-hidden">
@@ -500,10 +501,8 @@ const importFromGoogleSheet = async () => {
 
     console.log('Parsed data sample:', data.slice(0, 3));
 
-    // 获取表头
     const headers = data[0];
     
-    // 查找 EBITDA 行
     const ebitdaRowIndex = data.findIndex(row => 
       row[0] && String(row[0]).toLowerCase().includes('ebitda')
     );
