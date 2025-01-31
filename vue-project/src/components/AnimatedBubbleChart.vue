@@ -171,139 +171,151 @@ let globalYDomain = [-0.3, 1.2]; // Revenue growth range: -10% to 100% in decima
 
 // Function to process XLSX data
 const processExcelData = (file) => {
+  console.log('Starting to process Excel file:', file.name);
   const reader = new FileReader();
+  
   reader.onload = (e) => {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, { type: 'array' });
-    
-    // Get the TTM sheet
-    const ttmSheet = workbook.Sheets['TTM (bounded)'];
-    if (!ttmSheet) {
-      console.error('TTM (bounded) sheet not found');
-      return;
-    }
+    try {
+      console.log('File loaded, starting to parse...');
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      console.log('Available sheets:', workbook.SheetNames);
+      
+      // Get the TTM sheet
+      const ttmSheet = workbook.Sheets['TTM (bounded)'];
+      if (!ttmSheet) {
+        throw new Error('TTM (bounded) sheet not found');
+      }
 
-    // Convert sheet to JSON with headers
-    const jsonData = XLSX.utils.sheet_to_json(ttmSheet, { header: 1 });
-    
-    // First row contains company names (headers)
-    const headers = jsonData[0];
-    
-    // Process data for each year/quarter
-    const processedData = [];
-    years = []; // Reset years array
-    
-    // Create maps to store revenue growth and EBITDA margin data
-    const revenueGrowthData = new Map(); // key: 'company_quarter', value: growth value
-    const ebitdaMarginData = new Map(); // key: 'company_quarter', value: margin value
-    
-    // Process revenue growth data (first half)
-    for (let i = 2; i < 113; i++) {
-      const row = jsonData[i];
-      const yearQuarter = row[0];
-      if (yearQuarter && !years.includes(yearQuarter)) {
-        years.push(yearQuarter);
+      // Convert sheet to JSON with headers
+      const jsonData = XLSX.utils.sheet_to_json(ttmSheet, { header: 1 });
+      console.log('Raw data rows:', jsonData.length);
+      
+      if (jsonData.length < 3) {
+        throw new Error('数据行数不足');
       }
       
-      // Process each company's revenue growth
-      for (let j = 1; j < headers.length; j++) {
-        const company = headers[j];
-        if (!company) continue;
-        
-        const value = row[j];
-        if (value !== undefined) {
-          // Convert to decimal if it's a number
-          const numValue = typeof value === 'number' ? value : parseFloat(value);
-          if (!isNaN(numValue)) {
-            revenueGrowthData.set(`${company}_${yearQuarter}`, numValue);
-          }
-        }
-      }
-    }
-    
-    // Process EBITDA margin data (second half)
-    for (let i = 116; i < jsonData.length; i++) {
-      const row = jsonData[i];
-      const yearQuarter = row[0];
-      if (!yearQuarter) continue;
+      // Find the EBITDA row
+      const ebitdaRowIndex = jsonData.findIndex(row => 
+        row && row[0] && String(row[0]).toLowerCase().includes('ebitda')
+      );
       
-      // Process each company's EBITDA margin
-      for (let j = 1; j < 227; j++) {
-        const company = headers[j];
-        if (!company) continue;
-        
-        const value = row[j];
-        if (value !== undefined) {
-          // Convert to decimal if it's a number
-          const numValue = typeof value === 'number' ? value : parseFloat(value);
-          if (!isNaN(numValue)) {
-            ebitdaMarginData.set(`${company}_${yearQuarter}`, numValue);
-          }
-        }
+      if (ebitdaRowIndex === -1) {
+        throw new Error('未找到 EBITDA Margin 行');
       }
-    }
-    
-    // Combine the data
-    years.forEach(yearQuarter => {
-      headers.slice(1).forEach(company => {
-        if (!company) return;
+      
+      // Get headers (company names)
+      const headers = jsonData[0];
+      if (!headers || headers.length < 2) {
+        throw new Error('表头数据无效');
+      }
+      console.log('Headers:', headers);
+      
+      // Process data
+      const processedData = [];
+      years = []; // Reset years array
+      
+      // Process each row before EBITDA row
+      for (let i = 1; i < ebitdaRowIndex; i++) {
+        const row = jsonData[i];
+        if (!row || !row[0]) continue;
         
-        const revenueGrowth = revenueGrowthData.get(`${company}_${yearQuarter}`);
-        const ebitdaMargin = ebitdaMarginData.get(`${company}_${yearQuarter}`);
+        const yearStr = String(row[0]).trim();
+        const yearMatch = yearStr.match(/^(\d{4})/);
+        if (!yearMatch) continue;
         
-        // Only add if we have both values and they're within our domain ranges
-        if (revenueGrowth !== undefined && ebitdaMargin !== undefined &&
-            revenueGrowth >= globalYDomain[0] && revenueGrowth <= globalYDomain[1] &&
-            ebitdaMargin >= globalXDomain[0] && ebitdaMargin <= globalXDomain[1]) {
+        const year = yearMatch[1];
+        if (!years.includes(year)) {
+          years.push(year);
+        }
+        
+        // Process each company in this row
+        for (let j = 1; j < headers.length; j++) {
+          const company = headers[j];
+          if (!company) continue;
           
-          // Find previous quarter's data for trend calculation
-          const quarterIndex = years.indexOf(yearQuarter);
-          let revenueTrend = null;
-          let ebitdaTrend = null;
+          const revenueGrowth = row[j];
+          const ebitdaMargin = jsonData[ebitdaRowIndex][j];
           
-          if (quarterIndex > 0) {
-            const prevQuarter = years[quarterIndex - 1];
-            const prevRevenueGrowth = revenueGrowthData.get(`${company}_${prevQuarter}`);
-            const prevEbitdaMargin = ebitdaMarginData.get(`${company}_${prevQuarter}`);
+          // 处理空值或无效值，使用默认值0
+          let growth = 0;
+          let margin = 0;
+          
+          // 如果有值，则尝试解析
+          if (revenueGrowth !== undefined && revenueGrowth !== null && revenueGrowth !== '') {
+            growth = typeof revenueGrowth === 'number' ? revenueGrowth :
+              typeof revenueGrowth === 'string' && revenueGrowth.includes('%') ?
+                parseFloat(revenueGrowth.replace('%', '')) / 100 :
+                parseFloat(revenueGrowth);
             
-            if (prevRevenueGrowth !== undefined) {
-              revenueTrend = revenueGrowth > prevRevenueGrowth ? 'increase' : 
-                            revenueGrowth < prevRevenueGrowth ? 'decrease' : 'neutral';
-            }
-            
-            if (prevEbitdaMargin !== undefined) {
-              ebitdaTrend = ebitdaMargin > prevEbitdaMargin ? 'increase' : 
-                           ebitdaMargin < prevEbitdaMargin ? 'decrease' : 'neutral';
-            }
+            // 如果解析失败，使用默认值0
+            if (isNaN(growth)) growth = 0;
           }
           
+          if (ebitdaMargin !== undefined && ebitdaMargin !== null && ebitdaMargin !== '') {
+            margin = typeof ebitdaMargin === 'number' ? ebitdaMargin :
+              typeof ebitdaMargin === 'string' && ebitdaMargin.includes('%') ?
+                parseFloat(ebitdaMargin.replace('%', '')) / 100 :
+                parseFloat(ebitdaMargin);
+            
+            // 如果解析失败，使用默认值0
+            if (isNaN(margin)) margin = 0;
+          }
+          
+          // 添加数据点，即使值为0
           processedData.push({
-            year: yearQuarter,
-            company: company,
-            ebitdaMargin: ebitdaMargin,
-            revenueGrowth: revenueGrowth,
-            ebitdaTrend: ebitdaTrend,
-            revenueTrend: revenueTrend
+            year,
+            company,
+            revenueGrowth: growth,
+            ebitdaMargin: margin
           });
+          
+          if (growth !== 0 || margin !== 0) {
+            console.log('Added data point for:', company, { growth, margin });
+          } else {
+            console.log('Added zero values for:', company);
+          }
         }
+      }
+      
+      // Sort years
+      years.sort((a, b) => parseInt(a) - parseInt(b));
+      
+      console.log('Processed data:', {
+        years,
+        dataPoints: processedData.length,
+        sample: processedData.slice(0, 5)
       });
-    });
-
-    // Sort years chronologically
-    years.sort((a, b) => {
-      const [aYear, aQ] = a.split('Q').map(n => parseInt(n));
-      const [bYear, bQ] = b.split('Q').map(n => parseInt(n));
-      return aYear !== bYear ? aYear - bYear : aQ - bQ;
-    });
-
-    // Update the data
-    mergedData.value = processedData;
-    currentYearIndex = 0;
-    
-    // Initialize the visualization
-    initChart();
+      
+      if (processedData.length === 0) {
+        throw new Error('没有找到有效的数据点');
+      }
+      
+      // Update the data
+      mergedData.value = processedData;
+      currentYearIndex = 0;
+      
+      // Initialize the visualization
+      console.log('Initializing chart with data points:', processedData.length);
+      initChart();
+      
+    } catch (error) {
+      console.error('Error processing Excel file:', error);
+      alert('处理数据时出错：' + error.message);
+    }
   };
-  reader.readAsArrayBuffer(file);
+  
+  reader.onerror = (error) => {
+    console.error('Error reading file:', error);
+    alert('读取文件时出错');
+  };
+  
+  try {
+    reader.readAsArrayBuffer(file);
+  } catch (error) {
+    console.error('Error starting file read:', error);
+    alert('启动文件读取时出错');
+  }
 };
 
 // Initialize chart

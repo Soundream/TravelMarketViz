@@ -1,5 +1,4 @@
 <template>
-  <Analytics />
   <header class="absolute inset-x-0 top-0 z-50 flex h-16 border-b border-gray-900/10">
     <div class="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
       <div class="flex flex-1 items-center gap-x-6">
@@ -27,10 +26,17 @@
       <header class="pb-4 pt-6 sm:pb-6">
         <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-6 px-4 sm:flex-nowrap sm:px-6 lg:px-8">
           <h1 class="text-base/7 font-semibold text-wego-gray">Bubble Chart</h1>
-          <label class="px-4 py-2 bg-wego-green text-white rounded hover:bg-wego-green-dark cursor-pointer">
-            Upload XLSX(for the animated chart)
-            <input type="file" accept=".xlsx,.xls" @change="handleFileUpload" class="hidden">
-          </label>
+          <div class="flex gap-4">
+            <label class="px-4 py-2 bg-wego-green text-white rounded hover:bg-wego-green-dark cursor-pointer">
+              Upload XLSX(for the animated chart)
+              <input type="file" accept=".xlsx,.xls" @change="handleFileUpload" class="hidden">
+            </label>
+            <button 
+              @click="importFromGoogleSheet" 
+              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+              Import from Google Sheet
+            </button>
+          </div>
         </div>
       </header>
 
@@ -191,12 +197,42 @@ import StaticBubbleChart from './components/StaticBubbleChart.vue'
 import * as XLSX from 'xlsx'
 import WEGO_LOGO from '/logos/Wego_logo.png'
 import { inject } from '@vercel/analytics'
+import Papa from 'papaparse'
 
 const chartRef = ref(null)
 const bubbleChartRef = ref(null)
 const staticBubbleChartRef = ref(null)
 const mobileMenuOpen = ref(false)
 const excelData = ref([])
+
+// Add company names mapping
+const companyNames = {
+  'ABNB': 'Airbnb',
+  'BKNG': 'Booking.com',
+  'EXPE': 'Expedia',
+  'TCOM': 'Trip.com',
+  'TRIP': 'TripAdvisor',
+  'TRVG': 'Trivago',
+  'EDR': 'Edreams',
+  'DESP': 'Despegar',
+  'MMYT': 'MakeMyTrip',
+  'Ixigo': 'Ixigo',
+  'SEERA': 'Seera Group',
+  'Webjet': 'Webjet',
+  'LMN': 'Lastminute',
+  'Yatra': 'Yatra.com',
+  'Orbitz': 'Orbitz',
+  'Travelocity': 'Travelocity',
+  'EaseMyTrip': 'EaseMyTrip',
+  'Wego': 'Wego',
+  'Skyscanner': 'Skyscanner',
+  'Etraveli': 'Etraveli',
+  'Kiwi': 'Kiwi',
+  'Cleartrip': 'Cleartrip',
+  'FLT': 'Flight Centre',
+  'Almosafer': 'Almosafer',
+  'Webjet OTA': 'Webjet OTA'
+};
 
 const navigation = [
   { name: 'Dashboard', href: '#' },
@@ -330,20 +366,204 @@ const getCellStyle = (value, columnIndex) => {
 };
 
 const importFromGoogleSheet = async () => {
-  const sheetId = '1qXhRP5xwMfyV3ghcRmYAKhM1R619GDD9';
-  const sheetName = 'TTM (bounded)';
+  // 使用完整的发布链接
+  const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjYiAlmaxjfG4nIMCT4ggeSm8hySxiCOhI5m9RZGjEO28DdyeqmxIkk7uE6Q4cLA/pubhtml';
   
   try {
-    // Update all chart components with the Google Sheet data
-    const success = await staticBubbleChartRef.value.fetchGoogleSheetData(sheetId, sheetName);
-    if (success) {
-      // Only update other components if the static chart was updated successfully
-      await bubbleChartRef.value.fetchGoogleSheetData(sheetId, sheetName);
-      await chartRef.value.fetchGoogleSheetData(sheetId, sheetName);
+    const response = await fetch(sheetUrl);
+    if (!response.ok) {
+      throw new Error('Failed to fetch data from Google Sheet');
     }
+    
+    const htmlText = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+    
+    // 获取所有表格
+    const tables = doc.querySelectorAll('table');
+    console.log('Found tables:', tables.length);
+    
+    // 更详细地打印每个表格的内容
+    tables.forEach((table, index) => {
+      const rows = table.querySelectorAll('tr');
+      console.log(`Table ${index} info:`, {
+        rowCount: rows.length,
+        firstRowContent: rows[0]?.textContent,
+        firstRowHTML: rows[0]?.innerHTML,
+        allCells: Array.from(rows[0]?.querySelectorAll('td') || []).map(cell => cell.textContent.trim())
+      });
+    });
+    
+    // 查找目标表格的新方法
+    let targetTable = null;
+    let targetTableIndex = -1;
+    
+    // 遍历所有表格，查找包含公司数据的表格
+    for (let i = 0; i < tables.length; i++) {
+      const table = tables[i];
+      const rows = table.querySelectorAll('tr');
+      
+      // 检查每一行，寻找包含公司名称的行
+      for (let j = 0; j < Math.min(5, rows.length); j++) {
+        const row = rows[j];
+        const cells = row.querySelectorAll('td');
+        const cellContents = Array.from(cells).map(cell => cell.textContent.trim());
+        
+        console.log(`Table ${i}, Row ${j} contents:`, cellContents);
+        
+        // 检查是否包含已知的公司代码或名称
+        const hasCompanyIdentifier = cellContents.some(content => 
+          content && (
+            Object.keys(companyNames).includes(content) || // 检查公司代码完全匹配
+            Object.keys(companyNames).some(key => content.includes(key)) || // 检查公司代码部分匹配
+            Object.values(companyNames).some(name => content.includes(name)) // 检查公司名称部分匹配
+          )
+        );
+        
+        if (hasCompanyIdentifier) {
+          console.log(`Found company identifiers in table ${i}, row ${j}`);
+          targetTable = table;
+          targetTableIndex = i;
+          break;
+        }
+      }
+      
+      if (targetTable) break;
+    }
+    
+    // 如果找到了表格，检查是否需要使用下一个表格（有时标题和数据分开）
+    if (targetTable && targetTableIndex + 1 < tables.length) {
+      const nextTable = tables[targetTableIndex + 1];
+      const nextTableRows = nextTable.querySelectorAll('tr');
+      if (nextTableRows.length > 1) { // 确保下一个表格不是空的
+        const firstRow = nextTableRows[1]; // 使用第二行，因为第一行可能是空的
+        const cells = firstRow.querySelectorAll('td');
+        const cellContents = Array.from(cells).map(cell => cell.textContent.trim());
+        
+        // 检查是否包含数字数据（年份或百分比）
+        const hasNumericData = cellContents.some(content => 
+          /^\d{4}/.test(content) || // 年份
+          /^-?\d+(\.\d+)?%?$/.test(content) // 数字或百分比
+        );
+        
+        if (hasNumericData) {
+          console.log('Using next table as it contains numeric data');
+          targetTable = nextTable;
+        }
+      }
+    }
+    
+    if (!targetTable) {
+      throw new Error('未能找到包含公司数据的表格，请确认数据格式是否正确');
+    }
+    
+    // 将表格数据转换为数组格式
+    const rows = targetTable.querySelectorAll('tr');
+    console.log('Processing target table:', {
+      rowCount: rows.length,
+      firstFewRows: Array.from(rows).slice(0, 3).map(row => 
+        Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.trim())
+      )
+    });
+    
+    // 处理数据，跳过空行和无关行
+    let data = Array.from(rows).map(row => {
+      const cells = row.querySelectorAll('td');
+      return Array.from(cells).map(cell => {
+        let value = cell.textContent.trim();
+        
+        // 处理空值
+        if (value === '') {
+          return null;
+        }
+        
+        // 处理百分比值
+        if (value.endsWith('%')) {
+          return parseFloat(value.replace('%', '')) / 100;
+        }
+        
+        // 处理数字值
+        const num = parseFloat(value);
+        if (!isNaN(num)) {
+          return num;
+        }
+        
+        // 保持原始文本值
+        return value;
+      });
+    }).filter(row => row.length > 0 && row.some(cell => cell !== null));
+
+    // 确保数据有效
+    if (data.length < 2) {
+      throw new Error('数据行数不足，请确认数据格式是否正确');
+    }
+
+    console.log('Parsed data sample:', data.slice(0, 3));
+
+    // 获取表头
+    const headers = data[0];
+    
+    // 查找 EBITDA 行
+    const ebitdaRowIndex = data.findIndex(row => 
+      row[0] && String(row[0]).toLowerCase().includes('ebitda')
+    );
+    
+    if (ebitdaRowIndex === -1) {
+      throw new Error('未找到 EBITDA 数据行');
+    }
+
+    // 获取年份数据行（在 EBITDA 行之前的数据行）
+    const yearRows = data.slice(1, ebitdaRowIndex).filter(row => {
+      const yearValue = String(row[0]).match(/^\d{4}/);
+      return yearValue && parseInt(yearValue[0]) >= 1900 && parseInt(yearValue[0]) <= 2100;
+    });
+
+    if (yearRows.length === 0) {
+      throw new Error('未找到有效的年份数据行');
+    }
+
+    // 重组数据：表头 + 年份行 + EBITDA行
+    const processedData = [
+      headers,
+      ...yearRows,
+      data[ebitdaRowIndex]
+    ];
+
+    // 更新表格数据
+    excelData.value = processedData;
+    console.log('Final processed data:', {
+      headers: processedData[0],
+      yearRows: yearRows.length,
+      ebitdaRow: processedData[processedData.length - 1]
+    });
+
+    // 创建工作簿
+    const workbook = {
+      SheetNames: ['TTM (bounded)'],
+      Sheets: {
+        'TTM (bounded)': XLSX.utils.aoa_to_sheet(processedData)
+      }
+    };
+
+    // 转换为文件
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+    const file = new File([blob], 'google_sheet_data.xlsx', { type: blob.type });
+
+    // 更新图表
+    if (bubbleChartRef.value) {
+      console.log('Processing for animated chart with data:', {
+        rowCount: processedData.length,
+        yearRowCount: yearRows.length
+      });
+      await bubbleChartRef.value.processExcelData(file);
+    }
+
   } catch (error) {
     console.error('Error importing from Google Sheet:', error);
-    alert('Failed to import data from Google Sheet. Please make sure the sheet is publicly accessible and try again.');
+    alert('导入数据失败：' + error.message);
   }
 };
 
