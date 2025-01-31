@@ -6,10 +6,8 @@ import numpy as np
 # Initialize the Dash app
 app = Dash(__name__)
 
-# Read the visualization data
 df = pd.read_excel('travel_market_summary.xlsx', sheet_name='Visualization Data')
 
-# Convert Online Penetration to decimal format (if it's in percentage)
 df['Online Penetration'] = df['Online Penetration'] / 100
 
 # Remove rows where all numeric values are 0
@@ -137,7 +135,7 @@ def update_figure(slider_value):
         ),
         yaxis=dict(
             title=dict(
-                text='Online Bookings Volume',
+                text='Square Root of Online Bookings Volume',
                 font=dict(size=14)
             ),
             showgrid=True,
@@ -169,3 +167,7 @@ def update_figure(slider_value):
 
 if __name__ == '__main__':
     app.run_server(debug=True, port=8050)
+# TODO: now the chart is quite choppy and need to generate the animation video basing on the bubblechart(with a button to generate the chart on the website)
+# TODO: the font of the background year
+# TODO: we cannot 
+
