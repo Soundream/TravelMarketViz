@@ -195,15 +195,6 @@ const processExcelData = (file) => {
         throw new Error('数据行数不足');
       }
       
-      // Find the EBITDA row
-      const ebitdaRowIndex = jsonData.findIndex(row => 
-        row && row[0] && String(row[0]).toLowerCase().includes('ebitda')
-      );
-      
-      if (ebitdaRowIndex === -1) {
-        throw new Error('未找到 EBITDA Margin 行');
-      }
-      
       // Get headers (company names)
       const headers = jsonData[0];
       if (!headers || headers.length < 2) {
@@ -215,12 +206,32 @@ const processExcelData = (file) => {
       const processedData = [];
       years = []; // Reset years array
       
-      // Process each row before EBITDA row
-      for (let i = 1; i < ebitdaRowIndex; i++) {
-        const row = jsonData[i];
-        if (!row || !row[0]) continue;
+      // 找到收入增长和 EBITDA 的分界点
+      const ebitdaStartIndex = jsonData.findIndex(row => 
+        row && row[0] && String(row[0]).toLowerCase().includes('ebitda margin')
+      );
+
+      console.log('EBITDA start index:', ebitdaStartIndex);
+      console.log('Total rows:', jsonData.length);
+
+      if (ebitdaStartIndex === -1) {
+        throw new Error('未找到 EBITDA Margin 标记行');
+      }
+
+      // 获取有效的公司列表（从第3列开始，因为前两列是空的）
+      const validCompanies = headers.slice(2).filter(company => company);
+      console.log('Valid companies:', validCompanies);
+
+      // 计算上半部分和下半部分的行数
+      const revenueRowCount = ebitdaStartIndex - 1; // 减去表头行
+      console.log('Revenue section row count:', revenueRowCount);
+
+      // 处理每一年的数据
+      for (let i = 1; i < ebitdaStartIndex; i++) {
+        const revenueRow = jsonData[i];
+        if (!revenueRow || !revenueRow[0]) continue;
         
-        const yearStr = String(row[0]).trim();
+        const yearStr = String(revenueRow[0]).trim();
         const yearMatch = yearStr.match(/^(\d{4})/);
         if (!yearMatch) continue;
         
@@ -229,36 +240,65 @@ const processExcelData = (file) => {
           years.push(year);
         }
         
-        // Process each company in this row
-        for (let j = 1; j < headers.length; j++) {
+        // 计算对应的 EBITDA 行索引
+        // EBITDA 部分的起始位置是 ebitdaStartIndex + 1
+        // 相对位置与收入部分相同
+        const relativeIndex = i - 1; // 减1是因为要跳过表头行
+        const ebitdaRowIndex = ebitdaStartIndex + 1 + relativeIndex;
+        const ebitdaRow = jsonData[ebitdaRowIndex];
+        
+        console.log(`Processing year ${year}:`, {
+          revenueRowIndex: i,
+          ebitdaRowIndex: ebitdaRowIndex,
+          hasRevenueData: !!revenueRow,
+          hasEbitdaData: !!ebitdaRow,
+          revenueRowSample: revenueRow.slice(0, 5),
+          ebitdaRowSample: ebitdaRow ? ebitdaRow.slice(0, 5) : null,
+          yearMatch: yearMatch[0]
+        });
+        
+        if (!ebitdaRow) {
+          console.log(`No EBITDA data found for year ${year} at index ${ebitdaRowIndex}`);
+          continue;
+        }
+        
+        // 处理每个公司的数据（从第3列开始）
+        for (let j = 2; j < headers.length; j++) {
           const company = headers[j];
           if (!company) continue;
           
-          const revenueGrowth = row[j];
-          const ebitdaMargin = jsonData[ebitdaRowIndex][j];
+          const revenueGrowth = revenueRow[j];
+          const ebitdaMargin = ebitdaRow[j];
+          
+          console.log(`Processing ${company} data for ${year}:`, {
+            revenueGrowth,
+            ebitdaMargin,
+            columnIndex: j,
+            rowIndex: i,
+            ebitdaRowIndex
+          });
           
           // 处理空值或无效值，使用默认值0
           let growth = 0;
           let margin = 0;
           
-          // 如果有值，则尝试解析
+          // 处理收入增长率
           if (revenueGrowth !== undefined && revenueGrowth !== null && revenueGrowth !== '') {
-            growth = typeof revenueGrowth === 'number' ? revenueGrowth :
-              typeof revenueGrowth === 'string' && revenueGrowth.includes('%') ?
-                parseFloat(revenueGrowth.replace('%', '')) / 100 :
-                parseFloat(revenueGrowth);
-            
-            // 如果解析失败，使用默认值0
+            if (typeof revenueGrowth === 'string' && revenueGrowth.includes('%')) {
+              growth = parseFloat(revenueGrowth.replace('%', '')) / 100;
+            } else {
+              growth = parseFloat(revenueGrowth);
+            }
             if (isNaN(growth)) growth = 0;
           }
           
+          // 处理 EBITDA 利润率
           if (ebitdaMargin !== undefined && ebitdaMargin !== null && ebitdaMargin !== '') {
-            margin = typeof ebitdaMargin === 'number' ? ebitdaMargin :
-              typeof ebitdaMargin === 'string' && ebitdaMargin.includes('%') ?
-                parseFloat(ebitdaMargin.replace('%', '')) / 100 :
-                parseFloat(ebitdaMargin);
-            
-            // 如果解析失败，使用默认值0
+            if (typeof ebitdaMargin === 'string' && ebitdaMargin.includes('%')) {
+              margin = parseFloat(ebitdaMargin.replace('%', '')) / 100;
+            } else {
+              margin = parseFloat(ebitdaMargin);
+            }
             if (isNaN(margin)) margin = 0;
           }
           
@@ -270,10 +310,15 @@ const processExcelData = (file) => {
             ebitdaMargin: margin
           });
           
+          // 记录日志
           if (growth !== 0 || margin !== 0) {
-            console.log('Added data point for:', company, { growth, margin });
-          } else {
-            console.log('Added zero values for:', company);
+            console.log('Added valid data point for:', company, { 
+              year, 
+              growth, 
+              margin,
+              rawRevenue: revenueGrowth,
+              rawEbitda: ebitdaMargin
+            });
           }
         }
       }
@@ -281,10 +326,19 @@ const processExcelData = (file) => {
       // Sort years
       years.sort((a, b) => parseInt(a) - parseInt(b));
       
-      console.log('Processed data:', {
+      console.log('Final processed data:', {
         years,
         dataPoints: processedData.length,
-        sample: processedData.slice(0, 5)
+        sample: processedData.slice(0, 5),
+        yearCount: years.length,
+        companyCount: validCompanies.length,
+        firstFewDataPoints: processedData.slice(0, 3).map(d => ({
+          year: d.year,
+          company: d.company,
+          growth: d.revenueGrowth,
+          margin: d.ebitdaMargin,
+          rawData: true
+        }))
       });
       
       if (processedData.length === 0) {
