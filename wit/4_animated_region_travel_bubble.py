@@ -70,7 +70,7 @@ def save_animation(output_gif_path, output_html_path):
         os.remove(image_path)  # Clean up intermediate files
 
     # Save all frames as a GIF with slower speed
-    imageio.mimsave(output_gif_path, frames, duration=10)  # 1.5 seconds per frame
+    imageio.mimsave(output_gif_path, frames, duration=100)  # 1.5 seconds per frame
 
     # Save the HTML for debugging
     final_fig = px.scatter(
