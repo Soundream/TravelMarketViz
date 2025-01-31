@@ -25,6 +25,17 @@ years_sorted = sorted(df['Year'].unique())
 y_min = df['Transformed Online Bookings'].min() - 20000
 y_max = df['Transformed Online Bookings'].max() + 60000
 
+# Define country-specific colors (using country flag colors or other representative colors)
+country_colors = {
+    'China': '#DE2910',
+    'Japan': '#BC002D',
+    'India': '#FF9933',
+    'Australia': '#009C49',
+    'Singapore': '#FF0000',  # 示例颜色
+    'South Korea': '#003478',
+    # 更多国家及颜色映射
+}
+
 # Create the app layout
 app.layout = html.Div([
     html.H1('APAC Travel Market Evolution',
@@ -43,11 +54,11 @@ def generate_animation(_):
         x='Online Penetration',
         y='Transformed Online Bookings',
         size='Gross Bookings',
-        color='Market',
+        color='Market',  # Color by country or market
         animation_frame='Year',
         hover_name='Market',
         size_max=60,
-        color_discrete_sequence=['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFBE0B', '#FF006E']
+        color_discrete_map=country_colors  # Apply the country color map
     )
 
     # Style the chart
