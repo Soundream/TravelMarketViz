@@ -367,201 +367,76 @@ const getCellStyle = (value, columnIndex) => {
 };
 
 const importFromGoogleSheet = async () => {
-  // 使用完整的发布链接
-  const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjYiAlmaxjfG4nIMCT4ggeSm8hySxiCOhI5m9RZGjEO28DdyeqmxIkk7uE6Q4cLA/pubhtml';
+  // Google Sheets ID
+  const sheetId = '2PACX-1vQYwQTSYwig7AZ0fjPniLVfUUJnLz3PP4f4fBtqkBNPYqrkKtQyZDaB99kHk2eCzuCh5i8oxTPCHeQ9';
+  const sheetUrl = `https://docs.google.com/spreadsheets/d/e/${sheetId}/pub?output=csv`;
   
   try {
+    console.log('Starting Google Sheet import...');
+    console.log('Using sheet URL:', sheetUrl);
     const response = await fetch(sheetUrl);
     if (!response.ok) {
       throw new Error('Failed to fetch data from Google Sheet');
     }
     
-    const htmlText = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
+    const csvText = await response.text();
+    console.log('Received CSV response length:', csvText.length);
     
-    // 获取所有表格
-    const tables = doc.querySelectorAll('table');
-    console.log('Found tables:', tables.length);
+    // Parse CSV data
+    const rows = csvText.split('\n').map(row => 
+      row.split(',').map(cell => {
+        // Remove quotes and trim whitespace
+        const cleaned = cell.trim().replace(/^["']|["']$/g, '');
+        // Try to convert to number if possible
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? cleaned : num;
+      })
+    );
     
-    // 更详细地打印每个表格的内容
-    tables.forEach((table, index) => {
-      const rows = table.querySelectorAll('tr');
-      console.log(`Table ${index} info:`, {
-        rowCount: rows.length,
-        firstRowContent: rows[0]?.textContent,
-        firstRowHTML: rows[0]?.innerHTML,
-        allCells: Array.from(rows[0]?.querySelectorAll('td') || []).map(cell => cell.textContent.trim())
-      });
-    });
+    console.log('Processed data rows:', rows.length);
+    console.log('First few processed rows:', rows.slice(0, 3));
     
-    // 查找目标表格的新方法
-    let targetTable = null;
-    let targetTableIndex = -1;
-    
-    // 遍历所有表格，查找包含公司数据的表格
-    for (let i = 0; i < tables.length; i++) {
-      const table = tables[i];
-      const rows = table.querySelectorAll('tr');
-      
-      // 检查每一行，寻找包含公司名称的行
-      for (let j = 0; j < Math.min(5, rows.length); j++) {
-        const row = rows[j];
-        const cells = row.querySelectorAll('td');
-        const cellContents = Array.from(cells).map(cell => cell.textContent.trim());
-        
-        console.log(`Table ${i}, Row ${j} contents:`, cellContents);
-        
-        // 检查是否包含已知的公司代码或名称
-        const hasCompanyIdentifier = cellContents.some(content => 
-          content && (
-            Object.keys(companyNames).includes(content) || // 检查公司代码完全匹配
-            Object.keys(companyNames).some(key => content.includes(key)) || // 检查公司代码部分匹配
-            Object.values(companyNames).some(name => content.includes(name)) // 检查公司名称部分匹配
-          )
-        );
-        
-        if (hasCompanyIdentifier) {
-          console.log(`Found company identifiers in table ${i}, row ${j}`);
-          targetTable = table;
-          targetTableIndex = i;
-          break;
-        }
-      }
-      
-      if (targetTable) break;
-    }
-    
-    // 如果找到了表格，检查是否需要使用下一个表格（有时标题和数据分开）
-    if (targetTable && targetTableIndex + 1 < tables.length) {
-      const nextTable = tables[targetTableIndex + 1];
-      const nextTableRows = nextTable.querySelectorAll('tr');
-      if (nextTableRows.length > 1) { // 确保下一个表格不是空的
-        const firstRow = nextTableRows[1]; // 使用第二行，因为第一行可能是空的
-        const cells = firstRow.querySelectorAll('td');
-        const cellContents = Array.from(cells).map(cell => cell.textContent.trim());
-        
-        // 检查是否包含数字数据（年份或百分比）
-        const hasNumericData = cellContents.some(content => 
-          /^\d{4}/.test(content) || // 年份
-          /^-?\d+(\.\d+)?%?$/.test(content) // 数字或百分比
-        );
-        
-        if (hasNumericData) {
-          console.log('Using next table as it contains numeric data');
-          targetTable = nextTable;
-        }
-      }
-    }
-    
-    if (!targetTable) {
-      throw new Error('未能找到包含公司数据的表格，请确认数据格式是否正确');
-    }
-    
-    // 将表格数据转换为数组格式
-    const rows = targetTable.querySelectorAll('tr');
-    console.log('Processing target table:', {
-      rowCount: rows.length,
-      firstFewRows: Array.from(rows).slice(0, 3).map(row => 
-        Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.trim())
-      )
-    });
-    
-    // 处理数据，跳过空行和无关行
-    let data = Array.from(rows).map(row => {
-      const cells = row.querySelectorAll('td');
-      return Array.from(cells).map(cell => {
-        let value = cell.textContent.trim();
-        
-        // 处理空值
-        if (value === '') {
-          return null;
-        }
-        
-        // 处理百分比值
-        if (value.endsWith('%')) {
-          return parseFloat(value.replace('%', '')) / 100;
-        }
-        
-        // 处理数字值
-        const num = parseFloat(value);
-        if (!isNaN(num)) {
-          return num;
-        }
-        
-        // 保持原始文本值
-        return value;
-      });
-    }).filter(row => row.length > 0 && row.some(cell => cell !== null));
-
-    // 确保数据有效
-    if (data.length < 2) {
-      throw new Error('数据行数不足，请确认数据格式是否正确');
-    }
-
-    console.log('Parsed data sample:', data.slice(0, 3));
-
-    const headers = data[0];
-    
-    const ebitdaRowIndex = data.findIndex(row => 
-      row[0] && String(row[0]).toLowerCase().includes('ebitda')
+    // Find EBITDA row
+    const ebitdaRowIndex = rows.findIndex(row => 
+      row[0] && String(row[0]).toLowerCase().includes('ebitda margin')
     );
     
     if (ebitdaRowIndex === -1) {
       throw new Error('未找到 EBITDA 数据行');
     }
-
-    // 获取年份数据行（在 EBITDA 行之前的数据行）
-    const yearRows = data.slice(1, ebitdaRowIndex).filter(row => {
-      const yearValue = String(row[0]).match(/^\d{4}/);
-      return yearValue && parseInt(yearValue[0]) >= 1900 && parseInt(yearValue[0]) <= 2100;
-    });
-
-    if (yearRows.length === 0) {
-      throw new Error('未找到有效的年份数据行');
-    }
-
-    // 重组数据：表头 + 年份行 + EBITDA行
-    const processedData = [
-      headers,
-      ...yearRows,
-      data[ebitdaRowIndex]
-    ];
-
-    // 更新表格数据
-    excelData.value = processedData;
-    console.log('Final processed data:', {
-      headers: processedData[0],
-      yearRows: yearRows.length,
-      ebitdaRow: processedData[processedData.length - 1]
-    });
-
-    // 创建工作簿
+    
+    console.log('EBITDA row index:', ebitdaRowIndex);
+    
+    // Get headers
+    const headers = rows[0];
+    console.log('Headers:', headers);
+    
+    // Create workbook
     const workbook = {
       SheetNames: ['TTM (bounded)'],
       Sheets: {
-        'TTM (bounded)': XLSX.utils.aoa_to_sheet(processedData)
+        'TTM (bounded)': XLSX.utils.aoa_to_sheet(rows)
       }
     };
-
-    // 转换为文件
+    
+    // Convert to file
     const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([wbout], { 
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
     });
     const file = new File([blob], 'google_sheet_data.xlsx', { type: blob.type });
-
-    // 更新图表
+    
+    // Update chart
     if (bubbleChartRef.value) {
-      console.log('Processing for animated chart with data:', {
-        rowCount: processedData.length,
-        yearRowCount: yearRows.length
-      });
+      console.log('Preparing to update bubble chart with processed data');
       await bubbleChartRef.value.processExcelData(file);
+    } else {
+      console.warn('Bubble chart reference not found');
     }
-
+    
   } catch (error) {
     console.error('Error importing from Google Sheet:', error);
+    console.error('Error stack:', error.stack);
     alert('导入数据失败：' + error.message);
   }
 };

@@ -8,11 +8,183 @@
 .chart-container {
   width: 100%;
   height: 100%;
-  min-height: 840px;
-  background: white;
+  min-height: 600px;
+  background: #f8fafc;
   border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+#additional-chart {
+  width: 100%;
+  height: 100%;
+  min-height: 600px;
+}
+
+svg {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.x-label, .y-label {
+  font-size: 14px;
+  fill: #475569;
+}
+
+.quarter-display {
+  font-size: 24px;
+  fill: #1e293b;
+  font-weight: 600;
+}
+
+.bubble circle {
+  transition: all 0.3s ease;
+}
+
+.bubble:hover circle {
+  opacity: 0.9;
+  filter: brightness(1.1);
+}
+
+.bubble image {
+  pointer-events: none;
+}
+
+/* Axes styling */
+.domain {
+  stroke: #cbd5e1;
+}
+
+.tick line {
+  stroke: #e2e8f0;
+}
+
+.tick text {
+  fill: #64748b;
+  font-size: 12px;
+}
+
+/* Grid lines */
+.grid line {
+  stroke: #e2e8f0;
+  stroke-opacity: 0.5;
+  shape-rendering: crispEdges;
+}
+
+.grid path {
+  stroke-width: 0;
+}
+
+/* Quadrant labels */
+.quadrant-label {
+  font-size: 12px;
+  fill: #94a3b8;
+  text-anchor: middle;
+}
+
+/* Animation controls */
+.controls {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  background: white;
+  padding: 8px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.control-button {
+  padding: 8px 16px;
+  border: none;
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.control-button:hover {
+  background: #e2e8f0;
+}
+
+.control-button:active {
+  background: #cbd5e1;
+}
+
+.control-button.active {
+  background: #3b82f6;
+  color: white;
+}
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  font-size: 14px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.tooltip.visible {
+  opacity: 1;
+}
+
+.tooltip-company {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.tooltip-data {
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Legend */
+.legend {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.legend-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.legend-label {
+  font-size: 12px;
+  color: #64748b;
 }
 
 .zero-line {
@@ -169,14 +341,27 @@ let xScale, yScale;
 let globalXDomain = [-0.7, 1.2];  // EBITDA margin range: -50% to 100% in decimal form
 let globalYDomain = [-0.3, 1.2]; // Revenue growth range: -10% to 100% in decimal form
 
+// Add chart dimensions
+const margin = { top: 50, right: 100, bottom: 50, left: 60 };
+const chartRef = ref(null);
+
+// Function to get chart dimensions
+const getChartDimensions = () => {
+  const container = document.getElementById('additional-chart');
+  if (!container) return { width: 800, height: 600 };
+  return {
+    width: container.clientWidth,
+    height: container.clientHeight
+  };
+};
+
 // Function to process XLSX data
 const processExcelData = (file) => {
   console.log('Starting to process Excel file:', file.name);
   const reader = new FileReader();
   
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     try {
-      console.log('File loaded, starting to parse...');
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
       console.log('Available sheets:', workbook.SheetNames);
@@ -189,424 +374,432 @@ const processExcelData = (file) => {
 
       // Convert sheet to JSON with headers
       const jsonData = XLSX.utils.sheet_to_json(ttmSheet, { header: 1 });
-      console.log('Raw data rows:', jsonData.length);
+      console.log('First row (headers):', jsonData[0]);
       
-      if (jsonData.length < 3) {
-        throw new Error('数据行数不足');
-      }
+      // Get headers (company names) from first row, skip first column
+      const headers = jsonData[0].slice(1).map(h => h ? h.trim() : null).filter(Boolean);
+      console.log('Processed headers:', headers);
       
-      // Get headers (company names)
-      const headers = jsonData[0];
-      if (!headers || headers.length < 2) {
-        throw new Error('表头数据无效');
-      }
-      console.log('Headers:', headers);
-      
-      // Process data
-      const processedData = [];
-      years = []; // Reset years array
-      
-      // 找到收入增长和 EBITDA 的分界点
+      // Find EBITDA Margin row
       const ebitdaStartIndex = jsonData.findIndex(row => 
         row && row[0] && String(row[0]).toLowerCase().includes('ebitda margin')
       );
-
-      console.log('EBITDA start index:', ebitdaStartIndex);
-      console.log('Total rows:', jsonData.length);
-
+      
       if (ebitdaStartIndex === -1) {
-        throw new Error('未找到 EBITDA Margin 标记行');
+        throw new Error('EBITDA Margin row not found');
       }
-
-      // 获取有效的公司列表（从第3列开始，因为前两列是空的）
-      const validCompanies = headers.slice(2).filter(company => company);
-      console.log('Valid companies:', validCompanies);
-
-      // 计算上半部分和下半部分的行数
-      const revenueRowCount = ebitdaStartIndex - 1; // 减去表头行
-      console.log('Revenue section row count:', revenueRowCount);
-
-      // 处理每一年的数据
+      
+      // Process data rows
+      const processedData = [];
+      const quarters = new Set();
+      
+      // Log the data structure
+      console.log('Data structure check:', {
+        totalRows: jsonData.length,
+        ebitdaStartIndex,
+        firstDataRow: jsonData[1],
+        firstEbitdaRow: jsonData[ebitdaStartIndex + 1]
+      });
+      
+      // Process rows between headers and EBITDA row
       for (let i = 1; i < ebitdaStartIndex; i++) {
-        const revenueRow = jsonData[i];
-        if (!revenueRow || !revenueRow[0]) continue;
+        const row = jsonData[i];
         
-        const yearStr = String(revenueRow[0]).trim();
-        const yearMatch = yearStr.match(/^(\d{4})/);
-        if (!yearMatch) continue;
-        
-        const year = yearMatch[1];
-        if (!years.includes(year)) {
-          years.push(year);
-        }
-        
-        // 计算对应的 EBITDA 行索引
-        // EBITDA 部分的起始位置是 ebitdaStartIndex + 1
-        // 相对位置与收入部分相同
-        const relativeIndex = i - 1; // 减1是因为要跳过表头行
-        const ebitdaRowIndex = ebitdaStartIndex + 1 + relativeIndex;
-        const ebitdaRow = jsonData[ebitdaRowIndex];
-        
-        console.log(`Processing year ${year}:`, {
-          revenueRowIndex: i,
-          ebitdaRowIndex: ebitdaRowIndex,
-          hasRevenueData: !!revenueRow,
-          hasEbitdaData: !!ebitdaRow,
-          revenueRowSample: revenueRow.slice(0, 5),
-          ebitdaRowSample: ebitdaRow ? ebitdaRow.slice(0, 5) : null,
-          yearMatch: yearMatch[0]
-        });
-        
-        if (!ebitdaRow) {
-          console.log(`No EBITDA data found for year ${year} at index ${ebitdaRowIndex}`);
+        if (!row || !row[0]) {
+          console.log(`Skipping row ${i}: Empty row`);
           continue;
         }
         
-        // 处理每个公司的数据（从第3列开始）
-        for (let j = 2; j < headers.length; j++) {
-          const company = headers[j];
-          if (!company) continue;
+        // Get year from first column
+        const year = String(row[0]).trim();
+        if (!year || year === 'Revenue Growth YoY') {
+          console.log(`Skipping row ${i}: Invalid year or header row`);
+          continue;
+        }
+        
+        // Calculate quarter based on position within the year (4 rows per year)
+        const quarterNum = ((i - 1) % 4) + 1;
+        const quarter = `${year}'Q${quarterNum}`;
+        
+        // Get corresponding EBITDA row
+        const ebitdaRow = jsonData[ebitdaStartIndex + (i - 1)];
+        if (!ebitdaRow) {
+          console.log(`Skipping row ${i}: No corresponding EBITDA row`);
+          continue;
+        }
+        
+        let hasValidData = false;
+        let rowData = [];
+        
+        // Process each company's data
+        headers.forEach((company, j) => {
+          const colIndex = j + 1;
+          const revenueGrowth = parseFloat(row[colIndex]);
+          const ebitdaMargin = parseFloat(ebitdaRow[colIndex]);
           
-          const revenueGrowth = revenueRow[j];
-          const ebitdaMargin = ebitdaRow[j];
-          
-          console.log(`Processing ${company} data for ${year}:`, {
-            revenueGrowth,
-            ebitdaMargin,
-            columnIndex: j,
-            rowIndex: i,
-            ebitdaRowIndex
-          });
-          
-          // 处理空值或无效值，使用默认值0
-          let growth = 0;
-          let margin = 0;
-          
-          // 处理收入增长率
-          if (revenueGrowth !== undefined && revenueGrowth !== null && revenueGrowth !== '') {
-            if (typeof revenueGrowth === 'string' && revenueGrowth.includes('%')) {
-              growth = parseFloat(revenueGrowth.replace('%', '')) / 100;
-            } else {
-              growth = parseFloat(revenueGrowth);
-            }
-            if (isNaN(growth)) growth = 0;
+          if (!isNaN(revenueGrowth) && !isNaN(ebitdaMargin)) {
+            const dataPoint = {
+              quarter,
+              company,
+              revenueGrowth: revenueGrowth / 100,
+              ebitdaMargin: ebitdaMargin / 100,
+              hasBothQuarters: true
+            };
+            processedData.push(dataPoint);
+            rowData.push(dataPoint);
+            hasValidData = true;
           }
-          
-          // 处理 EBITDA 利润率
-          if (ebitdaMargin !== undefined && ebitdaMargin !== null && ebitdaMargin !== '') {
-            if (typeof ebitdaMargin === 'string' && ebitdaMargin.includes('%')) {
-              margin = parseFloat(ebitdaMargin.replace('%', '')) / 100;
-            } else {
-              margin = parseFloat(ebitdaMargin);
-            }
-            if (isNaN(margin)) margin = 0;
-          }
-          
-          // 添加数据点，即使值为0
-          processedData.push({
-            year,
-            company,
-            revenueGrowth: growth,
-            ebitdaMargin: margin
-          });
-          
-          // 记录日志
-          if (growth !== 0 || margin !== 0) {
-            console.log('Added valid data point for:', company, { 
-              year, 
-              growth, 
-              margin,
-              rawRevenue: revenueGrowth,
-              rawEbitda: ebitdaMargin
-            });
-          }
+        });
+        
+        if (hasValidData) {
+          quarters.add(quarter);
+          console.log(`Processed ${quarter}: ${rowData.length} valid data points`);
+        } else {
+          console.log(`No valid data for ${quarter}`);
         }
       }
       
-      // Sort years
-      years.sort((a, b) => parseInt(a) - parseInt(b));
-      
       console.log('Final processed data:', {
-        years,
-        dataPoints: processedData.length,
-        sample: processedData.slice(0, 5),
-        yearCount: years.length,
-        companyCount: validCompanies.length,
-        firstFewDataPoints: processedData.slice(0, 3).map(d => ({
-          year: d.year,
-          company: d.company,
-          growth: d.revenueGrowth,
-          margin: d.ebitdaMargin,
-          rawData: true
-        }))
+        totalQuarters: quarters.size,
+        quarters: Array.from(quarters).sort(),
+        totalDataPoints: processedData.length,
+        sampleData: processedData.slice(0, 5)
       });
       
       if (processedData.length === 0) {
-        throw new Error('没有找到有效的数据点');
+        throw new Error('No valid data points found');
       }
       
-      // Update the data
-      mergedData.value = processedData;
-      currentYearIndex = 0;
+      // Sort quarters chronologically
+      const sortedQuarters = Array.from(quarters).sort((a, b) => {
+        // Parse YYYY'QN format
+        const [yearA, quarterA] = a.split("'");
+        const [yearB, quarterB] = b.split("'");
+        
+        // Compare years first
+        const yearDiff = parseInt(yearA) - parseInt(yearB);
+        if (yearDiff !== 0) return yearDiff;
+        
+        // If years are same, compare quarters (Q1, Q2, Q3, Q4)
+        return parseInt(quarterA.substring(1)) - parseInt(quarterB.substring(1));
+      });
       
-      // Initialize the visualization
-      console.log('Initializing chart with data points:', processedData.length);
+      // Update data
+      years = sortedQuarters;
+      mergedData.value = processedData;
+      currentYearIndex = years.length - 1; // Start from the latest quarter
+      
+      // Initialize chart
+      console.log('Initializing chart with:', {
+        quarters: years,
+        currentIndex: currentYearIndex,
+        dataPoints: mergedData.value.length
+      });
       initChart();
       
     } catch (error) {
       console.error('Error processing Excel file:', error);
+      console.error('Error stack:', error.stack);
       alert('处理数据时出错：' + error.message);
     }
   };
   
   reader.onerror = (error) => {
     console.error('Error reading file:', error);
+    console.error('Error stack:', error.stack);
     alert('读取文件时出错');
   };
   
-  try {
-    reader.readAsArrayBuffer(file);
-  } catch (error) {
-    console.error('Error starting file read:', error);
-    alert('启动文件读取时出错');
-  }
+  reader.readAsArrayBuffer(file);
 };
 
-// Initialize chart
+// Initialize the chart
 const initChart = () => {
-  try {
-    // Clear previous chart
-    d3.select('#additional-chart').selectAll('*').remove();
+  const { width, height } = getChartDimensions();
+  console.log('Initializing chart with dimensions:', width, height);
+  
+  // Clear existing SVG
+  d3.select('#additional-chart').selectAll("*").remove();
     
     // Create SVG
-    const svg = d3.select('#additional-chart').append('svg')
-      .attr('width', '100%')
-      .attr('height', '100%')
-      .attr('viewBox', '0 0 1200 840')
-      .attr('preserveAspectRatio', 'xMidYMid meet');
-
-    const margin = { top: 40, right: 20, bottom: 50, left: 60 };
-    const width = 1200 - margin.left - margin.right;
-    const height = 840 - margin.top - margin.bottom;
-
-    const g = svg.append("g")
-      .attr("transform", `translate(${margin.left}, ${margin.top})`);
-
-    // Initialize scales with fixed domains
-    xScale = d3.scaleLinear()
+  const svg = d3.select('#additional-chart')
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+    
+  // Add background
+  svg.append("rect")
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("fill", "#f8fafc");
+    
+  // Create scales
+  const xScale = d3.scaleLinear()
       .domain(globalXDomain)
-      .range([0, width]);
+    .range([margin.left, width - margin.right]);
 
-    yScale = d3.scaleLinear()
+  const yScale = d3.scaleLinear()
       .domain(globalYDomain)
-      .range([height, 0]);
-
-    // Create axes
-    const xAxis = d3.axisBottom(xScale).tickFormat(d3.format('.0%'));
-    const yAxis = d3.axisLeft(yScale).tickFormat(d3.format('.0%'));
+    .range([height - margin.bottom, margin.top]);
 
     // Add axes
-    g.append('g')
-      .attr('class', 'x-axis')
-      .attr('transform', `translate(0,${height})`)
+  const xAxis = d3.axisBottom(xScale)
+    .ticks(5)
+    .tickFormat(d => d + "%");
+    
+  const yAxis = d3.axisLeft(yScale)
+    .ticks(5)
+    .tickFormat(d => d + "%");
+    
+  svg.append("g")
+    .attr("transform", `translate(0,${height - margin.bottom})`)
       .call(xAxis);
 
-    g.append('g')
-      .attr('class', 'y-axis')
+  svg.append("g")
+    .attr("transform", `translate(${margin.left},0)`)
       .call(yAxis);
 
-    // Add axis labels
-    g.append('text')
-      .attr('class', 'x-label')
-      .attr('text-anchor', 'middle')
-      .attr('x', width / 2)
-      .attr('y', height + 40)
-      .text('EBITDA Margin')
-      .style('font-size', '14px');
+  // Add labels
+  svg.append("text")
+    .attr("class", "x-label")
+    .attr("text-anchor", "middle")
+    .attr("x", width / 2)
+    .attr("y", height - 10)
+    .text("EBITDA Margin (%)");
+    
+  svg.append("text")
+    .attr("class", "y-label")
+    .attr("text-anchor", "middle")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -height / 2)
+    .attr("y", 15)
+    .text("Revenue Growth YoY (%)");
+    
+  // Add quarter display
+  const quarterDisplay = svg.append("text")
+    .attr("class", "quarter-display")
+    .attr("x", width - margin.right)
+    .attr("y", margin.top)
+    .attr("text-anchor", "end")
+    .attr("font-size", "24px")
+    .attr("font-weight", "bold");
+    
+  // Add tooltip
+  const tooltip = d3.select(chartRef.value)
+    .append("div")
+    .attr("class", "tooltip");
 
-    g.append('text')
-      .attr('class', 'y-label')
-      .attr('text-anchor', 'middle')
-      .attr('transform', 'rotate(-90)')
-      .attr('y', -45)
-      .attr('x', -height / 2)
-      .text('Revenue Growth YoY')
-      .style('font-size', '14px');
+  // Add controls
+  const controls = d3.select(chartRef.value)
+    .append("div")
+    .attr("class", "controls");
 
-    // Add zero lines
-    g.append('line')
-      .attr('class', 'zero-line')
-      .attr('x1', xScale(0))
-      .attr('y1', 0)
-      .attr('x2', xScale(0))
-      .attr('y2', height)
-      .attr('stroke', '#4e843d')
-      .attr('stroke-dasharray', '4,4');
+  // Play/pause button
+  controls.append("button")
+    .attr("class", "control-button")
+    .html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Play')
+    .on("click", togglePlay);
 
-    g.append('line')
-      .attr('class', 'zero-line')
-      .attr('x1', 0)
-      .attr('y1', yScale(0))
-      .attr('x2', width)
-      .attr('y2', yScale(0))
-      .attr('stroke', '#4e843d')
-      .attr('stroke-dasharray', '4,4');
-
-    // Define drag behaviors
-    const dragLogo = d3.drag()
-      .on('start', dragStarted)
-      .on('drag', dragged)
-      .on('end', dragEnded);
-
-    function dragStarted(event, d) {
-      d3.select(this).raise().classed('active', true);
-    }
-
-    function dragged(event, d) {
-      d3.select(this)
-        .attr('x', d.x = event.x)
-        .attr('y', d.y = event.y);
-    }
-
-    function dragEnded(event, d) {
-      d3.select(this).classed('active', false);
-    }
-
-    // Function to update chart with animation
-    function updateChart(yearIndex) {
-      const currentYear = years[yearIndex];
-      const yearData = mergedData.value.filter(d => d.year === currentYear);
-
-      // Update bubbles with proper transitions
-      const bubbles = g.selectAll('.bubble')
-        .data(yearData, d => d.company);
-
-      // Enter new bubbles
-      bubbles.enter()
-        .append('circle')
-        .attr('class', 'bubble')
-        .attr('r', 8)
-        .attr('fill', d => colorDict[d.company])
-        .attr('cx', d => xScale(d.ebitdaMargin))
-        .attr('cy', d => yScale(d.revenueGrowth));
-
-      // Update all bubbles (both existing and new)
-      g.selectAll('.bubble')
-        .transition()
-        .duration(750)
-        .ease(d3.easeCubicInOut)
-        .attr('cx', d => xScale(d.ebitdaMargin))
-        .attr('cy', d => yScale(d.revenueGrowth))
-        .attr('fill', d => colorDict[d.company]);
-
-      // Remove old bubbles
-      bubbles.exit().remove();
-
-      // Update logos with proper transitions
-      const logos = g.selectAll('.logo')
-        .data(yearData, d => d.company);
-
-      // Enter new logos
-      logos.enter()
-        .append('image')
-        .attr('class', 'logo')
-        .attr('width', 50)
-        .attr('height', 50)
-        .attr('xlink:href', d => logoDict[d.company])
-        .attr('x', d => xScale(d.ebitdaMargin) - 25)
-        .attr('y', d => yScale(d.revenueGrowth) - 55)
-        .call(dragLogo);
-
-      // Update all logos (both existing and new)
-      g.selectAll('.logo')
-        .transition()
-        .duration(750)
-        .ease(d3.easeCubicInOut)
-        .attr('x', d => xScale(d.ebitdaMargin) - 25)
-        .attr('y', d => yScale(d.revenueGrowth) - 55);
-
-      // Remove old logos
-      logos.exit().remove();
-
-      // Update trend indicators
-      const trends = g.selectAll('.trend')
-        .data(yearData, d => d.company);
-
-      // Enter new trends
-      trends.enter()
-        .append('text')
-        .attr('class', 'trend')
-        .attr('text-anchor', 'middle')
-        .attr('x', d => xScale(d.ebitdaMargin))
-        .attr('y', d => yScale(d.revenueGrowth) + 20)
-        .text(d => {
-          if (d.revenueTrend === 'increase') return '↑';
-          if (d.revenueTrend === 'decrease') return '↓';
-          return '→';
-        })
-        .attr('fill', d => {
-          if (d.revenueTrend === 'increase') return '#4CAF50';
-          if (d.revenueTrend === 'decrease') return '#F44336';
-          return '#9E9E9E';
-        });
-
-      // Update all trends (both existing and new)
-      g.selectAll('.trend')
-        .transition()
-        .duration(750)
-        .ease(d3.easeCubicInOut)
-        .attr('x', d => xScale(d.ebitdaMargin))
-        .attr('y', d => yScale(d.revenueGrowth) + 20)
-        .text(d => {
-          if (d.revenueTrend === 'increase') return '↑';
-          if (d.revenueTrend === 'decrease') return '↓';
-          return '→';
-        })
-        .attr('fill', d => {
-          if (d.revenueTrend === 'increase') return '#4CAF50';
-          if (d.revenueTrend === 'decrease') return '#F44336';
-          return '#9E9E9E';
-        });
-
-      // Remove old trends
-      trends.exit().remove();
-
-      // Update year label
-      g.selectAll('.year-label').remove();
-      g.append('text')
-        .attr('class', 'year-label')
-        .attr('x', width / 2)
-        .attr('y', -10)
-        .attr('text-anchor', 'middle')
-        .style('font-size', '24px')
-        .text(currentYear);
-    }
-
-    // Initial update
-    updateChart(currentYearIndex);
-
-    // Animation control methods
-    const togglePlay = () => {
-      isPlaying.value = !isPlaying.value;
-      if (isPlaying.value) {
-        animationInterval = setInterval(() => {
-          currentYearIndex = (currentYearIndex + 1) % years.length;
-          updateChart(currentYearIndex);
-        }, 1000);
-      } else {
-        clearInterval(animationInterval);
-      }
-    };
-
-    // Cleanup
-    onUnmounted(() => {
-      if (animationInterval) {
-        clearInterval(animationInterval);
-      }
+  // Reset button
+  controls.append("button")
+    .attr("class", "control-button")
+    .html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"></path><path d="M3 13a9 9 0 1 0 3-7.7L3 8"></path></svg> Reset')
+    .on("click", () => {
+      currentYearIndex = 0;
+      update(currentYearIndex);
     });
 
-  } catch (error) {
-    console.error('Error initializing chart:', error);
+  // Add legend
+  const legend = d3.select(chartRef.value)
+    .append("div")
+    .attr("class", "legend");
+
+  legend.append("div")
+    .attr("class", "legend-title")
+    .text("Companies");
+
+  const legendItems = legend.selectAll(".legend-item")
+    .data(Object.entries(colorDict))
+    .enter()
+    .append("div")
+    .attr("class", "legend-item");
+
+  legendItems.append("div")
+    .attr("class", "legend-color")
+    .style("background-color", d => d[1]);
+
+  legendItems.append("div")
+    .attr("class", "legend-label")
+    .text(d => d[0]);
+
+  // Update function with tooltip
+  const update = (quarterIndex) => {
+    console.log('Updating chart for quarter:', years[quarterIndex]);
+    
+    // Filter data for current quarter
+    const currentData = mergedData.value.filter(d => d.quarter === years[quarterIndex]);
+    console.log('Current quarter data:', currentData);
+    
+    // Update quarter display
+    quarterDisplay.text(years[quarterIndex].replace('Q', ' Q'));
+    
+    // Update bubbles
+    const bubbles = svg.selectAll(".bubble")
+      .data(currentData, d => d.company);
+      
+    // Remove old bubbles
+    bubbles.exit().remove();
+    
+    // Add new bubbles
+    const bubblesEnter = bubbles.enter()
+      .append("g")
+      .attr("class", "bubble")
+      .attr("transform", d => `translate(${xScale(d.ebitdaMargin)},${yScale(d.revenueGrowth)})`)
+      .style("cursor", "pointer")
+      .on("mouseover", (event, d) => {
+        // Highlight the bubble
+        d3.select(event.currentTarget).select("circle")
+          .transition()
+          .duration(200)
+          .attr("r", 35)
+          .attr("opacity", 0.9);
+          
+        // Show tooltip
+        tooltip
+          .classed("visible", true)
+          .html(`
+            <div class="tooltip-company">${d.company}</div>
+            <div class="tooltip-data">
+              <div>Revenue Growth: ${(d.revenueGrowth * 100).toFixed(1)}%</div>
+              <div>EBITDA Margin: ${(d.ebitdaMargin * 100).toFixed(1)}%</div>
+            </div>
+          `)
+          .style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY - 10) + "px");
+      })
+      .on("mousemove", (event) => {
+        tooltip
+          .style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY - 10) + "px");
+      })
+      .on("mouseout", (event) => {
+        // Reset bubble size
+        d3.select(event.currentTarget).select("circle")
+          .transition()
+          .duration(200)
+          .attr("r", 30)
+          .attr("opacity", 0.7);
+          
+        tooltip.classed("visible", false);
+      })
+      .on("click", (event, d) => {
+        // Remove the data point
+        mergedData.value = mergedData.value.filter(item => 
+          !(item.company === d.company && item.quarter === d.quarter)
+        );
+        update(currentYearIndex);
+      });
+      
+    // Add circle background
+    bubblesEnter.append("circle")
+      .attr("r", 30)
+      .attr("fill", d => {
+        const color = colorDict[d.company.toLowerCase()] || "#64748b";
+        return color;
+      })
+      .attr("opacity", 0.7);
+      
+    // Add company logo
+    bubblesEnter.append("image")
+      .attr("xlink:href", d => {
+        const logo = logoDict[d.company.toLowerCase()];
+        return logo || "";
+      })
+      .attr("x", -15)
+      .attr("y", -15)
+      .attr("width", 30)
+      .attr("height", 30)
+      .style("pointer-events", "none");
+      
+    // Add quarter label
+    bubblesEnter.append("text")
+      .attr("class", "quarter-label")
+      .attr("x", 20)
+      .attr("y", 0)
+      .attr("dy", ".35em")
+      .style("font-size", "12px")
+      .style("fill", "#475569")
+      .text(d => d.quarter.replace(/^\d{4}/, ''));
+      
+    // Update existing bubbles with transition
+    bubbles.transition()
+      .duration(1000)
+      .attr("transform", d => `translate(${xScale(d.ebitdaMargin)},${yScale(d.revenueGrowth)})`);
+      
+    // Add zero lines
+    const zeroLines = svg.selectAll(".zero-line").data([
+      { x1: xScale(0), y1: 0, x2: xScale(0), y2: height - margin.bottom },
+      { x1: margin.left, y1: yScale(0), x2: width - margin.right, y2: yScale(0) }
+    ]);
+    
+    zeroLines.enter()
+      .append("line")
+      .attr("class", "zero-line")
+      .merge(zeroLines)
+      .attr("x1", d => d.x1)
+      .attr("y1", d => d.y1)
+      .attr("x2", d => d.x2)
+      .attr("y2", d => d.y2)
+      .attr("stroke", "#4e843d")
+      .attr("stroke-dasharray", "4,4")
+      .attr("opacity", 0.5);
+  };
+
+    // Initial update
+  update(currentYearIndex);
+  
+  // Start animation
+  const animate = () => {
+    if (currentYearIndex < years.length - 1) {
+      currentYearIndex++;
+      update(currentYearIndex);
+      setTimeout(animate, 2000);
+    }
+  };
+  
+  setTimeout(animate, 2000);
+};
+
+// Toggle play/pause
+const togglePlay = () => {
+  isPlaying = !isPlaying;
+  const button = controls.select("button");
+  
+  if (isPlaying) {
+    button
+      .classed("active", true)
+      .html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Pause');
+      
+    function animate() {
+      if (!isPlaying) return;
+      
+      if (currentYearIndex < years.length - 1) {
+        currentYearIndex++;
+        update(currentYearIndex);
+        setTimeout(animate, 2000);
+      } else {
+        isPlaying = false;
+        button
+          .classed("active", false)
+          .html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Play');
+      }
+    }
+    
+    setTimeout(animate, 2000);
+  } else {
+    button
+      .classed("active", false)
+      .html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Play');
   }
 };
 
