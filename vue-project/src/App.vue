@@ -33,9 +33,8 @@
       <!-- File Format Description -->
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 class="text-lg font-semibold text-blue-800 mb-2">Excel File Requirements:</h3>
+          <h3 class="text-lg font-semibold text-blue-800 mb-2">Google Sheet Requirements:</h3>
           <ul class="list-disc list-inside text-blue-700 space-y-1">
-            <li>File must be in .xlsx or .xls format</li>
             <li>Must contain a sheet named 'TTM (bounded)'</li>
             <li>First row should contain company names as headers</li>
             <li>First column should contain quarter information (e.g., '2024'Q4')</li>
@@ -47,19 +46,130 @@
 
       <!-- Chart Sections -->
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Static 2024Q3 Chart -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-wego-gray">2024 Q4 Market Performance</h2>
-          </div>
-          <StaticBubbleChart ref="staticBubbleChartRef" />
-        </div>
         <!-- Animated Bubble Chart -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold text-wego-gray">Market Performance Over Time</h2>
+            <button 
+              @click="saveAnimatedChart"
+              class="px-4 py-2 bg-wego-green text-white rounded hover:bg-wego-green-dark flex items-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h-2v5.586l-1.293-1.293z" />
+                <path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
+              </svg>
+              Save Chart
+            </button>
           </div>
-          <AnimatedBubbleChart ref="bubbleChartRef" class="h-[700px]" />
+          <div class="mb-6">
+            <div class="slider-container bg-gray-50 rounded-lg p-4">
+              <div class="flex justify-between items-center mb-4">
+                <span class="text-sm font-medium text-gray-500">Current Period:</span>
+                <span class="text-lg font-semibold text-gray-900">{{ currentQuarter }}</span>
+              </div>
+              <input 
+                type="range" 
+                :min="0" 
+                :max="quarters.length - 1" 
+                v-model="currentQuarterIndex"
+                @input="handleSliderChange"
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              >
+              <div class="flex justify-between mt-2">
+                <span class="text-sm text-gray-500">{{ quarters[0] || '' }}</span>
+                <span class="text-sm text-gray-500">{{ quarters[quarters.length - 1] || '' }}</span>
+              </div>
+            </div>
+          </div>
+          <AnimatedBubbleChart 
+            ref="bubbleChartRef" 
+            class="h-[840px]" 
+            @data-update="handleDataUpdate"
+            @company-select="handleCompanySelect"
+            @quarters-loaded="handleQuartersLoaded"
+          />
+        </div>
+
+        <!-- Current Company Details -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-wego-gray">Current Company Details</h2>
+          </div>
+          <div v-if="selectedCompany" class="mt-5">
+            <dl class="grid grid-cols-1 gap-5 sm:grid-cols-4">
+              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                <dt class="truncate text-sm font-medium text-gray-500">Company Name</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
+                  {{ companyNames[selectedCompany.company] || selectedCompany.company }}
+                </dd>
+              </div>
+              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                <dt class="truncate text-sm font-medium text-gray-500">Quarter</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
+                  {{ selectedCompany.quarter }}
+                </dd>
+              </div>
+              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                <dt class="truncate text-sm font-medium text-gray-500">Revenue Growth</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight"
+                    :class="selectedCompany.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'">
+                  {{ formatPercentage(selectedCompany.revenueGrowth) }}
+                </dd>
+              </div>
+              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                <dt class="truncate text-sm font-medium text-gray-500">EBITDA Margin</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight"
+                    :class="selectedCompany.ebitdaMargin >= 0 ? 'text-green-600' : 'text-red-600'">
+                  {{ formatPercentage(selectedCompany.ebitdaMargin) }}
+                </dd>
+              </div>
+            </dl>
+          </div>
+          <div v-else class="text-center py-8 text-gray-500">
+            Click on a company in the chart above to view its details.
+          </div>
+        </div>
+
+        <!-- Current Quarter Details -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-wego-gray">Current Quarter Details</h2>
+          </div>
+          <div v-if="currentQuarterData.length > 0">
+            <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
+              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                <dt class="truncate text-sm font-medium text-gray-500">Average Revenue Growth</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight"
+                    :class="averageRevenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'">
+                  {{ formatPercentage(averageRevenueGrowth) }}
+                </dd>
+              </div>
+              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                <dt class="truncate text-sm font-medium text-gray-500">Average EBITDA Margin</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight"
+                    :class="averageEbitdaMargin >= 0 ? 'text-green-600' : 'text-red-600'">
+                  {{ formatPercentage(averageEbitdaMargin) }}
+                </dd>
+              </div>
+              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                <dt class="truncate text-sm font-medium text-gray-500">Companies Tracked</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
+                  {{ currentQuarterData.length }}
+                </dd>
+              </div>
+            </dl>
+          </div>
+          <div v-else class="text-center py-8 text-gray-500">
+            No data available for the current quarter. Please interact with the chart above.
+          </div>
+        </div>
+
+        <!-- Static 2024Q3 Chart -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-wego-gray">2024 Yearly Market Performance</h2>
+          </div>
+          <StaticBubbleChart ref="staticBubbleChartRef" />
         </div>
 
         <!-- Excel Data Table -->
@@ -91,18 +201,13 @@
             </table>
           </div>
         </div>
-
-        <!-- Static Chart: cannot be deleted or it will cause some problem -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-          <DataChart ref="chartRef" />
-        </div>
       </div>
     </div>
   </main>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Dialog, DialogPanel } from '@headlessui/vue'
 import {
   ArrowDownCircleIcon,
@@ -111,7 +216,6 @@ import {
   Bars3Icon,
 } from '@heroicons/vue/20/solid'
 import { BellIcon, XMarkIcon } from '@heroicons/vue/24/outline'
-import DataChart from './components/DataChart.vue'
 import AnimatedBubbleChart from './components/AnimatedBubbleChart.vue'
 import StaticBubbleChart from './components/StaticBubbleChart.vue'
 import * as XLSX from 'xlsx'
@@ -119,7 +223,6 @@ import WEGO_LOGO from '/logos/Wego_logo.png'
 import { inject } from '@vercel/analytics'
 import Papa from 'papaparse'
 
-const chartRef = ref(null)
 const bubbleChartRef = ref(null)
 const staticBubbleChartRef = ref(null)
 const mobileMenuOpen = ref(false)
@@ -368,6 +471,63 @@ onMounted(async () => {
     console.error('Failed to load initial data:', error);
   }
 });
+
+// Add new data management for interactive display
+const currentQuarterData = ref([]);
+const averageRevenueGrowth = computed(() => {
+  if (currentQuarterData.value.length === 0) return 0;
+  const sum = currentQuarterData.value.reduce((acc, curr) => acc + curr.revenueGrowth, 0);
+  return sum / currentQuarterData.value.length;
+});
+
+const averageEbitdaMargin = computed(() => {
+  if (currentQuarterData.value.length === 0) return 0;
+  const sum = currentQuarterData.value.reduce((acc, curr) => acc + curr.ebitdaMargin, 0);
+  return sum / currentQuarterData.value.length;
+});
+
+const formatPercentage = (value) => {
+  return `${(value * 100).toFixed(1)}%`;
+};
+
+// Add selected company state
+const selectedCompany = ref(null);
+
+const handleDataUpdate = (data) => {
+  currentQuarterData.value = data;
+  selectedCompany.value = null; // Reset selected company when data updates
+};
+
+// Add company selection handler
+const handleCompanySelect = (company) => {
+  selectedCompany.value = company;
+};
+
+// Add time control state
+const quarters = ref([]);
+const currentQuarterIndex = ref(0);
+const currentQuarter = computed(() => quarters.value[currentQuarterIndex.value] || '');
+
+// Handle quarters loaded event
+const handleQuartersLoaded = ({ quarters: loadedQuarters, currentIndex }) => {
+  quarters.value = loadedQuarters;
+  currentQuarterIndex.value = currentIndex;
+};
+
+// Handle slider change
+const handleSliderChange = () => {
+  if (bubbleChartRef.value) {
+    bubbleChartRef.value.currentYearIndex = currentQuarterIndex.value;
+    bubbleChartRef.value.handleSliderChange();
+  }
+};
+
+// Add save chart function
+const saveAnimatedChart = async () => {
+  if (bubbleChartRef.value) {
+    await bubbleChartRef.value.saveChart();
+  }
+};
 
 inject();
 </script>

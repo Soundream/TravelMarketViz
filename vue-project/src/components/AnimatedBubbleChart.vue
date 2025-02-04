@@ -1,20 +1,6 @@
 <template>
   <div class="chart-container" ref="chartRef">
     <div id="additional-chart" class="w-full h-full"></div>
-    <div class="slider-container">
-      <div class="slider-header">
-        <span class="slider-title">Time Period</span>
-        <span class="slider-value">{{ currentQuarter }}</span>
-      </div>
-      <input 
-        type="range" 
-        :min="0" 
-        :max="years.length - 1" 
-        v-model="currentYearIndex"
-        @input="handleSliderChange"
-        class="w-full"
-      >
-    </div>
   </div>
 </template>
 
@@ -22,18 +8,17 @@
 .chart-container {
   width: 100%;
   height: 100%;
-  min-height: 600px;
-  background: #f8fafc;
+  min-height: 840px;
+  background: white;
   border-radius: 8px;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-  position: relative;
-  padding-bottom: 100px; /* Add padding for slider */
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 #additional-chart {
   width: 100%;
-  height: calc(100% - 100px); /* Adjust height to account for slider */
-  min-height: 500px;
+  height: 100%;
+  min-height: 800px;
 }
 
 svg {
@@ -396,6 +381,9 @@ const currentYearIndex = ref(0);
 const years = ref([]);
 const mergedData = ref([]);
 
+// Add emit definition
+const emit = defineEmits(['data-update', 'company-select', 'quarters-loaded']);
+
 // Add these as component-level variables to maintain consistent scales
 let xScale, yScale;
 let globalXDomain = [-0.7, 1.2];  // EBITDA margin range: -50% to 100% in decimal form
@@ -573,6 +561,12 @@ const processExcelData = (file) => {
       mergedData.value = processedData;
       currentYearIndex.value = years.value.length - 1; // Start from the latest quarter
       
+      // Emit quarters loaded event
+      emit('quarters-loaded', {
+        quarters: years.value,
+        currentIndex: currentYearIndex.value
+      });
+
       // Initialize chart
       console.log('Initializing chart with:', {
         quarters: years.value,
@@ -610,6 +604,82 @@ const handleSliderChange = (event) => {
   if (update) update(currentYearIndex.value);
 };
 
+// Add save chart function
+const saveChart = async () => {
+  try {
+    const svgNode = document.querySelector('#additional-chart svg');
+    const svgWidth = svgNode.viewBox.baseVal.width || 1200;
+    const svgHeight = svgNode.viewBox.baseVal.height || 840;
+    
+    // First, load all images
+    const images = svgNode.querySelectorAll('image');
+    await Promise.all(Array.from(images).map(async (image) => {
+      try {
+        const url = image.getAttribute('href') || image.getAttribute('xlink:href');
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Image load failed');
+        const blob = await response.blob();
+        const base64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+        image.setAttribute('href', base64);
+      } catch (error) {
+        image.remove();
+      }
+    }));
+    
+    const svgData = new XMLSerializer().serializeToString(svgNode);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    // Set ultra-high resolution scale
+    const scale = 8;  // Increased from 4 to 8 for maximum quality
+    canvas.width = svgWidth * scale;
+    canvas.height = svgHeight * scale;
+    
+    // Enable maximum quality image rendering
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
+    // Set white background
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Set image source with proper SVG dimensions
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+    
+    return new Promise((resolve, reject) => {
+      img.onload = () => {
+        try {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(svgUrl);
+          
+          // Convert to PNG and download
+          const link = document.createElement('a');
+          link.download = `market_performance_${years.value[currentYearIndex.value]}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(svgUrl);
+        reject(new Error('Failed to load SVG'));
+      };
+      img.src = svgUrl;
+    });
+  } catch (error) {
+    console.error('Error saving chart:', error);
+    throw error;
+  }
+};
+
 // Initialize the chart
 const initChart = () => {
   const { width, height } = getChartDimensions();
@@ -618,17 +688,19 @@ const initChart = () => {
   // Clear existing SVG
   d3.select('#additional-chart').selectAll("*").remove();
     
-  // Create SVG
+  // Create SVG with viewBox for better scaling
   const svg = d3.select('#additional-chart')
     .append("svg")
-    .attr("width", width)
-    .attr("height", height);
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("viewBox", "0 0 1200 840")
+    .attr("preserveAspectRatio", "xMidYMid meet");
     
   // Add background
   svg.append("rect")
     .attr("width", "100%")
     .attr("height", "100%")
-    .attr("fill", "#f8fafc");
+    .attr("fill", "white");
     
   // Create scales
   xScale = d3.scaleLinear()
@@ -694,6 +766,9 @@ const initChart = () => {
     const currentData = mergedData.value.filter(d => d.quarter === years.value[quarterIndex]);
     console.log('Current quarter data:', currentData);
     
+    // Emit the current data
+    emit('data-update', currentData);
+    
     // Update quarter display
     quarterDisplay.text(years.value[quarterIndex]);
     
@@ -710,6 +785,10 @@ const initChart = () => {
       .attr("class", "bubble")
       .attr("transform", d => `translate(${xScale(d.ebitdaMargin)},${yScale(d.revenueGrowth)})`)
       .style("cursor", "pointer")
+      .on("click", (event, d) => {
+        // Emit company selection event
+        emit('company-select', d);
+      })
       .on("mouseover", (event, d) => {
         // Highlight the bubble
         d3.select(event.currentTarget).select("circle")
@@ -717,24 +796,6 @@ const initChart = () => {
           .duration(200)
           .attr("r", 35)
           .attr("opacity", 0.9);
-          
-        // Show tooltip
-        tooltip
-          .classed("visible", true)
-          .html(`
-            <div class="tooltip-company">${companyNames[d.company] || d.company}</div>
-            <div class="tooltip-data">
-              <div>Revenue Growth: ${(d.revenueGrowth * 100).toFixed(1)}%</div>
-              <div>EBITDA Margin: ${(d.ebitdaMargin * 100).toFixed(1)}%</div>
-            </div>
-          `)
-          .style("left", (event.pageX + 10) + "px")
-          .style("top", (event.pageY - 10) + "px");
-      })
-      .on("mousemove", (event) => {
-        tooltip
-          .style("left", (event.pageX + 10) + "px")
-          .style("top", (event.pageY - 10) + "px");
       })
       .on("mouseout", (event) => {
         // Reset bubble size
@@ -743,23 +804,20 @@ const initChart = () => {
           .duration(200)
           .attr("r", 30)
           .attr("opacity", 0.7);
-          
-        tooltip.classed("visible", false);
       });
       
-    // Add circle background
+    // Update bubble and logo sizes
     bubblesEnter.append("circle")
-      .attr("r", 30)
+      .attr("r", 30)  // Increased from previous size
       .attr("fill", d => colorDict[d.company] || "#64748b")
       .attr("opacity", 0.7);
       
-    // Add company logo
     bubblesEnter.append("image")
       .attr("xlink:href", d => logoDict[d.company] || "")
-      .attr("x", -15)
-      .attr("y", -15)
-      .attr("width", 30)
-      .attr("height", 30)
+      .attr("x", -20)  // Adjusted for new size
+      .attr("y", -20)  // Adjusted for new size
+      .attr("width", 40)  // Increased from previous size
+      .attr("height", 40)  // Increased from previous size
       .style("pointer-events", "none");
       
     // Update existing bubbles with transition
@@ -794,6 +852,11 @@ const initChart = () => {
 
 // Expose methods
 defineExpose({
-  processExcelData
+  processExcelData,
+  saveChart,
+  currentYearIndex,
+  handleSliderChange: () => {
+    if (update) update(currentYearIndex.value);
+  }
 });
 </script> 
