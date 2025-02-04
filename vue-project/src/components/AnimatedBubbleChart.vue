@@ -1,6 +1,19 @@
 <template>
-  <div class="chart-container">
+  <div class="chart-container" ref="chartRef">
     <div id="additional-chart" class="w-full h-full"></div>
+    <div class="slider-container">
+      <div class="slider-header">
+        <span class="slider-title">Time Period</span>
+        <span class="slider-value">{{ currentQuarter }}</span>
+      </div>
+      <input 
+        type="range" 
+        :min="0" 
+        :max="years.length - 1" 
+        :value="currentYearIndex"
+        @input="handleSliderChange"
+      >
+    </div>
   </div>
 </template>
 
@@ -12,6 +25,7 @@
   background: #f8fafc;
   border-radius: 8px;
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  position: relative;
 }
 
 #additional-chart {
@@ -209,10 +223,87 @@ svg {
   stroke: #000;
   stroke-width: 2px;
 }
+
+/* Slider container */
+.slider-container {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.slider-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.slider-value {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Custom slider styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: #e2e8f0;
+  outline: none;
+  margin: 10px 0;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: #2563eb;
+  transform: scale(1.1);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  background: #2563eb;
+  transform: scale(1.1);
+}
 </style>
 
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref, computed } from 'vue';
 import * as d3 from 'd3';
 import * as XLSX from 'xlsx';
 
@@ -344,6 +435,7 @@ let globalYDomain = [-0.3, 1.2]; // Revenue growth range: -10% to 100% in decima
 // Add chart dimensions
 const margin = { top: 50, right: 100, bottom: 50, left: 60 };
 const chartRef = ref(null);
+let update; // Declare update function reference
 
 // Function to get chart dimensions
 const getChartDimensions = () => {
@@ -496,6 +588,7 @@ const processExcelData = (file) => {
         dataPoints: mergedData.value.length
       });
       initChart();
+      update(currentYearIndex);  // Initial update
       
     } catch (error) {
       console.error('Error processing Excel file:', error);
@@ -513,6 +606,18 @@ const processExcelData = (file) => {
   reader.readAsArrayBuffer(file);
 };
 
+// Add computed property for current quarter display
+const currentQuarter = computed(() => {
+  if (!years.length) return '';
+  return years[currentYearIndex];
+});
+
+// Handle slider change
+const handleSliderChange = (event) => {
+  currentYearIndex = parseInt(event.target.value);
+  if (update) update(currentYearIndex);
+};
+
 // Initialize the chart
 const initChart = () => {
   const { width, height } = getChartDimensions();
@@ -521,7 +626,7 @@ const initChart = () => {
   // Clear existing SVG
   d3.select('#additional-chart').selectAll("*").remove();
     
-    // Create SVG
+  // Create SVG
   const svg = d3.select('#additional-chart')
     .append("svg")
     .attr("width", width)
@@ -534,30 +639,30 @@ const initChart = () => {
     .attr("fill", "#f8fafc");
     
   // Create scales
-  const xScale = d3.scaleLinear()
-      .domain(globalXDomain)
+  xScale = d3.scaleLinear()
+    .domain(globalXDomain)
     .range([margin.left, width - margin.right]);
 
-  const yScale = d3.scaleLinear()
-      .domain(globalYDomain)
+  yScale = d3.scaleLinear()
+    .domain(globalYDomain)
     .range([height - margin.bottom, margin.top]);
 
-    // Add axes
+  // Add axes
   const xAxis = d3.axisBottom(xScale)
     .ticks(5)
-    .tickFormat(d => d + "%");
+    .tickFormat(d => (d * 100).toFixed(0) + "%");
     
   const yAxis = d3.axisLeft(yScale)
     .ticks(5)
-    .tickFormat(d => d + "%");
+    .tickFormat(d => (d * 100).toFixed(0) + "%");
     
   svg.append("g")
     .attr("transform", `translate(0,${height - margin.bottom})`)
-      .call(xAxis);
+    .call(xAxis);
 
   svg.append("g")
     .attr("transform", `translate(${margin.left},0)`)
-      .call(yAxis);
+    .call(yAxis);
 
   // Add labels
   svg.append("text")
@@ -589,51 +694,8 @@ const initChart = () => {
     .append("div")
     .attr("class", "tooltip");
 
-  // Add controls
-  const controls = d3.select(chartRef.value)
-    .append("div")
-    .attr("class", "controls");
-
-  // Play/pause button
-  controls.append("button")
-    .attr("class", "control-button")
-    .html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Play')
-    .on("click", togglePlay);
-
-  // Reset button
-  controls.append("button")
-    .attr("class", "control-button")
-    .html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"></path><path d="M3 13a9 9 0 1 0 3-7.7L3 8"></path></svg> Reset')
-    .on("click", () => {
-      currentYearIndex = 0;
-      update(currentYearIndex);
-    });
-
-  // Add legend
-  const legend = d3.select(chartRef.value)
-    .append("div")
-    .attr("class", "legend");
-
-  legend.append("div")
-    .attr("class", "legend-title")
-    .text("Companies");
-
-  const legendItems = legend.selectAll(".legend-item")
-    .data(Object.entries(colorDict))
-    .enter()
-    .append("div")
-    .attr("class", "legend-item");
-
-  legendItems.append("div")
-    .attr("class", "legend-color")
-    .style("background-color", d => d[1]);
-
-  legendItems.append("div")
-    .attr("class", "legend-label")
-    .text(d => d[0]);
-
-  // Update function with tooltip
-  const update = (quarterIndex) => {
+  // Define update function
+  update = (quarterIndex) => {
     console.log('Updating chart for quarter:', years[quarterIndex]);
     
     // Filter data for current quarter
@@ -641,7 +703,7 @@ const initChart = () => {
     console.log('Current quarter data:', currentData);
     
     // Update quarter display
-    quarterDisplay.text(years[quarterIndex].replace('Q', ' Q'));
+    quarterDisplay.text(years[quarterIndex]);
     
     // Update bubbles
     const bubbles = svg.selectAll(".bubble")
@@ -668,7 +730,7 @@ const initChart = () => {
         tooltip
           .classed("visible", true)
           .html(`
-            <div class="tooltip-company">${d.company}</div>
+            <div class="tooltip-company">${companyNames[d.company] || d.company}</div>
             <div class="tooltip-data">
               <div>Revenue Growth: ${(d.revenueGrowth * 100).toFixed(1)}%</div>
               <div>EBITDA Margin: ${(d.ebitdaMargin * 100).toFixed(1)}%</div>
@@ -691,45 +753,22 @@ const initChart = () => {
           .attr("opacity", 0.7);
           
         tooltip.classed("visible", false);
-      })
-      .on("click", (event, d) => {
-        // Remove the data point
-        mergedData.value = mergedData.value.filter(item => 
-          !(item.company === d.company && item.quarter === d.quarter)
-        );
-        update(currentYearIndex);
       });
       
     // Add circle background
     bubblesEnter.append("circle")
       .attr("r", 30)
-      .attr("fill", d => {
-        const color = colorDict[d.company.toLowerCase()] || "#64748b";
-        return color;
-      })
+      .attr("fill", d => colorDict[d.company] || "#64748b")
       .attr("opacity", 0.7);
       
     // Add company logo
     bubblesEnter.append("image")
-      .attr("xlink:href", d => {
-        const logo = logoDict[d.company.toLowerCase()];
-        return logo || "";
-      })
+      .attr("xlink:href", d => logoDict[d.company] || "")
       .attr("x", -15)
       .attr("y", -15)
       .attr("width", 30)
       .attr("height", 30)
       .style("pointer-events", "none");
-      
-    // Add quarter label
-    bubblesEnter.append("text")
-      .attr("class", "quarter-label")
-      .attr("x", 20)
-      .attr("y", 0)
-      .attr("dy", ".35em")
-      .style("font-size", "12px")
-      .style("fill", "#475569")
-      .text(d => d.quarter.replace(/^\d{4}/, ''));
       
     // Update existing bubbles with transition
     bubbles.transition()
@@ -755,68 +794,14 @@ const initChart = () => {
       .attr("opacity", 0.5);
   };
 
-    // Initial update
-  update(currentYearIndex);
-  
-  // Start animation
-  const animate = () => {
-    if (currentYearIndex < years.length - 1) {
-      currentYearIndex++;
-      update(currentYearIndex);
-      setTimeout(animate, 2000);
-    }
-  };
-  
-  setTimeout(animate, 2000);
-};
-
-// Toggle play/pause
-const togglePlay = () => {
-  isPlaying = !isPlaying;
-  const button = controls.select("button");
-  
-  if (isPlaying) {
-    button
-      .classed("active", true)
-      .html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg> Pause');
-      
-    function animate() {
-      if (!isPlaying) return;
-      
-      if (currentYearIndex < years.length - 1) {
-        currentYearIndex++;
-        update(currentYearIndex);
-        setTimeout(animate, 2000);
-      } else {
-        isPlaying = false;
-        button
-          .classed("active", false)
-          .html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Play');
-      }
-    }
-    
-    setTimeout(animate, 2000);
-  } else {
-    button
-      .classed("active", false)
-      .html('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Play');
+  // Initial update
+  if (years.length > 0) {
+    update(currentYearIndex);
   }
 };
 
 // Expose methods
 defineExpose({
-  processExcelData,
-  togglePlay: () => {
-    isPlaying.value = !isPlaying.value;
-    if (isPlaying.value) {
-      animationInterval = setInterval(() => {
-        currentYearIndex = (currentYearIndex + 1) % years.length;
-        initChart();
-      }, 1000);
-    } else {
-      clearInterval(animationInterval);
-    }
-  },
-  isPlaying
+  processExcelData
 });
 </script> 
