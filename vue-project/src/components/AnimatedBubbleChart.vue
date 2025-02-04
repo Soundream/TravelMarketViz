@@ -256,6 +256,11 @@ input[type="range"]::-moz-range-thumb:hover {
   background: #2563eb;
   transform: scale(1.1);
 }
+
+.logo {
+  cursor: move;
+  user-select: none;
+}
 </style>
 
 <script setup>
@@ -287,6 +292,8 @@ import CLEARTRIP_LOGO from '/logos/Cleartrip_logo.png'
 import TRAVELOKA_LOGO from '/logos/Traveloka_logo.png'
 import FLIGHTCENTRE_LOGO from '/logos/FlightCentre_logo.png'
 import SEERA_LOGO from '/logos/SEERA_logo.png'
+import ALMOSAFER_LOGO from '/logos/Almosafer_logo.png'
+import OTA_LOGO from '/logos/OTA_logo.png'
 
 // Company colors
 const colorDict = {
@@ -344,8 +351,8 @@ const logoDict = {
   'Cleartrip': CLEARTRIP_LOGO,
   'Traveloka': TRAVELOKA_LOGO,
   'FLT': FLIGHTCENTRE_LOGO,
-  'Almosafer': SEERA_LOGO,
-  'Webjet OTA': SEERA_LOGO
+  'Almosafer': ALMOSAFER_LOGO,
+  'Webjet OTA': OTA_LOGO
 };
 
 // Add company names mapping
@@ -386,8 +393,8 @@ const emit = defineEmits(['data-update', 'company-select', 'quarters-loaded']);
 
 // Add these as component-level variables to maintain consistent scales
 let xScale, yScale;
-let globalXDomain = [-0.7, 1.2];  // EBITDA margin range: -50% to 100% in decimal form
-let globalYDomain = [-0.3, 1.2]; // Revenue growth range: -10% to 100% in decimal form
+let globalXDomain = [-0.5, 0.8];  // EBITDA margin range: -50% to 80%
+let globalYDomain = [-0.3, 1.0]; // Revenue growth range: -30% to 100%
 
 // Add chart dimensions
 const margin = { top: 50, right: 100, bottom: 50, left: 60 };
@@ -713,11 +720,11 @@ const initChart = () => {
 
   // Add axes
   const xAxis = d3.axisBottom(xScale)
-    .ticks(5)
+    .ticks(8)  // Increased number of ticks
     .tickFormat(d => (d * 100).toFixed(0) + "%");
     
   const yAxis = d3.axisLeft(yScale)
-    .ticks(5)
+    .ticks(8)  // Increased number of ticks
     .tickFormat(d => (d * 100).toFixed(0) + "%");
     
   svg.append("g")
@@ -744,110 +751,133 @@ const initChart = () => {
     .attr("y", 15)
     .text("Revenue Growth YoY (%)");
     
-  // Add quarter display
-  const quarterDisplay = svg.append("text")
-    .attr("class", "quarter-display")
-    .attr("x", width - margin.right)
-    .attr("y", margin.top)
-    .attr("text-anchor", "end")
-    .attr("font-size", "24px")
-    .attr("font-weight", "bold");
+    /* Remove quarter display
+    const quarterDisplay = svg.append("text")
+      .attr("class", "quarter-display")
+      .attr("x", width - margin.right)
+      .attr("y", margin.top)
+      .attr("text-anchor", "end")
+      .attr("font-size", "24px")
+      .attr("font-weight", "bold");
+    */
     
-  // Add tooltip
-  const tooltip = d3.select(chartRef.value)
-    .append("div")
-    .attr("class", "tooltip");
+    // Add tooltip
+    const tooltip = d3.select(chartRef.value)
+      .append("div")
+      .attr("class", "tooltip");
 
-  // Define update function
-  update = (quarterIndex) => {
-    console.log('Updating chart for quarter:', years.value[quarterIndex]);
-    
-    // Filter data for current quarter
-    const currentData = mergedData.value.filter(d => d.quarter === years.value[quarterIndex]);
-    console.log('Current quarter data:', currentData);
-    
-    // Emit the current data
-    emit('data-update', currentData);
-    
-    // Update quarter display
-    quarterDisplay.text(years.value[quarterIndex]);
-    
-    // Update bubbles
-    const bubbles = svg.selectAll(".bubble")
-      .data(currentData, d => d.company);
+    // Define update function
+    update = (quarterIndex) => {
+      console.log('Updating chart for quarter:', years.value[quarterIndex]);
       
-    // Remove old bubbles
-    bubbles.exit().remove();
-    
-    // Add new bubbles
-    const bubblesEnter = bubbles.enter()
-      .append("g")
-      .attr("class", "bubble")
-      .attr("transform", d => `translate(${xScale(d.ebitdaMargin)},${yScale(d.revenueGrowth)})`)
-      .style("cursor", "pointer")
-      .on("click", (event, d) => {
-        // Emit company selection event
-        emit('company-select', d);
-      })
-      .on("mouseover", (event, d) => {
-        // Highlight the bubble
-        d3.select(event.currentTarget).select("circle")
-          .transition()
-          .duration(200)
-          .attr("r", 35)
-          .attr("opacity", 0.9);
-      })
-      .on("mouseout", (event) => {
-        // Reset bubble size
-        d3.select(event.currentTarget).select("circle")
-          .transition()
-          .duration(200)
-          .attr("r", 30)
-          .attr("opacity", 0.7);
-      });
+      // Filter data for current quarter
+      const currentData = mergedData.value.filter(d => d.quarter === years.value[quarterIndex]);
+      console.log('Current quarter data:', currentData);
       
-    // Update bubble and logo sizes
-    bubblesEnter.append("circle")
-      .attr("r", 30)  // Increased from previous size
-      .attr("fill", d => colorDict[d.company] || "#64748b")
-      .attr("opacity", 0.7);
+      // Emit the current data
+      emit('data-update', currentData);
       
-    bubblesEnter.append("image")
-      .attr("xlink:href", d => logoDict[d.company] || "")
-      .attr("x", -20)  // Adjusted for new size
-      .attr("y", -20)  // Adjusted for new size
-      .attr("width", 40)  // Increased from previous size
-      .attr("height", 40)  // Increased from previous size
-      .style("pointer-events", "none");
+      // Update bubbles
+      const bubbles = svg.selectAll(".bubble")
+        .data(currentData, d => d.company);
+        
+      // Remove old bubbles
+      bubbles.exit().remove();
       
-    // Update existing bubbles with transition
-    bubbles.transition()
-      .duration(1000)
-      .attr("transform", d => `translate(${xScale(d.ebitdaMargin)},${yScale(d.revenueGrowth)})`);
-      
-    // Add zero lines
-    const zeroLines = svg.selectAll(".zero-line").data([
-      { x1: xScale(0), y1: 0, x2: xScale(0), y2: height - margin.bottom },
-      { x1: margin.left, y1: yScale(0), x2: width - margin.right, y2: yScale(0) }
-    ]);
-    
-    zeroLines.enter()
-      .append("line")
-      .attr("class", "zero-line")
-      .merge(zeroLines)
-      .attr("x1", d => d.x1)
-      .attr("y1", d => d.y1)
-      .attr("x2", d => d.x2)
-      .attr("y2", d => d.y2)
-      .attr("stroke", "#4e843d")
-      .attr("stroke-dasharray", "4,4")
-      .attr("opacity", 0.5);
-  };
+      // Add new bubbles
+      const bubblesEnter = bubbles.enter()
+        .append("g")
+        .attr("class", "bubble")
+        .attr("transform", d => `translate(${xScale(d.ebitdaMargin)},${yScale(d.revenueGrowth)})`)
+        .style("cursor", "pointer")
+        .on("click", (event, d) => {
+          // Emit company selection event
+          emit('company-select', d);
+        });
 
-  // Initial update
-  if (years.value.length > 0) {
-    update(currentYearIndex.value);
-  }
+      // Update bubble and logo sizes
+      bubblesEnter.append("circle")
+        .attr("r", 6)
+        .attr("fill", d => colorDict[d.company] || "#64748b")
+        .attr("stroke", "white")
+        .attr("stroke-width", "2px")
+        .attr("opacity", 0.8);
+
+      // Create a group for the logo to make dragging more stable
+      const logoGroups = bubblesEnter.append("g")
+        .attr("class", "logo-group")
+        .style("cursor", "move");
+
+      // Add the logo image
+      const logoSize = 96;
+      logoGroups.append("image")
+        .attr("class", "logo")
+        .attr("xlink:href", d => logoDict[d.company] || "")
+        .attr("x", -logoSize/2)
+        .attr("y", -logoSize/2)
+        .attr("width", logoSize)
+        .attr("height", logoSize)
+        .style("pointer-events", "auto");
+
+      // Add invisible background rect to make dragging easier
+      logoGroups.insert("rect", "image")
+        .attr("class", "logo-hit-area")
+        .attr("x", -logoSize/2)
+        .attr("y", -logoSize/2)
+        .attr("width", logoSize)
+        .attr("height", logoSize)
+        .attr("fill", "transparent");
+
+      // Apply drag behavior to the logo groups
+      logoGroups.call(d3.drag()
+        .on("start", function() {
+          d3.select(this).raise();
+        })
+        .on("drag", function(event) {
+          const dx = event.dx;
+          const dy = event.dy;
+          
+          // Update both rect and image positions
+          const currentX = parseFloat(d3.select(this).select('image').attr('x'));
+          const currentY = parseFloat(d3.select(this).select('image').attr('y'));
+          
+          d3.select(this).select('rect')
+            .attr('x', currentX + dx)
+            .attr('y', currentY + dy);
+            
+          d3.select(this).select('image')
+            .attr('x', currentX + dx)
+            .attr('y', currentY + dy);
+        }));
+
+      // Update existing bubbles with transition
+      bubbles.transition()
+        .duration(1000)
+        .attr("transform", d => `translate(${xScale(d.ebitdaMargin)},${yScale(d.revenueGrowth)})`);
+
+      // Add zero lines
+      const zeroLines = svg.selectAll(".zero-line").data([
+        { x1: xScale(0), y1: 0, x2: xScale(0), y2: height - margin.bottom },
+        { x1: margin.left, y1: yScale(0), x2: width - margin.right, y2: yScale(0) }
+      ]);
+      
+      zeroLines.enter()
+        .append("line")
+        .attr("class", "zero-line")
+        .merge(zeroLines)
+        .attr("x1", d => d.x1)
+        .attr("y1", d => d.y1)
+        .attr("x2", d => d.x2)
+        .attr("y2", d => d.y2)
+        .attr("stroke", "#4e843d")
+        .attr("stroke-dasharray", "4,4")
+        .attr("opacity", 0.5);
+    };
+
+    // Initial update
+    if (years.value.length > 0) {
+      update(currentYearIndex.value);
+    }
 };
 
 // Expose methods
