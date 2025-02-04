@@ -463,6 +463,9 @@ const processExcelData = (file) => {
       });
       
       // Process rows between headers and EBITDA row
+      let currentYear = null;
+      let quarterCount = 0;
+      
       for (let i = 1; i < ebitdaStartIndex; i++) {
         const row = jsonData[i];
         
@@ -478,9 +481,13 @@ const processExcelData = (file) => {
           continue;
         }
         
-        // Calculate quarter based on position within the year (4 rows per year)
-        const quarterNum = ((i - 1) % 4) + 1;
-        const quarter = `${year}'Q${quarterNum}`;
+        // Reset quarter count when year changes
+        if (year !== currentYear) {
+          currentYear = year;
+          quarterCount = 1;
+        } else {
+          quarterCount++;
+        }
         
         // Get corresponding EBITDA row
         const ebitdaRow = jsonData[ebitdaStartIndex + (i - 1)];
@@ -488,6 +495,22 @@ const processExcelData = (file) => {
           console.log(`Skipping row ${i}: No corresponding EBITDA row`);
           continue;
         }
+        
+        // Check if the row has any valid data
+        let hasAnyData = false;
+        for (let j = 1; j < row.length; j++) {
+          if (row[j] !== undefined && row[j] !== null && row[j] !== '') {
+            hasAnyData = true;
+            break;
+          }
+        }
+        
+        if (!hasAnyData) {
+          console.log(`Skipping row ${i}: No data in row`);
+          continue;
+        }
+        
+        const quarter = `${year}'Q${quarterCount}`;
         
         let hasValidData = false;
         let rowData = [];
