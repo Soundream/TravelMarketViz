@@ -10,8 +10,9 @@
         type="range" 
         :min="0" 
         :max="years.length - 1" 
-        :value="currentYearIndex"
+        v-model="currentYearIndex"
         @input="handleSliderChange"
+        class="w-full"
       >
     </div>
   </div>
@@ -26,12 +27,13 @@
   border-radius: 8px;
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
   position: relative;
+  padding-bottom: 100px; /* Add padding for slider */
 }
 
 #additional-chart {
   width: 100%;
-  height: 100%;
-  min-height: 600px;
+  height: calc(100% - 100px); /* Adjust height to account for slider */
+  min-height: 500px;
 }
 
 svg {
@@ -96,43 +98,11 @@ svg {
 
 /* Animation controls */
 .controls {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 10px;
-  background: white;
-  padding: 8px;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  display: none;
 }
 
 .control-button {
-  padding: 8px 16px;
-  border: none;
-  background: #f1f5f9;
-  color: #475569;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s ease;
-}
-
-.control-button:hover {
-  background: #e2e8f0;
-}
-
-.control-button:active {
-  background: #cbd5e1;
-}
-
-.control-button.active {
-  background: #3b82f6;
-  color: white;
+  display: none;
 }
 
 /* Tooltip */
@@ -227,7 +197,7 @@ svg {
 /* Slider container */
 .slider-container {
   position: absolute;
-  bottom: 30px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   width: 80%;
@@ -235,6 +205,7 @@ svg {
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  z-index: 1000; /* Ensure slider is above chart */
 }
 
 .slider-header {
@@ -421,11 +392,9 @@ const companyNames = {
   'Webjet OTA': 'Webjet OTA'
 };
 
-let mergedData = ref([]);
-let isPlaying = ref(false);
-let animationInterval = null;
-let currentYearIndex = 0;
-let years = [];
+const currentYearIndex = ref(0);
+const years = ref([]);
+const mergedData = ref([]);
 
 // Add these as component-level variables to maintain consistent scales
 let xScale, yScale;
@@ -577,18 +546,18 @@ const processExcelData = (file) => {
       });
       
       // Update data
-      years = sortedQuarters;
+      years.value = sortedQuarters;
       mergedData.value = processedData;
-      currentYearIndex = years.length - 1; // Start from the latest quarter
+      currentYearIndex.value = years.value.length - 1; // Start from the latest quarter
       
       // Initialize chart
       console.log('Initializing chart with:', {
-        quarters: years,
-        currentIndex: currentYearIndex,
+        quarters: years.value,
+        currentIndex: currentYearIndex.value,
         dataPoints: mergedData.value.length
       });
       initChart();
-      update(currentYearIndex);  // Initial update
+      update(currentYearIndex.value);  // Initial update
       
     } catch (error) {
       console.error('Error processing Excel file:', error);
@@ -608,14 +577,14 @@ const processExcelData = (file) => {
 
 // Add computed property for current quarter display
 const currentQuarter = computed(() => {
-  if (!years.length) return '';
-  return years[currentYearIndex];
+  if (!years.value.length) return '';
+  return years.value[currentYearIndex.value];
 });
 
 // Handle slider change
 const handleSliderChange = (event) => {
-  currentYearIndex = parseInt(event.target.value);
-  if (update) update(currentYearIndex);
+  currentYearIndex.value = parseInt(event.target.value);
+  if (update) update(currentYearIndex.value);
 };
 
 // Initialize the chart
@@ -696,14 +665,14 @@ const initChart = () => {
 
   // Define update function
   update = (quarterIndex) => {
-    console.log('Updating chart for quarter:', years[quarterIndex]);
+    console.log('Updating chart for quarter:', years.value[quarterIndex]);
     
     // Filter data for current quarter
-    const currentData = mergedData.value.filter(d => d.quarter === years[quarterIndex]);
+    const currentData = mergedData.value.filter(d => d.quarter === years.value[quarterIndex]);
     console.log('Current quarter data:', currentData);
     
     // Update quarter display
-    quarterDisplay.text(years[quarterIndex]);
+    quarterDisplay.text(years.value[quarterIndex]);
     
     // Update bubbles
     const bubbles = svg.selectAll(".bubble")
@@ -795,8 +764,8 @@ const initChart = () => {
   };
 
   // Initial update
-  if (years.length > 0) {
-    update(currentYearIndex);
+  if (years.value.length > 0) {
+    update(currentYearIndex.value);
   }
 };
 
