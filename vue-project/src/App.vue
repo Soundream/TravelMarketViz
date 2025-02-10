@@ -31,7 +31,7 @@
       </header>
 
       <!-- File Format Description -->
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+      <!-- <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h3 class="text-lg font-semibold text-blue-800 mb-2">Google Sheet Requirements:</h3>
           <ul class="list-disc list-inside text-blue-700 space-y-1">
@@ -42,54 +42,10 @@
             <li>Values should be in decimal format (e.g., 0.15 for 15%)</li>
           </ul>
         </div>
-      </div>
+      </div> -->
 
       <!-- Chart Sections -->
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Animated Bubble Chart -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-wego-gray">Market Performance Over Time</h2>
-            <button 
-              @click="saveAnimatedChart"
-              class="px-4 py-2 bg-wego-green text-white rounded hover:bg-wego-green-dark flex items-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h-2v5.586l-1.293-1.293z" />
-                <path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
-              </svg>
-              Save Chart
-            </button>
-          </div>
-          <div class="mb-6">
-            <div class="slider-container bg-gray-50 rounded-lg p-4">
-              <div class="flex justify-between items-center mb-4">
-                <span class="text-sm font-medium text-gray-500">Current Period:</span>
-                <span class="text-lg font-semibold text-gray-900">{{ currentQuarter }}</span>
-              </div>
-              <input 
-                type="range" 
-                :min="0" 
-                :max="quarters.length - 1" 
-                v-model="currentQuarterIndex"
-                @input="handleSliderChange"
-                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              >
-              <div class="flex justify-between mt-2">
-                <span class="text-sm text-gray-500">{{ quarters[0] || '' }}</span>
-                <span class="text-sm text-gray-500">{{ quarters[quarters.length - 1] || '' }}</span>
-              </div>
-            </div>
-          </div>
-          <AnimatedBubbleChart 
-            ref="bubbleChartRef" 
-            class="h-[840px]" 
-            @data-update="handleDataUpdate"
-            @company-select="handleCompanySelect"
-            @quarters-loaded="handleQuartersLoaded"
-          />
-        </div>
-
         <!-- Current Company Details -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div class="flex justify-between items-center mb-4">
@@ -129,7 +85,51 @@
             Click on a company in the chart above to view its details.
           </div>
         </div>
-
+        
+        <!-- Animated Bubble Chart -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-wego-gray">Market Performance Over Time</h2>
+            <button 
+              @click="saveAnimatedChart"
+              class="px-4 py-2 bg-wego-green text-white rounded hover:bg-wego-green-dark flex items-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h-2v5.586l-1.293-1.293z" />
+                <path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
+              </svg>
+              Save Chart
+            </button>
+          </div>
+          <div class="mb-6">
+            <div class="slider-container bg-gray-50 rounded-lg p-4">
+              <div class="flex justify-between items-center mb-4">
+                <span class="text-sm font-medium text-gray-500">Current Period:</span>
+                <span class="text-lg font-semibold text-gray-900">{{ currentQuarter }}</span>
+              </div>
+              <input 
+                type="range" 
+                :min="0" 
+                :max="quarters.length - 1" 
+                v-model="currentQuarterIndex"
+                @input="handleSliderChange"
+                :style="{ '--range-progress': `${(currentQuarterIndex / (quarters.length - 1)) * 100}%` }"
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              >
+              <div class="flex justify-between mt-2">
+                <span class="text-sm text-gray-500">{{ quarters[0] || '' }}</span>
+                <span class="text-sm text-gray-500">{{ quarters[quarters.length - 1] || '' }}</span>
+              </div>
+            </div>
+          </div>
+          <AnimatedBubbleChart 
+            ref="bubbleChartRef" 
+            class="h-[840px]" 
+            @data-update="handleDataUpdate"
+            @company-select="handleCompanySelect"
+            @quarters-loaded="handleQuartersLoaded"
+          />
+        </div>
         <!-- Current Quarter Details -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div class="flex justify-between items-center mb-4">
@@ -164,6 +164,9 @@
           </div>
         </div>
 
+        
+
+        
         <!-- Static 2024Q3 Chart -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div class="flex justify-between items-center mb-4">

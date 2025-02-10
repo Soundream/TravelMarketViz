@@ -415,10 +415,10 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: #4e843d;  /* Wego green */
   cursor: pointer;
   border: 2px solid white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -426,15 +426,16 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
-  background: #2563eb;
+  background: #3d6a31;  /* Darker Wego green */
   transform: scale(1.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
 }
 
 input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: #4e843d;  /* Wego green */
   cursor: pointer;
   border: 2px solid white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -442,8 +443,38 @@ input[type="range"]::-moz-range-thumb {
 }
 
 input[type="range"]::-moz-range-thumb:hover {
-  background: #2563eb;
+  background: #3d6a31;  /* Darker Wego green */
   transform: scale(1.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Add track styling for better visual feedback */
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(to right, #4e843d 0%, #4e843d var(--range-progress, 50%), #e2e8f0 var(--range-progress, 50%));
+  border-radius: 2px;
+  border: none;
+}
+
+input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(to right, #4e843d 0%, #4e843d var(--range-progress, 50%), #e2e8f0 var(--range-progress, 50%));
+  border-radius: 2px;
+  border: none;
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(78, 132, 61, 0.2);  /* Wego green with opacity */
+}
+
+input[type="range"]:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(78, 132, 61, 0.2);  /* Wego green with opacity */
 }
 
 .logo {
