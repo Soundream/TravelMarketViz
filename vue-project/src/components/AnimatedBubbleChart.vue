@@ -1,5 +1,35 @@
 <template>
   <div class="chart-container" ref="chartRef">
+    <!-- Add company selection dropdown -->
+    <div class="mb-4">
+      <fieldset>
+        <legend class="text-base font-semibold text-gray-900 mb-2">Companies to Display</legend>
+        <div class="mt-4 divide-y divide-gray-200 border-b border-t border-gray-200 max-h-60 overflow-y-auto">
+          <div v-for="company in Object.keys(companyNames)" :key="company" class="relative flex gap-3 py-2">
+            <div class="min-w-0 flex-1 text-sm/6">
+              <label :for="`company-${company}`" class="select-none font-medium text-gray-900">
+                {{ companyNames[company] }}
+              </label>
+            </div>
+            <div class="flex h-6 shrink-0 items-center">
+              <div class="group grid size-4 grid-cols-1">
+                <input 
+                  :id="`company-${company}`" 
+                  :name="`company-${company}`" 
+                  type="checkbox" 
+                  v-model="selectedCompanies[company]"
+                  class="col-start-1 row-start-1 appearance-none rounded border border-gray-300 bg-white checked:border-wego-green checked:bg-wego-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wego-green disabled:border-gray-300 disabled:bg-gray-100 disabled:checked:bg-gray-100 forced-colors:appearance-auto"
+                  @change="handleCompanySelection"
+                />
+                <svg class="pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white group-has-[:disabled]:stroke-gray-950/25" viewBox="0 0 14 14" fill="none">
+                  <path class="opacity-0 group-has-[:checked]:opacity-100" d="M3 8L6 11L11 3.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+    </div>
     <div id="additional-chart" class="w-full h-full"></div>
   </div>
 </template>
@@ -401,6 +431,18 @@ const margin = { top: 50, right: 100, bottom: 50, left: 60 };
 const chartRef = ref(null);
 let update; // Declare update function reference
 
+// Add selected companies state
+const selectedCompanies = ref({});
+
+// Function to initialize selected companies
+const initializeSelectedCompanies = () => {
+  const companies = Object.keys(companyNames);
+  companies.forEach(company => {
+    selectedCompanies.value[company] = true;
+  });
+  console.log('Initialized selected companies:', selectedCompanies.value);
+};
+
 // Function to get chart dimensions
 const getChartDimensions = () => {
   const container = document.getElementById('additional-chart');
@@ -435,6 +477,9 @@ const processExcelData = (file) => {
       // Get headers (company names) from first row, skip first column
       const headers = jsonData[0].slice(1).map(h => h ? h.trim() : null).filter(Boolean);
       console.log('Processed headers:', headers);
+      
+      // Initialize selected companies
+      initializeSelectedCompanies();
       
       // Find EBITDA Margin row
       const ebitdaStartIndex = jsonData.findIndex(row => 
@@ -768,11 +813,20 @@ const initChart = () => {
 
     // Define update function
     update = (quarterIndex) => {
+      console.log('=== Update Function Start ===');
       console.log('Updating chart for quarter:', years.value[quarterIndex]);
+      console.log('Selected companies state:', selectedCompanies.value);
+      console.log('Current mergedData:', mergedData.value);
       
-      // Filter data for current quarter
-      const currentData = mergedData.value.filter(d => d.quarter === years.value[quarterIndex]);
-      console.log('Current quarter data:', currentData);
+      // Filter data for current quarter and selected companies
+      const currentData = mergedData.value.filter(d => {
+        const isSelectedQuarter = d.quarter === years.value[quarterIndex];
+        const isSelectedCompany = selectedCompanies.value[d.company] === true;
+        console.log(`Filtering ${d.company}: Quarter match: ${isSelectedQuarter}, Selected: ${isSelectedCompany}, Quarter: ${d.quarter} vs ${years.value[quarterIndex]}`);
+        return isSelectedQuarter && isSelectedCompany;
+      });
+      
+      console.log('Filtered data for rendering:', currentData);
       
       // Emit the current data
       emit('data-update', currentData);
@@ -781,6 +835,10 @@ const initChart = () => {
       const bubbles = svg.selectAll(".bubble")
         .data(currentData, d => d.company);
         
+      console.log('Existing bubbles count:', bubbles.size());
+      console.log('Entering bubbles count:', bubbles.enter().size());
+      console.log('Exiting bubbles count:', bubbles.exit().size());
+      
       // Remove old bubbles
       bubbles.exit().remove();
       
@@ -872,12 +930,22 @@ const initChart = () => {
         .attr("stroke", "#4e843d")
         .attr("stroke-dasharray", "4,4")
         .attr("opacity", 0.5);
+
+      console.log('=== Update Function End ===');
     };
 
     // Initial update
     if (years.value.length > 0) {
+      console.log('Performing initial update with index:', currentYearIndex.value);
       update(currentYearIndex.value);
+    } else {
+      console.warn('No years data available for initial update');
     }
+};
+
+// Add company selection handler
+const handleCompanySelection = () => {
+  if (update) update(currentYearIndex.value);
 };
 
 // Expose methods
