@@ -93,7 +93,7 @@
         <!-- Current Company Details -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-wego-gray">Current Company Details</h2>
+            <h2 class="text-xl font-semibold text-wego-gray">Selected Company Details</h2>
           </div>
           <div v-if="selectedCompany" class="mt-5">
             <dl class="grid grid-cols-1 gap-5 sm:grid-cols-4">
@@ -133,7 +133,7 @@
         <!-- Current Quarter Details -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-wego-gray">Current Quarter Details</h2>
+            <h2 class="text-xl font-semibold text-wego-gray">Selected Quarter Details</h2>
           </div>
           <div v-if="currentQuarterData.length > 0">
             <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">

@@ -1,186 +1,195 @@
 <template>
   <div class="chart-container" ref="chartRef">
-    <!-- Add axis range controls -->
-    <div class="mb-4 grid grid-cols-2 gap-4">
-      <fieldset>
-        <legend class="block text-sm/6 font-semibold text-gray-900">Chart Dimensions</legend>
-        <div class="mt-2 grid grid-cols-2 gap-4">
-          <div>
-            <label for="chart-width" class="block text-sm/6 font-medium text-gray-700">Width (px)</label>
-            <div class="mt-1 grid grid-cols-1">
-              <input 
-                type="text" 
-                id="chart-width" 
-                v-model="chartDimensions.width" 
-                @input="validateAndUpdateDimensions('width')"
-                :class="[
-                  'col-start-1 row-start-1 block w-full rounded-md bg-white py-1.5 pl-3 pr-10 text-base text-gray-900 outline outline-1 -outline-offset-1 sm:text-sm/6',
-                  chartDimensions.widthError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
-                ]"
-                placeholder="1200"
-              />
-              <ExclamationCircleIcon 
-                v-if="chartDimensions.widthError"
-                class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
-              />
-            </div>
-            <p v-if="chartDimensions.widthError" class="mt-1 text-sm text-red-600">{{ chartDimensions.widthError }}</p>
-          </div>
-          <div>
-            <label for="chart-height" class="block text-sm/6 font-medium text-gray-700">Height (px)</label>
-            <div class="mt-1 grid grid-cols-1">
-              <input 
-                type="text" 
-                id="chart-height" 
-                v-model="chartDimensions.height" 
-                @input="validateAndUpdateDimensions('height')"
-                :class="[
-                  'col-start-1 row-start-1 block w-full rounded-md bg-white py-1.5 pl-3 pr-10 text-base text-gray-900 outline outline-1 -outline-offset-1 sm:text-sm/6',
-                  chartDimensions.heightError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
-                ]"
-                placeholder="840"
-              />
-              <ExclamationCircleIcon 
-                v-if="chartDimensions.heightError"
-                class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
-              />
-            </div>
-            <p v-if="chartDimensions.heightError" class="mt-1 text-sm text-red-600">{{ chartDimensions.heightError }}</p>
-          </div>
-        </div>
-      </fieldset>
-      
-      <fieldset>
-        <legend class="block text-sm/6 font-semibold text-gray-900">X-Axis Range (EBITDA Margin)</legend>
-        <div class="mt-2 grid grid-cols-2 gap-4">
-          <div>
-            <label for="x-min" class="block text-sm/6 font-medium text-gray-700">Min (%)</label>
-            <div class="mt-1 grid grid-cols-1">
-              <input 
-                type="text" 
-                id="x-min" 
-                v-model="xAxisRange.min" 
-                @input="validateAndUpdateRange('x', 'min')"
-                :class="[
-                  'col-start-1 row-start-1 block w-full rounded-md bg-white py-1.5 pl-3 pr-10 text-base text-gray-900 outline outline-1 -outline-offset-1 sm:text-sm/6',
-                  xAxisRange.minError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
-                ]"
-                placeholder="-50"
-              />
-              <ExclamationCircleIcon 
-                v-if="xAxisRange.minError"
-                class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
-              />
-            </div>
-            <p v-if="xAxisRange.minError" class="mt-1 text-sm text-red-600">{{ xAxisRange.minError }}</p>
-          </div>
-          <div>
-            <label for="x-max" class="block text-sm/6 font-medium text-gray-700">Max (%)</label>
-            <div class="mt-1 grid grid-cols-1">
-              <input 
-                type="text" 
-                id="x-max" 
-                v-model="xAxisRange.max" 
-                @input="validateAndUpdateRange('x', 'max')"
-                :class="[
-                  'col-start-1 row-start-1 block w-full rounded-md bg-white py-1.5 pl-3 pr-10 text-base text-gray-900 outline outline-1 -outline-offset-1 sm:text-sm/6',
-                  xAxisRange.maxError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
-                ]"
-                placeholder="80"
-              />
-              <ExclamationCircleIcon 
-                v-if="xAxisRange.maxError"
-                class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
-              />
-            </div>
-            <p v-if="xAxisRange.maxError" class="mt-1 text-sm text-red-600">{{ xAxisRange.maxError }}</p>
-          </div>
-        </div>
-      </fieldset>
-      
-      <fieldset>
-        <legend class="block text-sm/6 font-semibold text-gray-900">Y-Axis Range (Revenue Growth)</legend>
-        <div class="mt-2 grid grid-cols-2 gap-4">
-          <div>
-            <label for="y-min" class="block text-sm/6 font-medium text-gray-700">Min (%)</label>
-            <div class="mt-1 grid grid-cols-1">
-              <input 
-                type="text" 
-                id="y-min" 
-                v-model="yAxisRange.min" 
-                @input="validateAndUpdateRange('y', 'min')"
-                :class="[
-                  'col-start-1 row-start-1 block w-full rounded-md bg-white py-1.5 pl-3 pr-10 text-base text-gray-900 outline outline-1 -outline-offset-1 sm:text-sm/6',
-                  yAxisRange.minError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
-                ]"
-                placeholder="-30"
-              />
-              <ExclamationCircleIcon 
-                v-if="yAxisRange.minError"
-                class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
-              />
-            </div>
-            <p v-if="yAxisRange.minError" class="mt-1 text-sm text-red-600">{{ yAxisRange.minError }}</p>
-          </div>
-          <div>
-            <label for="y-max" class="block text-sm/6 font-medium text-gray-700">Max (%)</label>
-            <div class="mt-1 grid grid-cols-1">
-              <input 
-                type="text" 
-                id="y-max" 
-                v-model="yAxisRange.max" 
-                @input="validateAndUpdateRange('y', 'max')"
-                :class="[
-                  'col-start-1 row-start-1 block w-full rounded-md bg-white py-1.5 pl-3 pr-10 text-base text-gray-900 outline outline-1 -outline-offset-1 sm:text-sm/6',
-                  yAxisRange.maxError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
-                ]"
-                placeholder="100"
-              />
-              <ExclamationCircleIcon 
-                v-if="yAxisRange.maxError"
-                class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
-              />
-            </div>
-            <p v-if="yAxisRange.maxError" class="mt-1 text-sm text-red-600">{{ yAxisRange.maxError }}</p>
-          </div>
-        </div>
-      </fieldset>
-    </div>
-
-    <!-- Add company selection dropdown -->
-    <div class="mb-4">
-      <fieldset>
-        <legend class="text-base font-semibold text-gray-900 mb-2">Companies to Display</legend>
-        <div class="mt-4 divide-y divide-gray-200 border-b border-t border-gray-200 max-h-60 overflow-y-auto">
-          <div v-for="company in Object.keys(companyNames)" 
-               :key="company" 
-               class="relative flex gap-3 py-2 cursor-pointer hover:bg-gray-50"
-               @click="toggleCompany(company)">
-            <div class="min-w-0 flex-1 text-sm/6">
-              <label :for="`company-${company}`" class="select-none font-medium text-gray-900">
-                {{ companyNames[company] }}
-              </label>
-            </div>
-            <div class="flex h-6 shrink-0 items-center">
-              <div class="group grid size-4 grid-cols-1">
-                <input 
-                  :id="`company-${company}`" 
-                  :name="`company-${company}`" 
-                  type="checkbox" 
-                  v-model="selectedCompanies[company]"
-                  class="col-start-1 row-start-1 appearance-none rounded border border-gray-300 bg-white checked:border-wego-green checked:bg-wego-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wego-green disabled:border-gray-300 disabled:bg-gray-100 disabled:checked:bg-gray-100 forced-colors:appearance-auto"
-                  @click.stop
-                />
-                <svg class="pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white group-has-[:disabled]:stroke-gray-950/25" viewBox="0 0 14 14" fill="none">
-                  <path class="opacity-0 group-has-[:checked]:opacity-100" d="M3 8L6 11L11 3.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-      </fieldset>
-    </div>
     <div id="additional-chart" class="w-full h-full"></div>
+
+    <!-- Chart Controls Section -->
+    <form class="mt-8">
+      <div class="space-y-12">
+        <div class="grid grid-cols-1 gap-x-8 gap-y-10 border-b border-gray-900/10 pb-12 md:grid-cols-3">
+          <div>
+            <h2 class="text-base/7 font-semibold text-gray-900">Chart Settings</h2>
+            <p class="mt-1 text-sm/6 text-gray-600">Adjust the chart dimensions and axis ranges to customize the visualization.</p>
+          </div>
+
+          <div class="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6 md:col-span-2">
+            <!-- Chart Dimensions -->
+            <div class="sm:col-span-3">
+              <label for="chart-width" class="block text-sm/6 font-medium text-gray-900">Width (px)</label>
+              <div class="mt-2 grid grid-cols-1">
+                <input 
+                  type="text" 
+                  id="chart-width" 
+                  v-model="chartDimensions.width" 
+                  @input="validateAndUpdateDimensions('width')"
+                  :class="[
+                    'col-start-1 row-start-1 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6',
+                    chartDimensions.widthError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
+                  ]"
+                  placeholder="1200"
+                />
+                <ExclamationCircleIcon 
+                  v-if="chartDimensions.widthError"
+                  class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
+                />
+              </div>
+              <p v-if="chartDimensions.widthError" class="mt-1 text-sm text-red-600">{{ chartDimensions.widthError }}</p>
+            </div>
+
+            <div class="sm:col-span-3">
+              <label for="chart-height" class="block text-sm/6 font-medium text-gray-900">Height (px)</label>
+              <div class="mt-2 grid grid-cols-1">
+                <input 
+                  type="text" 
+                  id="chart-height" 
+                  v-model="chartDimensions.height" 
+                  @input="validateAndUpdateDimensions('height')"
+                  :class="[
+                    'col-start-1 row-start-1 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6',
+                    chartDimensions.heightError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
+                  ]"
+                  placeholder="840"
+                />
+                <ExclamationCircleIcon 
+                  v-if="chartDimensions.heightError"
+                  class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
+                />
+              </div>
+              <p v-if="chartDimensions.heightError" class="mt-1 text-sm text-red-600">{{ chartDimensions.heightError }}</p>
+            </div>
+
+            <!-- X-Axis Range -->
+            <div class="sm:col-span-3">
+              <label for="x-min" class="block text-sm/6 font-medium text-gray-900">X-Axis Min (%)</label>
+              <div class="mt-2 grid grid-cols-1">
+                <input 
+                  type="text" 
+                  id="x-min" 
+                  v-model="xAxisRange.min" 
+                  @input="validateAndUpdateRange('x', 'min')"
+                  :class="[
+                    'col-start-1 row-start-1 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6',
+                    xAxisRange.minError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
+                  ]"
+                  placeholder="-50"
+                />
+                <ExclamationCircleIcon 
+                  v-if="xAxisRange.minError"
+                  class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
+                />
+              </div>
+              <p v-if="xAxisRange.minError" class="mt-1 text-sm text-red-600">{{ xAxisRange.minError }}</p>
+            </div>
+
+            <div class="sm:col-span-3">
+              <label for="x-max" class="block text-sm/6 font-medium text-gray-900">X-Axis Max (%)</label>
+              <div class="mt-2 grid grid-cols-1">
+                <input 
+                  type="text" 
+                  id="x-max" 
+                  v-model="xAxisRange.max" 
+                  @input="validateAndUpdateRange('x', 'max')"
+                  :class="[
+                    'col-start-1 row-start-1 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6',
+                    xAxisRange.maxError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
+                  ]"
+                  placeholder="80"
+                />
+                <ExclamationCircleIcon 
+                  v-if="xAxisRange.maxError"
+                  class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
+                />
+              </div>
+              <p v-if="xAxisRange.maxError" class="mt-1 text-sm text-red-600">{{ xAxisRange.maxError }}</p>
+            </div>
+
+            <!-- Y-Axis Range -->
+            <div class="sm:col-span-3">
+              <label for="y-min" class="block text-sm/6 font-medium text-gray-900">Y-Axis Min (%)</label>
+              <div class="mt-2 grid grid-cols-1">
+                <input 
+                  type="text" 
+                  id="y-min" 
+                  v-model="yAxisRange.min" 
+                  @input="validateAndUpdateRange('y', 'min')"
+                  :class="[
+                    'col-start-1 row-start-1 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6',
+                    yAxisRange.minError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
+                  ]"
+                  placeholder="-30"
+                />
+                <ExclamationCircleIcon 
+                  v-if="yAxisRange.minError"
+                  class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
+                />
+              </div>
+              <p v-if="yAxisRange.minError" class="mt-1 text-sm text-red-600">{{ yAxisRange.minError }}</p>
+            </div>
+
+            <div class="sm:col-span-3">
+              <label for="y-max" class="block text-sm/6 font-medium text-gray-900">Y-Axis Max (%)</label>
+              <div class="mt-2 grid grid-cols-1">
+                <input 
+                  type="text" 
+                  id="y-max" 
+                  v-model="yAxisRange.max" 
+                  @input="validateAndUpdateRange('y', 'max')"
+                  :class="[
+                    'col-start-1 row-start-1 block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6',
+                    yAxisRange.maxError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
+                  ]"
+                  placeholder="100"
+                />
+                <ExclamationCircleIcon 
+                  v-if="yAxisRange.maxError"
+                  class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
+                />
+              </div>
+              <p v-if="yAxisRange.maxError" class="mt-1 text-sm text-red-600">{{ yAxisRange.maxError }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Companies Section -->
+        <div class="grid grid-cols-1 gap-x-8 gap-y-10 border-b border-gray-900/10 pb-12 md:grid-cols-3">
+          <div>
+            <h2 class="text-base/7 font-semibold text-gray-900">Companies to Display</h2>
+            <p class="mt-1 text-sm/6 text-gray-600">Select which companies you want to show on the chart.</p>
+          </div>
+
+          <div class="max-w-2xl space-y-10 md:col-span-2">
+            <fieldset>
+              <div class="mt-6 divide-y divide-gray-200 border-b border-t border-gray-200 max-h-60 overflow-y-auto">
+                <div v-for="company in Object.keys(companyNames)" 
+                     :key="company" 
+                     class="relative flex gap-3 py-2 cursor-pointer hover:bg-gray-50"
+                     @click="toggleCompany(company)">
+                  <div class="min-w-0 flex-1 text-sm/6">
+                    <label :for="`company-${company}`" class="select-none font-medium text-gray-900">
+                      {{ companyNames[company] }}
+                    </label>
+                  </div>
+                  <div class="flex h-6 shrink-0 items-center">
+                    <div class="group grid size-4 grid-cols-1">
+                      <input 
+                        :id="`company-${company}`" 
+                        :name="`company-${company}`" 
+                        type="checkbox" 
+                        v-model="selectedCompanies[company]"
+                        class="col-start-1 row-start-1 appearance-none rounded border border-gray-300 bg-white checked:border-wego-green checked:bg-wego-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wego-green disabled:border-gray-300 disabled:bg-gray-100 disabled:checked:bg-gray-100 forced-colors:appearance-auto"
+                        @click.stop
+                      />
+                      <svg class="pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white group-has-[:disabled]:stroke-gray-950/25" viewBox="0 0 14 14" fill="none">
+                        <path class="opacity-0 group-has-[:checked]:opacity-100" d="M3 8L6 11L11 3.5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div>
+    </form>
   </div>
 </template>
 
@@ -885,7 +894,7 @@ const processExcelData = (file) => {
         quarters: years.value,
         currentIndex: currentYearIndex.value
       });
-
+      
       // Initialize chart
       console.log('Initializing chart with:', {
         quarters: years.value,
@@ -1024,14 +1033,14 @@ const initChart = () => {
     
   // Create scales
   xScale = d3.scaleLinear()
-    .domain(globalXDomain)
+      .domain(globalXDomain)
     .range([margin.left, width - margin.right]);
 
   yScale = d3.scaleLinear()
-    .domain(globalYDomain)
+      .domain(globalYDomain)
     .range([height - margin.bottom, margin.top]);
 
-  // Add axes
+    // Add axes
   const xAxis = d3.axisBottom(xScale)
     .ticks(8)  // Increased number of ticks
     .tickFormat(d => (d * 100).toFixed(0) + "%");
@@ -1042,11 +1051,11 @@ const initChart = () => {
     
   svg.append("g")
     .attr("transform", `translate(0,${height - margin.bottom})`)
-    .call(xAxis);
+      .call(xAxis);
 
   svg.append("g")
     .attr("transform", `translate(${margin.left},0)`)
-    .call(yAxis);
+      .call(yAxis);
 
   // Add labels
   svg.append("text")
@@ -1065,19 +1074,19 @@ const initChart = () => {
     .text("Revenue Growth YoY (%)");
     
     /* Remove quarter display
-    const quarterDisplay = svg.append("text")
-      .attr("class", "quarter-display")
-      .attr("x", width - margin.right)
-      .attr("y", margin.top)
-      .attr("text-anchor", "end")
-      .attr("font-size", "24px")
-      .attr("font-weight", "bold");
+  const quarterDisplay = svg.append("text")
+    .attr("class", "quarter-display")
+    .attr("x", width - margin.right)
+    .attr("y", margin.top)
+    .attr("text-anchor", "end")
+    .attr("font-size", "24px")
+    .attr("font-weight", "bold");
     */
     
-    // Add tooltip
-    const tooltip = d3.select(chartRef.value)
-      .append("div")
-      .attr("class", "tooltip");
+  // Add tooltip
+  const tooltip = d3.select(chartRef.value)
+    .append("div")
+    .attr("class", "tooltip");
 
     // Define update function
     update = (quarterIndex) => {
@@ -1098,31 +1107,31 @@ const initChart = () => {
       
       // Emit the current data
       emit('data-update', currentData);
-      
-      // Update bubbles
-      const bubbles = svg.selectAll(".bubble")
-        .data(currentData, d => d.company);
+    
+    // Update bubbles
+    const bubbles = svg.selectAll(".bubble")
+      .data(currentData, d => d.company);
         
       console.log('Existing bubbles count:', bubbles.size());
       console.log('Entering bubbles count:', bubbles.enter().size());
       console.log('Exiting bubbles count:', bubbles.exit().size());
       
-      // Remove old bubbles
-      bubbles.exit().remove();
-      
-      // Add new bubbles
-      const bubblesEnter = bubbles.enter()
-        .append("g")
-        .attr("class", "bubble")
-        .attr("transform", d => `translate(${xScale(d.ebitdaMargin)},${yScale(d.revenueGrowth)})`)
-        .style("cursor", "pointer")
-        .on("click", (event, d) => {
+    // Remove old bubbles
+    bubbles.exit().remove();
+    
+    // Add new bubbles
+    const bubblesEnter = bubbles.enter()
+      .append("g")
+      .attr("class", "bubble")
+      .attr("transform", d => `translate(${xScale(d.ebitdaMargin)},${yScale(d.revenueGrowth)})`)
+      .style("cursor", "pointer")
+      .on("click", (event, d) => {
           // Emit company selection event
           emit('company-select', d);
         });
 
       // Update bubble and logo sizes
-      bubblesEnter.append("circle")
+    bubblesEnter.append("circle")
         .attr("r", 6)
         .attr("fill", d => colorDict[d.company] || "#64748b")
         .attr("stroke", "white")
@@ -1175,32 +1184,32 @@ const initChart = () => {
             .attr('x', currentX + dx)
             .attr('y', currentY + dy);
         }));
-
-      // Update existing bubbles with transition
-      bubbles.transition()
-        .duration(1000)
-        .attr("transform", d => `translate(${xScale(d.ebitdaMargin)},${yScale(d.revenueGrowth)})`);
-
-      // Add zero lines
-      const zeroLines = svg.selectAll(".zero-line").data([
-        { x1: xScale(0), y1: 0, x2: xScale(0), y2: height - margin.bottom },
-        { x1: margin.left, y1: yScale(0), x2: width - margin.right, y2: yScale(0) }
-      ]);
       
-      zeroLines.enter()
-        .append("line")
-        .attr("class", "zero-line")
-        .merge(zeroLines)
-        .attr("x1", d => d.x1)
-        .attr("y1", d => d.y1)
-        .attr("x2", d => d.x2)
-        .attr("y2", d => d.y2)
-        .attr("stroke", "#4e843d")
-        .attr("stroke-dasharray", "4,4")
-        .attr("opacity", 0.5);
+    // Update existing bubbles with transition
+    bubbles.transition()
+      .duration(1000)
+      .attr("transform", d => `translate(${xScale(d.ebitdaMargin)},${yScale(d.revenueGrowth)})`);
+      
+    // Add zero lines
+    const zeroLines = svg.selectAll(".zero-line").data([
+      { x1: xScale(0), y1: 0, x2: xScale(0), y2: height - margin.bottom },
+      { x1: margin.left, y1: yScale(0), x2: width - margin.right, y2: yScale(0) }
+    ]);
+    
+    zeroLines.enter()
+      .append("line")
+      .attr("class", "zero-line")
+      .merge(zeroLines)
+      .attr("x1", d => d.x1)
+      .attr("y1", d => d.y1)
+      .attr("x2", d => d.x2)
+      .attr("y2", d => d.y2)
+      .attr("stroke", "#4e843d")
+      .attr("stroke-dasharray", "4,4")
+      .attr("opacity", 0.5);
 
       console.log('=== Update Function End ===');
-    };
+  };
 
     // Initial update
     if (years.value.length > 0) {
