@@ -47,44 +47,7 @@
       <!-- Chart Sections -->
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <!-- Current Company Details -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-wego-gray">Selected Company Details</h2>
-          </div>
-          <div v-if="selectedCompany" class="mt-5">
-            <dl class="grid grid-cols-1 gap-5 sm:grid-cols-4">
-              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-                <dt class="truncate text-sm font-medium text-gray-500">Company Name</dt>
-                <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
-                  {{ companyNames[selectedCompany.company] || selectedCompany.company }}
-                </dd>
-              </div>
-              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-                <dt class="truncate text-sm font-medium text-gray-500">Quarter</dt>
-                <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
-                  {{ selectedCompany.quarter }}
-                </dd>
-              </div>
-              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-                <dt class="truncate text-sm font-medium text-gray-500">Revenue Growth</dt>
-                <dd class="mt-1 text-3xl font-semibold tracking-tight"
-                    :class="selectedCompany.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'">
-                  {{ formatPercentage(selectedCompany.revenueGrowth) }}
-                </dd>
-              </div>
-              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-                <dt class="truncate text-sm font-medium text-gray-500">EBITDA Margin</dt>
-                <dd class="mt-1 text-3xl font-semibold tracking-tight"
-                    :class="selectedCompany.ebitdaMargin >= 0 ? 'text-green-600' : 'text-red-600'">
-                  {{ formatPercentage(selectedCompany.ebitdaMargin) }}
-                </dd>
-              </div>
-            </dl>
-          </div>
-          <div v-else class="text-center py-8 text-gray-500">
-            Click on a company in the chart above to view its details.
-          </div>
-        </div>
+        
         
         <!-- Animated Bubble Chart -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
@@ -130,31 +93,76 @@
             @quarters-loaded="handleQuartersLoaded"
           />
         </div>
-        <!-- Current Quarter Details -->
+        <!-- Selected Company -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-wego-gray">Selected Quarter Details</h2>
+            <h2 class="text-xl font-semibold text-wego-gray">Selected Company</h2>
+          </div>
+          <div v-if="selectedCompany" class="mt-5">
+            <dl class="grid grid-cols-1 gap-5 sm:grid-cols-4">
+              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                <dt class="truncate text-sm font-medium text-gray-500">Company Name</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
+                  {{ companyNames[selectedCompany.company] || selectedCompany.company }}
+                </dd>
+              </div>
+              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                <dt class="truncate text-sm font-medium text-gray-500">Quarter</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
+                  {{ selectedCompany.quarter }}
+                </dd>
+              </div>
+              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                <dt class="truncate text-sm font-medium text-gray-500">Revenue Growth</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight"
+                    :class="selectedCompany.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'">
+                  {{ formatPercentage(selectedCompany.revenueGrowth) }}
+                </dd>
+              </div>
+              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                <dt class="truncate text-sm font-medium text-gray-500">EBITDA Margin</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight"
+                    :class="selectedCompany.ebitdaMargin >= 0 ? 'text-green-600' : 'text-red-600'">
+                  {{ formatPercentage(selectedCompany.ebitdaMargin) }}
+                </dd>
+              </div>
+            </dl>
+          </div>
+          <div v-else class="text-center py-8 text-gray-500">
+            Click on a company in the chart above to view its details.
+          </div>
+        </div>
+        <!-- Selected Quarter (Industry Median) -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-wego-gray">Selected Quarter (Industry Median)</h2>
           </div>
           <div v-if="currentQuarterData.length > 0">
-            <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
-              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-                <dt class="truncate text-sm font-medium text-gray-500">Average Revenue Growth</dt>
-                <dd class="mt-1 text-3xl font-semibold tracking-tight"
-                    :class="averageRevenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'">
-                  {{ formatPercentage(averageRevenueGrowth) }}
-                </dd>
-              </div>
-              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-                <dt class="truncate text-sm font-medium text-gray-500">Average EBITDA Margin</dt>
-                <dd class="mt-1 text-3xl font-semibold tracking-tight"
-                    :class="averageEbitdaMargin >= 0 ? 'text-green-600' : 'text-red-600'">
-                  {{ formatPercentage(averageEbitdaMargin) }}
-                </dd>
-              </div>
+            <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-4">
               <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
                 <dt class="truncate text-sm font-medium text-gray-500">Companies Tracked</dt>
                 <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
                   {{ currentQuarterData.length }}
+                </dd>
+              </div>
+              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                <dt class="truncate text-sm font-medium text-gray-500">Quarter</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
+                  {{ currentQuarter }}
+                </dd>
+              </div>
+              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                <dt class="truncate text-sm font-medium text-gray-500">Revenue Growth (Median)</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight"
+                    :class="medianRevenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'">
+                  {{ formatPercentage(medianRevenueGrowth) }}
+                </dd>
+              </div>
+              <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+                <dt class="truncate text-sm font-medium text-gray-500">EBITDA Margin (Median)</dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight"
+                    :class="medianEbitdaMargin >= 0 ? 'text-green-600' : 'text-red-600'">
+                  {{ formatPercentage(medianEbitdaMargin) }}
                 </dd>
               </div>
             </dl>
@@ -531,6 +539,29 @@ const saveAnimatedChart = async () => {
     await bubbleChartRef.value.saveChart();
   }
 };
+
+// Add median data calculation
+const medianRevenueGrowth = computed(() => {
+  if (currentQuarterData.value.length === 0) return 0;
+  const sortedGrowths = [...currentQuarterData.value].sort((a, b) => a.revenueGrowth - b.revenueGrowth);
+  const midIndex = Math.floor(sortedGrowths.length / 2);
+  if (sortedGrowths.length % 2 === 0) {
+    return (sortedGrowths[midIndex - 1].revenueGrowth + sortedGrowths[midIndex].revenueGrowth) / 2;
+  } else {
+    return sortedGrowths[midIndex].revenueGrowth;
+  }
+});
+
+const medianEbitdaMargin = computed(() => {
+  if (currentQuarterData.value.length === 0) return 0;
+  const sortedMargins = [...currentQuarterData.value].sort((a, b) => a.ebitdaMargin - b.ebitdaMargin);
+  const midIndex = Math.floor(sortedMargins.length / 2);
+  if (sortedMargins.length % 2 === 0) {
+    return (sortedMargins[midIndex - 1].ebitdaMargin + sortedMargins[midIndex].ebitdaMargin) / 2;
+  } else {
+    return sortedMargins[midIndex].ebitdaMargin;
+  }
+});
 
 inject();
 </script>
