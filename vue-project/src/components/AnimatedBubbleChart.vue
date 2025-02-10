@@ -1,5 +1,152 @@
 <template>
   <div class="chart-container" ref="chartRef">
+    <!-- Add axis range controls -->
+    <div class="mb-4 grid grid-cols-2 gap-4">
+      <fieldset>
+        <legend class="block text-sm/6 font-semibold text-gray-900">Chart Dimensions</legend>
+        <div class="mt-2 grid grid-cols-2 gap-4">
+          <div>
+            <label for="chart-width" class="block text-sm/6 font-medium text-gray-700">Width (px)</label>
+            <div class="mt-1 grid grid-cols-1">
+              <input 
+                type="text" 
+                id="chart-width" 
+                v-model="chartDimensions.width" 
+                @input="validateAndUpdateDimensions('width')"
+                :class="[
+                  'col-start-1 row-start-1 block w-full rounded-md bg-white py-1.5 pl-3 pr-10 text-base text-gray-900 outline outline-1 -outline-offset-1 sm:text-sm/6',
+                  chartDimensions.widthError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
+                ]"
+                placeholder="1200"
+              />
+              <ExclamationCircleIcon 
+                v-if="chartDimensions.widthError"
+                class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
+              />
+            </div>
+            <p v-if="chartDimensions.widthError" class="mt-1 text-sm text-red-600">{{ chartDimensions.widthError }}</p>
+          </div>
+          <div>
+            <label for="chart-height" class="block text-sm/6 font-medium text-gray-700">Height (px)</label>
+            <div class="mt-1 grid grid-cols-1">
+              <input 
+                type="text" 
+                id="chart-height" 
+                v-model="chartDimensions.height" 
+                @input="validateAndUpdateDimensions('height')"
+                :class="[
+                  'col-start-1 row-start-1 block w-full rounded-md bg-white py-1.5 pl-3 pr-10 text-base text-gray-900 outline outline-1 -outline-offset-1 sm:text-sm/6',
+                  chartDimensions.heightError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
+                ]"
+                placeholder="840"
+              />
+              <ExclamationCircleIcon 
+                v-if="chartDimensions.heightError"
+                class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
+              />
+            </div>
+            <p v-if="chartDimensions.heightError" class="mt-1 text-sm text-red-600">{{ chartDimensions.heightError }}</p>
+          </div>
+        </div>
+      </fieldset>
+      
+      <fieldset>
+        <legend class="block text-sm/6 font-semibold text-gray-900">X-Axis Range (EBITDA Margin)</legend>
+        <div class="mt-2 grid grid-cols-2 gap-4">
+          <div>
+            <label for="x-min" class="block text-sm/6 font-medium text-gray-700">Min (%)</label>
+            <div class="mt-1 grid grid-cols-1">
+              <input 
+                type="text" 
+                id="x-min" 
+                v-model="xAxisRange.min" 
+                @input="validateAndUpdateRange('x', 'min')"
+                :class="[
+                  'col-start-1 row-start-1 block w-full rounded-md bg-white py-1.5 pl-3 pr-10 text-base text-gray-900 outline outline-1 -outline-offset-1 sm:text-sm/6',
+                  xAxisRange.minError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
+                ]"
+                placeholder="-50"
+              />
+              <ExclamationCircleIcon 
+                v-if="xAxisRange.minError"
+                class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
+              />
+            </div>
+            <p v-if="xAxisRange.minError" class="mt-1 text-sm text-red-600">{{ xAxisRange.minError }}</p>
+          </div>
+          <div>
+            <label for="x-max" class="block text-sm/6 font-medium text-gray-700">Max (%)</label>
+            <div class="mt-1 grid grid-cols-1">
+              <input 
+                type="text" 
+                id="x-max" 
+                v-model="xAxisRange.max" 
+                @input="validateAndUpdateRange('x', 'max')"
+                :class="[
+                  'col-start-1 row-start-1 block w-full rounded-md bg-white py-1.5 pl-3 pr-10 text-base text-gray-900 outline outline-1 -outline-offset-1 sm:text-sm/6',
+                  xAxisRange.maxError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
+                ]"
+                placeholder="80"
+              />
+              <ExclamationCircleIcon 
+                v-if="xAxisRange.maxError"
+                class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
+              />
+            </div>
+            <p v-if="xAxisRange.maxError" class="mt-1 text-sm text-red-600">{{ xAxisRange.maxError }}</p>
+          </div>
+        </div>
+      </fieldset>
+      
+      <fieldset>
+        <legend class="block text-sm/6 font-semibold text-gray-900">Y-Axis Range (Revenue Growth)</legend>
+        <div class="mt-2 grid grid-cols-2 gap-4">
+          <div>
+            <label for="y-min" class="block text-sm/6 font-medium text-gray-700">Min (%)</label>
+            <div class="mt-1 grid grid-cols-1">
+              <input 
+                type="text" 
+                id="y-min" 
+                v-model="yAxisRange.min" 
+                @input="validateAndUpdateRange('y', 'min')"
+                :class="[
+                  'col-start-1 row-start-1 block w-full rounded-md bg-white py-1.5 pl-3 pr-10 text-base text-gray-900 outline outline-1 -outline-offset-1 sm:text-sm/6',
+                  yAxisRange.minError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
+                ]"
+                placeholder="-30"
+              />
+              <ExclamationCircleIcon 
+                v-if="yAxisRange.minError"
+                class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
+              />
+            </div>
+            <p v-if="yAxisRange.minError" class="mt-1 text-sm text-red-600">{{ yAxisRange.minError }}</p>
+          </div>
+          <div>
+            <label for="y-max" class="block text-sm/6 font-medium text-gray-700">Max (%)</label>
+            <div class="mt-1 grid grid-cols-1">
+              <input 
+                type="text" 
+                id="y-max" 
+                v-model="yAxisRange.max" 
+                @input="validateAndUpdateRange('y', 'max')"
+                :class="[
+                  'col-start-1 row-start-1 block w-full rounded-md bg-white py-1.5 pl-3 pr-10 text-base text-gray-900 outline outline-1 -outline-offset-1 sm:text-sm/6',
+                  yAxisRange.maxError ? 'outline-red-300 focus:outline-red-600' : 'outline-gray-300 focus:outline-indigo-600'
+                ]"
+                placeholder="100"
+              />
+              <ExclamationCircleIcon 
+                v-if="yAxisRange.maxError"
+                class="pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-red-500 sm:size-4" 
+              />
+            </div>
+            <p v-if="yAxisRange.maxError" class="mt-1 text-sm text-red-600">{{ yAxisRange.maxError }}</p>
+          </div>
+        </div>
+      </fieldset>
+    </div>
+
     <!-- Add company selection dropdown -->
     <div class="mb-4">
       <fieldset>
@@ -298,6 +445,7 @@ input[type="range"]::-moz-range-thumb:hover {
 
 <script setup>
 import { onMounted, onUnmounted, ref, computed } from 'vue';
+import { ExclamationCircleIcon } from '@heroicons/vue/16/solid';
 import * as d3 from 'd3';
 import * as XLSX from 'xlsx';
 
@@ -436,6 +584,122 @@ let update; // Declare update function reference
 
 // Add selected companies state
 const selectedCompanies = ref({});
+
+// Add axis range state
+const xAxisRange = ref({
+  min: '-50',
+  max: '80',
+  minError: '',
+  maxError: ''
+});
+
+const yAxisRange = ref({
+  min: '-30',
+  max: '100',
+  minError: '',
+  maxError: ''
+});
+
+// Add after the axis range state declarations
+const chartDimensions = ref({
+  width: '1200',
+  height: '840',
+  widthError: '',
+  heightError: ''
+});
+
+// Add new validation function for dimensions
+const validateAndUpdateDimensions = (dimension) => {
+  const value = parseInt(chartDimensions.value[dimension]);
+  
+  // Clear error first
+  chartDimensions.value[`${dimension}Error`] = '';
+  
+  // Validate input is a number
+  if (isNaN(value)) {
+    chartDimensions.value[`${dimension}Error`] = 'Please enter a valid number';
+    return;
+  }
+  
+  // Validate minimum size
+  if (value < 200) {
+    chartDimensions.value[`${dimension}Error`] = 'Value must be at least 200px';
+    return;
+  }
+  
+  // Validate maximum size
+  if (value > 5000) {
+    chartDimensions.value[`${dimension}Error`] = 'Value must not exceed 5000px';
+    return;
+  }
+  
+  // Update chart if input is valid
+  if (!chartDimensions.value.widthError && !chartDimensions.value.heightError) {
+    console.log('Updating chart dimensions:', {
+      width: parseInt(chartDimensions.value.width),
+      height: parseInt(chartDimensions.value.height)
+    });
+    initChart();
+    update(currentYearIndex.value);
+  }
+};
+
+// Add validation and update function
+const validateAndUpdateRange = (axis, bound) => {
+  const range = axis === 'x' ? xAxisRange.value : yAxisRange.value;
+  const value = parseFloat(range[bound]);
+  
+  // Clear error first
+  range[`${bound}Error`] = '';
+  
+  // Validate input is a number
+  if (isNaN(value)) {
+    range[`${bound}Error`] = 'Please enter a valid number';
+    return;
+  }
+  
+  // Validate min is less than max
+  const otherBound = bound === 'min' ? 'max' : 'min';
+  const otherValue = parseFloat(range[otherBound]);
+  
+  if (!isNaN(otherValue)) {
+    if (bound === 'min' && value >= otherValue) {
+      range[`${bound}Error`] = 'Min value must be less than max';
+      return;
+    }
+    if (bound === 'max' && value <= otherValue) {
+      range[`${bound}Error`] = 'Max value must be greater than min';
+      return;
+    }
+  }
+  
+  // Update global domain and redraw chart if input is valid
+  if (axis === 'x') {
+    const xMin = parseFloat(xAxisRange.value.min) / 100;
+    const xMax = parseFloat(xAxisRange.value.max) / 100;
+    if (!isNaN(xMin) && !isNaN(xMax) && xMin < xMax) {
+      globalXDomain = [xMin, xMax];
+      console.log('Updated X axis domain:', globalXDomain);
+    }
+  } else {
+    const yMin = parseFloat(yAxisRange.value.min) / 100;
+    const yMax = parseFloat(yAxisRange.value.max) / 100;
+    if (!isNaN(yMin) && !isNaN(yMax) && yMin < yMax) {
+      globalYDomain = [yMin, yMax];
+      console.log('Updated Y axis domain:', globalYDomain);
+    }
+  }
+  
+  // Only update chart if both values are valid and min < max
+  if (!range.minError && !range.maxError) {
+    console.log('Updating chart with new domains:', { 
+      xDomain: globalXDomain, 
+      yDomain: globalYDomain 
+    });
+    initChart();
+    update(currentYearIndex.value);
+  }
+};
 
 // Function to initialize selected companies
 const initializeSelectedCompanies = () => {
@@ -737,7 +1001,8 @@ const saveChart = async () => {
 
 // Initialize the chart
 const initChart = () => {
-  const { width, height } = getChartDimensions();
+  const width = parseInt(chartDimensions.value.width);
+  const height = parseInt(chartDimensions.value.height);
   console.log('Initializing chart with dimensions:', width, height);
   
   // Clear existing SVG
@@ -748,7 +1013,7 @@ const initChart = () => {
     .append("svg")
     .attr("width", "100%")
     .attr("height", "100%")
-    .attr("viewBox", "0 0 1200 840")
+    .attr("viewBox", `0 0 ${width} ${height}`)
     .attr("preserveAspectRatio", "xMidYMid meet");
     
   // Add background
