@@ -22,8 +22,13 @@ df['Transformed Online Bookings'] = np.sqrt(df['Online Bookings'])
 years_sorted = sorted(df['Year'].unique())
 
 # Precompute global y-axis range to make it fixed
-y_min = df['Transformed Online Bookings'].min() - 20000
-y_max = df['Transformed Online Bookings'].max() + 60000
+y_min = 0  # Start from 0 for better visualization
+y_max = df['Transformed Online Bookings'].max() * 1.3  # Increase padding to 30%
+
+# Create non-linear tick positions based on square root transformation
+actual_values = [0, 10e9, 40e9, 90e9, 160e9, 250e9, 350e9]  # Added one more tick for larger range
+tick_positions = [np.sqrt(val) for val in actual_values]  # Transform to sqrt scale
+tick_labels = ['0', '10B', '40B', '90B', '160B', '250B', '350B']
 
 # Define country-specific colors (using country flag colors or other representative colors)
 country_colors = {
@@ -85,9 +90,9 @@ def generate_animation(_):
             linecolor='#444'
         ),
         yaxis=dict(
-            title='Square Root of Online Bookings Volume',
-            tickprefix='$',
-            tickformat=',',
+            title='Online Bookings Volume',
+            tickvals=tick_positions,
+            ticktext=tick_labels,
             range=[y_min, y_max],
             showgrid=True,
             gridwidth=1,
