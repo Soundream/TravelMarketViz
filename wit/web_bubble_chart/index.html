@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Market Visualization</title>
+    <link rel="icon" type="image/png" href="https://www.google.com/s2/favicons?domain=plotly.com">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>APAC Travel Market Evolution</h1>
+        
+        <div class="controls">
+            <button id="play-button" class="control-button">
+                <i class="fas fa-play"></i> Play
+            </button>
+            <div id="timeline"></div>
+        </div>
+
+        <div class="chart-container">
+            <div id="bubble-chart"></div>
+        </div>
+
+        <div class="company-filters">
+            <div class="filter-header">
+                <h3>Company Filters</h3>
+                <div class="filter-controls">
+                    <input type="text" id="search-input" placeholder="Search companies...">
+                    <button id="select-all">Select All</button>
+                    <button id="deselect-all">Deselect All</button>
+                </div>
+            </div>
+            <div id="company-filters"></div>
+        </div>
+    </div>
+
+    <div id="chart-tooltip" class="tooltip"></div>
+    <div id="play-tooltip" class="tooltip"></div>
+
+    <script src="js/config.js"></script>
+    <script src="js/chart.js"></script>
+</body>
+</html> 
