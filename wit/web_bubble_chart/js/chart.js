@@ -75,7 +75,7 @@ function updateBubbleChart(data, year) {
         text: yearData.map(d => d.Market),
         mode: 'markers',
         marker: {
-            size: yearData.map(d => Math.pow(d.GrossBookings / 1e9, 0.4) * 3000), // Changed from sqrt to power 0.4 for more dramatic differences
+            size: yearData.map(d => Math.pow(d.GrossBookings / 1e9, 0.15) * 4000),
             color: "rgba(0,0,0,0)"
         },
         hovertemplate: '<b>%{text}</b><br>' +
@@ -92,12 +92,12 @@ function updateBubbleChart(data, year) {
         xaxis: {
             title: 'Online Penetration',
             tickformat: ',.0%',
-            range: [0, 1], // Fixed range from 0 to 100%
+            range: [0, 1],
             gridcolor: '#eee'
         },
         yaxis: {
             title: 'Online Bookings Volume (Billion USD)',
-            range: [0, Math.sqrt(250)], // Square root of max value
+            range: [0, Math.sqrt(250)],
             gridcolor: '#eee',
             ticktext: ['0', '10', '40', '90', '160', '250'],
             tickvals: [0, Math.sqrt(10), Math.sqrt(40), Math.sqrt(90), Math.sqrt(160), Math.sqrt(250)],
@@ -107,24 +107,63 @@ function updateBubbleChart(data, year) {
         hovermode: 'closest',
         plot_bgcolor: 'white',
         paper_bgcolor: 'white',
-        images: []
+        images: [],
+        dragmode: false,
+        annotations: [{
+            text: getEraText(year),
+            x: 0.5,
+            y: Math.sqrt(250)/2,
+            xref: 'paper',
+            yref: 'paper',
+            showarrow: false,
+            font: {
+                family: 'Montserrat, Arial',
+                size: 60,
+                color: 'rgba(200, 200, 200, 0.3)'
+            }
+        },
+        {
+            text: 'Data Source: Phocal Point',
+            x: 0,
+            y: -0.15,
+            xref: 'paper',
+            yref: 'paper',
+            showarrow: false,
+            font: {
+                size: 12,
+                color: 'rgba(0, 0, 0, 0.6)'
+            },
+            xanchor: 'left'
+        },
+        {
+            text: 'Note: 2005 - 2009 figures based on extrapolation',
+            x: 0,
+            y: -0.19,
+            xref: 'paper',
+            yref: 'paper',
+            showarrow: false,
+            font: {
+                size: 12,
+                color: 'rgba(0, 0, 0, 0.6)'
+            },
+            xanchor: 'left'
+        }]
     };
 
     // Add flag images
     yearData.forEach(d => {
         const logo = window.appConfig.companyLogos[d.Market];
         if (logo) {
-            // Calculate size based on gross bookings relative to maximum
             const maxGrossBookings = d3.max(data, d => d.GrossBookings);
-            const relativeSize = Math.pow(d.GrossBookings / maxGrossBookings, 0.4); // Changed from sqrt to power 0.4
-            const size = relativeSize * 1.2 + 0.3; // Adjusted multiplier and base size
+            const relativeSize = Math.pow(d.GrossBookings / maxGrossBookings, 0.25);
+            const size = relativeSize * 2.5 + 0.15;
 
             layout.images.push({
                 source: logo,
                 xref: "x",
                 yref: "y",
                 x: d.OnlinePenetration,
-                y: Math.sqrt(d.OnlineBookings / 1e9), // Convert to billions and apply sqrt
+                y: Math.sqrt(d.OnlineBookings / 1e9),
                 sizex: size,
                 sizey: size,
                 sizing: "contain",
@@ -223,4 +262,21 @@ async function initialize() {
 const script = document.createElement('script');
 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
 script.onload = initialize;
-document.head.appendChild(script); 
+document.head.appendChild(script);
+
+// Add this new function at the end of the file
+function getEraText(year) {
+    const yearNum = parseInt(year);
+    if (yearNum >= 2005 && yearNum <= 2008) {
+        return "Growth of WWW";
+    } else if (yearNum >= 2009 && yearNum <= 2010) {
+        return "Great Recession";
+    } else if (yearNum >= 2011 && yearNum <= 2019) {
+        return "Growth of Mobile";
+    } else if (yearNum >= 2020 && yearNum <= 2021) {
+        return "Global Pandemic";
+    } else if (yearNum >= 2022) {
+        return "Post-Pandemic Recovery";
+    }
+    return "";
+} 
