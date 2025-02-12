@@ -7,6 +7,14 @@ let mergedData;
 let timelineTriangle;
 let xScaleTimeline;
 let selectedCompanies = window.appConfig.defaultSelectedCompanies;
+let globalMaxOnlinePenetration;
+let globalMaxOnlineBookings;
+
+// Function to initialize global max values
+function initializeGlobalMaxValues(data) {
+    globalMaxOnlinePenetration = d3.max(data, d => d.OnlinePenetration);
+    globalMaxOnlineBookings = d3.max(data, d => Math.sqrt(d.OnlineBookings));
+}
 
 // Function to fetch and process Excel data
 async function fetchData() {
@@ -28,7 +36,7 @@ async function fetchData() {
             }
             
             const jsonData = XLSX.utils.sheet_to_json(sheet);
-            console.log('Loaded data:', jsonData); // Debug log
+            console.log('Raw data:', jsonData); // Debug log
 
             // Process data similar to Python code
             const processedData = jsonData
@@ -63,26 +71,20 @@ function updateBubbleChart(data, year) {
     // Create base scatter plot with invisible markers
     const trace = {
         x: yearData.map(d => d.OnlinePenetration),
-        y: yearData.map(d => Math.sqrt(d.OnlineBookings)),
+        y: yearData.map(d => Math.sqrt(d.OnlineBookings / 1e9)), // Convert to billions and apply sqrt
         text: yearData.map(d => d.Market),
         mode: 'markers',
         marker: {
-            size: yearData.map(d => Math.sqrt(d.GrossBookings / 1e9) * 50),
+            size: yearData.map(d => Math.sqrt(d.GrossBookings / 1e9) * 5000), // Significantly increased size multiplier
             color: "rgba(0,0,0,0)" // Make markers completely transparent
         },
         hovertemplate: '<b>%{text}</b><br>' +
                       'Online Penetration: %{x:.1%}<br>' +
-                      'Online Bookings: %{customdata[0]:$,.0f}M<br>' +
-                      'Gross Bookings: %{customdata[1]:$,.0f}M<br>' +
+                      'Online Bookings: %{customdata[0]:$,.0f}B<br>' +
+                      'Gross Bookings: %{customdata[1]:$,.0f}B<br>' +
                       '<extra></extra>',
-        customdata: yearData.map(d => [d.OnlineBookings, d.GrossBookings])
+        customdata: yearData.map(d => [d.OnlineBookings / 1e9, d.GrossBookings / 1e9])
     };
-
-    // Get maximum dimension for scaling
-    const maxDim = Math.max(
-        d3.max(yearData, d => d.OnlinePenetration),
-        d3.max(yearData, d => Math.sqrt(d.OnlineBookings))
-    );
 
     // Create layout with flag images
     const layout = {
@@ -90,14 +92,21 @@ function updateBubbleChart(data, year) {
         xaxis: {
             title: 'Online Penetration',
             tickformat: ',.0%',
-            range: [0, Math.max(1, d3.max(yearData, d => d.OnlinePenetration) * 1.1)]
+            range: [0, 1], // Fixed range from 0 to 100%
+            gridcolor: '#eee'
         },
         yaxis: {
-            title: 'Online Bookings Volume',
-            range: [0, d3.max(yearData, d => Math.sqrt(d.OnlineBookings)) * 1.3]
+            title: 'Online Bookings Volume (Billion USD)',
+            range: [0, Math.sqrt(250)], // Square root of max value
+            gridcolor: '#eee',
+            ticktext: ['0', '10', '40', '90', '160', '250'],
+            tickvals: [0, Math.sqrt(10), Math.sqrt(40), Math.sqrt(90), Math.sqrt(160), Math.sqrt(250)],
+            tickmode: 'array'
         },
         showlegend: false,
         hovermode: 'closest',
+        plot_bgcolor: 'white',
+        paper_bgcolor: 'white',
         images: []
     };
 
@@ -106,16 +115,16 @@ function updateBubbleChart(data, year) {
         const logo = window.appConfig.companyLogos[d.Market];
         if (logo) {
             // Calculate size based on gross bookings relative to maximum
-            const maxGrossBookings = d3.max(yearData, d => d.GrossBookings);
+            const maxGrossBookings = d3.max(data, d => d.GrossBookings);
             const relativeSize = Math.sqrt(d.GrossBookings / maxGrossBookings);
-            const size = relativeSize * maxDim * 0.2 + maxDim * 0.05;
+            const size = relativeSize * 1.5 + 0.4; // Significantly increased base size and multiplier
 
             layout.images.push({
                 source: logo,
                 xref: "x",
                 yref: "y",
                 x: d.OnlinePenetration,
-                y: Math.sqrt(d.OnlineBookings),
+                y: Math.sqrt(d.OnlineBookings / 1e9), // Convert to billions and apply sqrt
                 sizex: size,
                 sizey: size,
                 sizing: "contain",
@@ -199,6 +208,9 @@ function handlePlayPause() {
 async function initialize() {
     mergedData = await fetchData();
     uniqueQuarters = [...new Set(mergedData.map(d => d.Year))].sort();
+    
+    // Initialize global max values
+    initializeGlobalMaxValues(mergedData);
     
     createTimeline(uniqueQuarters);
     updateBubbleChart(mergedData, uniqueQuarters[currentQuarterIndex]);
