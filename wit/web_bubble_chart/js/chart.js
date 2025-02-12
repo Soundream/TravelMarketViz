@@ -71,12 +71,12 @@ function updateBubbleChart(data, year) {
     // Create base scatter plot with invisible markers
     const trace = {
         x: yearData.map(d => d.OnlinePenetration),
-        y: yearData.map(d => Math.sqrt(d.OnlineBookings / 1e9)), // Convert to billions and apply sqrt
+        y: yearData.map(d => Math.sqrt(d.OnlineBookings / 1e9)),
         text: yearData.map(d => d.Market),
         mode: 'markers',
         marker: {
-            size: yearData.map(d => Math.sqrt(d.GrossBookings / 1e9) * 5000), // Significantly increased size multiplier
-            color: "rgba(0,0,0,0)" // Make markers completely transparent
+            size: yearData.map(d => Math.pow(d.GrossBookings / 1e9, 0.4) * 3000), // Changed from sqrt to power 0.4 for more dramatic differences
+            color: "rgba(0,0,0,0)"
         },
         hovertemplate: '<b>%{text}</b><br>' +
                       'Online Penetration: %{x:.1%}<br>' +
@@ -116,8 +116,8 @@ function updateBubbleChart(data, year) {
         if (logo) {
             // Calculate size based on gross bookings relative to maximum
             const maxGrossBookings = d3.max(data, d => d.GrossBookings);
-            const relativeSize = Math.sqrt(d.GrossBookings / maxGrossBookings);
-            const size = relativeSize * 1.5 + 0.4; // Significantly increased base size and multiplier
+            const relativeSize = Math.pow(d.GrossBookings / maxGrossBookings, 0.4); // Changed from sqrt to power 0.4
+            const size = relativeSize * 1.2 + 0.3; // Adjusted multiplier and base size
 
             layout.images.push({
                 source: logo,
