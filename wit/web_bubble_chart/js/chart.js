@@ -332,8 +332,19 @@ async function initialize() {
     createTimeline(uniqueQuarters);
     updateBubbleChart(mergedData, uniqueQuarters[currentQuarterIndex]);
 
-    // Event listeners
-    document.getElementById('play-button').addEventListener('click', handlePlayPause);
+    // Remove play button event listener and hide the button
+    const playButton = document.getElementById('play-button');
+    if (playButton) {
+        playButton.style.display = 'none';
+    }
+
+    // Automatically start playing
+    isPlaying = true;
+    playInterval = setInterval(() => {
+        currentQuarterIndex = (currentQuarterIndex + 1) % uniqueQuarters.length;
+        updateTimelineTriangle(currentQuarterIndex);
+        updateBubbleChart(mergedData, uniqueQuarters[currentQuarterIndex]);
+    }, 1500); // Changed from 2000 to 1000 for faster year transitions
 }
 
 // Load XLSX library and initialize
