@@ -71,13 +71,13 @@ function updateBubbleChart(data, year) {
     // Create background text trace
     const backgroundTrace = {
         x: [0.5], // Center of x-axis
-        y: [Math.sqrt(125)], // Center of y-axis
+        y: [Math.sqrt(250/4)], // Lower the position by using one-third of max value
         mode: 'text',
         text: [getEraText(year)],
         textposition: 'middle center',
         textfont: {
             size: 60,
-            family: 'Arial',
+            family: 'Montserrat, Arial',
             color: 'rgba(200,200,200,0.3)'
         },
         hoverinfo: 'skip',
