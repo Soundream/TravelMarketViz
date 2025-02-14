@@ -163,7 +163,7 @@ function updateBubbleChart(data, year) {
         const prevImages = chartDiv._fullLayout.images || [];
         
         // Create interpolated frames for smooth transition
-        const numFrames = 30; // Number of intermediate frames
+        const numFrames = 38; // Increased from 30 to 45 for smoother transition
         const frames = [];
         
         for (let i = 0; i <= numFrames; i++) {
@@ -238,11 +238,11 @@ function updateBubbleChart(data, year) {
             
             Plotly.animate('bubble-chart', frames[currentFrame], {
                 transition: {
-                    duration: 20,
+                    duration: 35,  // Increased from 20 to 35
                     easing: 'linear'
                 },
                 frame: {
-                    duration: 20,
+                    duration: 35,  // Increased from 20 to 35
                     redraw: false
                 }
             });
@@ -298,8 +298,8 @@ function updateTimelineTriangle(index) {
     const x = xScaleTimeline(index);
     timelineTriangle
         .transition()
-        .duration(1200)  // Match the bubble chart animation duration
-        .ease(d3.easeCubicInOut)  // Match the bubble chart easing
+        .duration(1800)  // Increased from 1200 to 1800 to match slower animation
+        .ease(d3.easeCubicInOut)
         .attr("transform", `translate(${x},${40}) rotate(180)`);
 }
 
@@ -317,7 +317,7 @@ function handlePlayPause() {
             currentQuarterIndex = (currentQuarterIndex + 1) % uniqueQuarters.length;
             updateTimelineTriangle(currentQuarterIndex);
             updateBubbleChart(mergedData, uniqueQuarters[currentQuarterIndex]);
-        }, 800); // Adjusted to match the total animation duration (30 frames * 20ms + buffer)
+        }, 2000); // Increased from 800 to 2000 to give more time between transitions
     }
 }
 
