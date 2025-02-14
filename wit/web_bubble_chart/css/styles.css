@@ -47,9 +47,9 @@ h1 {
 #timeline {
     flex-grow: 1;
     height: 80px;
-    background-color: #fff;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background-color: transparent;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 .chart-container {

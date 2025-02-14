@@ -68,6 +68,22 @@ async function fetchData() {
 function updateBubbleChart(data, year) {
     const yearData = data.filter(d => d.Year === year && selectedCompanies.includes(d.Market));
     
+    // Create background text trace
+    const backgroundTrace = {
+        x: [0.5], // Center of x-axis
+        y: [Math.sqrt(125)], // Center of y-axis
+        mode: 'text',
+        text: [getEraText(year)],
+        textposition: 'middle center',
+        textfont: {
+            size: 60,
+            family: 'Arial',
+            color: 'rgba(200,200,200,0.3)'
+        },
+        hoverinfo: 'skip',
+        showlegend: false
+    };
+
     // Create base scatter plot with invisible markers
     const trace = {
         x: yearData.map(d => d.OnlinePenetration),
@@ -109,19 +125,6 @@ function updateBubbleChart(data, year) {
         paper_bgcolor: 'white',
         dragmode: false,
         annotations: [{
-            text: getEraText(year),
-            x: 0.5,
-            y: Math.sqrt(250)/2,
-            xref: 'paper',
-            yref: 'paper',
-            showarrow: false,
-            font: {
-                family: 'Montserrat, Arial',
-                size: 60,
-                color: 'rgba(200, 200, 200, 0.3)'
-            }
-        },
-        {
             text: 'Data Source: Phocal Point',
             x: 0,
             y: -0.15,
@@ -153,17 +156,44 @@ function updateBubbleChart(data, year) {
     const chartDiv = document.getElementById('bubble-chart');
     if (!chartDiv.data) {
         // First time creation
-        Plotly.newPlot('bubble-chart', [trace], layout, { 
+        Plotly.newPlot('bubble-chart', [backgroundTrace, trace], layout, { 
             responsive: true,
             displayModeBar: false
+        }).then(() => {
+            // Add company logos after initial plot
+            const images = yearData.map(d => {
+                const logo = window.appConfig.companyLogos[d.Market];
+                if (!logo) return null;
+
+                const maxGrossBookings = d3.max(data, d => d.GrossBookings);
+                const relativeSize = Math.pow(d.GrossBookings / maxGrossBookings, 0.25);
+                const targetSize = relativeSize * 2.5 + 0.15;
+
+                return {
+                    source: logo,
+                    xref: "x",
+                    yref: "y",
+                    x: d.OnlinePenetration,
+                    y: Math.sqrt(d.OnlineBookings / 1e9),
+                    sizex: targetSize,
+                    sizey: targetSize,
+                    sizing: "contain",
+                    opacity: 0.8,
+                    layer: "above",
+                    xanchor: "center",
+                    yanchor: "middle"
+                };
+            }).filter(Boolean);
+
+            Plotly.relayout('bubble-chart', { images });
         });
     } else {
         // Get the previous data
-        const prevData = chartDiv.data[0];
+        const prevData = chartDiv.data[1]; // Index 1 is the bubble trace
         const prevImages = chartDiv._fullLayout.images || [];
         
         // Create interpolated frames for smooth transition
-        const numFrames = 35; // Increased from 30 to 45 for smoother transition
+        const numFrames = 35;
         const frames = [];
         
         for (let i = 0; i <= numFrames; i++) {
@@ -223,7 +253,7 @@ function updateBubbleChart(data, year) {
             }).filter(Boolean);
 
             frames.push({
-                data: [frameTrace],
+                data: [backgroundTrace, frameTrace],
                 layout: {
                     ...layout,
                     images: frameImages
@@ -238,11 +268,11 @@ function updateBubbleChart(data, year) {
             
             Plotly.animate('bubble-chart', frames[currentFrame], {
                 transition: {
-                    duration: 35,  // Increased from 20 to 35
+                    duration: 35,
                     easing: 'linear'
                 },
                 frame: {
-                    duration: 35,  // Increased from 20 to 35
+                    duration: 35,
                     redraw: false
                 }
             });
