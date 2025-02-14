@@ -86,7 +86,7 @@ function updateBubbleChart(data, year) {
         customdata: yearData.map(d => [d.OnlineBookings / 1e9, d.GrossBookings / 1e9])
     };
 
-    // Create layout with flag images
+    // Create layout
     const layout = {
         title: `APAC Travel Market ${year}`,
         xaxis: {
@@ -107,7 +107,6 @@ function updateBubbleChart(data, year) {
         hovermode: 'closest',
         plot_bgcolor: 'white',
         paper_bgcolor: 'white',
-        images: [],
         dragmode: false,
         annotations: [{
             text: getEraText(year),
@@ -150,32 +149,110 @@ function updateBubbleChart(data, year) {
         }]
     };
 
-    // Add flag images
-    yearData.forEach(d => {
-        const logo = window.appConfig.companyLogos[d.Market];
-        if (logo) {
-            const maxGrossBookings = d3.max(data, d => d.GrossBookings);
-            const relativeSize = Math.pow(d.GrossBookings / maxGrossBookings, 0.25);
-            const size = relativeSize * 2.5 + 0.15;
+    // Check if the chart already exists
+    const chartDiv = document.getElementById('bubble-chart');
+    if (!chartDiv.data) {
+        // First time creation
+        Plotly.newPlot('bubble-chart', [trace], layout, { 
+            responsive: true,
+            displayModeBar: false
+        });
+    } else {
+        // Get the previous data
+        const prevData = chartDiv.data[0];
+        const prevImages = chartDiv._fullLayout.images || [];
+        
+        // Create interpolated frames for smooth transition
+        const numFrames = 30; // Number of intermediate frames
+        const frames = [];
+        
+        for (let i = 0; i <= numFrames; i++) {
+            const t = i / numFrames; // Interpolation factor (0 to 1)
+            
+            // Interpolate data points
+            const frameTrace = {
+                x: yearData.map((d, idx) => {
+                    const prevX = prevData.x[idx] || 0;
+                    return prevX + (d.OnlinePenetration - prevX) * t;
+                }),
+                y: yearData.map((d, idx) => {
+                    const prevY = prevData.y[idx] || 0;
+                    const targetY = Math.sqrt(d.OnlineBookings / 1e9);
+                    return prevY + (targetY - prevY) * t;
+                }),
+                text: yearData.map(d => d.Market),
+                mode: 'markers',
+                marker: {
+                    size: yearData.map((d, idx) => {
+                        const prevSize = prevData.marker.size[idx] || 0;
+                        const targetSize = Math.pow(d.GrossBookings / 1e9, 0.15) * 4000;
+                        return prevSize + (targetSize - prevSize) * t;
+                    }),
+                    color: "rgba(0,0,0,0)"
+                }
+            };
 
-            layout.images.push({
-                source: logo,
-                xref: "x",
-                yref: "y",
-                x: d.OnlinePenetration,
-                y: Math.sqrt(d.OnlineBookings / 1e9),
-                sizex: size,
-                sizey: size,
-                sizing: "contain",
-                opacity: 0.8,
-                layer: "above",
-                xanchor: "center",
-                yanchor: "middle"
+            // Interpolate images
+            const frameImages = yearData.map((d, idx) => {
+                const logo = window.appConfig.companyLogos[d.Market];
+                if (!logo) return null;
+
+                const maxGrossBookings = d3.max(data, d => d.GrossBookings);
+                const relativeSize = Math.pow(d.GrossBookings / maxGrossBookings, 0.25);
+                const targetSize = relativeSize * 2.5 + 0.15;
+                
+                const prevImage = prevImages[idx] || {};
+                const prevX = prevImage.x || 0;
+                const prevY = prevImage.y || 0;
+                const prevSize = prevImage.sizex || 0;
+
+                return {
+                    source: logo,
+                    xref: "x",
+                    yref: "y",
+                    x: prevX + (d.OnlinePenetration - prevX) * t,
+                    y: prevY + (Math.sqrt(d.OnlineBookings / 1e9) - prevY) * t,
+                    sizex: prevSize + (targetSize - prevSize) * t,
+                    sizey: prevSize + (targetSize - prevSize) * t,
+                    sizing: "contain",
+                    opacity: 0.8,
+                    layer: "above",
+                    xanchor: "center",
+                    yanchor: "middle"
+                };
+            }).filter(Boolean);
+
+            frames.push({
+                data: [frameTrace],
+                layout: {
+                    ...layout,
+                    images: frameImages
+                }
             });
         }
-    });
 
-    Plotly.react('bubble-chart', [trace], layout, { responsive: true });
+        // Animate through the frames
+        let currentFrame = 0;
+        const animate = () => {
+            if (currentFrame >= frames.length) return;
+            
+            Plotly.animate('bubble-chart', frames[currentFrame], {
+                transition: {
+                    duration: 20,
+                    easing: 'linear'
+                },
+                frame: {
+                    duration: 20,
+                    redraw: false
+                }
+            });
+            
+            currentFrame++;
+            requestAnimationFrame(animate);
+        };
+
+        animate();
+    }
 }
 
 // Function to create timeline
@@ -221,7 +298,8 @@ function updateTimelineTriangle(index) {
     const x = xScaleTimeline(index);
     timelineTriangle
         .transition()
-        .duration(300)
+        .duration(1200)  // Match the bubble chart animation duration
+        .ease(d3.easeCubicInOut)  // Match the bubble chart easing
         .attr("transform", `translate(${x},${40}) rotate(180)`);
 }
 
@@ -239,7 +317,7 @@ function handlePlayPause() {
             currentQuarterIndex = (currentQuarterIndex + 1) % uniqueQuarters.length;
             updateTimelineTriangle(currentQuarterIndex);
             updateBubbleChart(mergedData, uniqueQuarters[currentQuarterIndex]);
-        }, 1000);
+        }, 800); // Adjusted to match the total animation duration (30 frames * 20ms + buffer)
     }
 }
 
