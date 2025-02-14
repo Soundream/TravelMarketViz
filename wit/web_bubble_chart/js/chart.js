@@ -88,7 +88,7 @@ function updateBubbleChart(data, year) {
 
     // Create layout
     const layout = {
-        title: `APAC Travel Market ${year}`,
+        title: 'APAC Travel Market',
         xaxis: {
             title: 'Online Penetration',
             tickformat: ',.0%',
@@ -163,7 +163,7 @@ function updateBubbleChart(data, year) {
         const prevImages = chartDiv._fullLayout.images || [];
         
         // Create interpolated frames for smooth transition
-        const numFrames = 38; // Increased from 30 to 45 for smoother transition
+        const numFrames = 35; // Increased from 30 to 45 for smoother transition
         const frames = [];
         
         for (let i = 0; i <= numFrames; i++) {
