@@ -11,6 +11,23 @@ let currentTraces;
 let layout;
 let config;
 
+// Add getEraText function at the top level
+function getEraText(year) {
+    const yearNum = parseInt(year);
+    if (yearNum >= 2005 && yearNum <= 2008) {
+        return "Growth of WWW";
+    } else if (yearNum >= 2009 && yearNum <= 2010) {
+        return "Great Recession";
+    } else if (yearNum >= 2011 && yearNum <= 2018) {
+        return "Growth of Mobile";
+    } else if (yearNum >= 2019 && yearNum <= 2021) {
+        return "Global Pandemic";
+    } else if (yearNum >= 2022) {
+        return "Post-Pandemic Recovery";
+    }
+    return "";
+}
+
 // Function to create timeline
 function createTimeline() {
     const timelineWidth = document.getElementById('timeline').offsetWidth;
@@ -130,10 +147,10 @@ function createBubbleChart(data, year) {
 
     // 创建背景文字
     backgroundTrace = {
-        x: [0.5],
-        y: [Math.sqrt(allYears.maxOnlineBookings * appConfig.dataProcessing.bookingsScaleFactor / 4)],
+        x: [50],
+        y: [40],  // 降低y坐标值，使文字往下移
         mode: 'text',
-        text: [`Global Pandemic`],
+        text: [getEraText(year)],
         textposition: 'middle center',
         textfont: {
             size: 60,
@@ -483,6 +500,22 @@ function togglePlay() {
                             redraw: false
                         }
                     });
+
+                    // 更新背景文字
+                    backgroundTrace = {
+                        x: [50],
+                        y: [40],  // 同样更新动画更新时的y坐标
+                        mode: 'text',
+                        text: [getEraText(years[currentIndex])],
+                        textposition: 'middle center',
+                        textfont: {
+                            size: 60,
+                            family: 'Monda, Arial',
+                            color: 'rgba(200,200,200,0.3)'
+                        },
+                        hoverinfo: 'skip',
+                        showlegend: false
+                    };
                 }
             }
 
