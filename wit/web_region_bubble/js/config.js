@@ -2,17 +2,17 @@ const appConfig = {
     // Region colors based on representative flags
     regionColors: {
         'APAC': '#DE2910',        // China's flag red
-        'Europe': '#003399',      // EU flag blue
-        'Eastern Europe': '#1B4B9E', // Darker blue
+        'Europe': '#003399',      // 深蓝色
+        'Eastern Europe': '#4B0082', // 靛蓝色
         'LATAM': '#009B3A',       // Brazil's flag green
-        'Middle East': '#8B4513',  // 改为棕色
-        'North America': '#002868' // US flag blue
+        'Middle East': '#8B4513',  // 棕色
+        'North America': '#00BCD4' // 浅蓝色
     },
 
     // Animation settings
     animation: {
-        duration: 1000,           // Duration of each animation frame in ms
-        frameDelay: 2000,         // Delay between frames in ms
+        duration: 800,            // 减少每个动画的持续时间
+        frameDelay: 1200,         // 减少帧之间的延迟
     },
 
     // Chart settings
