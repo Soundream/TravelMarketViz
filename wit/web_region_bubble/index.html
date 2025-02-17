@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Travel Market by Region</title>
+    <link rel="icon" type="image/png" href="https://www.google.com/s2/favicons?domain=plotly.com">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Monda:wght@400;700&family=Open+Sans:wght@400;600&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>Global Travel Market Evolution by Region</h1>
+        
+        <div class="controls">
+            <div id="timeline"></div>
+            <button id="playButton" class="control-button">
+                <i class="fas fa-play"></i>
+            </button>
+        </div>
+
+        <div class="chart-container">
+            <div id="bubble-chart"></div>
+        </div>
+    </div>
+
+    <div id="chart-tooltip" class="tooltip"></div>
+
+    <script src="js/config.js"></script>
+    <script src="js/chart.js"></script>
+</body>
+</html> 
