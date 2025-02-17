@@ -1,5 +1,5 @@
 // Global variables
-let isPlaying = false;
+let isPlaying = true; // 默认为播放状态
 let playInterval;
 let currentYearIndex = 0;
 let years;
@@ -8,11 +8,13 @@ let timeline;
 let uniqueRegions;
 let backgroundTrace;
 let currentTraces;
+let layout;
+let config;
 
 // Function to create timeline
 function createTimeline() {
     const timelineWidth = document.getElementById('timeline').offsetWidth;
-    const margin = { left: 50, right: 50 };
+    const margin = { left: 80, right: 80 }; // 增加左右边距
     const width = timelineWidth - margin.left - margin.right;
 
     // Create SVG
@@ -179,9 +181,10 @@ function createBubbleChart(data, year) {
     // 合并背景文字和数据轨迹
     const allTraces = [backgroundTrace, ...currentTraces];
 
-    const layout = {
+    // 初始化全局 layout 变量
+    layout = {
         title: {
-            text: `Global Travel Market by Region - ${year}`,
+            text: `Global Travel Market by Region`,
             font: {
                 family: 'Montserrat',
                 size: 24
@@ -239,9 +242,9 @@ function createBubbleChart(data, year) {
                 size: 12
             },
             tickmode: 'array',
-            ticktext: ['0', '10', '40', '90', '160', '250', '400', '600'],
-            tickvals: [0, 10, 40, 90, 160, 250, 400, 600],
-            range: [0, Math.log10(600)],
+            ticktext: ['0', '10', '40', '90', '160', '250', '400', '600', '800', '1000'],
+            tickvals: [0, 10, 40, 90, 160, 250, 400, 600, 800, 1000],
+            range: [0, Math.log10(1000)],
             autorange: false,
             showticklabels: true,
             ticklen: 5,
@@ -308,11 +311,12 @@ function createBubbleChart(data, year) {
             t: 100,
             b: 100
         },
-        width: 950,
-        height: 600
+        width: 1300, // 增加图表宽度
+        height: 600,
     };
 
-    const config = {
+    // 初始化全局 config 变量
+    config = {
         responsive: true,
         displayModeBar: false
     };
@@ -386,11 +390,7 @@ function createBubbleChart(data, year) {
 
 // Function to handle play/pause
 function togglePlay() {
-    const playButton = document.getElementById('playButton');
-    isPlaying = !isPlaying;
-    
     if (isPlaying) {
-        playButton.innerHTML = '<i class="fas fa-pause"></i>';
         let lastTime = 0;
         let lastUpdateTime = 0;
         const animationDuration = 30000; // 30秒完成一个完整循环
@@ -470,7 +470,7 @@ function togglePlay() {
                         traces: Array.from({ length: traces.length + 1 }, (_, i) => i),
                         layout: {
                             title: {
-                                text: `Global Travel Market by Region - ${years[currentIndex]}`
+                                text: `Global Travel Market by Region`
                             }
                         }
                     }, {
@@ -490,8 +490,6 @@ function togglePlay() {
         }
 
         requestAnimationFrame(animate);
-    } else {
-        playButton.innerHTML = '<i class="fas fa-play"></i>';
     }
 }
 
@@ -521,11 +519,14 @@ async function init() {
         // 创建时间轴
         createTimeline();
         
-        // 创建初始图表
+        // 先创建初始图表数据
         createBubbleChart(processedData, years[currentYearIndex]);
         
-        // Setup event listeners
-        document.getElementById('playButton').addEventListener('click', togglePlay);
+        // 确保图表已经完全加载后再开始动画
+        setTimeout(() => {
+            isPlaying = true;
+            togglePlay();
+        }, 500);
         
     } catch (error) {
         console.error('Error initializing visualization:', error);
