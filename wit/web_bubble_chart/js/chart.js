@@ -77,7 +77,7 @@ function updateBubbleChart(data, year) {
         textposition: 'middle center',
         textfont: {
             size: 60,
-            family: 'Montserrat, Arial',
+            family: 'Monda, Arial',
             color: 'rgba(200,200,200,0.3)'
         },
         hoverinfo: 'skip',
@@ -326,11 +326,7 @@ function createTimeline(years) {
 // Function to update timeline triangle position
 function updateTimelineTriangle(index) {
     const x = xScaleTimeline(index);
-    timelineTriangle
-        .transition()
-        .duration(1800)  // Increased from 1200 to 1800 to match slower animation
-        .ease(d3.easeCubicInOut)
-        .attr("transform", `translate(${x},${40}) rotate(180)`);
+    timelineTriangle.attr("transform", `translate(${x},40) rotate(180)`);
 }
 
 // Function to handle play/pause
@@ -347,34 +343,144 @@ function handlePlayPause() {
             currentQuarterIndex = (currentQuarterIndex + 1) % uniqueQuarters.length;
             updateTimelineTriangle(currentQuarterIndex);
             updateBubbleChart(mergedData, uniqueQuarters[currentQuarterIndex]);
-        }, 2000); // Increased from 800 to 2000 to give more time between transitions
+        }, 2000); // Increased interval to give more time for smooth transitions
     }
 }
 
 // Initialize the visualization
 async function initialize() {
-    mergedData = await fetchData();
-    uniqueQuarters = [...new Set(mergedData.map(d => d.Year))].sort();
-    
-    // Initialize global max values
-    initializeGlobalMaxValues(mergedData);
-    
-    createTimeline(uniqueQuarters);
-    updateBubbleChart(mergedData, uniqueQuarters[currentQuarterIndex]);
-
-    // Remove play button event listener and hide the button
-    const playButton = document.getElementById('play-button');
-    if (playButton) {
-        playButton.style.display = 'none';
-    }
-
-    // Automatically start playing
-    isPlaying = true;
-    playInterval = setInterval(() => {
-        currentQuarterIndex = (currentQuarterIndex + 1) % uniqueQuarters.length;
-        updateTimelineTriangle(currentQuarterIndex);
+    try {
+        mergedData = await fetchData();
+        if (!mergedData || mergedData.length === 0) {
+            console.error('No data loaded');
+            return;
+        }
+        
+        uniqueQuarters = [...new Set(mergedData.map(d => d.Year))].sort();
+        
+        // Initialize global max values
+        initializeGlobalMaxValues(mergedData);
+        
+        createTimeline(uniqueQuarters);
         updateBubbleChart(mergedData, uniqueQuarters[currentQuarterIndex]);
-    }, 1500); // Changed from 2000 to 1000 for faster year transitions
+
+        // Remove play button event listener and hide the button
+        const playButton = document.getElementById('play-button');
+        if (playButton) {
+            playButton.style.display = 'none';
+        }
+
+        // Start continuous animation
+        let lastTime = 0;
+        let lastUpdateTime = 0;
+        const animationDuration = 30000; // 30 seconds for full cycle
+        const updateInterval = 1000 / 30; // Cap updates at 30fps
+        
+        function animate(currentTime) {
+            if (!lastTime) lastTime = currentTime;
+            const elapsed = currentTime - lastTime;
+            
+            // Calculate progress (0 to 1)
+            const totalProgress = (elapsed % animationDuration) / animationDuration;
+            const indexFloat = totalProgress * (uniqueQuarters.length - 1);
+            const currentIndex = Math.floor(indexFloat);
+            const nextIndex = (currentIndex + 1) % uniqueQuarters.length;
+            const progress = indexFloat - currentIndex;
+
+            // Update timeline triangle position smoothly
+            const currentX = xScaleTimeline(currentIndex);
+            const nextX = xScaleTimeline(nextIndex);
+            const interpolatedX = currentX + (nextX - currentX) * progress;
+            timelineTriangle.attr("transform", `translate(${interpolatedX},40) rotate(180)`);
+
+            // Only update bubble chart at specified interval
+            if (currentTime - lastUpdateTime >= updateInterval) {
+                lastUpdateTime = currentTime;
+
+                // Get data for current and next year
+                const currentYearData = mergedData.filter(d => d.Year === uniqueQuarters[currentIndex] && selectedCompanies.includes(d.Market));
+                const nextYearData = mergedData.filter(d => d.Year === uniqueQuarters[nextIndex] && selectedCompanies.includes(d.Market));
+
+                // Create interpolated data
+                const interpolatedData = currentYearData.map((d, i) => {
+                    const nextData = nextYearData.find(nd => nd.Market === d.Market) || d;
+                    return {
+                        Market: d.Market,
+                        Year: uniqueQuarters[currentIndex],
+                        OnlinePenetration: d.OnlinePenetration + (nextData.OnlinePenetration - d.OnlinePenetration) * progress,
+                        OnlineBookings: d.OnlineBookings + (nextData.OnlineBookings - d.OnlineBookings) * progress,
+                        GrossBookings: d.GrossBookings + (nextData.GrossBookings - d.GrossBookings) * progress
+                    };
+                });
+
+                // Update bubble chart with interpolated data
+                const chartDiv = document.getElementById('bubble-chart');
+                if (chartDiv && chartDiv.data) {
+                    const trace = chartDiv.data[1];
+                    const images = chartDiv._fullLayout.images || [];
+
+                    // Batch all updates into a single object
+                    const updates = {
+                        x: [null, interpolatedData.map(d => d.OnlinePenetration)],
+                        y: [null, interpolatedData.map(d => Math.sqrt(d.OnlineBookings / 1e9))],
+                        'marker.size': [null, interpolatedData.map(d => Math.pow(d.GrossBookings / 1e9, 0.15) * 4000)]
+                    };
+
+                    // Update images positions and sizes
+                    const updatedImages = images.map((img, idx) => {
+                        if (!interpolatedData[idx]) return img;
+                        const d = interpolatedData[idx];
+                        const relativeSize = Math.pow(d.GrossBookings / d3.max(mergedData, d => d.GrossBookings), 0.25);
+                        return {
+                            ...img,
+                            x: d.OnlinePenetration,
+                            y: Math.sqrt(d.OnlineBookings / 1e9),
+                            sizex: relativeSize * 2.5 + 0.15,
+                            sizey: relativeSize * 2.5 + 0.15
+                        };
+                    });
+
+                    // Create background text trace
+                    const backgroundTrace = {
+                        x: [0.5],
+                        y: [Math.sqrt(250/4)],
+                        mode: 'text',
+                        text: [getEraText(uniqueQuarters[currentIndex])],
+                        textposition: 'middle center',
+                        textfont: {
+                            size: 60,
+                            family: 'Monda, Arial',
+                            color: 'rgba(200,200,200,0.3)'
+                        },
+                        hoverinfo: 'skip',
+                        showlegend: false
+                    };
+
+                    // Perform single update with all changes
+                    Plotly.update('bubble-chart', 
+                        {
+                            x: [backgroundTrace.x, interpolatedData.map(d => d.OnlinePenetration)],
+                            y: [backgroundTrace.y, interpolatedData.map(d => Math.sqrt(d.OnlineBookings / 1e9))],
+                            'marker.size': [null, interpolatedData.map(d => Math.pow(d.GrossBookings / 1e9, 0.15) * 4000)],
+                            text: [backgroundTrace.text, interpolatedData.map(d => d.Market)],
+                            textposition: [backgroundTrace.textposition, null],
+                            textfont: [backgroundTrace.textfont, null],
+                            mode: ['text', 'markers'],
+                            hoverinfo: ['skip', trace.hoverinfo]
+                        },
+                        { images: updatedImages },
+                        [0, 1]
+                    );
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        requestAnimationFrame(animate);
+    } catch (error) {
+        console.error('Error initializing visualization:', error);
+    }
 }
 
 // Load XLSX library and initialize
@@ -390,9 +496,9 @@ function getEraText(year) {
         return "Growth of WWW";
     } else if (yearNum >= 2009 && yearNum <= 2010) {
         return "Great Recession";
-    } else if (yearNum >= 2011 && yearNum <= 2019) {
+    } else if (yearNum >= 2011 && yearNum <= 2018) {
         return "Growth of Mobile";
-    } else if (yearNum >= 2020 && yearNum <= 2021) {
+    } else if (yearNum >= 2019 && yearNum <= 2021) {
         return "Global Pandemic";
     } else if (yearNum >= 2022) {
         return "Post-Pandemic Recovery";
