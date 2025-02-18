@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Travel Market Gross Bookings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Monda:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Global Travel Market Gross Bookings</h1>
+        <div id="map-container"></div>
+        <div id="controls">
+            <button id="play-button" class="control-button">Play</button>
+            <div class="slider-container">
+                <input type="range" id="year-slider" min="2005" max="2025" value="2005">
+                <span id="year-display">2005</span>
+            </div>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/map.js"></script>
+</body>
+</html> 
