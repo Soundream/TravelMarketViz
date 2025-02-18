@@ -1,14 +1,12 @@
 import pandas as pd
 
-# 读取 CSV 文件
 file_path = "API_NY.GDP.MKTP.CD_DS2_zh_csv_v2_285.csv"
-df = pd.read_csv(file_path, skiprows=4)  # 跳过元数据行
+df = pd.read_csv(file_path, skiprows=4) 
 
-# 选择需要的列
 df = df[['Country Name', '2005', '2006', '2007', '2008', '2009']]
 df.iloc[:, 1:] = df.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')
 
-# 用户需要的国家/地区列表
+
 user_countries = [
     "Argentina", "Australia-New Zealand", "Brazil", "Bulgaria", "Canada", "Chile", "China",
     "Colombia", "Czech Republic", "Egypt", "France", "Germany", "Greece", "Hong Kong", "Hungary",
@@ -18,7 +16,6 @@ user_countries = [
     "U.A.E.", "U.K.", "U.S.", "Ukraine"
 ]
 
-# 世界银行数据中的名称映射
 country_mapping = {
     "Argentina": "阿根廷",
     "Australia-New Zealand": ["澳大利亚", "新西兰"],
@@ -54,7 +51,7 @@ country_mapping = {
     "Singapore": "新加坡",
     "South Korea": "大韩民国",
     "Spain": "西班牙",
-    "Taiwan": "台湾",  # 台湾可能不会出现在世界银行数据中
+    "Taiwan": "台湾",  
     "Thailand": "泰国",
     "U.A.E.": "阿拉伯联合酋长国",
     "U.K.": "英国",
@@ -62,7 +59,6 @@ country_mapping = {
     "Ukraine": "乌克兰"
 }
 
-# 处理数据匹配
 processed_data = []
 for user_country, wb_country in country_mapping.items():
     if isinstance(wb_country, list):
@@ -76,14 +72,10 @@ for user_country, wb_country in country_mapping.items():
         else:
             processed_data.append([user_country] + [None] * 5)
 
-# 转换为 DataFrame
 df_final = pd.DataFrame(processed_data, columns=["Country", "2005", "2006", "2007", "2008", "2009"])
+df_final.iloc[:, 1:] = df_final.iloc[:, 1:].applymap(lambda x: int(x) if pd.notna(x) else "")
 
-# 转换 GDP 数据为整数，并确保 NaN 变为 ""
-df_final.iloc[:, 1:] = df_final.iloc[:, 1:].applymap(lambda x: str(int(x)) if pd.notna(x) else "")
+output_path = "./gdp_cleaned_integer.xlsx"
+df_final.to_excel(output_path, index=False, sheet_name='GDP Data')
 
-# 导出到 CSV 文件（无索引、无列名）
-output_path = "/Users/liugan/Library/CloudStorage/OneDrive-Personal/Files/000_Archive/TravelMarketViz/gdp_cleaned_integer.csv"
-df_final.to_csv(output_path, index=False, header=False)
-
-print(f"GDP 数据整理完成，已保存至 {output_path}")
+print(f"saved to {output_path}")
