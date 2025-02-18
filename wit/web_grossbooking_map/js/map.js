@@ -2,12 +2,16 @@ let isPlaying = false;
 let currentFrame = 0;
 let animationInterval;
 let data;
+let timeline;
+let years;
+let animationFrameId = null;
+let processedData = null;
 
 // Initialize the visualization
 async function init() {
     try {
         console.log('Initializing visualization...');
-        const response = await fetch('../../../utilities/travel_market_summary.xlsx');
+        const response = await fetch('/utilities/travel_market_summary.xlsx');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -22,16 +26,27 @@ async function init() {
         }
         
         const jsonData = XLSX.utils.sheet_to_json(sheet);
-        console.log('Loaded data:', jsonData); // Debug log
-        const processedData = processData(jsonData);
+        if (!jsonData || jsonData.length === 0) {
+            throw new Error("No data found in the Excel file");
+        }
+        console.log('Loaded data:', jsonData);
+        
+        processedData = processData(jsonData);
+        if (!processedData || processedData.length === 0) {
+            throw new Error("Failed to process data");
+        }
+        
         createMap(processedData, appConfig.map.defaultYear);
-        setupControls();
+        createTimeline();
+        
+        // 自动开始动画
+        startAnimation();
     } catch (error) {
         console.error('Error loading data:', error);
         document.getElementById('map-container').innerHTML = `
             <div style="color: red; padding: 20px;">
                 Error loading visualization: ${error.message}<br>
-                Path tried: ../../../utilities/travel_market_summary.xlsx<br>
+                Path tried: /utilities/travel_market_summary.xlsx<br>
                 Please make sure you're running this through a web server and the Excel file is accessible.
             </div>
         `;
@@ -41,9 +56,12 @@ async function init() {
 // Process the data for visualization
 function processData(rawData) {
     console.log('Raw data:', rawData);
-    const years = [...new Set(rawData.map(row => row['Year']))].sort();
-    console.log('Years found:', years);
+    console.log('Sample data row:', rawData[0]);
     const processedData = [];
+
+    // 首先从原始数据中提取年份
+    years = [...new Set(rawData.map(d => d.Year))].sort((a, b) => a - b);
+    console.log('Years extracted:', years);
 
     // 创建一个Set来跟踪已添加的区域
     const addedRegions = new Set();
@@ -99,17 +117,20 @@ function processData(rawData) {
     
     // 为每年创建一个新的数据集
     years.forEach(year => {
+        // 重置区域跟踪器（每年都需要显示所有区域的图例）
+        addedRegions.clear();
+        
         // 只获取当前年份的数据
-        const yearData = rawData.filter(row => row['Year'] === parseInt(year));
-        console.log(`Processing data for year ${year}:`, yearData);
+        const yearData = rawData.filter(row => row.Year === year);
+        console.log(`Processing data for year ${year}, found ${yearData.length} records`);
         
         // 创建一个Map来存储每个国家在当前年份的数据
         const marketMap = new Map();
         
         // 处理当前年份的所有数据
         yearData.forEach(row => {
-            const market = row['Market'];
-            const grossBookings = row['Gross Bookings'] / 1e9; // 转换为十亿
+            const market = row.Market;
+            const grossBookings = parseFloat(row['Gross Bookings']) / 1e9; // 确保转换为数字
             
             // 如果这个市场已经存在，跳过（确保每个市场只出现一次）
             if (marketMap.has(market)) {
@@ -118,7 +139,7 @@ function processData(rawData) {
             }
             
             // 确定国家所属的区域
-            const region = row['Region'];
+            const region = row.Region;
             let mappedRegion = region;
             if (region === 'APAC') mappedRegion = 'Asia-Pacific';
             if (region === 'LATAM') mappedRegion = 'Latin America';
@@ -130,8 +151,8 @@ function processData(rawData) {
                 return;
             }
 
-            if (grossBookings > 0) {
-                marketMap.set(market, {
+            if (!isNaN(grossBookings) && grossBookings > 0) {
+                const trace = {
                     type: 'scattergeo',
                     lon: [coords.lon],
                     lat: [coords.lat],
@@ -140,25 +161,26 @@ function processData(rawData) {
                     mode: 'markers',
                     marker: {
                         size: scaleMarkerSize(grossBookings),
-                        color: appConfig.regionColors[mappedRegion],
+                        color: appConfig.regionColors[mappedRegion] || '#999999',
                         line: {
                             color: 'white',
                             width: 1
                         },
                         sizemode: 'area'
                     },
-                    name: mappedRegion, // 使用区域名称而不是国家名称
+                    name: mappedRegion,
                     legendgroup: mappedRegion,
-                    showlegend: !addedRegions.has(mappedRegion), // 每个区域只在图例中显示一次
+                    showlegend: !addedRegions.has(mappedRegion),
                     hovertemplate: '<b>%{text}</b><br>' +
                                  'Gross Bookings: $%{customdata[0]}B<br>' +
                                  'Year: %{customdata[1]}<br>' +
                                  'Region: ' + mappedRegion,
-                    frame: year
-                });
-
-                // 记录该区域已被添加到图例
+                    frame: year.toString()
+                };
+                marketMap.set(market, trace);
                 addedRegions.add(mappedRegion);
+            } else {
+                console.log(`Invalid gross bookings value for ${market}: ${grossBookings}`);
             }
         });
         
@@ -166,7 +188,8 @@ function processData(rawData) {
         processedData.push(...marketMap.values());
     });
     
-    console.log('Processed data:', processedData);
+    console.log('Processed data sample:', processedData[0]);
+    console.log('Total processed data points:', processedData.length);
     return processedData;
 }
 
@@ -179,8 +202,80 @@ function scaleMarkerSize(value) {
     return size;
 }
 
+// Function to create timeline
+function createTimeline() {
+    const timelineWidth = document.getElementById('timeline').offsetWidth;
+    const margin = { left: 80, right: 80 }; // 增加左右边距
+    const width = timelineWidth - margin.left - margin.right;
+
+    // Create SVG
+    const svg = d3.select('#timeline')
+        .append('svg')
+        .attr('width', timelineWidth)
+        .attr('height', 60);
+
+    const g = svg.append('g')
+        .attr('transform', `translate(${margin.left}, 30)`);
+
+    // Create scale
+    const xScale = d3.scaleLinear()
+        .domain([d3.min(years), d3.max(years)])
+        .range([0, width]);
+
+    // Create axis
+    const xAxis = d3.axisBottom(xScale)
+        .tickFormat(d => d.toString())
+        .ticks(years.length)
+        .tickValues(years);
+
+    // Add axis
+    g.append('g')
+        .attr('class', 'timeline-axis')
+        .call(xAxis)
+        .selectAll('text')
+        .style('text-anchor', 'middle')
+        .style('font-family', 'Monda')
+        .style('font-size', '12px');
+
+    // Add triangle marker
+    const triangle = g.append('path')
+        .attr('d', d3.symbol().type(d3.symbolTriangle).size(100))
+        .attr('fill', '#4CAF50')
+        .attr('transform', `translate(${xScale(years[currentFrame])}, -10) rotate(180)`);
+
+    timeline = {
+        scale: xScale,
+        triangle: triangle
+    };
+
+    // Add click interaction
+    svg.on('click', function(event) {
+        const coords = d3.pointer(event);
+        const x = coords[0] - margin.left;
+        const year = Math.round(xScale.invert(x));
+        if (years.includes(year)) {
+            currentFrame = years.indexOf(year);
+            updateVisualization(year);
+        }
+    });
+}
+
+// Function to update timeline
+function updateTimeline(year) {
+    if (timeline && timeline.triangle) {
+        timeline.triangle
+            .transition()
+            .duration(appConfig.animation.duration)
+            .attr('transform', `translate(${timeline.scale(year)}, -10) rotate(180)`);
+    }
+    document.getElementById('year-display').textContent = year;
+}
+
 // Create the map visualization
 function createMap(data, year) {
+    console.log('Creating map with data for year:', year);
+    console.log('Sample data point:', data[0]);
+
     const layout = {
         title: {
             text: 'Global Travel Market Gross Bookings',
@@ -189,131 +284,219 @@ function createMap(data, year) {
                 size: 24
             }
         },
+        autosize: true,
+        width: window.innerWidth * 0.9,
+        height: 600,
+        margin: {
+            l: 0,
+            r: 0,
+            t: 30,
+            b: 0
+        },
+        showlegend: true,
         geo: {
             scope: 'world',
             projection: {
-                type: appConfig.map.projection
+                type: 'equirectangular'
             },
             showland: true,
             landcolor: 'rgb(243, 243, 243)',
             countrycolor: 'rgb(204, 204, 204)',
             showocean: true,
             oceancolor: 'rgb(250, 250, 250)',
-            showframe: false
+            showframe: false,
+            showcountries: true,
+            resolution: 50,
+            lonaxis: {
+                showgrid: true,
+                gridwidth: 0.5,
+                range: [-180, 180],
+                dtick: 30
+            },
+            lataxis: {
+                showgrid: true,
+                gridwidth: 0.5,
+                range: [-90, 90],
+                dtick: 30
+            }
         },
         legend: {
+            x: 0.01,
+            y: 0.99,
+            bgcolor: 'rgba(255, 255, 255, 0.9)',
+            bordercolor: '#666',
+            borderwidth: 1,
+            font: {
+                family: 'Monda',
+                size: 12
+            },
             title: {
                 text: 'Regions',
                 font: {
                     family: 'Monda',
-                    size: 14
+                    size: 14,
+                    color: '#333'
+                }
+            },
+            itemsizing: 'constant',
+            itemwidth: 30,
+            traceorder: 'normal'
+        }
+    };
+
+    // 存储全局数据供后续更新使用
+    window.mapData = data;
+
+    const yearStr = year.toString();
+    const yearData = data.filter(d => d.frame === yearStr);
+    console.log(`Filtered ${yearData.length} points for year ${year}`);
+
+    const config = {
+        displayModeBar: false,
+        responsive: true,
+        scrollZoom: false
+    };
+
+    try {
+        Plotly.newPlot('map-container', yearData, layout, config)
+            .then(() => {
+                console.log('Map created successfully');
+                // 强制重新计算布局
+                window.dispatchEvent(new Event('resize'));
+            })
+            .catch(error => {
+                console.error('Error creating map:', error);
+            });
+    } catch (error) {
+        console.error('Error in map creation:', error);
+    }
+}
+
+// Update the map for a specific year
+function updateMap(year) {
+    console.log('Updating map for year:', year);
+    const yearData = processedData.filter(d => d.frame === year.toString());
+    console.log(`Found ${yearData.length} data points for year ${year}`);
+
+    const data = yearData;
+    const layout = {
+        title: {
+            text: 'Global Travel Market Gross Bookings',
+            font: {
+                family: 'Monda',
+                size: 24
+            }
+        },
+        autosize: true,
+        width: window.innerWidth * 0.9,
+        height: 600,
+        margin: {
+            l: 0,
+            r: 0,
+            t: 30,
+            b: 0
+        },
+        showlegend: true,
+        geo: {
+            scope: 'world',
+            projection: {
+                type: 'equirectangular'
+            },
+            showland: true,
+            landcolor: 'rgb(243, 243, 243)',
+            countrycolor: 'rgb(204, 204, 204)',
+            showocean: true,
+            oceancolor: 'rgb(250, 250, 250)',
+            showframe: false,
+            showcountries: true,
+            resolution: 50,
+            lonaxis: {
+                showgrid: true,
+                gridwidth: 0.5,
+                range: [-180, 180],
+                dtick: 30
+            },
+            lataxis: {
+                showgrid: true,
+                gridwidth: 0.5,
+                range: [-90, 90],
+                dtick: 30
+            }
+        },
+        legend: {
+            x: 0.01,
+            y: 0.99,
+            bgcolor: 'rgba(255, 255, 255, 0.9)',
+            bordercolor: '#666',
+            borderwidth: 1,
+            font: {
+                family: 'Monda',
+                size: 12
+            },
+            title: {
+                text: 'Regions',
+                font: {
+                    family: 'Monda',
+                    size: 14,
+                    color: '#333'
                 }
             },
             itemsizing: 'constant',
             itemwidth: 30,
             traceorder: 'normal'
         },
-        sliders: [{
-            currentvalue: {
-                prefix: 'Year: ',
-                xanchor: 'right'
-            },
-            steps: [...new Set(data.map(d => d.frame))].sort().map(year => ({
-                label: year.toString(),
-                method: 'animate',
-                args: [[year], {
-                    mode: 'immediate',
-                    frame: {
-                        duration: appConfig.animation.duration,
-                        redraw: true
-                    }
-                }]
-            }))
-        }]
+        transition: {
+            duration: 500,
+            easing: 'cubic-in-out'
+        }
     };
 
-    // 存储全局数据供后续更新使用
-    window.mapData = data;
+    const config = {
+        displayModeBar: false,
+        responsive: true,
+        scrollZoom: false
+    };
 
-    Plotly.newPlot('map-container', 
-        data.filter(d => d.frame === year),
-        layout,
-        {displayModeBar: false}
-    );
-}
-
-// Set up control elements
-function setupControls() {
-    const playButton = document.getElementById('play-button');
-    const yearSlider = document.getElementById('year-slider');
-    const yearDisplay = document.getElementById('year-display');
-
-    // 设置年份范围
-    const years = [...new Set(window.mapData.map(d => d.frame))].sort();
-    yearSlider.min = years[0];
-    yearSlider.max = years[years.length - 1];
-    yearSlider.value = years[0];
-    yearDisplay.textContent = years[0];
-
-    playButton.addEventListener('click', togglePlay);
-    yearSlider.addEventListener('input', () => {
-        const year = parseInt(yearSlider.value);
-        yearDisplay.textContent = year;
-        updateMap(year);
-    });
-}
-
-// Toggle play/pause
-function togglePlay() {
-    isPlaying = !isPlaying;
-    const playButton = document.getElementById('play-button');
-    playButton.textContent = isPlaying ? 'Pause' : 'Play';
-
-    if (isPlaying) {
-        animationInterval = setInterval(() => {
-            const yearSlider = document.getElementById('year-slider');
-            const currentYear = parseInt(yearSlider.value);
-            const nextYear = currentYear >= parseInt(yearSlider.max) 
-                ? parseInt(yearSlider.min) 
-                : currentYear + 1;
-            
-            yearSlider.value = nextYear;
-            document.getElementById('year-display').textContent = nextYear;
-            updateMap(nextYear);
-        }, appConfig.animation.frameDelay);
-    } else {
-        clearInterval(animationInterval);
+    try {
+        Plotly.react('map-container', data, layout, config);
+        updateTimeline(year);
+    } catch (error) {
+        console.error('Error updating map:', error);
     }
 }
 
-// Update the map for a specific year
-function updateMap(year) {
-    if (!window.mapData) return;
+// Start the animation
+function startAnimation() {
+    isPlaying = true;
+    let startTime = null;
+    const animationDuration = 20000; // 20 seconds for full cycle
     
-    const yearData = window.mapData.filter(d => d.frame === year);
-    
-    // 保持现有的图例可见性
-    const currentData = document.getElementById('map-container').data;
-    if (currentData) {
-        yearData.forEach((trace, i) => {
-            if (currentData[i]) {
-                trace.showlegend = currentData[i].showlegend;
-            }
-        });
-    }
-    
-    Plotly.animate('map-container', {
-        data: yearData,
-        traces: Array.from({ length: yearData.length }, (_, i) => i)
-    }, {
-        transition: {
-            duration: appConfig.animation.duration
-        },
-        frame: {
-            duration: appConfig.animation.duration,
-            redraw: true
+    function animate(currentTime) {
+        if (!startTime) startTime = currentTime;
+        const elapsed = currentTime - startTime;
+        
+        // Calculate progress and current year index
+        const totalProgress = (elapsed % animationDuration) / animationDuration;
+        const indexFloat = totalProgress * (years.length - 1);
+        const currentIndex = Math.floor(indexFloat);
+        
+        // Only update if the year has changed
+        if (currentIndex !== currentFrame) {
+            currentFrame = currentIndex;
+            updateMap(years[currentIndex]);
         }
-    });
+        
+        // Request next frame
+        animationFrameId = requestAnimationFrame(animate);
+    }
+    
+    animationFrameId = requestAnimationFrame(animate);
+}
+
+// Update both map and timeline
+function updateVisualization(year) {
+    updateMap(year);
+    updateTimeline(year);
 }
 
 // Initialize when the page loads

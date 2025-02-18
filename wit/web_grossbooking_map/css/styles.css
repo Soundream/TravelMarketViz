@@ -31,9 +31,8 @@ h1 {
 #controls {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 20px;
-    padding: 10px;
+    padding: 10px 20px;
     background-color: #f8f8f8;
     border-radius: 4px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -56,41 +55,27 @@ h1 {
     background-color: #45a049;
 }
 
-.slider-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+#timeline {
     flex: 1;
-    max-width: 400px;
+    height: 60px;
+    position: relative;
 }
 
-#year-slider {
-    flex: 1;
-    height: 4px;
-    -webkit-appearance: none;
-    background: #ddd;
-    border-radius: 2px;
-    outline: none;
+#timeline .timeline-axis text {
+    font-family: 'Monda', sans-serif;
+    font-size: 12px;
+    fill: #666;
 }
 
-#year-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
-    background: #4CAF50;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-#year-slider::-webkit-slider-thumb:hover {
-    background: #45a049;
+#timeline .timeline-axis path,
+#timeline .timeline-axis line {
+    stroke: #ccc;
 }
 
 #year-display {
     font-size: 16px;
     font-weight: bold;
-    min-width: 60px;
     color: #333;
+    min-width: 60px;
     text-align: center;
 } 

@@ -11,8 +11,8 @@ const appConfig = {
 
     // Animation settings
     animation: {
-        duration: 1000,
-        frameDelay: 1500,
+        duration: 500,
+        frameDelay: 2000,
     },
 
     // Map settings
