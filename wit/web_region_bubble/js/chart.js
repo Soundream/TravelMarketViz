@@ -14,15 +14,15 @@ let config;
 // Add getEraText function at the top level
 function getEraText(year) {
     const yearNum = parseInt(year);
-    if (yearNum >= 2005 && yearNum <= 2008) {
+    if (yearNum >= 2005 && yearNum <= 2007) {
         return "Growth of WWW";
-    } else if (yearNum >= 2009 && yearNum <= 2010) {
+    } else if (yearNum >= 2007 && yearNum <= 2008) {
         return "Great Recession";
-    } else if (yearNum >= 2011 && yearNum <= 2018) {
+    } else if (yearNum >= 2009 && yearNum <= 2018) {
         return "Growth of Mobile";
-    } else if (yearNum >= 2019 && yearNum <= 2021) {
+    } else if (yearNum >= 2019 && yearNum <= 2020) {
         return "Global Pandemic";
-    } else if (yearNum >= 2022) {
+    } else if (yearNum >= 2021) {
         return "Post-Pandemic Recovery";
     }
     return "";
@@ -60,7 +60,7 @@ function createTimeline() {
         .call(xAxis)
         .selectAll('text')
         .style('text-anchor', 'middle')
-        .style('font-family', 'Open Sans')
+        .style('font-family', 'Monda')
         .style('font-size', '12px');
 
     // Add triangle marker
@@ -91,11 +91,20 @@ function processDataByRegion(jsonData) {
     const regionData = {};
     
     // Get unique regions first
-    uniqueRegions = [...new Set(jsonData.map(row => row['Region']))];
+    uniqueRegions = [...new Set(jsonData.map(row => {
+        // Map old region names to new ones
+        const region = row['Region'];
+        if (region === 'APAC') return 'Asia-Pacific';
+        if (region === 'LATAM') return 'Latin America';
+        return region;
+    }))];
     
     jsonData.forEach(row => {
         const year = row['Year'];
-        const region = row['Region'];
+        let region = row['Region'];
+        // Map old region names to new ones
+        if (region === 'APAC') region = 'Asia-Pacific';
+        if (region === 'LATAM') region = 'Latin America';
         
         if (!regionData[year]) {
             regionData[year] = {};
@@ -171,10 +180,10 @@ function createBubbleChart(data, year) {
             mode: 'markers',
             hoverinfo: 'text',
             hovertext: regionData.map(d => `
-                <b>${d.Region}</b><br>
-                Online Penetration: ${(d['Online Penetration'] * 100).toFixed(1)}%<br>
+                <b style="font-family: Monda">${d.Region}</b><br>
+                <span style="font-family: Monda">Share of Online Bookings: ${(d['Online Penetration'] * 100).toFixed(1)}%<br>
                 Online Bookings: $${(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor).toFixed(1)}B<br>
-                Gross Bookings: $${(d['Gross Bookings'] * appConfig.dataProcessing.bookingsScaleFactor).toFixed(1)}B
+                Gross Bookings: $${(d['Gross Bookings'] * appConfig.dataProcessing.bookingsScaleFactor).toFixed(1)}B</span>
             `),
             marker: {
                 size: regionData.map(d => {
@@ -201,18 +210,18 @@ function createBubbleChart(data, year) {
     // 初始化全局 layout 变量
     layout = {
         title: {
-            text: `Global Travel Market by Region`,
+            text: `Online Travel Market`,
             font: {
-                family: 'Montserrat',
+                family: 'Monda',
                 size: 24
             },
             y: 0.95
         },
         xaxis: {
             title: {
-                text: appConfig.chart.xAxisTitle,
+                text: 'Share of Online Bookings (%)',
                 font: {
-                    family: 'Open Sans',
+                    family: 'Monda',
                     size: 14
                 }
             },
@@ -226,7 +235,7 @@ function createBubbleChart(data, year) {
             linecolor: '#ccc',
             linewidth: 1,
             tickfont: {
-                family: 'Open Sans',
+                family: 'Monda',
                 size: 12
             },
             tickmode: 'array',
@@ -239,9 +248,9 @@ function createBubbleChart(data, year) {
         },
         yaxis: {
             title: {
-                text: appConfig.chart.yAxisTitle + ' (Billions)',
+                text: 'Online Bookings (USD bn)',
                 font: {
-                    family: 'Open Sans',
+                    family: 'Monda',
                     size: 14
                 }
             },
@@ -255,7 +264,7 @@ function createBubbleChart(data, year) {
             linecolor: '#ccc',
             linewidth: 1,
             tickfont: {
-                family: 'Open Sans',
+                family: 'Monda',
                 size: 12
             },
             tickmode: 'array',
@@ -267,44 +276,53 @@ function createBubbleChart(data, year) {
             ticklen: 5,
             tickcolor: '#ccc'
         },
-        showlegend: true,
-        legend: {
-            x: 1.05,
-            y: 1,
-            xanchor: 'left',
-            yanchor: 'top',
-            bgcolor: 'rgba(255, 255, 255, 0)',
-            bordercolor: 'rgba(255, 255, 255, 0)',
-            font: {
-                family: 'Open Sans',
-                size: 12
-            },
-            itemsizing: 'constant',
-            itemwidth: 30,
-            tracegroupgap: 8
+        showlegend: false,
+        margin: {
+            l: 80,
+            r: 30,  // Reduced right margin since the map legend is in a separate container
+            t: 100,
+            b: 150
         },
+        width: null,
+        height: 600,
         annotations: [
             {
-                text: 'Data Source: Phocal Point',
+                text: 'Source: Phocal Point',
                 x: 0,
-                y: -0.15,
+                y: -0.25,
                 xref: 'paper',
                 yref: 'paper',
                 showarrow: false,
                 font: {
+                    family: 'Monda',
                     size: 12,
                     color: 'rgba(0, 0, 0, 0.6)'
                 },
                 xanchor: 'left'
             },
             {
-                text: 'Note: 2005 - 2009 figures based on extrapolation',
+                text: 'Note: Online bookings comprise of online direct and via OTA.',
                 x: 0,
-                y: -0.19,
+                y: -0.29,
                 xref: 'paper',
                 yref: 'paper',
                 showarrow: false,
                 font: {
+                    family: 'Monda',
+                    size: 12,
+                    color: 'rgba(0, 0, 0, 0.6)'
+                },
+                xanchor: 'left'
+            },
+            {
+                text: '2005-2008 figures extrapolated based on GDP trends for the period. 2024-2027 figures are estimates.',
+                x: 0,
+                y: -0.33,
+                xref: 'paper',
+                yref: 'paper',
+                showarrow: false,
+                font: {
+                    family: 'Monda',
                     size: 12,
                     color: 'rgba(0, 0, 0, 0.6)'
                 },
@@ -315,21 +333,14 @@ function createBubbleChart(data, year) {
         hoverlabel: {
             bgcolor: 'white',
             font: { 
-                family: 'Montserrat',
+                family: 'Monda',
                 size: 12
             },
             bordercolor: '#666'
         },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
-        margin: {
-            l: 80,
-            r: 250,
-            t: 100,
-            b: 100
-        },
-        width: 1300, // 增加图表宽度
-        height: 600,
+        autosize: true
     };
 
     // 初始化全局 config 变量
@@ -487,7 +498,7 @@ function togglePlay() {
                         traces: Array.from({ length: traces.length + 1 }, (_, i) => i),
                         layout: {
                             title: {
-                                text: `Global Travel Market by Region`
+                                text: `Online Travel Market`
                             }
                         }
                     }, {
@@ -554,6 +565,10 @@ async function init() {
         
         // 先创建初始图表数据
         createBubbleChart(processedData, years[currentYearIndex]);
+
+        // 清空并重新创建地图图例
+        document.getElementById('map-legend').innerHTML = '';
+        createMapLegend();
         
         // 确保图表已经完全加载后再开始动画
         setTimeout(() => {

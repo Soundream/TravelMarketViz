@@ -14,20 +14,24 @@
 </head>
 <body>
     <div class="container">
-        <h1>Global Travel Market Evolution by Region</h1>
-        
         <div class="controls">
             <div id="timeline"></div>
         </div>
 
-        <div class="chart-container">
-            <div id="bubble-chart"></div>
+        <div class="visualization-container">
+            <div class="main-chart">
+                <div id="bubble-chart"></div>
+            </div>
+            <div class="side-panel">
+                <div id="map-legend"></div>
+            </div>
         </div>
     </div>
 
     <div id="chart-tooltip" class="tooltip"></div>
 
     <script src="js/config.js"></script>
+    <script src="js/map.js"></script>
     <script src="js/chart.js"></script>
 </body>
 </html> 

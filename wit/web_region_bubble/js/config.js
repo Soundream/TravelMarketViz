@@ -1,10 +1,10 @@
 const appConfig = {
     // Region colors based on representative flags
     regionColors: {
-        'APAC': '#DE2910',        // China's flag red
+        'Asia-Pacific': '#DE2910',        // China's flag red
         'Europe': '#003399',      // 深蓝色
         'Eastern Europe': '#4B0082', // 靛蓝色
-        'LATAM': '#009B3A',       // Brazil's flag green
+        'Latin America': '#009B3A',       // Brazil's flag green
         'Middle East': '#8B4513',  // 棕色
         'North America': '#00BCD4' // 浅蓝色
     },
@@ -20,8 +20,8 @@ const appConfig = {
         minBubbleSize: 10,
         maxBubbleSize: 100,
         defaultYear: 2005,        // Starting year
-        xAxisTitle: 'Online Penetration (%)',
-        yAxisTitle: 'Online Bookings (USD)',
+        xAxisTitle: 'Share of Online Bookings (%)',
+        yAxisTitle: 'Online Bookings (USD bn)',
         sizeMetric: 'Gross Bookings'
     },
 
