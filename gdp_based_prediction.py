@@ -1,6 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.linear_model import LinearRegression
+import math
 
 # GDP percentage data for each country
 gdp_data = {
@@ -65,24 +67,127 @@ def get_country_gdp_ratios(country):
         "2009": 1.0
     }
 
-def generate_historical_predictions(actual_df):
-    """Generate predictions for 2005-2008 using country-specific GDP ratios"""
-    historical_data = []
+def learn_channel_growth_patterns(df):
+    """Learn growth patterns for each channel from 2009 onwards"""
+    channel_patterns = {}
     
-    # Get 2009 data as base
+    # 按渠道分组计算年度增长率
+    for channel in df['Channel Type'].unique():
+        channel_data = df[df['Channel Type'] == channel].copy()
+        yearly_total = channel_data.groupby('Year')['Total Market Gross Bookings'].sum()
+        
+        # 计算年度增长率
+        growth_rates = yearly_total.pct_change()
+        # 只使用2009年之后的数据，并移除NaN值
+        growth_rates = growth_rates[growth_rates.index >= 2010]  # 从2010开始避免2009的NaN
+        
+        # 使用简单线性回归来学习增长趋势
+        X = np.array(range(len(growth_rates))).reshape(-1, 1)
+        y = growth_rates.values
+        
+        reg = LinearRegression()
+        reg.fit(X, y)
+        
+        # 存储每个渠道的基准增长率和趋势
+        channel_patterns[channel] = {
+            'base_growth': growth_rates.iloc[0],  # 使用2010年的增长率作为基准
+            'trend': reg.coef_[0],
+            'intercept': reg.intercept_
+        }
+    
+    return channel_patterns
+
+def adjust_historical_predictions(historical_df, channel_patterns):
+    """根据学习到的增长模式调整历史预测"""
+    adjusted_df = historical_df.copy()
+    
+    for channel in historical_df['Channel Type'].unique():
+        pattern = channel_patterns[channel]
+        channel_mask = adjusted_df['Channel Type'] == channel
+        
+        # 对于每个国家分别调整
+        for country in historical_df['Market'].unique():
+            country_mask = adjusted_df['Market'] == country
+            
+            try:
+                # 获取2008年的基准值
+                base_value_2008 = historical_df[
+                    (historical_df['Market'] == country) & 
+                    (historical_df['Channel Type'] == channel) & 
+                    (historical_df['Year'] == 2008)
+                ]['Total Market Gross Bookings'].iloc[0]
+                
+                if channel == 'Online':
+                    # 对在线渠道使用GDP和regression的组合，但减弱GDP对2005-2007年的影响
+                    for year in range(2007, 2004, -1):
+                        years_from_2008 = 2008 - year
+                        growth_adjustment = pattern['base_growth'] + (pattern['trend'] * years_from_2008)
+                        
+                        gdp_ratio = historical_df.loc[
+                            (channel_mask) & (country_mask) & (historical_df['Year'] == year),
+                            'Total Market Gross Bookings'
+                        ].iloc[0] / base_value_2008
+                        
+                        # 对2005-2007年减弱GDP的影响
+                        gdp_impact = 1.5  # GDP影响力降低到30%
+                        adjusted_gdp_ratio = 1.0 + (gdp_ratio - 1.0) * gdp_impact
+                        
+                        adjusted_value = base_value_2008 * adjusted_gdp_ratio * (1 + growth_adjustment * 0.7)
+                        
+                        if adjusted_value > 0:
+                            adjusted_df.loc[
+                                (channel_mask) & (country_mask) & (adjusted_df['Year'] == year),
+                                'Total Market Gross Bookings'
+                            ] = adjusted_value
+                
+                else:
+                    # 对其他渠道使用原有的调整方法
+                    for year in range(2007, 2004, -1):
+                        years_from_2008 = 2008 - year
+                        growth_adjustment = pattern['base_growth'] + (pattern['trend'] * years_from_2008)
+                        
+                        if channel == 'Offline':
+                            growth_adjustment = growth_adjustment * 0.85  # 降低15%的增长率
+                        
+                        gdp_ratio = historical_df.loc[
+                            (channel_mask) & (country_mask) & (historical_df['Year'] == year),
+                            'Total Market Gross Bookings'
+                        ].iloc[0] / base_value_2008
+                        
+                        adjusted_value = base_value_2008 * gdp_ratio * (1 + growth_adjustment * 0.7)
+                        
+                        if adjusted_value > 0:
+                            adjusted_df.loc[
+                                (channel_mask) & (country_mask) & (adjusted_df['Year'] == year),
+                                'Total Market Gross Bookings'
+                            ] = adjusted_value
+            except (IndexError, KeyError):
+                continue
+    
+    # 对2005-2007年的online数据进行整体上移
+    online_mask = adjusted_df['Channel Type'] == 'Online'
+    for year in range(2005, 2008):
+        year_mask = adjusted_df['Year'] == year
+        # 上移力度随着年份增加而减小
+        lift_factor = 1.15 - (year - 2005) * 0.02  # 2005年提升15%，逐年略微减少
+        adjusted_df.loc[online_mask & year_mask, 'Total Market Gross Bookings'] *= lift_factor
+    
+    return adjusted_df
+
+def generate_historical_predictions(actual_df):
+    """Generate predictions for 2005-2008 using combined GDP and growth pattern approach"""
+    # 首先使用GDP比率生成基础预测
+    historical_data = []
     base_data_2009 = actual_df[actual_df['Year'] == 2009].copy()
     
-    # Process each country and channel
     for _, row in base_data_2009.iterrows():
         country = row['Market']
         channel = row['Channel Type']
         base_value = row['Total Market Gross Bookings']
         
-        # Get country-specific GDP ratios
         try:
             gdp_ratios = get_country_gdp_ratios(country)
             
-            # Generate predictions for 2005-2008
             for year in range(2005, 2009):
                 predicted_value = base_value * gdp_ratios[str(year)]
                 historical_data.append({
@@ -98,12 +203,18 @@ def generate_historical_predictions(actual_df):
             print(f"Warning: GDP data not found for {country}")
             continue
     
-    # Convert to DataFrame
+    # 转换为DataFrame
     historical_df = pd.DataFrame(historical_data)
     
-    # Combine with actual data from 2009 onwards
+    # 学习2009年之后的增长模式
+    channel_patterns = learn_channel_growth_patterns(actual_df[actual_df['Year'] >= 2009])
+    
+    # 调整历史预测
+    adjusted_historical_df = adjust_historical_predictions(historical_df, channel_patterns)
+    
+    # 合并调整后的历史数据和实际数据
     combined_df = pd.concat([
-        historical_df,
+        adjusted_historical_df,
         actual_df[actual_df['Year'] >= 2009]
     ])
     
