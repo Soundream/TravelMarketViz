@@ -44,7 +44,6 @@ function createMapLegend() {
     // 创建布局
     const layout = {
         title: {
-            text: 'Regions',
             font: {
                 family: 'Monda',
                 size: 10,
@@ -88,8 +87,8 @@ function createMapLegend() {
             pad: 0
         },
         dragmode: false,
-        height: 120,
-        width: 180,
+        height: 250,
+        width: 350,
         showlegend: false,
         autosize: false
     };

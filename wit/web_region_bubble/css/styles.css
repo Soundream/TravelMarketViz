@@ -71,44 +71,42 @@ h1 {
 }
 
 .visualization-container {
-    width: 100%;
-    height: 600px;
     display: flex;
-    position: relative;
-    margin-top: 20px;
-    gap: 20px;
+    flex-direction: row; /* 确保是横向排列 */
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px; /* 增加一些间距 */
 }
 
 .main-chart {
-    flex: 1;
-    min-width: 0;
-    height: 100%;
-    position: relative;
+    flex: 3; /* 让bubble chart占据3倍空间 */
 }
 
 .side-panel {
-    width: 250px;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
+    flex: 1; /* 让侧边栏占据1倍空间 */
 }
+
 
 #bubble-chart {
+    position: relative;  /* 作为 map-legend 的定位基准 */
     width: 100%;
     height: 100%;
 }
 
+
 #map-legend {
-    width: 100%;
-    height: 200px;
-    background-color: rgba(255, 255, 255, 0.98);
+    position: absolute;  /* 让它悬浮 */
+    top: 10px;           /* 距离 bubble chart 顶部 10px */
+    right: 10px;         /* 让它靠右 */
+    width: 220px;        /* 适当调整宽度 */
+    height: 160px;       /* 适当调整高度 */
+    background-color: rgba(255, 255, 255, 0.95); /* 透明背景，增强可读性 */
     border: 1px solid #ddd;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    overflow: hidden;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 10;         /* 确保它在最上层 */
 }
+
 
 .map-region {
     fill-opacity: 0.9;
