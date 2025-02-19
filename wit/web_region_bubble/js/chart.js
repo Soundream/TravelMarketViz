@@ -499,11 +499,7 @@ function togglePlay() {
                     Plotly.animate('bubble-chart', {
                         data: [backgroundTrace, ...traces],
                         traces: Array.from({ length: traces.length + 1 }, (_, i) => i),
-                        layout: {
-                            title: {
-                                text: `Online Travel Market`
-                            }
-                        }
+                        
                     }, {
                         transition: {
                             duration: 0,
