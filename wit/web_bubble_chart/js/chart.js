@@ -381,8 +381,8 @@ function createBubbleChart(data, year) {
         }
 
         const maxGrossBookings = d3.max(data, d => d.GrossBookings);
-        const relativeSize = Math.pow(d.GrossBookings / maxGrossBookings, 0.4);
-        const targetSize = relativeSize * 0.5 + 0.02;
+        const relativeSize = Math.pow(d.GrossBookings / maxGrossBookings, 0.6);
+        const targetSize = relativeSize * 0.8 + 0.01;
 
         // 计算对数坐标系下的y值
         const rawValue = d.OnlineBookings / 1e9;
@@ -482,7 +482,7 @@ async function init() {
         setTimeout(() => {
             isPlaying = true;
             let lastTime = 0;
-            const animationDuration = 15000; // 调整为15秒完成一个循环
+            const animationDuration = 30000; // 调整为15秒完成一个循环
             const minFrameTime = 1000 / 60; // 限制最大帧率为60fps
             let lastFrameTime = 0;
             
@@ -490,7 +490,7 @@ async function init() {
                 if (!isPlaying) {
                     return;
                 }
-
+//对于bubble大小的调节，参考web_region_bubble
                 // 控制帧率
                 if (currentTime - lastFrameTime < minFrameTime) {
                     requestAnimationFrame(animate);
