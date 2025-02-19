@@ -42,7 +42,7 @@ function createRaceChart(data, year) {
     // 创建布局
     const layout = {
         title: {
-            text: 'Gross Bookings by Region',
+            text: '',  // 移除标题
             font: {
                 family: 'Monda',
                 size: 16
@@ -55,7 +55,8 @@ function createRaceChart(data, year) {
                 font: {
                     family: 'Monda',
                     size: 12
-                }
+                },
+                standoff: 10  // 添加标签与轴的距离
             },
             showgrid: true,
             gridcolor: '#eee',
@@ -66,7 +67,7 @@ function createRaceChart(data, year) {
                 family: 'Monda',
                 size: 10
             },
-            range: [0, maxValue * 1.1],  // 使用全局最大值设置固定范围
+            range: [0, maxValue * 1.5],  // 增加范围到1.2倍最大值
             fixedrange: true  // 固定范围，防止自动调整
         },
         yaxis: {
@@ -75,12 +76,13 @@ function createRaceChart(data, year) {
                 family: 'Monda',
                 size: 10
             },
-            fixedrange: true  // 固定范围，防止自动调整
+            fixedrange: true,  // 固定范围，防止自动调整
+            ticklabelposition: 'outside left'  // 调整y轴标签位置
         },
         margin: {
             l: 120,
-            r: 60,
-            t: 40,
+            r: 0,
+            t: -20,  // 使用负值来减少与上方地图的距离
             b: 30
         },
         height: 300,

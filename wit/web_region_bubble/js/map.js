@@ -70,7 +70,7 @@ function createMapLegend() {
             },
             domain: {
                 x: [0.02, 1],
-                y: [0, 1]
+                y: [0, 0.9]
             },
             center: {
                 lat: 20,
@@ -87,7 +87,7 @@ function createMapLegend() {
             pad: 0
         },
         dragmode: false,
-        height: 280,
+        height: 250,
         width: 450,
         showlegend: false,
         autosize: false
