@@ -13,7 +13,7 @@ const companyLogos = {
     "Hong Kong": "logos/Hong Kong Icon.png",
     "Taiwan": "logos/Taiwan Icon.png",
     "Macau": "logos/Macau Icon.png",
-    "Australia-New Zealand": "logos/Australia Icon.png"
+    "Australia & New Zealand": "logos/Australia Icon.png"
 };
 
 // Color dictionary for companies
@@ -31,14 +31,14 @@ const colorDict = {
     'Hong Kong': '#de2910',
     'Taiwan': '#fe0000',
     'Macau': '#00785e',
-    'Australia-New Zealand': '#00008b'
+    'Australia & New Zealand': '#00008b'
 };
 
 // Default selected companies - now including all countries
 const defaultSelectedCompanies = [
     "Singapore", "China", "India", "Indonesia", "Malaysia", 
     "Thailand", "Vietnam", "Philippines", "Japan", "South Korea",
-    "Hong Kong", "Taiwan", "Macau", "Australia-New Zealand"
+    "Hong Kong", "Taiwan", "Macau", "Australia & New Zealand"
 ];
 
 // Company full names mapping
@@ -56,7 +56,7 @@ const companyNames = {
     "Hong Kong": "Hong Kong",
     "Taiwan": "Taiwan",
     "Macau": "Macau",
-    "Australia-New Zealand": "Australia-New Zealand"
+    "Australia & New Zealand": "Australia & New Zealand"
 };
 
 // Export configurations

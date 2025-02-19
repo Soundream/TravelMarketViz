@@ -227,26 +227,76 @@ async function fetchData() {
         const arrayBuffer = await response.arrayBuffer();
         const data = new Uint8Array(arrayBuffer);
         
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheet = workbook.Sheets['Visualization Data'];
-            if (!sheet) {
-                throw new Error("Sheet 'Visualization Data' not found");
-            }
-            
-            const jsonData = XLSX.utils.sheet_to_json(sheet);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets['Visualization Data'];
+        if (!sheet) {
+            throw new Error("Sheet 'Visualization Data' not found");
+        }
+        
+        const jsonData = XLSX.utils.sheet_to_json(sheet);
 
         // Process data
-            const processedData = jsonData
+        const processedData = jsonData
             .filter(row => row['Region'] === 'APAC' && row['Market'] && row['Year'])
-                .map(row => ({
-                    Market: row['Market'],
+            .map(row => {
+                // 标准化市场名称
+                let market = row['Market'];
+                if (market === 'Australia-New Zealand' || market === 'Australia/New Zealand') {
+                    market = 'Australia & New Zealand';
+                }
+                return {
+                    Market: market,
                     Year: row['Year'],
-                OnlinePenetration: row['Online Penetration'] / 100, // Convert to decimal
+                    OnlinePenetration: row['Online Penetration'] / 100,
                     OnlineBookings: row['Online Bookings'],
                     GrossBookings: row['Gross Bookings']
-                }));
+                };
+            });
 
-            return processedData;
+        // 获取所有年份和市场
+        const allYears = [...new Set(processedData.map(d => d.Year))].sort();
+        const allMarkets = [...new Set(processedData.map(d => d.Market))];
+
+        // 处理缺失数据
+        const interpolatedData = [];
+        allMarkets.forEach(market => {
+            const marketData = processedData.filter(d => d.Market === market);
+            const marketYears = marketData.map(d => d.Year);
+
+            allYears.forEach(year => {
+                if (!marketYears.includes(year)) {
+                    // 找到最近的前后年份数据
+                    const prevYear = Math.max(...marketYears.filter(y => y < year));
+                    const nextYear = Math.min(...marketYears.filter(y => y > year));
+                    
+                    if (prevYear && nextYear) {
+                        const prevData = marketData.find(d => d.Year === prevYear);
+                        const nextData = marketData.find(d => d.Year === nextYear);
+                        
+                        // 线性插值
+                        const progress = (year - prevYear) / (nextYear - prevYear);
+                        const interpolated = {
+                            Market: market,
+                            Year: year,
+                            OnlinePenetration: prevData.OnlinePenetration + (nextData.OnlinePenetration - prevData.OnlinePenetration) * progress,
+                            OnlineBookings: prevData.OnlineBookings + (nextData.OnlineBookings - prevData.OnlineBookings) * progress,
+                            GrossBookings: prevData.GrossBookings + (nextData.GrossBookings - prevData.GrossBookings) * progress
+                        };
+                        interpolatedData.push(interpolated);
+                    }
+                }
+            });
+        });
+
+        // 合并原始数据和插值数据
+        const finalData = [...processedData, ...interpolatedData].sort((a, b) => {
+            if (a.Year === b.Year) {
+                return a.Market.localeCompare(b.Market);
+            }
+            return a.Year - b.Year;
+        });
+
+        return finalData;
     } catch (error) {
         console.error('Error loading data:', error);
         return [];
@@ -374,12 +424,12 @@ function createBubbleChart(data, year) {
         Plotly.newPlot('bubble-chart', [backgroundTrace, trace], {
             ...layout,
             images: images,
-            datarevision: Date.now()  // 添加数据修订标记
+            datarevision: Date.now()
         }, {
             ...config,
-            doubleClick: false,  // 禁用双击事件
-            displayModeBar: false,  // 确保不显示模式栏
-            staticPlot: true  // 使用静态绘图模式
+            doubleClick: false,
+            displayModeBar: false,
+            staticPlot: false
         }).then(() => {
             Plotly.relayout('bubble-chart', { images });
         });
@@ -396,14 +446,14 @@ function createBubbleChart(data, year) {
             }
         }, {
             transition: {
-                duration: 0,  // 设置为0以实现实时更新
+                duration: 0,
                 easing: 'linear'
             },
             frame: {
                 duration: 0,
                 redraw: true
             },
-            mode: 'immediate'  // 添加立即模式
+            mode: 'immediate'
         });
         // Update race chart
         updateRaceChart(data, year);
@@ -432,12 +482,21 @@ async function init() {
         setTimeout(() => {
             isPlaying = true;
             let lastTime = 0;
-            const animationDuration = 30000; // 进一步减少循环时间到6秒
+            const animationDuration = 15000; // 调整为15秒完成一个循环
+            const minFrameTime = 1000 / 60; // 限制最大帧率为60fps
+            let lastFrameTime = 0;
             
             function animate(currentTime) {
                 if (!isPlaying) {
                     return;
                 }
+
+                // 控制帧率
+                if (currentTime - lastFrameTime < minFrameTime) {
+                    requestAnimationFrame(animate);
+                    return;
+                }
+                lastFrameTime = currentTime;
 
                 if (!lastTime) lastTime = currentTime;
                 const elapsed = currentTime - lastTime;
