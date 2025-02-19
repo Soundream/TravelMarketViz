@@ -87,6 +87,7 @@ h1 {
     align-items: flex-end;
     padding: 0;
     margin: 0;
+    gap: 20px;
 }
 
 #map-legend {
@@ -100,6 +101,18 @@ h1 {
     margin: 0;
     box-sizing: border-box;
     overflow: visible;
+}
+
+#race-chart {
+    position: absolute;
+    top: 320px;
+    right: -10px;
+    width: 450px;
+    height: 300px;
+    background-color: white;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
 }
 
 .map-region {
@@ -150,7 +163,7 @@ h1 {
     .visualization-container {
         grid-template-columns: 1fr 440px;
     }
-    #map-legend {
+    #map-legend, #race-chart {
         width: 430px;
     }
 }
@@ -159,7 +172,7 @@ h1 {
     .visualization-container {
         grid-template-columns: 1fr 420px;
     }
-    #map-legend {
+    #map-legend, #race-chart {
         width: 410px;
         right: -5px;
     }
@@ -174,6 +187,12 @@ h1 {
         height: 260px;
         right: 0;
     }
+    #race-chart {
+        width: 390px;
+        height: 280px;
+        top: 280px;
+        right: 0;
+    }
 }
 
 @media (max-width: 1200px) {
@@ -183,6 +202,11 @@ h1 {
     #map-legend {
         width: 370px;
         height: 240px;
+    }
+    #race-chart {
+        width: 370px;
+        height: 260px;
+        top: 260px;
     }
 }
 

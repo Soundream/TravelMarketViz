@@ -412,6 +412,9 @@ function createBubbleChart(data, year) {
         Plotly.newPlot('bubble-chart', allTraces, layout, config);
     }
 
+    // 创建race chart
+    createRaceChart(data, year);
+
     // 更新时间轴
     updateTimeline(year);
 }
@@ -445,7 +448,7 @@ function togglePlay() {
                 timeline.triangle.attr('transform', `translate(${interpolatedX}, -10) rotate(180)`);
             }
 
-            // 仅在指定间隔更新气泡图
+            // 仅在指定间隔更新图表
             if (currentTime - lastUpdateTime >= updateInterval) {
                 lastUpdateTime = currentTime;
 
@@ -492,7 +495,7 @@ function togglePlay() {
                         };
                     });
 
-                    // 更新图表
+                    // 更新气泡图
                     Plotly.animate('bubble-chart', {
                         data: [backgroundTrace, ...traces],
                         traces: Array.from({ length: traces.length + 1 }, (_, i) => i),
@@ -515,7 +518,7 @@ function togglePlay() {
                     // 更新背景文字
                     backgroundTrace = {
                         x: [50],
-                        y: [40],  // 同样更新动画更新时的y坐标
+                        y: [40],
                         mode: 'text',
                         text: [getEraText(years[currentIndex])],
                         textposition: 'middle center',
@@ -527,6 +530,9 @@ function togglePlay() {
                         hoverinfo: 'skip',
                         showlegend: false
                     };
+
+                    // 更新race chart
+                    updateRaceChart(interpolatedData, years[currentIndex]);
                 }
             }
 
