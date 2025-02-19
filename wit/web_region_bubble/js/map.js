@@ -62,19 +62,19 @@ function createMapLegend() {
             oceancolor: 'white',
             showlakes: false,
             showcountries: false,
-            lataxis: {range: [-50, 75]},
-            lonaxis: {range: [-170, 190]},
+            lataxis: {range: [-40, 70]},
+            lonaxis: {range: [-150, 180]},
             projection: {
                 type: 'miller',
-                scale: 0.45
+                scale: 0.48
             },
             domain: {
-                x: [0, 1],
+                x: [0.02, 1],
                 y: [0, 1]
             },
             center: {
                 lat: 20,
-                lon: 10
+                lon: 20
             }
         },
         paper_bgcolor: 'rgba(0,0,0,0)',
@@ -87,7 +87,7 @@ function createMapLegend() {
             pad: 0
         },
         dragmode: false,
-        height: 320,
+        height: 280,
         width: 450,
         showlegend: false,
         autosize: false
