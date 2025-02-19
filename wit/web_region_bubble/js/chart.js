@@ -225,7 +225,7 @@ function createBubbleChart(data, year) {
                     size: 14
                 }
             },
-            range: [0, 100],
+            range: [-5, 105],  // 扩大横轴范围，给两边留出空间
             showgrid: true,
             gridcolor: '#eee',
             gridwidth: 1,
@@ -278,8 +278,8 @@ function createBubbleChart(data, year) {
         },
         showlegend: false,
         margin: {
-            l: 80,
-            r: 30,  // Reduced right margin since the map legend is in a separate container
+            l: 70,    // 减小左边距
+            r: 20,    // 减小右边距
             t: 100,
             b: 150
         },
