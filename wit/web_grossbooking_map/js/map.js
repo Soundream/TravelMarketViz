@@ -271,71 +271,71 @@ function updateTimeline(year) {
 }
 
 // Create the map visualization
+const layout = {
+    autosize: true,
+    height: 600,
+    margin: {
+        l: 0,
+        r: 0,
+        t: 0,
+        b: 0
+    },
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    showlegend: true,
+    geo: {
+        scope: 'world',
+        projection: {
+            type: 'equirectangular'
+        },
+        showland: true,
+        landcolor: 'rgb(243, 243, 243)',
+        countrycolor: 'rgb(204, 204, 204)',
+        showocean: true,
+        oceancolor: 'rgb(250, 250, 250)',
+        showframe: false,
+        showcountries: true,
+        resolution: 50,
+        lonaxis: {
+            showgrid: true,
+            gridwidth: 0.5,
+            range: [-180, 180],
+            dtick: 30
+        },
+        lataxis: {
+            showgrid: true,
+            gridwidth: 0.5,
+            range: [-90, 90],
+            dtick: 30
+        }
+    },
+    legend: {
+        x: 0.1,
+        y: 0.4,
+        bgcolor: 'rgba(255, 255, 255, 0.9)',
+        bordercolor: 'rgba(0, 0, 0, 0.1)',
+        borderwidth: 1,
+        font: {
+            family: 'Monda',
+            size: 12
+        },
+        title: {
+            text: 'Regions',
+            font: {
+                family: 'Monda',
+                size: 14,
+                color: '#333'
+            }
+        },
+        itemsizing: 'constant',
+        itemwidth: 30,
+        traceorder: 'normal'
+    }
+};
+
 function createMap(data, year) {
     console.log('Creating map with data for year:', year);
     console.log('Sample data point:', data[0]);
-
-    const layout = {
-        autosize: true,
-        height: 600,
-        margin: {
-            l: 0,
-            r: 0,
-            t: 0,
-            b: 0
-        },
-        paper_bgcolor: 'rgba(0,0,0,0)',
-        plot_bgcolor: 'rgba(0,0,0,0)',
-        showlegend: true,
-        geo: {
-            scope: 'world',
-            projection: {
-                type: 'equirectangular'
-            },
-            showland: true,
-            landcolor: 'rgb(243, 243, 243)',
-            countrycolor: 'rgb(204, 204, 204)',
-            showocean: true,
-            oceancolor: 'rgb(250, 250, 250)',
-            showframe: false,
-            showcountries: true,
-            resolution: 50,
-            lonaxis: {
-                showgrid: true,
-                gridwidth: 0.5,
-                range: [-180, 180],
-                dtick: 30
-            },
-            lataxis: {
-                showgrid: true,
-                gridwidth: 0.5,
-                range: [-90, 90],
-                dtick: 30
-            }
-        },
-        legend: {
-            x: 0.01,
-            y: 0.99,
-            bgcolor: 'rgba(255, 255, 255, 0)',
-            bordercolor: 'rgba(0,0,0,0)',
-            borderwidth: 0,
-            font: {
-                family: 'Monda',
-                size: 12
-            },
-            title: {
-                text: '',
-                font: {
-                    family: 'Monda',
-                    size: 14,
-                    color: '#333'
-                }
-            },
-            itemsizing: 'constant',
-            itemwidth: 30,
-            traceorder: 'normal'
-        }
-    };
 
     // 存储全局数据供后续更新使用
     window.mapData = data;
@@ -390,21 +390,19 @@ function startAnimation() {
         // 只在年份变化时更新
         if (currentIndex !== currentFrame) {
             currentFrame = currentIndex;
-            // 使用 Plotly.animate 而不是 react 来实现更平滑的过渡
             const yearData = processedData.filter(d => d.frame === years[currentIndex].toString());
-            Plotly.animate('map-container', {
-                data: yearData,
-                traces: [0]
-            }, {
+            
+            // 使用 Plotly.react 来更新所有数据
+            Plotly.react('map-container', yearData, layout, {
+                displayModeBar: false,
+                responsive: true,
+                scrollZoom: false,
                 transition: {
                     duration: 300,
                     easing: 'cubic-in-out'
-                },
-                frame: {
-                    duration: 300,
-                    redraw: false
                 }
             });
+            
             updateTimeline(years[currentIndex]);
         }
         
@@ -421,18 +419,14 @@ function updateMap(year) {
     const yearData = processedData.filter(d => d.frame === year.toString());
     console.log(`Found ${yearData.length} data points for year ${year}`);
 
-    // 使用 Plotly.animate 替代 Plotly.react
-    Plotly.animate('map-container', {
-        data: yearData,
-        traces: [0]
-    }, {
+    // 使用 Plotly.react 来更新所有数据
+    Plotly.react('map-container', yearData, layout, {
+        displayModeBar: false,
+        responsive: true,
+        scrollZoom: false,
         transition: {
             duration: 300,
             easing: 'cubic-in-out'
-        },
-        frame: {
-            duration: 300,
-            redraw: false
         }
     });
     
