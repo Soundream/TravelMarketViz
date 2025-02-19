@@ -225,7 +225,7 @@ function createBubbleChart(data, year) {
                     size: 14
                 }
             },
-            range: [-5, 105],  // 扩大横轴范围，给两边留出空间
+            range: [-5, 105],  // 进一步扩大横轴范围
             showgrid: true,
             gridcolor: '#eee',
             gridwidth: 1,
@@ -278,13 +278,13 @@ function createBubbleChart(data, year) {
         },
         showlegend: false,
         margin: {
-            l: 70,    // 减小左边距
-            r: 20,    // 减小右边距
+            l: 60,    // 进一步减小左边距
+            r: 0,    // 进一步减小右边距
             t: 100,
             b: 150
         },
         width: null,
-        height: 600,
+        height: 650,  // 增加图表高度
         annotations: [
             {
                 text: 'Source: Phocal Point',
