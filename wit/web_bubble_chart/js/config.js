@@ -59,6 +59,24 @@ const companyNames = {
     "Australia & New Zealand": "Australia & New Zealand"
 };
 
+// Country codes mapping
+const countryCodes = {
+    "Singapore": "SG",
+    "China": "CN",
+    "India": "IN",
+    "Indonesia": "ID",
+    "Malaysia": "MY",
+    "Thailand": "TH",
+    "Vietnam": "VN",
+    "Philippines": "PH",
+    "Japan": "JP",
+    "South Korea": "KR",
+    "Hong Kong": "HK",
+    "Taiwan": "TW",
+    "Macau": "MO",
+    "Australia & New Zealand": "AU/NZ"
+};
+
 // Export configurations
 const appConfig = {
     // Default selected companies for the bubble chart
@@ -137,5 +155,6 @@ const appConfig = {
         roundDecimals: 2
     },
 
-    companyNames
+    companyNames,
+    countryCodes
 }; 

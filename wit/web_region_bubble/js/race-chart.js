@@ -31,7 +31,7 @@ function createRaceChart(data, year) {
             value: d['Gross Bookings'] * appConfig.dataProcessing.bookingsScaleFactor,
             color: appConfig.regionColors[d.Region]
         }))
-        .sort((a, b) => b.value - a.value);
+        .sort((a, b) => a.value - b.value);
 
     // 填充图表数据
     barData.y = sortedData.map(d => d.region);
@@ -118,7 +118,7 @@ function updateRaceChart(data, year) {
             value: d['Gross Bookings'] * appConfig.dataProcessing.bookingsScaleFactor,
             color: appConfig.regionColors[d.Region]
         }))
-        .sort((a, b) => b.value - a.value);
+        .sort((a, b) => a.value - b.value);
 
     // 准备更新数据
     const updateData = {

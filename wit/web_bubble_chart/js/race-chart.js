@@ -22,22 +22,17 @@ function createRaceChart(data, year) {
             family: 'Monda',
             size: 12
         },
-        cliponaxis: false,  // 防止文本被裁剪
-        transforms: [{
-            type: 'sort',
-            target: 'x',
-            order: 'descending'
-        }]
+        cliponaxis: false  // 防止文本被裁剪
     };
 
     // 处理数据
     const sortedData = yearData
         .map(d => ({
-            market: d.Market,
+            market: appConfig.countryCodes[d.Market] || d.Market,
             value: d.GrossBookings * appConfig.dataProcessing.bookingsScaleFactor,
             color: appConfig.colorDict[d.Market]
         }))
-        .sort((a, b) => b.value - a.value);
+        .sort((a, b) => a.value - b.value);
 
     // 填充图表数据
     barData.y = sortedData.map(d => d.market);
@@ -123,11 +118,11 @@ function updateRaceChart(data, year) {
     // 处理数据
     const sortedData = data
         .map(d => ({
-            market: d.Market,
+            market: appConfig.countryCodes[d.Market] || d.Market,
             value: d.GrossBookings * appConfig.dataProcessing.bookingsScaleFactor,
             color: appConfig.colorDict[d.Market]
         }))
-        .sort((a, b) => b.value - a.value);
+        .sort((a, b) => a.value - b.value);
 
     // 创建新的数据帧
     const newFrame = {
