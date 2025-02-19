@@ -1,25 +1,25 @@
 const appConfig = {
     // Region colors based on representative flags
     regionColors: {
-        'Asia-Pacific': '#DE2910',        // China's flag red
-        'Europe': '#003399',      // 深蓝色
-        'Eastern Europe': '#4B0082', // 靛蓝色
-        'Latin America': '#009B3A',       // Brazil's flag green
-        'Middle East': '#8B4513',  // 棕色
-        'North America': '#00BCD4' // 浅蓝色
+        'Asia-Pacific': '#FF4B4B',        // 明亮的红色
+        'Europe': '#4169E1',              // 皇家蓝
+        'Eastern Europe': '#9370DB',      // 中等紫色
+        'Latin America': '#32CD32',       // 鲜艳的绿色
+        'Middle East': '#DEB887',         // 暖棕色
+        'North America': '#40E0D0'        // 绿松石色
     },
 
     // Animation settings
     animation: {
-        duration: 800,            // 减少每个动画的持续时间
-        frameDelay: 1200,         // 减少帧之间的延迟
+        duration: 800,            
+        frameDelay: 1200,         
     },
 
     // Chart settings
     chart: {
-        minBubbleSize: 10,
-        maxBubbleSize: 100,
-        defaultYear: 2005,        // Starting year
+        minBubbleSize: 15,        // 增加最小气泡大小
+        maxBubbleSize: 80,        // 减小最大气泡大小
+        defaultYear: 2005,        
         xAxisTitle: 'Share of Online Bookings (%)',
         yAxisTitle: 'Online Bookings (USD bn)',
         sizeMetric: 'Gross Bookings'
@@ -27,8 +27,8 @@ const appConfig = {
 
     // Data processing
     dataProcessing: {
-        onlinePenetrationMultiplier: 100,  // Convert decimal to percentage
-        bookingsScaleFactor: 1e-9,         // Convert to billions
+        onlinePenetrationMultiplier: 100,  
+        bookingsScaleFactor: 1e-9,         
         roundDecimals: 2
     }
 }; 

@@ -9,11 +9,9 @@ body {
     max-width: 1400px;
     margin: 0 auto;
     background-color: white;
-    padding: 10px 20px;
+    padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow: visible;
-    position: relative;
 }
 
 h1 {
@@ -24,26 +22,17 @@ h1 {
 }
 
 .controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     margin-bottom: 20px;
-    padding: 0 20px;
 }
 
 #timeline {
     width: 100%;
-    max-width: 1300px;
     height: 40px;
     position: relative;
     margin: 0 auto;
 }
 
-#timeline .timeline-axis path {
-    stroke: #ccc;
-    stroke-width: 1px;
-}
-
+#timeline .timeline-axis path,
 #timeline .timeline-axis line {
     stroke: #ccc;
     stroke-width: 1px;
@@ -51,7 +40,8 @@ h1 {
 
 #timeline .timeline-axis text {
     fill: #666;
-    font-size: 11px;
+    font-size: 12px;
+    font-family: 'Monda', sans-serif;
 }
 
 .control-button {
@@ -71,56 +61,54 @@ h1 {
 }
 
 .visualization-container {
-    display: flex;
-    flex-direction: row; /* 确保是横向排列 */
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px; /* 增加一些间距 */
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+    position: relative;
+    height: 600px;
 }
 
-.main-chart {
-    flex: 3; /* 让bubble chart占据3倍空间 */
-}
-
-.side-panel {
-    flex: 1; /* 让侧边栏占据1倍空间 */
-}
-
-
-#bubble-chart {
-    position: relative;  /* 作为 map-legend 的定位基准 */
+.chart-wrapper {
+    position: relative;
     width: 100%;
     height: 100%;
 }
 
-
-#map-legend {
-    position: absolute;  /* 让它悬浮 */
-    top: 10px;           /* 距离 bubble chart 顶部 10px */
-    right: 10px;         /* 让它靠右 */
-    width: 220px;        /* 适当调整宽度 */
-    height: 160px;       /* 适当调整高度 */
-    background-color: rgba(255, 255, 255, 0.95); /* 透明背景，增强可读性 */
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    z-index: 10;         /* 确保它在最上层 */
+#bubble-chart {
+    width: 100%;
+    height: 100%;
 }
 
+.map-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+#map-legend {
+    width: 100%;
+    height: 200px;
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-sizing: border-box;
+}
 
 .map-region {
     fill-opacity: 0.9;
     stroke: #ffffff;
     stroke-width: 1.5;
     transition: all 0.3s ease;
-    filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.2));
 }
 
 .map-region:hover {
     fill-opacity: 1;
     cursor: pointer;
     stroke-width: 2;
-    filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.3));
 }
 
 .map-label {
@@ -152,4 +140,26 @@ h1 {
 .metric-value {
     font-family: 'Monda', sans-serif;
     color: #666;
+}
+
+@media (max-width: 1200px) {
+    .visualization-container {
+        grid-template-columns: 1fr 250px;
+    }
+}
+
+@media (max-width: 900px) {
+    .visualization-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        height: auto;
+    }
+    
+    .chart-wrapper {
+        height: 500px;
+    }
+    
+    .map-wrapper {
+        height: 300px;
+    }
 } 

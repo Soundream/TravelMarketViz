@@ -192,10 +192,10 @@ function createBubbleChart(data, year) {
                            Math.min(appConfig.chart.maxBubbleSize, size));
                 }),
                 color: appConfig.regionColors[region],
-                opacity: 0.8,
+                opacity: 0.75,
                 line: {
-                    color: 'white',
-                    width: 2
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    width: 1.5
                 }
             },
             showlegend: true,
@@ -483,10 +483,10 @@ function togglePlay() {
                                            Math.min(appConfig.chart.maxBubbleSize, size));
                                 }),
                                 color: appConfig.regionColors[region],
-                                opacity: 0.8,
+                                opacity: 0.75,
                                 line: {
-                                    color: 'white',
-                                    width: 2
+                                    color: 'rgba(255, 255, 255, 0.8)',
+                                    width: 1.5
                                 }
                             }
                         };
