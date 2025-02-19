@@ -268,7 +268,6 @@ function updateTimeline(year) {
             .duration(appConfig.animation.duration)
             .attr('transform', `translate(${timeline.scale(year)}, -10) rotate(180)`);
     }
-    document.getElementById('year-display').textContent = year;
 }
 
 // Create the map visualization
@@ -277,22 +276,16 @@ function createMap(data, year) {
     console.log('Sample data point:', data[0]);
 
     const layout = {
-        title: {
-            text: 'Global Travel Market Gross Bookings',
-            font: {
-                family: 'Monda',
-                size: 24
-            }
-        },
         autosize: true,
-        width: window.innerWidth * 0.9,
         height: 600,
         margin: {
             l: 0,
             r: 0,
-            t: 30,
+            t: 0,
             b: 0
         },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
         showlegend: true,
         geo: {
             scope: 'world',
@@ -323,15 +316,15 @@ function createMap(data, year) {
         legend: {
             x: 0.01,
             y: 0.99,
-            bgcolor: 'rgba(255, 255, 255, 0.9)',
-            bordercolor: '#666',
-            borderwidth: 1,
+            bgcolor: 'rgba(255, 255, 255, 0)',
+            bordercolor: 'rgba(0,0,0,0)',
+            borderwidth: 0,
             font: {
                 family: 'Monda',
                 size: 12
             },
             title: {
-                text: 'Regions',
+                text: '',
                 font: {
                     family: 'Monda',
                     size: 14,
@@ -372,125 +365,78 @@ function createMap(data, year) {
     }
 }
 
+// Start the animation
+function startAnimation() {
+    isPlaying = true;
+    let startTime = null;
+    const animationDuration = 15000; // 减少总循环时间到15秒
+    const frameInterval = 50; // 添加帧间隔控制
+    let lastFrameTime = 0;
+    
+    function animate(currentTime) {
+        if (!startTime) startTime = currentTime;
+        
+        // 控制帧率
+        if (currentTime - lastFrameTime < frameInterval) {
+            animationFrameId = requestAnimationFrame(animate);
+            return;
+        }
+        
+        const elapsed = currentTime - startTime;
+        const totalProgress = (elapsed % animationDuration) / animationDuration;
+        const indexFloat = totalProgress * (years.length - 1);
+        const currentIndex = Math.floor(indexFloat);
+        
+        // 只在年份变化时更新
+        if (currentIndex !== currentFrame) {
+            currentFrame = currentIndex;
+            // 使用 Plotly.animate 而不是 react 来实现更平滑的过渡
+            const yearData = processedData.filter(d => d.frame === years[currentIndex].toString());
+            Plotly.animate('map-container', {
+                data: yearData,
+                traces: [0]
+            }, {
+                transition: {
+                    duration: 300,
+                    easing: 'cubic-in-out'
+                },
+                frame: {
+                    duration: 300,
+                    redraw: false
+                }
+            });
+            updateTimeline(years[currentIndex]);
+        }
+        
+        lastFrameTime = currentTime;
+        animationFrameId = requestAnimationFrame(animate);
+    }
+    
+    animationFrameId = requestAnimationFrame(animate);
+}
+
 // Update the map for a specific year
 function updateMap(year) {
     console.log('Updating map for year:', year);
     const yearData = processedData.filter(d => d.frame === year.toString());
     console.log(`Found ${yearData.length} data points for year ${year}`);
 
-    const data = yearData;
-    const layout = {
-        title: {
-            text: 'Global Travel Market Gross Bookings',
-            font: {
-                family: 'Monda',
-                size: 24
-            }
-        },
-        autosize: true,
-        width: window.innerWidth * 0.9,
-        height: 600,
-        margin: {
-            l: 0,
-            r: 0,
-            t: 30,
-            b: 0
-        },
-        showlegend: true,
-        geo: {
-            scope: 'world',
-            projection: {
-                type: 'equirectangular'
-            },
-            showland: true,
-            landcolor: 'rgb(243, 243, 243)',
-            countrycolor: 'rgb(204, 204, 204)',
-            showocean: true,
-            oceancolor: 'rgb(250, 250, 250)',
-            showframe: false,
-            showcountries: true,
-            resolution: 50,
-            lonaxis: {
-                showgrid: true,
-                gridwidth: 0.5,
-                range: [-180, 180],
-                dtick: 30
-            },
-            lataxis: {
-                showgrid: true,
-                gridwidth: 0.5,
-                range: [-90, 90],
-                dtick: 30
-            }
-        },
-        legend: {
-            x: 0.01,
-            y: 0.99,
-            bgcolor: 'rgba(255, 255, 255, 0.9)',
-            bordercolor: '#666',
-            borderwidth: 1,
-            font: {
-                family: 'Monda',
-                size: 12
-            },
-            title: {
-                text: 'Regions',
-                font: {
-                    family: 'Monda',
-                    size: 14,
-                    color: '#333'
-                }
-            },
-            itemsizing: 'constant',
-            itemwidth: 30,
-            traceorder: 'normal'
-        },
+    // 使用 Plotly.animate 替代 Plotly.react
+    Plotly.animate('map-container', {
+        data: yearData,
+        traces: [0]
+    }, {
         transition: {
-            duration: 500,
+            duration: 300,
             easing: 'cubic-in-out'
+        },
+        frame: {
+            duration: 300,
+            redraw: false
         }
-    };
-
-    const config = {
-        displayModeBar: false,
-        responsive: true,
-        scrollZoom: false
-    };
-
-    try {
-        Plotly.react('map-container', data, layout, config);
-        updateTimeline(year);
-    } catch (error) {
-        console.error('Error updating map:', error);
-    }
-}
-
-// Start the animation
-function startAnimation() {
-    isPlaying = true;
-    let startTime = null;
-    const animationDuration = 20000; // 20 seconds for full cycle
+    });
     
-    function animate(currentTime) {
-        if (!startTime) startTime = currentTime;
-        const elapsed = currentTime - startTime;
-        
-        // Calculate progress and current year index
-        const totalProgress = (elapsed % animationDuration) / animationDuration;
-        const indexFloat = totalProgress * (years.length - 1);
-        const currentIndex = Math.floor(indexFloat);
-        
-        // Only update if the year has changed
-        if (currentIndex !== currentFrame) {
-            currentFrame = currentIndex;
-            updateMap(years[currentIndex]);
-        }
-        
-        // Request next frame
-        animationFrameId = requestAnimationFrame(animate);
-    }
-    
-    animationFrameId = requestAnimationFrame(animate);
+    updateTimeline(year);
 }
 
 // Update both map and timeline
