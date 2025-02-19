@@ -1,22 +1,223 @@
 // Global variables
-let isPlaying = false;
+let isPlaying = true;
 let playInterval;
-let currentQuarterIndex = 0;
-let uniqueQuarters;
-let mergedData;
-let timelineTriangle;
-let xScaleTimeline;
-let selectedCompanies = window.appConfig.defaultSelectedCompanies;
-let globalMaxOnlinePenetration;
-let globalMaxOnlineBookings;
+let currentYearIndex = 0;
+let years;
+let processedData;
+let timeline;
+let selectedCompanies = appConfig.defaultSelectedCompanies;
+let backgroundTrace;
+let currentTraces;
+let layout;
+let config;
 
-// Function to initialize global max values
-function initializeGlobalMaxValues(data) {
-    globalMaxOnlinePenetration = d3.max(data, d => d.OnlinePenetration);
-    globalMaxOnlineBookings = d3.max(data, d => Math.sqrt(d.OnlineBookings));
+// Create layout configuration
+layout = {
+    xaxis: {
+        title: {
+            text: 'Share of Online Bookings (%)',
+            font: {
+                family: 'Monda',
+                size: 14
+            },
+            standoff: 10
+        },
+        tickformat: ',.0%',
+        range: [-0.05, 1.05],
+        showgrid: true,
+        gridcolor: '#eee',
+        gridwidth: 1,
+        zeroline: true,
+        zerolinecolor: '#eee',
+        showline: true,
+        linecolor: '#ccc',
+        linewidth: 1,
+        tickfont: {
+            family: 'Monda',
+            size: 12
+        },
+        tickmode: 'array',
+        ticktext: ['0%', '20%', '40%', '60%', '80%', '100%'],
+        tickvals: [0, 0.2, 0.4, 0.6, 0.8, 1.0],
+        fixedrange: true
+    },
+    yaxis: {
+        title: {
+            text: 'Online Bookings (USD bn)',
+            font: {
+                family: 'Monda',
+                size: 14
+            },
+            standoff: 10
+        },
+        type: 'log',
+        showgrid: true,
+        gridcolor: '#eee',
+        gridwidth: 1,
+        zeroline: true,
+        zerolinecolor: '#eee',
+        showline: true,
+        linecolor: '#ccc',
+        linewidth: 1,
+        tickfont: {
+            family: 'Monda',
+            size: 12
+        },
+        tickmode: 'array',
+        ticktext: ['0.1', '0.5', '1', '5', '10', '40', '90', '160', '250', '400', '500'],
+        tickvals: [0.1, 0.5, 1, 5, 10, 40, 90, 160, 250, 400, 500],
+        range: [Math.log10(0.1), Math.log10(500)],
+        autorange: false,
+        fixedrange: true
+    },
+    showlegend: false,
+    margin: {
+        l: 80,
+        r: 20,
+        t: 100,
+        b: 150
+    },
+    height: 650,
+    annotations: [
+        {
+            text: 'Source: Phocal Point',
+            x: 0,
+            y: -0.25,
+            xref: 'paper',
+            yref: 'paper',
+            showarrow: false,
+            font: {
+                family: 'Monda',
+                size: 12,
+                color: 'rgba(0, 0, 0, 0.6)'
+            },
+            xanchor: 'left'
+        },
+        {
+            text: 'Note: Online bookings comprise of online direct and via OTA.',
+            x: 0,
+            y: -0.29,
+            xref: 'paper',
+            yref: 'paper',
+            showarrow: false,
+            font: {
+                family: 'Monda',
+                size: 12,
+                color: 'rgba(0, 0, 0, 0.6)'
+            },
+            xanchor: 'left'
+        },
+        {
+            text: '2005-2008 figures extrapolated based on GDP trends for the period. 2024-2027 figures are estimates.',
+            x: 0,
+            y: -0.33,
+            xref: 'paper',
+            yref: 'paper',
+            showarrow: false,
+            font: {
+                family: 'Monda',
+                size: 12,
+                color: 'rgba(0, 0, 0, 0.6)'
+            },
+            xanchor: 'left'
+        }
+    ],
+    hovermode: 'closest',
+    hoverlabel: {
+        bgcolor: 'white',
+        font: { 
+            family: 'Monda',
+            size: 12
+        },
+        bordercolor: '#666'
+    },
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    autosize: true
+};
+
+// Create config
+config = {
+    responsive: true,
+    displayModeBar: false,
+    staticPlot: true
+};
+
+// Add getEraText function at the top level
+function getEraText(year) {
+    const yearNum = parseInt(year);
+    if (yearNum >= 2005 && yearNum <= 2007) {
+        return "Growth of WWW";
+    } else if (yearNum >= 2007 && yearNum <= 2008) {
+        return "Great Recession";
+    } else if (yearNum >= 2009 && yearNum <= 2018) {
+        return "Growth of Mobile";
+    } else if (yearNum >= 2019 && yearNum <= 2020) {
+        return "Global Pandemic";
+    } else if (yearNum >= 2021) {
+        return "Post-Pandemic Recovery";
+    }
+    return "";
 }
 
-// Function to fetch and process Excel data
+// Function to create timeline
+function createTimeline() {
+    const timelineWidth = document.getElementById('timeline').offsetWidth;
+    const margin = { left: 80, right: 80 };
+    const width = timelineWidth - margin.left - margin.right;
+
+    // Create SVG
+    const svg = d3.select('#timeline')
+        .append('svg')
+        .attr('width', timelineWidth)
+        .attr('height', 60);
+
+    const g = svg.append('g')
+        .attr('transform', `translate(${margin.left}, 30)`);
+
+    // Create scale
+    const xScale = d3.scaleLinear()
+        .domain([d3.min(years), d3.max(years)])
+        .range([0, width]);
+
+    // Create axis
+    const xAxis = d3.axisBottom(xScale)
+        .tickFormat(d => d.toString())
+        .ticks(years.length)
+        .tickValues(years);
+
+    // Add axis
+    g.append('g')
+        .attr('class', 'timeline-axis')
+        .call(xAxis)
+        .selectAll('text')
+        .style('text-anchor', 'middle')
+        .style('font-family', 'Monda')
+        .style('font-size', '12px');
+
+    // Add triangle marker
+    const triangle = g.append('path')
+        .attr('d', d3.symbol().type(d3.symbolTriangle).size(100))
+        .attr('fill', '#4CAF50')
+        .attr('transform', `translate(${xScale(years[currentYearIndex])}, -10) rotate(180)`);
+
+    timeline = {
+        scale: xScale,
+        triangle: triangle
+    };
+}
+
+// Function to update timeline
+function updateTimeline(year) {
+    if (timeline && timeline.triangle) {
+        timeline.triangle
+            .transition()
+            .duration(appConfig.animation.duration)
+            .attr('transform', `translate(${timeline.scale(year)}, -10) rotate(180)`);
+    }
+}
+
+// Function to process Excel data
 async function fetchData() {
     try {
         const response = await fetch('travel_market_summary.xlsx');
@@ -26,52 +227,66 @@ async function fetchData() {
         const arrayBuffer = await response.arrayBuffer();
         const data = new Uint8Array(arrayBuffer);
         
-        try {
             const workbook = XLSX.read(data, { type: 'array' });
-            
-            // Read the 'Visualization Data' sheet
             const sheet = workbook.Sheets['Visualization Data'];
             if (!sheet) {
                 throw new Error("Sheet 'Visualization Data' not found");
             }
             
             const jsonData = XLSX.utils.sheet_to_json(sheet);
-            console.log('Raw data:', jsonData); // Debug log
 
-            // Process data similar to Python code
+        // Process data
             const processedData = jsonData
-                .filter(row => row['Region'] === 'APAC')
-                .filter(row => !(row['Online Bookings'] === 0 && 
-                               row['Gross Bookings'] === 0 && 
-                               row['Online Penetration'] === 0))
+            .filter(row => row['Region'] === 'APAC' && row['Market'] && row['Year'])
                 .map(row => ({
                     Market: row['Market'],
                     Year: row['Year'],
-                    OnlinePenetration: row['Online Penetration'] / 100,
+                OnlinePenetration: row['Online Penetration'] / 100, // Convert to decimal
                     OnlineBookings: row['Online Bookings'],
                     GrossBookings: row['Gross Bookings']
                 }));
 
-            console.log('Processed data:', processedData); // Debug log
             return processedData;
-        } catch (parseError) {
-            console.error('Error parsing Excel file:', parseError);
-            throw new Error('Failed to parse Excel file: ' + parseError.message);
-        }
     } catch (error) {
         console.error('Error loading data:', error);
         return [];
     }
 }
 
-// Function to update bubble chart
-function updateBubbleChart(data, year) {
+// Function to create bubble chart
+function createBubbleChart(data, year) {
     const yearData = data.filter(d => d.Year === year && selectedCompanies.includes(d.Market));
     
+    // 只在2005年输出原始数据和计算后的值
+    if (year === 2005) {
+        yearData.forEach(d => {
+            const rawValue = d.OnlineBookings;
+            const scaledValue = rawValue / 1e9; // 直接转换为十亿
+            console.log(`${d.Market}:`);
+            console.log(`  Raw: ${rawValue}`);
+            console.log(`  Scaled (bn): ${scaledValue}`);
+            console.log('-------------------');
+        });
+    }
+
+    // 输出中国的数据
+    const chinaData = yearData.find(d => d.Market === 'China');
+    if (chinaData) {
+        const rawValue = chinaData.OnlineBookings;
+        const scaledValue = rawValue / 1e9; // 转换为十亿
+        const safeValue = Math.max(scaledValue, 0.1);
+        const logValue = Math.log10(safeValue);
+        console.log(`Year ${year} China:`);
+        console.log(`  Raw Online Bookings: ${rawValue.toLocaleString()}`);
+        console.log(`  Billions: ${scaledValue.toFixed(2)}B`);
+        console.log(`  Log Value: ${logValue.toFixed(2)}`);
+        console.log('-------------------');
+    }
+
     // Create background text trace
-    const backgroundTrace = {
-        x: [0.5], // Center of x-axis
-        y: [Math.sqrt(250/4)], // Lower the position by using one-third of max value
+    backgroundTrace = {
+        x: [0.5],
+        y: [10],
         mode: 'text',
         text: [getEraText(year)],
         textposition: 'middle center',
@@ -87,421 +302,187 @@ function updateBubbleChart(data, year) {
     // Create base scatter plot with invisible markers
     const trace = {
         x: yearData.map(d => d.OnlinePenetration),
-        y: yearData.map(d => Math.sqrt(d.OnlineBookings / 1e9)),
-        text: yearData.map(d => d.Market),
-        mode: 'markers',
-        marker: {
-            size: yearData.map(d => Math.pow(d.GrossBookings / 1e9, 0.15) * 4000),
-            color: "rgba(0,0,0,0)"
-        },
+        y: yearData.map(d => {
+            const rawValue = d.OnlineBookings / 1e9;
+            const safeValue = Math.max(rawValue, 0.1);
+            return Math.log10(safeValue);
+        }),
+        mode: 'none',  // 完全移除所有可视元素
+        showlegend: false,
+        hoverinfo: 'none',
+        visible: true,
+        customdata: yearData.map(d => [
+            d.GrossBookings / 1e9,
+            d.OnlineBookings / 1e9
+        ]),
         hovertemplate: '<b>%{text}</b><br>' +
                       'Online Penetration: %{x:.1%}<br>' +
-                      'Online Bookings: %{customdata[0]:$,.0f}B<br>' +
-                      'Gross Bookings: %{customdata[1]:$,.0f}B<br>' +
-                      '<extra></extra>',
-        customdata: yearData.map(d => [d.OnlineBookings / 1e9, d.GrossBookings / 1e9])
+                      'Online Bookings: $%{customdata[1]:.1f}B<br>' +
+                      'Gross Bookings: %{customdata[0]:$,.1f}B<br>' +
+                      '<extra></extra>'
     };
 
-    // Create layout
-    const layout = {
-        title: 'APAC Travel Market',
-        xaxis: {
-            title: 'Online Penetration',
-            tickformat: ',.0%',
-            range: [0, 1],
-            gridcolor: '#eee'
-        },
-        yaxis: {
-            title: 'Online Bookings Volume (Billion USD)',
-            range: [0, Math.sqrt(250)],
-            gridcolor: '#eee',
-            ticktext: ['0', '10', '40', '90', '160', '250'],
-            tickvals: [0, Math.sqrt(10), Math.sqrt(40), Math.sqrt(90), Math.sqrt(160), Math.sqrt(250)],
-            tickmode: 'array'
-        },
-        showlegend: false,
-        hovermode: 'closest',
-        plot_bgcolor: 'white',
-        paper_bgcolor: 'white',
-        dragmode: false,
-        annotations: [{
-            text: 'Data Source: Phocal Point',
-            x: 0,
-            y: -0.15,
-            xref: 'paper',
-            yref: 'paper',
-            showarrow: false,
-            font: {
-                size: 12,
-                color: 'rgba(0, 0, 0, 0.6)'
-            },
-            xanchor: 'left'
-        },
-        {
-            text: 'Note: 2005 - 2009 figures based on extrapolation',
-            x: 0,
-            y: -0.19,
-            xref: 'paper',
-            yref: 'paper',
-            showarrow: false,
-            font: {
-                size: 12,
-                color: 'rgba(0, 0, 0, 0.6)'
-            },
-            xanchor: 'left'
-        }]
-    };
+    // Create images
+    const images = yearData.map(d => {
+        const logo = appConfig.companyLogos[d.Market];
+        if (!logo) {
+            console.warn('No logo found for market:', d.Market);
+            return null;
+        }
+
+        const maxGrossBookings = d3.max(data, d => d.GrossBookings);
+        const relativeSize = Math.pow(d.GrossBookings / maxGrossBookings, 0.4);
+        const targetSize = relativeSize * 0.5 + 0.02;
+
+        // 计算对数坐标系下的y值
+        const rawValue = d.OnlineBookings / 1e9;
+        const safeValue = Math.max(rawValue, 0.1);
+        const yValue = Math.log10(safeValue);
+
+        // 只在2005年输出调试信息
+        if (year === 2005) {
+            console.log(`${d.Market}:`);
+            console.log(`  Raw Online Bookings: ${d.OnlineBookings}`);
+            console.log(`  Converted to billions: ${rawValue}`);
+            console.log(`  Safe value: ${safeValue}`);
+            console.log(`  Final log10 y-value: ${yValue}`);
+            console.log(`  Pixel position: ${layout.yaxis.range[0] + (Math.log10(safeValue) / Math.log10(1000)) * (layout.yaxis.range[1] - layout.yaxis.range[0])}`);
+            console.log('-------------------');
+        }
+
+        return {
+            source: logo,
+            xref: "x",
+            yref: "y",
+            x: d.OnlinePenetration,
+            y: yValue,
+            sizex: targetSize,
+            sizey: targetSize,
+            sizing: "contain",
+            opacity: 0.8,
+            layer: "above",
+            xanchor: "center",
+            yanchor: "middle"
+        };
+    }).filter(Boolean);
 
     // Check if the chart already exists
     const chartDiv = document.getElementById('bubble-chart');
     if (!chartDiv.data) {
+        console.log('Initial chart creation');
         // First time creation
-        Plotly.newPlot('bubble-chart', [backgroundTrace, trace], layout, { 
-            responsive: true,
-            displayModeBar: false
+        Plotly.newPlot('bubble-chart', [backgroundTrace, trace], {
+            ...layout,
+            images: images,
+            datarevision: Date.now()  // 添加数据修订标记
+        }, {
+            ...config,
+            doubleClick: false,  // 禁用双击事件
+            displayModeBar: false,  // 确保不显示模式栏
+            staticPlot: true  // 使用静态绘图模式
         }).then(() => {
-            // Add company logos after initial plot
-            const images = yearData.map(d => {
-                const logo = window.appConfig.companyLogos[d.Market];
-                if (!logo) return null;
-
-                const maxGrossBookings = d3.max(data, d => d.GrossBookings);
-                const relativeSize = Math.pow(d.GrossBookings / maxGrossBookings, 0.25);
-                const targetSize = relativeSize * 2.5 + 0.15;
-
-                return {
-                    source: logo,
-                    xref: "x",
-                    yref: "y",
-                    x: d.OnlinePenetration,
-                    y: Math.sqrt(d.OnlineBookings / 1e9),
-                    sizex: targetSize,
-                    sizey: targetSize,
-                    sizing: "contain",
-                    opacity: 0.8,
-                    layer: "above",
-                    xanchor: "center",
-                    yanchor: "middle"
-                };
-            }).filter(Boolean);
-
             Plotly.relayout('bubble-chart', { images });
         });
+        // Create race chart
+        createRaceChart(data, year);
     } else {
-        // Get the previous data
-        const prevData = chartDiv.data[1]; // Index 1 is the bubble trace
-        const prevImages = chartDiv._fullLayout.images || [];
-        
-        // Create interpolated frames for smooth transition
-        const numFrames = 35;
-        const frames = [];
-        
-        for (let i = 0; i <= numFrames; i++) {
-            const t = i / numFrames; // Interpolation factor (0 to 1)
-            
-            // Interpolate data points
-            const frameTrace = {
-                x: yearData.map((d, idx) => {
-                    const prevX = prevData.x[idx] || 0;
-                    return prevX + (d.OnlinePenetration - prevX) * t;
-                }),
-                y: yearData.map((d, idx) => {
-                    const prevY = prevData.y[idx] || 0;
-                    const targetY = Math.sqrt(d.OnlineBookings / 1e9);
-                    return prevY + (targetY - prevY) * t;
-                }),
-                text: yearData.map(d => d.Market),
-                mode: 'markers',
-                marker: {
-                    size: yearData.map((d, idx) => {
-                        const prevSize = prevData.marker.size[idx] || 0;
-                        const targetSize = Math.pow(d.GrossBookings / 1e9, 0.15) * 4000;
-                        return prevSize + (targetSize - prevSize) * t;
-                    }),
-                    color: "rgba(0,0,0,0)"
-                }
-            };
-
-            // Interpolate images
-            const frameImages = yearData.map((d, idx) => {
-                const logo = window.appConfig.companyLogos[d.Market];
-                if (!logo) return null;
-
-                const maxGrossBookings = d3.max(data, d => d.GrossBookings);
-                const relativeSize = Math.pow(d.GrossBookings / maxGrossBookings, 0.25);
-                const targetSize = relativeSize * 2.5 + 0.15;
-                
-                const prevImage = prevImages[idx] || {};
-                const prevX = prevImage.x || 0;
-                const prevY = prevImage.y || 0;
-                const prevSize = prevImage.sizex || 0;
-
-                return {
-                    source: logo,
-                    xref: "x",
-                    yref: "y",
-                    x: prevX + (d.OnlinePenetration - prevX) * t,
-                    y: prevY + (Math.sqrt(d.OnlineBookings / 1e9) - prevY) * t,
-                    sizex: prevSize + (targetSize - prevSize) * t,
-                    sizey: prevSize + (targetSize - prevSize) * t,
-                    sizing: "contain",
-                    opacity: 0.8,
-                    layer: "above",
-                    xanchor: "center",
-                    yanchor: "middle"
-                };
-            }).filter(Boolean);
-
-            frames.push({
-                data: [backgroundTrace, frameTrace],
-                layout: {
-                    ...layout,
-                    images: frameImages
-                }
-            });
-        }
-
-        // Animate through the frames
-        let currentFrame = 0;
-        const animate = () => {
-            if (currentFrame >= frames.length) return;
-            
-            Plotly.animate('bubble-chart', frames[currentFrame], {
-                transition: {
-                    duration: 35,
-                    easing: 'linear'
-                },
-                frame: {
-                    duration: 35,
-                    redraw: false
-                }
-            });
-            
-            currentFrame++;
-            requestAnimationFrame(animate);
-        };
-
-        animate();
-    }
-}
-
-// Function to create timeline
-function createTimeline(years) {
-    const width = document.getElementById('timeline').clientWidth;
-    const height = 80;
-    
-    const svg = d3.select("#timeline")
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height);
-
-    xScaleTimeline = d3.scaleLinear()
-        .domain([0, years.length - 1])
-        .range([50, width - 50]);
-
-    const axis = d3.axisBottom(xScaleTimeline)
-        .tickFormat(i => years[i])
-        .ticks(years.length);
-
-    svg.append("g")
-        .attr("transform", `translate(0,${height - 30})`)
-        .call(axis);
-
-    // Add triangle indicator
-    timelineTriangle = svg.append("path")
-        .attr("d", d3.symbol().type(d3.symbolTriangle).size(200))
-        .attr("transform", `translate(${xScaleTimeline(0)},${height/2}) rotate(180)`)
-        .attr("fill", "#666");
-
-    // Make timeline responsive
-    window.addEventListener('resize', () => {
-        const newWidth = document.getElementById('timeline').clientWidth;
-        svg.attr("width", newWidth);
-        xScaleTimeline.range([50, newWidth - 50]);
-        svg.select("g").call(axis);
-        updateTimelineTriangle(currentQuarterIndex);
-    });
-}
-
-// Function to update timeline triangle position
-function updateTimelineTriangle(index) {
-    const x = xScaleTimeline(index);
-    timelineTriangle.attr("transform", `translate(${x},40) rotate(180)`);
-}
-
-// Function to handle play/pause
-function handlePlayPause() {
-    const button = document.getElementById('play-button');
-    if (isPlaying) {
-        clearInterval(playInterval);
-        button.innerHTML = '<i class="fas fa-play"></i> Play';
-        isPlaying = false;
-    } else {
-        button.innerHTML = '<i class="fas fa-pause"></i> Pause';
-        isPlaying = true;
-        playInterval = setInterval(() => {
-            currentQuarterIndex = (currentQuarterIndex + 1) % uniqueQuarters.length;
-            updateTimelineTriangle(currentQuarterIndex);
-            updateBubbleChart(mergedData, uniqueQuarters[currentQuarterIndex]);
-        }, 2000); // Increased interval to give more time for smooth transitions
+        // Update existing chart with animation
+        Plotly.animate('bubble-chart', {
+            data: [backgroundTrace, trace],
+            layout: {
+                ...layout,
+                images,
+                datarevision: Date.now()  // 添加数据修订标记
+            }
+        }, {
+            transition: {
+                duration: 400,
+                easing: 'cubic-in-out'
+            },
+            frame: {
+                duration: 400,
+                redraw: true
+            }
+        });
+        // Update race chart
+        updateRaceChart(data, year);
     }
 }
 
 // Initialize the visualization
-async function initialize() {
+async function init() {
     try {
-        mergedData = await fetchData();
-        if (!mergedData || mergedData.length === 0) {
-            console.error('No data loaded');
-            return;
+        processedData = await fetchData();
+        
+        if (!processedData || processedData.length === 0) {
+            throw new Error('No data loaded');
         }
         
-        uniqueQuarters = [...new Set(mergedData.map(d => d.Year))].sort();
+        years = [...new Set(processedData.map(d => d.Year))].sort();
+        currentYearIndex = years.indexOf(appConfig.chart.defaultYear);
         
-        // Initialize global max values
-        initializeGlobalMaxValues(mergedData);
+        // Create timeline
+        createTimeline();
         
-        createTimeline(uniqueQuarters);
-        updateBubbleChart(mergedData, uniqueQuarters[currentQuarterIndex]);
-
-        // Remove play button event listener and hide the button
-        const playButton = document.getElementById('play-button');
-        if (playButton) {
-            playButton.style.display = 'none';
-        }
-
-        // Start continuous animation
-        let lastTime = 0;
-        let lastUpdateTime = 0;
-        const animationDuration = 30000; // 30 seconds for full cycle
-        const updateInterval = 1000 / 30; // Cap updates at 30fps
+        // Create initial chart
+        createBubbleChart(processedData, years[currentYearIndex]);
         
-        function animate(currentTime) {
-            if (!lastTime) lastTime = currentTime;
-            const elapsed = currentTime - lastTime;
-            
-            // Calculate progress (0 to 1)
-            const totalProgress = (elapsed % animationDuration) / animationDuration;
-            const indexFloat = totalProgress * (uniqueQuarters.length - 1);
-            const currentIndex = Math.floor(indexFloat);
-            const nextIndex = (currentIndex + 1) % uniqueQuarters.length;
-            const progress = indexFloat - currentIndex;
-
-            // Update timeline triangle position smoothly
-            const currentX = xScaleTimeline(currentIndex);
-            const nextX = xScaleTimeline(nextIndex);
-            const interpolatedX = currentX + (nextX - currentX) * progress;
-            timelineTriangle.attr("transform", `translate(${interpolatedX},40) rotate(180)`);
-
-            // Only update bubble chart at specified interval
-            if (currentTime - lastUpdateTime >= updateInterval) {
-                lastUpdateTime = currentTime;
-
-                // Get data for current and next year
-                const currentYearData = mergedData.filter(d => d.Year === uniqueQuarters[currentIndex] && selectedCompanies.includes(d.Market));
-                const nextYearData = mergedData.filter(d => d.Year === uniqueQuarters[nextIndex] && selectedCompanies.includes(d.Market));
-
-                // Create interpolated data
-                const interpolatedData = currentYearData.map((d, i) => {
-                    const nextData = nextYearData.find(nd => nd.Market === d.Market) || d;
-                    return {
-                        Market: d.Market,
-                        Year: uniqueQuarters[currentIndex],
-                        OnlinePenetration: d.OnlinePenetration + (nextData.OnlinePenetration - d.OnlinePenetration) * progress,
-                        OnlineBookings: d.OnlineBookings + (nextData.OnlineBookings - d.OnlineBookings) * progress,
-                        GrossBookings: d.GrossBookings + (nextData.GrossBookings - d.GrossBookings) * progress
-                    };
-                });
-
-                // Update bubble chart with interpolated data
-                const chartDiv = document.getElementById('bubble-chart');
-                if (chartDiv && chartDiv.data) {
-                    const trace = chartDiv.data[1];
-                    const images = chartDiv._fullLayout.images || [];
-
-                    // Batch all updates into a single object
-                    const updates = {
-                        x: [null, interpolatedData.map(d => d.OnlinePenetration)],
-                        y: [null, interpolatedData.map(d => Math.sqrt(d.OnlineBookings / 1e9))],
-                        'marker.size': [null, interpolatedData.map(d => Math.pow(d.GrossBookings / 1e9, 0.15) * 4000)]
-                    };
-
-                    // Update images positions and sizes
-                    const updatedImages = images.map((img, idx) => {
-                        if (!interpolatedData[idx]) return img;
-                        const d = interpolatedData[idx];
-                        const relativeSize = Math.pow(d.GrossBookings / d3.max(mergedData, d => d.GrossBookings), 0.25);
-                        return {
-                            ...img,
-                            x: d.OnlinePenetration,
-                            y: Math.sqrt(d.OnlineBookings / 1e9),
-                            sizex: relativeSize * 2.5 + 0.15,
-                            sizey: relativeSize * 2.5 + 0.15
-                        };
-                    });
-
-                    // Create background text trace
-                    const backgroundTrace = {
-                        x: [0.5],
-                        y: [Math.sqrt(250/4)],
-                        mode: 'text',
-                        text: [getEraText(uniqueQuarters[currentIndex])],
-                        textposition: 'middle center',
-                        textfont: {
-                            size: 60,
-                            family: 'Monda, Arial',
-                            color: 'rgba(200,200,200,0.3)'
-                        },
-                        hoverinfo: 'skip',
-                        showlegend: false
-                    };
-
-                    // Perform single update with all changes
-                    Plotly.update('bubble-chart', 
-                        {
-                            x: [backgroundTrace.x, interpolatedData.map(d => d.OnlinePenetration)],
-                            y: [backgroundTrace.y, interpolatedData.map(d => Math.sqrt(d.OnlineBookings / 1e9))],
-                            'marker.size': [null, interpolatedData.map(d => Math.pow(d.GrossBookings / 1e9, 0.15) * 4000)],
-                            text: [backgroundTrace.text, interpolatedData.map(d => d.Market)],
-                            textposition: [backgroundTrace.textposition, null],
-                            textfont: [backgroundTrace.textfont, null],
-                            mode: ['text', 'markers'],
-                            hoverinfo: ['skip', trace.hoverinfo]
-                        },
-                        { images: updatedImages },
-                        [0, 1]
-                    );
+        // Start animation
+        setTimeout(() => {
+            isPlaying = true;
+            let lastTime = 0;
+            let lastUpdateTime = 0;
+            const animationDuration = 20000;
+            const updateInterval = 500;
+            let lastYearIndex = currentYearIndex;
+        
+            function animate(currentTime) {
+                if (!isPlaying) {
+                    return;
                 }
+
+                if (!lastTime) lastTime = currentTime;
+                const elapsed = currentTime - lastTime;
+                
+                const totalProgress = (elapsed % animationDuration) / animationDuration;
+                const indexFloat = totalProgress * (years.length - 1);
+                const currentIndex = Math.floor(indexFloat);
+
+                // Update timeline marker smoothly
+                if (timeline && timeline.triangle) {
+                    const nextIndex = (currentIndex + 1) % years.length;
+                    const progress = indexFloat - currentIndex;
+                    const currentX = timeline.scale(years[currentIndex]);
+                    const nextX = timeline.scale(years[nextIndex]);
+                    const interpolatedX = currentX + (nextX - currentX) * progress;
+                    timeline.triangle.attr('transform', `translate(${interpolatedX}, -10) rotate(180)`);
+                }
+
+                // Only update chart when year changes and enough time has passed
+                if (currentTime - lastUpdateTime >= updateInterval && currentIndex !== lastYearIndex) {
+                    lastUpdateTime = currentTime;
+                    lastYearIndex = currentIndex;
+                    
+                    const currentYearData = processedData.filter(d => d.Year === years[currentIndex]);
+                    createBubbleChart(currentYearData, years[currentIndex]);
+                }
+
+                requestAnimationFrame(animate);
             }
 
             requestAnimationFrame(animate);
-        }
-
-        requestAnimationFrame(animate);
+        }, 500);
+        
     } catch (error) {
         console.error('Error initializing visualization:', error);
+        document.getElementById('bubble-chart').innerHTML = `
+            <div style="color: red; padding: 20px;">
+                Error loading visualization: ${error.message}<br>
+                Please check the browser console for more details.
+            </div>
+        `;
     }
 }
 
-// Load XLSX library and initialize
-const script = document.createElement('script');
-script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-script.onload = initialize;
-document.head.appendChild(script);
-
-// Add this new function at the end of the file
-function getEraText(year) {
-    const yearNum = parseInt(year);
-    if (yearNum >= 2005 && yearNum <= 2008) {
-        return "Growth of WWW";
-    } else if (yearNum >= 2009 && yearNum <= 2010) {
-        return "Great Recession";
-    } else if (yearNum >= 2011 && yearNum <= 2018) {
-        return "Growth of Mobile";
-    } else if (yearNum >= 2019 && yearNum <= 2021) {
-        return "Global Pandemic";
-    } else if (yearNum >= 2022) {
-        return "Post-Pandemic Recovery";
-    }
-    return "";
-} 
+// Start the visualization when the page loads
+document.addEventListener('DOMContentLoaded', init); 

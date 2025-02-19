@@ -164,13 +164,11 @@ def adjust_historical_predictions(historical_df, channel_patterns):
             except (IndexError, KeyError):
                 continue
     
-    # 对2005-2007年的online数据进行整体上移
-    online_mask = adjusted_df['Channel Type'] == 'Online'
-    for year in range(2005, 2008):
-        year_mask = adjusted_df['Year'] == year
-        # 上移力度随着年份增加而减小
-        lift_factor = 1.15 - (year - 2005) * 0.02  # 2005年提升15%，逐年略微减少
-        adjusted_df.loc[online_mask & year_mask, 'Total Market Gross Bookings'] *= lift_factor
+    # online_mask = adjusted_df['Channel Type'] == 'Online'
+    # for year in range(2005, 2008):
+    #     year_mask = adjusted_df['Year'] == year
+    #     lift_factor = 1.15 - (year - 2005) * 0.02  
+    #     adjusted_df.loc[online_mask & year_mask, 'Total Market Gross Bookings'] *= lift_factor
     
     return adjusted_df
 
