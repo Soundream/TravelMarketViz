@@ -120,10 +120,8 @@ function createRaceChart(data, year) {
 
 // 更新race chart的函数
 function updateRaceChart(data, year) {
-    const yearData = data.filter(d => d.Year === year);
-    
     // 处理数据
-    const sortedData = yearData
+    const sortedData = data
         .map(d => ({
             market: d.Market,
             value: d.GrossBookings * appConfig.dataProcessing.bookingsScaleFactor,
@@ -148,13 +146,12 @@ function updateRaceChart(data, year) {
     // 使用 Plotly.animate 来实现平滑过渡
     Plotly.animate('race-chart', newFrame, {
         transition: {
-            duration: 400,
-            easing: 'cubic-in-out'
+            duration: 0,  // 设置为0以实现实时更新
+            easing: 'linear'
         },
         frame: {
-            duration: 400,
-            redraw: true  // 改为 true 以确保文本正确重绘
-        },
-        mode: 'afterall'  // 确保动画按顺序执行
+            duration: 0,
+            redraw: true
+        }
     });
 } 

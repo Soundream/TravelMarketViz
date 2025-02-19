@@ -140,7 +140,7 @@ layout = {
 config = {
     responsive: true,
     displayModeBar: false,
-    staticPlot: true
+    staticPlot: false
 };
 
 // Add getEraText function at the top level
@@ -392,17 +392,18 @@ function createBubbleChart(data, year) {
             layout: {
                 ...layout,
                 images,
-                datarevision: Date.now()  // 添加数据修订标记
+                datarevision: Date.now()
             }
         }, {
             transition: {
-                duration: 400,
-                easing: 'cubic-in-out'
+                duration: 0,  // 设置为0以实现实时更新
+                easing: 'linear'
             },
             frame: {
-                duration: 400,
+                duration: 0,
                 redraw: true
-            }
+            },
+            mode: 'immediate'  // 添加立即模式
         });
         // Update race chart
         updateRaceChart(data, year);
@@ -431,11 +432,8 @@ async function init() {
         setTimeout(() => {
             isPlaying = true;
             let lastTime = 0;
-            let lastUpdateTime = 0;
-            const animationDuration = 20000;
-            const updateInterval = 500;
-            let lastYearIndex = currentYearIndex;
-        
+            const animationDuration = 30000; // 进一步减少循环时间到6秒
+            
             function animate(currentTime) {
                 if (!isPlaying) {
                     return;
@@ -444,29 +442,40 @@ async function init() {
                 if (!lastTime) lastTime = currentTime;
                 const elapsed = currentTime - lastTime;
                 
+                // 计算当前进度 (0 到 1)
                 const totalProgress = (elapsed % animationDuration) / animationDuration;
                 const indexFloat = totalProgress * (years.length - 1);
                 const currentIndex = Math.floor(indexFloat);
+                const nextIndex = (currentIndex + 1) % years.length;
+                const progress = indexFloat - currentIndex;
 
-                // Update timeline marker smoothly
+                // 更新时间轴标记
                 if (timeline && timeline.triangle) {
-                    const nextIndex = (currentIndex + 1) % years.length;
-                    const progress = indexFloat - currentIndex;
                     const currentX = timeline.scale(years[currentIndex]);
                     const nextX = timeline.scale(years[nextIndex]);
                     const interpolatedX = currentX + (nextX - currentX) * progress;
                     timeline.triangle.attr('transform', `translate(${interpolatedX}, -10) rotate(180)`);
                 }
 
-                // Only update chart when year changes and enough time has passed
-                if (currentTime - lastUpdateTime >= updateInterval && currentIndex !== lastYearIndex) {
-                    lastUpdateTime = currentTime;
-                    lastYearIndex = currentIndex;
-                    
-                    const currentYearData = processedData.filter(d => d.Year === years[currentIndex]);
-                    createBubbleChart(currentYearData, years[currentIndex]);
-                }
+                // 获取当前和下一年的数据
+                const currentYearData = processedData.filter(d => d.Year === years[currentIndex]);
+                const nextYearData = processedData.filter(d => d.Year === years[nextIndex]);
 
+                // 创建插值数据
+                const interpolatedData = currentYearData.map(d => {
+                    const nextData = nextYearData.find(nd => nd.Market === d.Market) || d;
+                    return {
+                        Market: d.Market,
+                        Year: years[currentIndex],
+                        OnlinePenetration: d.OnlinePenetration + (nextData.OnlinePenetration - d.OnlinePenetration) * progress,
+                        OnlineBookings: d.OnlineBookings + (nextData.OnlineBookings - d.OnlineBookings) * progress,
+                        GrossBookings: d.GrossBookings + (nextData.GrossBookings - d.GrossBookings) * progress
+                    };
+                });
+
+                // 更新图表
+                createBubbleChart(interpolatedData, years[currentIndex]);
+                
                 requestAnimationFrame(animate);
             }
 
