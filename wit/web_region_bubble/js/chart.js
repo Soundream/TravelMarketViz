@@ -210,7 +210,7 @@ function createBubbleChart(data, year) {
     // 初始化全局 layout 变量
     layout = {
         title: {
-            text: `Online Travel Market`,
+            text: '',  // 移除标题
             font: {
                 family: 'Monda',
                 size: 24

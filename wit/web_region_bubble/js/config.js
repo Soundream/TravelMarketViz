@@ -1,12 +1,12 @@
 const appConfig = {
-    // Region colors based on representative flags
+    // Region colors with vibrant values
     regionColors: {
-        'Asia-Pacific': '#FF4B4B',        // 明亮的红色
-        'Europe': '#4169E1',              // 皇家蓝
-        'Eastern Europe': '#9370DB',      // 中等紫色
+        'Asia-Pacific': '#FF4B4B',        // 鲜艳的红色
+        'Europe': '#4169E1',              // 鲜艳的蓝色
+        'Eastern Europe': '#9370DB',      // 鲜艳的紫色
         'Latin America': '#32CD32',       // 鲜艳的绿色
-        'Middle East': '#DEB887',         // 暖棕色
-        'North America': '#40E0D0'        // 绿松石色
+        'Middle East': '#DEB887',         // 鲜艳的棕色
+        'North America': '#40E0D0'        // 鲜艳的绿松石色
     },
 
     // Animation settings

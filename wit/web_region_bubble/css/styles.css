@@ -19,6 +19,15 @@ h1 {
     margin-bottom: 30px;
 }
 
+.main-title {
+    font-family: 'Monda', sans-serif;
+    text-align: center;
+    color: #333;
+    font-size: 28px;
+    margin: 10px 0 0 0;
+    font-weight: 500;
+}
+
 .controls {
     margin-bottom: 20px;
 }
@@ -63,7 +72,7 @@ h1 {
     grid-template-columns: 1fr 460px;
     gap: 0;
     position: relative;
-    height: 700px;
+    height: 650px;
 }
 
 .chart-wrapper {
@@ -71,6 +80,7 @@ h1 {
     width: 100%;
     height: 100%;
     padding-right: 0;
+    margin-top: -40px;
 }
 
 #bubble-chart {
@@ -86,16 +96,16 @@ h1 {
     flex-direction: column;
     align-items: flex-end;
     padding: 0;
-    margin: 0;
-    gap: 20px;
+    margin-top: -40px;
+    gap: 0;
 }
 
 #map-legend {
     position: absolute;
-    top: 20px;
+    top: 0;
     right: -10px;
     width: 450px;
-    height: 280px;
+    height: 250px;
     background-color: white;
     padding: 0;
     margin: 0;
@@ -105,7 +115,7 @@ h1 {
 
 #race-chart {
     position: absolute;
-    top: 0;
+    top: 230px;
     right: -10px;
     width: 450px;
     height: 300px;
@@ -166,6 +176,12 @@ h1 {
     #map-legend, #race-chart {
         width: 430px;
     }
+    #map-legend {
+        height: 240px;
+    }
+    #race-chart {
+        top: 220px;
+    }
 }
 
 @media (max-width: 1600px) {
@@ -176,6 +192,12 @@ h1 {
         width: 410px;
         right: -5px;
     }
+    #map-legend {
+        height: 230px;
+    }
+    #race-chart {
+        top: 210px;
+    }
 }
 
 @media (max-width: 1400px) {
@@ -184,7 +206,7 @@ h1 {
     }
     #map-legend {
         width: 390px;
-        height: 260px;
+        height: 220px;
         right: 0;
     }
     #race-chart {
@@ -201,12 +223,12 @@ h1 {
     }
     #map-legend {
         width: 370px;
-        height: 240px;
+        height: 210px;
     }
     #race-chart {
         width: 370px;
         height: 260px;
-        top: 220px;
+        top: 190px;
     }
 }
 
