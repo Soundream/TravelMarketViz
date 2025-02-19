@@ -66,7 +66,7 @@ layout = {
         tickmode: 'array',
         ticktext: ['0.1', '0.5', '1', '5', '10', '40', '90', '160', '250', '400', '500'],
         tickvals: [0.1, 0.5, 1, 5, 10, 40, 90, 160, 250, 400, 500],
-        range: [Math.log10(0.1), Math.log10(500)],
+        range: [Math.log10(0.05), Math.log10(500)],
         autorange: false,
         fixedrange: true
     },
