@@ -1,4 +1,67 @@
 function createRaceChart(data, year) {
+    // 首先列出所有需要的国旗
+    console.log('\n=== Required Flags List ===');
+    const allMarkets = [...new Set(data.map(d => d.Market))].sort();
+    console.log('All markets in data:', allMarkets.join(', '));
+    console.log('\nFlags needed:');
+    allMarkets.forEach(market => {
+        console.log(`'${market}': '${market} Icon.png',`);
+    });
+    console.log('=== End of Flags List ===\n');
+
+    // 添加国旗映射
+    const flagMapping = {
+        'Japan': 'Japan Icon.png',
+        'China': 'China Icon.png',
+        'Russia': 'Russia Icon.png',
+        'Hong Kong': 'Hong Kong Icon.png',
+        'U.K.': 'UK Icon.png',
+        'Chile': 'Chile Icon.png',
+        'U.S.': 'USA Icon.png',
+        'Brazil': 'Brazil Icon.png',
+        'Colombia': 'Colombia Icon.png',
+        'Spain': 'Spain Icon.png',
+        'Mexico': 'Mexico Icon.png',
+        'Canada': 'Canada Icon.png',
+        'U.A.E.': 'UAE Icon.png',
+        'Australia-New Zealand': 'Australia Icon.png',
+        'France': 'France Icon.png',
+        'Germany': 'Germany Icon.png',
+        'Italy': 'Italy Icon.png',
+        'Rest of Europe': 'Europe Icon.png',
+        'India': 'India Icon.png',
+        'Scandinavia': 'Sweden Icon.png'
+    };
+
+    // 添加国家代码映射
+    const countryCodeMapping = {
+        'Japan': 'JPN',
+        'China': 'CHN',
+        'Russia': 'RUS',
+        'Hong Kong': 'HKG',
+        'U.K.': 'GBR',
+        'Chile': 'CHL',
+        'U.S.': 'USA',
+        'Brazil': 'BRA',
+        'Colombia': 'COL',
+        'Spain': 'ESP',
+        'Mexico': 'MEX',
+        'Canada': 'CAN',
+        'U.A.E.': 'UAE',
+        'Australia-New Zealand': 'AUS',
+        'India': 'IND',
+        'Singapore': 'SGP',
+        'Indonesia': 'IDN',
+        'Malaysia': 'MYS',
+        'Thailand': 'THA',
+        'Taiwan': 'TWN',
+        'France': 'FRA',
+        'Germany': 'DEU',
+        'Italy': 'ITA',
+        'South Korea': 'KOR',
+        'Rest of Europe': 'EUR'
+    };
+
     // 计算所有年份的最大值，用于固定坐标轴范围
     const maxValue = Math.max(...data.map(d => {
         const bookings = parseFloat(d['Gross Bookings']) || 0;
@@ -22,15 +85,12 @@ function createRaceChart(data, year) {
             family: 'Monda',
             size: 11
         },
-        cliponaxis: false,
+        cliponaxis: true,
         textangle: 0,
-        outsidetextfont: {
-            family: 'Monda',
-            size: 11
-        },
         offsetgroup: 1,
-        textoffset: 12,
-        width: Array(15).fill(0.25)
+        width: 0.6,
+        textposition: 'auto',
+        constraintext: 'both'
     };
 
     // 处理数据
@@ -38,8 +98,14 @@ function createRaceChart(data, year) {
         .map(d => {
             const market = d.Market;
             const bookings = parseFloat(d['Gross Bookings']) || 0;
+            
+            // 检查并输出没有国旗的国家
+            if (!flagMapping[market]) {
+                console.log('Missing flag for country:', market);
+            }
+
             return {
-                market: appConfig.countryCodes?.[market] || market,
+                market: market,
                 originalMarket: market,
                 value: bookings * (appConfig.dataProcessing?.bookingsScaleFactor || 1e-9),
                 color: (appConfig.colorDict?.[market] || appConfig.regionColors?.[d.Region] || '#999999'),
@@ -62,6 +128,9 @@ function createRaceChart(data, year) {
 
     // 创建布局
     const layout = {
+        width: 480,  // 调整为更合适的宽度
+        height: 380,  // 保持原有高度
+        autosize: false,  // 禁用自动调整大小
         title: {
             text: '',
             font: {
@@ -87,10 +156,11 @@ function createRaceChart(data, year) {
                 family: 'Monda',
                 size: 11
             },
-            range: [0, maxValue * 1.15],
+            range: [0, maxValue * 1.2],
             fixedrange: true,
             ticklen: 6,
-            ticksuffix: ' '
+            ticksuffix: ' ',
+            automargin: true
         },
         yaxis: {
             showgrid: false,
@@ -102,34 +172,49 @@ function createRaceChart(data, year) {
             ticklabelposition: 'outside left',
             automargin: true,
             range: [-0.5, 14.5],
-            dtick: 1
+            dtick: 1,
+            ticktext: sortedData.map(d => flagMapping[d.originalMarket] ? '' : (countryCodeMapping[d.originalMarket] || d.originalMarket)),
+            tickmode: 'array',
+            tickvals: Array.from({length: sortedData.length}, (_, i) => i),
+            ticklabelposition: 'inside',
         },
+        images: sortedData.map((d, i) => ({
+            source: flagMapping[d.originalMarket] ? 'flags/' + flagMapping[d.originalMarket] : null,
+            xref: 'paper',
+            yref: 'y',
+            x: -0.15,
+            y: i,
+            sizex: 0.25,
+            sizey: 1.2,
+            xanchor: 'right',
+            yanchor: 'middle',
+            visible: flagMapping[d.originalMarket] ? true : false
+        })),
         margin: {
             l: 90,
-            r: 90,
-            t: 10,
+            r: 80,  // 减小右边距
+            t: 20,
             b: 35
         },
-        height: 380,
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         showlegend: false,
         barmode: 'group',
-        bargap: 0.05,
-        bargroupgap: 0.01,
+        bargap: 0.2,
+        bargroupgap: 0.1,
         font: {
             family: 'Monda'
         },
         uniformtext: {
             mode: 'hide',
-            minsize: 11
+            minsize: 10
         }
     };
 
     // 创建配置
     const config = {
         displayModeBar: false,
-        responsive: true,
+        responsive: false,  // 禁用响应式
         staticPlot: false
     };
 
@@ -144,15 +229,87 @@ function createRaceChart(data, year) {
 
 // 更新race chart的函数
 function updateRaceChart(data, year) {
+    console.clear(); // 清除之前的控制台输出
+    console.log(`\n====== Starting Race Chart Update for Year ${year} ======`);
+
+    const flagMapping = {
+        'Japan': 'Japan Icon.png',
+        'China': 'China Icon.png',
+        'Russia': 'Russia Icon.png',
+        'Hong Kong': 'Hong Kong Icon.png',
+        'U.K.': 'UK Icon.png',
+        'Chile': 'Chile Icon.png',
+        'U.S.': 'USA Icon.png',
+        'Brazil': 'Brazil Icon.png',
+        'Colombia': 'Colombia Icon.png',
+        'Spain': 'Spain Icon.png',
+        'Mexico': 'Mexico Icon.png',
+        'Canada': 'Canada Icon.png',
+        'U.A.E.': 'UAE Icon.png',
+        'Australia-New Zealand': 'Australia Icon.png',
+        'France': 'France Icon.png',
+        'Germany': 'Germany Icon.png',
+        'Italy': 'Italy Icon.png',
+        'Rest of Europe': 'Europe Icon.png',
+        'India': 'India Icon.png',
+        'Scandinavia': 'Sweden Icon.png'
+    };
+
+    const countryCodeMapping = {
+        'Japan': 'JPN',
+        'China': 'CHN',
+        'Russia': 'RUS',
+        'Hong Kong': 'HKG',
+        'U.K.': 'GBR',
+        'Chile': 'CHL',
+        'U.S.': 'USA',
+        'Brazil': 'BRA',
+        'Colombia': 'COL',
+        'Spain': 'ESP',
+        'Mexico': 'MEX',
+        'Canada': 'CAN',
+        'U.A.E.': 'UAE',
+        'Australia-New Zealand': 'AUS',
+        'India': 'IND',
+        'Singapore': 'SGP',
+        'Indonesia': 'IDN',
+        'Malaysia': 'MYS',
+        'Thailand': 'THA',
+        'Taiwan': 'TWN',
+        'France': 'FRA',
+        'Germany': 'DEU',
+        'Italy': 'ITA',
+        'South Korea': 'KOR',
+        'Rest of Europe': 'EUR'
+    };
+
     const yearData = data.filter(d => d.Year === year);
+    
+    // 输出数据处理信息
+    console.log(`\n1. Raw Data Analysis for ${year}:`);
+    console.log(`Total countries in data: ${yearData.length}`);
+    console.log('All countries:', yearData.map(d => d.Market).sort().join(', '));
+    
+    // 创建缺失国旗的列表
+    const missingFlags = [];
     
     // 处理目标数据
     const targetData = yearData
         .map(d => {
             const market = d.Market;
             const bookings = parseFloat(d['Gross Bookings']) || 0;
+            
+            // 收集缺失国旗的信息
+            if (!flagMapping[market]) {
+                missingFlags.push({
+                    market: market,
+                    region: d.Region,
+                    bookings: bookings * (appConfig.dataProcessing?.bookingsScaleFactor || 1e-9)
+                });
+            }
+
             return {
-                market: appConfig.countryCodes?.[market] || market,
+                market: market,
                 originalMarket: market,
                 value: bookings * (appConfig.dataProcessing?.bookingsScaleFactor || 1e-9),
                 color: (appConfig.colorDict?.[market] || appConfig.regionColors?.[d.Region] || '#999999'),
@@ -162,11 +319,76 @@ function updateRaceChart(data, year) {
         .sort((a, b) => b.value - a.value)
         .slice(0, 15);
 
+    // 输出缺失国旗的信息
+    if (missingFlags.length > 0) {
+        console.log('\n2. Missing Flags Report:');
+        missingFlags.forEach(item => {
+            console.log(`⚠️ ${item.market} (${item.region}) - ${item.bookings.toFixed(1)}B USD`);
+        });
+    } else {
+        console.log('\n2. Missing Flags Report: All countries have flags! ✅');
+    }
+
+    // 输出前15名国家
+    console.log('\n3. Top 15 Countries:');
+    targetData.forEach((d, i) => {
+        const hasFlag = flagMapping[d.market] ? '🏳️' : '❌';
+        console.log(`${i + 1}. ${hasFlag} ${d.market} (${d.region}) - ${d.value.toFixed(1)}B USD`);
+    });
+
     // 获取当前数据
     const currentData = window.currentRaceData || targetData;
 
+    // 更新布局中的图标位置
+    const updatedLayout = {
+        ...window.raceChartLayout,
+        yaxis: {
+            ...window.raceChartLayout.yaxis,
+            showgrid: false,
+            tickfont: {
+                family: 'Monda',
+                size: 11
+            },
+            fixedrange: true,
+            automargin: true,
+            range: [-0.5, 14.5],
+            dtick: 1,
+            ticktext: targetData.map(d => flagMapping[d.originalMarket] ? '' : (countryCodeMapping[d.originalMarket] || d.originalMarket)),
+            tickmode: 'array',
+            tickvals: Array.from({length: targetData.length}, (_, i) => i),
+            ticklabelposition: 'inside'
+        },
+        xaxis: {
+            ...window.raceChartLayout.xaxis,
+            range: [0, window.globalMaxValue * 1.2],
+            fixedrange: true
+        },
+        margin: {
+            l: 90,
+            r: 80,  // 减小右边距
+            t: 20,
+            b: 35,
+            autoexpand: true
+        },
+        height: 380,
+        images: targetData.map((d, i) => ({
+            source: flagMapping[d.originalMarket] ? 'flags/' + flagMapping[d.originalMarket] : null,
+            xref: 'paper',
+            yref: 'y',
+            x: -0.15,
+            y: i,
+            sizex: 0.25,
+            sizey: 1.2,
+            xanchor: 'right',
+            yanchor: 'middle',
+            visible: flagMapping[d.originalMarket] ? true : false
+        }))
+    };
+
     // 创建动画帧
+    console.log('\n4. Preparing Animation:');
     const frameCount = 30;
+    console.log(`Creating ${frameCount} animation frames...`);
     const frames = [];
     
     for (let i = 0; i <= frameCount; i++) {
@@ -190,24 +412,44 @@ function updateRaceChart(data, year) {
                     color: interpolatedData.map(d => d.color)
                 },
                 text: interpolatedData.map(d => d.value.toFixed(1))
-            }],
-            layout: window.raceChartLayout
+            }]
         });
     }
 
     // 执行动画
-    Plotly.animate('race-chart', frames, {
-        transition: {
-            duration: 800 / frameCount,
-            easing: 'linear'
-        },
-        frame: {
-            duration: 800 / frameCount,
-            redraw: false
-        },
-        mode: 'immediate'
-    });
+    console.log('\n5. Attempting Animation:');
+    try {
+        if (!window.baseTrace) {
+            console.error('baseTrace is undefined! This might cause animation errors.');
+            return;
+        }
+        if (!window.raceChartLayout) {
+            console.error('raceChartLayout is undefined! This might cause animation errors.');
+            return;
+        }
+
+        Plotly.animate('race-chart', frames, {
+            transition: {
+                duration: 800 / frameCount,
+                easing: 'linear'
+            },
+            frame: {
+                duration: 800 / frameCount,
+                redraw: false
+            },
+            mode: 'immediate',
+            layout: updatedLayout
+        });
+    } catch (error) {
+        console.error('Animation execution error details:', error);
+        console.error('Error type:', typeof error);
+        console.error('Error properties:', Object.keys(error || {}));
+        if (error && error.stack) {
+            console.error('Error stack:', error.stack);
+        }
+    }
 
     // 更新当前数据
     window.currentRaceData = targetData;
+    console.log('\n====== Race Chart Update Completed ======\n');
 } 

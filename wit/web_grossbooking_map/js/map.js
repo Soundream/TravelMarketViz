@@ -46,6 +46,9 @@ async function init() {
         
         // 自动开始动画
         startAnimation();
+
+        // 在初始化完成后添加source和note
+        addSourceAndNote();
     } catch (error) {
         console.error('Error loading data:', error);
         document.getElementById('map-container').innerHTML = `
@@ -168,10 +171,12 @@ function processData(rawData) {
                         size: scaleMarkerSize(grossBookings),
                         color: appConfig.regionColors[mappedRegion] || '#999999',
                         line: {
-                            color: 'white',
-                            width: 1
+                            color: 'rgba(255, 255, 255, 0.1)',
+                            width: 0.2
                         },
-                        sizemode: 'area'
+                        sizemode: 'area',
+                        sizeref: 0.15,
+                        opacity: 0.9
                     },
                     name: mappedRegion,
                     legendgroup: mappedRegion,
@@ -203,7 +208,6 @@ function scaleMarkerSize(value) {
     const size = Math.max(appConfig.map.minBubbleSize, 
            Math.min(appConfig.map.maxBubbleSize, 
            Math.sqrt(value) * 2));  // 调整系数使气泡大小更合适
-    console.log('Scaling value', value, 'to size', size);
     return size;
 }
 
@@ -278,12 +282,13 @@ function updateTimeline(year) {
 
 // Create the map visualization
 const layout = {
-    autosize: true,
-    height: 600,
+    width: 1000,  // 调整为更合适的宽度
+    height: 500,  // 相应调整高度保持比例
+    autosize: false,  // 禁用自动调整大小
     margin: {
         l: 0,
         r: 0,
-        t: 0,
+        t: 30,  // 增加顶部边距，为标题留出空间
         b: 0
     },
     paper_bgcolor: 'rgba(0,0,0,0)',
@@ -295,10 +300,10 @@ const layout = {
             type: 'equirectangular'
         },
         showland: true,
-        landcolor: 'rgb(243, 243, 243)',
+        landcolor: 'rgba(255, 255, 255, 0)',
         countrycolor: 'rgb(204, 204, 204)',
         showocean: true,
-        oceancolor: 'rgb(250, 250, 250)',
+        oceancolor: 'rgba(255, 255, 255, 0)',
         showframe: false,
         showcountries: true,
         resolution: 50,
@@ -339,6 +344,13 @@ const layout = {
     }
 };
 
+// 创建配置
+const config = {
+    displayModeBar: false,
+    responsive: false,  // 禁用响应式
+    scrollZoom: false
+};
+
 function createMap(data, year) {
     console.log('Creating map with data for year:', year);
     console.log('Sample data point:', data[0]);
@@ -350,18 +362,10 @@ function createMap(data, year) {
     const yearData = data.filter(d => d.frame === yearStr);
     console.log(`Filtered ${yearData.length} points for year ${year}`);
 
-    const config = {
-        displayModeBar: false,
-        responsive: true,
-        scrollZoom: false
-    };
-
     try {
         Plotly.newPlot('map-container', yearData, layout, config)
             .then(() => {
                 console.log('Map created successfully');
-                // 强制重新计算布局
-                window.dispatchEvent(new Event('resize'));
             })
             .catch(error => {
                 console.error('Error creating map:', error);
@@ -407,28 +411,27 @@ function startAnimation() {
             const upper = upperYearData.find(u => u.text[0] === lower.text[0]) || lower;
             
             // 计算插值后的大小
-            const lowerSize = parseFloat(lower.customdata[0][0]);
-            const upperSize = parseFloat(upper.customdata[0][0]);
-            const interpolatedSize = lowerSize + (upperSize - lowerSize) * yearProgress;
+            const lowerValue = parseFloat(lower.customdata[0][0]);
+            const upperValue = parseFloat(upper.customdata[0][0]);
+            const interpolatedValue = lowerValue + (upperValue - lowerValue) * yearProgress;
             
             return {
                 type: 'scattergeo',
-                lon: [lower.lon[0]],
-                lat: [lower.lat[0]],
+                lon: lower.lon,
+                lat: lower.lat,
                 text: lower.text,
-                customdata: [[
-                    interpolatedSize.toFixed(1),
-                    Math.round(exactYear * 10) / 10
-                ]],
+                customdata: [[interpolatedValue.toFixed(1), Math.round(exactYear * 10) / 10]],
                 mode: 'markers',
                 marker: {
-                    size: scaleMarkerSize(interpolatedSize),
+                    size: scaleMarkerSize(interpolatedValue),
                     color: lower.marker.color,
                     line: {
-                        color: 'white',
-                        width: 1
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        width: 0.2
                     },
-                    sizemode: 'area'
+                    sizemode: 'area',
+                    sizeref: 0.15,
+                    opacity: 0.9
                 },
                 name: lower.name,
                 legendgroup: lower.legendgroup,
@@ -447,7 +450,7 @@ function startAnimation() {
             },
             frame: {
                 duration: 0,
-                redraw: false
+                redraw: true
             }
         });
         
@@ -485,9 +488,37 @@ function updateMap(year) {
     const yearData = processedData.filter(d => d.frame === year.toString());
     console.log(`Found ${yearData.length} data points for year ${year}`);
 
+    // 更新每个气泡的大小
+    const updatedData = yearData.map(d => {
+        const value = parseFloat(d.customdata[0][0]);
+        return {
+            type: 'scattergeo',
+            lon: d.lon,
+            lat: d.lat,
+            text: d.text,
+            customdata: [[value.toFixed(1), year]],
+            mode: 'markers',
+            marker: {
+                size: scaleMarkerSize(value),
+                color: d.marker.color,
+                line: {
+                    color: 'rgba(255, 255, 255, 0.1)',
+                    width: 0.2
+                },
+                sizemode: 'area',
+                sizeref: 0.15,
+                opacity: 0.9
+            },
+            name: d.name,
+            legendgroup: d.legendgroup,
+            showlegend: d.showlegend,
+            hovertemplate: d.hovertemplate
+        };
+    });
+
     Plotly.animate('map-container', {
-        data: yearData,
-        traces: Array.from({ length: yearData.length }, (_, i) => i)
+        data: updatedData,
+        traces: Array.from({ length: updatedData.length }, (_, i) => i)
     }, {
         transition: {
             duration: 300,
@@ -495,7 +526,7 @@ function updateMap(year) {
         },
         frame: {
             duration: 300,
-            redraw: false
+            redraw: true
         }
     });
     
@@ -519,4 +550,28 @@ function updateVisualization(year) {
 }
 
 // Initialize when the page loads
-document.addEventListener('DOMContentLoaded', init); 
+document.addEventListener('DOMContentLoaded', init);
+
+// 在初始化完成后添加source和note
+function addSourceAndNote() {
+    const container = document.querySelector('.visualization-container');
+    if (!container) return;
+
+    const sourceNote = document.createElement('div');
+    sourceNote.style.cssText = `
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        font-family: Monda;
+        font-size: 11px;
+        color: #666666;
+        z-index: 1000;
+    `;
+
+    sourceNote.innerHTML = `
+        <div style="margin-bottom: 5px;">Source: Phocuswright, Travel Market Gross Bookings by Region</div>
+        <div>Note: Rest of Europe uses EU flag, Scandinavia uses Sweden flag</div>
+    `;
+
+    container.appendChild(sourceNote);
+} 
