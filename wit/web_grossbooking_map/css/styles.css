@@ -33,7 +33,6 @@ body {
 }
 
 .controls {
-    margin-top: 50px;
     margin-bottom: 40px;
     padding: 0 80px;
     background-color: transparent;
@@ -60,10 +59,25 @@ body {
 }
 
 .visualization-container {
+    display: grid;
+    grid-template-columns: 1fr 460px;
+    gap: 0;
     position: relative;
-    height: 75vh;
-    margin: 0;
-    padding: 0;
+    height: 670px;
+    margin-top: 0;
+}
+
+.chart-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding-right: 0;
+    margin-top: -50px;
+}
+
+#map-container {
+    width: 100%;
+    height: 100%;
     background-color: transparent;
     border: none;
     box-shadow: none;
@@ -74,21 +88,25 @@ body {
     position: relative;
     width: 100%;
     height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
     padding: 0;
-    margin: 0;
-    background-color: transparent;
-    border: none;
-    box-shadow: none;
-    outline: none;
+    margin-top: -30px;
+    gap: 0;
 }
 
-#map-container {
-    width: 100%;
-    height: 100%;
-    background-color: transparent;
-    border: none;
-    box-shadow: none;
-    outline: none;
+#race-chart {
+    position: absolute;
+    top: 100px;
+    right: 0;
+    width: 40%;
+    height: calc(100% - 50px);
+    z-index: 1;
+    background-color: white;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
 }
 
 .js-plotly-plot {
@@ -103,18 +121,62 @@ body {
     outline: none !important;
 }
 
+@media (max-width: 1800px) {
+    .visualization-container {
+        grid-template-columns: 1fr 440px;
+    }
+    #race-chart {
+        width: 430px;
+    }
+}
+
+@media (max-width: 1600px) {
+    .visualization-container {
+        grid-template-columns: 1fr 420px;
+    }
+    #race-chart {
+        width: 410px;
+        right: -5px;
+    }
+}
+
 @media (max-width: 1400px) {
     .visualization-container {
-        height: 70vh;
+        grid-template-columns: 1fr 400px;
+    }
+    #race-chart {
+        width: 390px;
+        height: 280px;
+        top: 200px;
+        right: 0;
+    }
+}
+
+@media (max-width: 1200px) {
+    .visualization-container {
+        grid-template-columns: 1fr 380px;
+    }
+    #race-chart {
+        width: 370px;
+        height: 260px;
+        top: 190px;
     }
 }
 
 @media (max-width: 900px) {
     .visualization-container {
-        height: 60vh;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        height: auto;
+        gap: 40px;
+    }
+    
+    .chart-wrapper {
+        height: 500px;
+        padding-right: 0;
     }
     
     .map-wrapper {
-        height: 100%;
+        height: 400px;
     }
 } 

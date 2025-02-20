@@ -6,6 +6,7 @@ let timeline;
 let years;
 let animationFrameId = null;
 let processedData = null;
+let originalData = null;
 
 // Initialize the visualization
 async function init() {
@@ -31,13 +32,17 @@ async function init() {
         }
         console.log('Loaded data:', jsonData);
         
+        // 保存原始数据
+        originalData = jsonData;
+        
         processedData = processData(jsonData);
         if (!processedData || processedData.length === 0) {
             throw new Error("Failed to process data");
         }
         
-        createMap(processedData, appConfig.map.defaultYear);
+        createMap(processedData, years[0]);
         createTimeline();
+        createRaceChart(originalData, years[0]);
         
         // 自动开始动画
         startAnimation();
@@ -265,7 +270,8 @@ function updateTimeline(year) {
     if (timeline && timeline.triangle) {
         timeline.triangle
             .transition()
-            .duration(appConfig.animation.duration)
+            .duration(300)
+            .ease(d3.easeCubicInOut)
             .attr('transform', `translate(${timeline.scale(year)}, -10) rotate(180)`);
     }
 }
@@ -369,48 +375,108 @@ function createMap(data, year) {
 function startAnimation() {
     isPlaying = true;
     let startTime = null;
-    const animationDuration = 15000; // 减少总循环时间到15秒
-    const frameInterval = 50; // 添加帧间隔控制
-    let lastFrameTime = 0;
+    const animationDuration = 20000; // 20秒循环
+    const frameInterval = 16; // 约60fps
     
     function animate(currentTime) {
         if (!startTime) startTime = currentTime;
         
-        // 控制帧率
-        if (currentTime - lastFrameTime < frameInterval) {
-            animationFrameId = requestAnimationFrame(animate);
-            return;
-        }
-        
         const elapsed = currentTime - startTime;
         const totalProgress = (elapsed % animationDuration) / animationDuration;
-        const indexFloat = totalProgress * (years.length - 1);
-        const currentIndex = Math.floor(indexFloat);
         
-        // 只在年份变化时更新
-        if (currentIndex !== currentFrame) {
-            currentFrame = currentIndex;
-            const yearData = processedData.filter(d => d.frame === years[currentIndex].toString());
+        // 计算精确的年份（包括小数）
+        const startYear = years[0];
+        const endYear = years[years.length - 1];
+        const exactYear = startYear + (endYear - startYear) * totalProgress;
+        
+        // 找到相邻的两个年份
+        const lowerIndex = Math.floor((years.length - 1) * totalProgress);
+        const upperIndex = Math.min(years.length - 1, lowerIndex + 1);
+        const lowerYear = years[lowerIndex];
+        const upperYear = years[upperIndex];
+        
+        // 计算两个年份之间的插值比例
+        const yearProgress = (exactYear - lowerYear) / (upperYear - lowerYear);
+        
+        // 获取相邻两年的数据
+        const lowerYearData = processedData.filter(d => d.frame === lowerYear.toString());
+        const upperYearData = processedData.filter(d => d.frame === upperYear.toString());
+        
+        // 创建插值后的数据
+        const interpolatedData = lowerYearData.map((lower, i) => {
+            const upper = upperYearData.find(u => u.text[0] === lower.text[0]) || lower;
             
-            // 使用 Plotly.react 来更新所有数据
-            Plotly.react('map-container', yearData, layout, {
-                displayModeBar: false,
-                responsive: true,
-                scrollZoom: false,
-                transition: {
-                    duration: 300,
-                    easing: 'cubic-in-out'
-                }
-            });
+            // 计算插值后的大小
+            const lowerSize = parseFloat(lower.customdata[0][0]);
+            const upperSize = parseFloat(upper.customdata[0][0]);
+            const interpolatedSize = lowerSize + (upperSize - lowerSize) * yearProgress;
             
-            updateTimeline(years[currentIndex]);
+            return {
+                type: 'scattergeo',
+                lon: [lower.lon[0]],
+                lat: [lower.lat[0]],
+                text: lower.text,
+                customdata: [[
+                    interpolatedSize.toFixed(1),
+                    Math.round(exactYear * 10) / 10
+                ]],
+                mode: 'markers',
+                marker: {
+                    size: scaleMarkerSize(interpolatedSize),
+                    color: lower.marker.color,
+                    line: {
+                        color: 'white',
+                        width: 1
+                    },
+                    sizemode: 'area'
+                },
+                name: lower.name,
+                legendgroup: lower.legendgroup,
+                showlegend: lower.showlegend,
+                hovertemplate: lower.hovertemplate
+            };
+        });
+
+        // 更新地图
+        Plotly.animate('map-container', {
+            data: interpolatedData,
+            traces: Array.from({ length: interpolatedData.length }, (_, i) => i)
+        }, {
+            transition: {
+                duration: 0
+            },
+            frame: {
+                duration: 0,
+                redraw: false
+            }
+        });
+        
+        // 平滑更新时间轴
+        if (timeline && timeline.triangle) {
+            timeline.triangle
+                .attr('transform', `translate(${timeline.scale(exactYear)}, -10) rotate(180)`);
         }
         
-        lastFrameTime = currentTime;
-        animationFrameId = requestAnimationFrame(animate);
+        // 更新race chart
+        if (Math.abs(exactYear - Math.round(exactYear)) < 0.05) {
+            updateRaceChart(originalData, Math.round(exactYear));
+        }
+        
+        // 继续动画
+        if (isPlaying) {
+            requestAnimationFrame(animate);
+        }
     }
     
-    animationFrameId = requestAnimationFrame(animate);
+    // 初始化地图
+    const initialData = processedData.filter(d => d.frame === years[0].toString());
+    Plotly.newPlot('map-container', initialData, layout, {
+        displayModeBar: false,
+        responsive: true,
+        scrollZoom: false
+    }).then(() => {
+        requestAnimationFrame(animate);
+    });
 }
 
 // Update the map for a specific year
@@ -419,18 +485,31 @@ function updateMap(year) {
     const yearData = processedData.filter(d => d.frame === year.toString());
     console.log(`Found ${yearData.length} data points for year ${year}`);
 
-    // 使用 Plotly.react 来更新所有数据
-    Plotly.react('map-container', yearData, layout, {
-        displayModeBar: false,
-        responsive: true,
-        scrollZoom: false,
+    Plotly.animate('map-container', {
+        data: yearData,
+        traces: Array.from({ length: yearData.length }, (_, i) => i)
+    }, {
         transition: {
             duration: 300,
             easing: 'cubic-in-out'
+        },
+        frame: {
+            duration: 300,
+            redraw: false
         }
     });
     
-    updateTimeline(year);
+    // 更新race chart
+    updateRaceChart(originalData, year);
+    
+    // 平滑更新时间轴
+    if (timeline && timeline.triangle) {
+        timeline.triangle
+            .transition()
+            .duration(300)
+            .ease(d3.easeCubicInOut)
+            .attr('transform', `translate(${timeline.scale(year)}, -10) rotate(180)`);
+    }
 }
 
 // Update both map and timeline
