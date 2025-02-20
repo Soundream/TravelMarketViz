@@ -128,9 +128,8 @@ function createRaceChart(data, year) {
 
     // 创建布局
     const layout = {
-        width: 480,  // 调整为更合适的宽度
-        height: 380,  // 保持原有高度
-        autosize: false,  // 禁用自动调整大小
+        width: 450,  // 增加宽度
+        height: 400,  // 固定高度
         title: {
             text: '',
             font: {
@@ -191,10 +190,11 @@ function createRaceChart(data, year) {
             visible: flagMapping[d.originalMarket] ? true : false
         })),
         margin: {
-            l: 90,
-            r: 80,  // 减小右边距
-            t: 20,
-            b: 35
+            l: 120,  // 增加左边距以容纳国旗
+            r: 100,
+            t: 40,
+            b: 50,
+            autoexpand: false  // 禁用自动扩展
         },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
@@ -214,7 +214,7 @@ function createRaceChart(data, year) {
     // 创建配置
     const config = {
         displayModeBar: false,
-        responsive: false,  // 禁用响应式
+        responsive: true,
         staticPlot: false
     };
 
@@ -344,33 +344,8 @@ function updateRaceChart(data, year) {
         ...window.raceChartLayout,
         yaxis: {
             ...window.raceChartLayout.yaxis,
-            showgrid: false,
-            tickfont: {
-                family: 'Monda',
-                size: 11
-            },
-            fixedrange: true,
-            automargin: true,
-            range: [-0.5, 14.5],
-            dtick: 1,
-            ticktext: targetData.map(d => flagMapping[d.originalMarket] ? '' : (countryCodeMapping[d.originalMarket] || d.originalMarket)),
-            tickmode: 'array',
-            tickvals: Array.from({length: targetData.length}, (_, i) => i),
-            ticklabelposition: 'inside'
+            ticktext: targetData.map(d => flagMapping[d.originalMarket] ? '' : (countryCodeMapping[d.originalMarket] || d.originalMarket))
         },
-        xaxis: {
-            ...window.raceChartLayout.xaxis,
-            range: [0, window.globalMaxValue * 1.2],
-            fixedrange: true
-        },
-        margin: {
-            l: 90,
-            r: 80,  // 减小右边距
-            t: 20,
-            b: 35,
-            autoexpand: true
-        },
-        height: 380,
         images: targetData.map((d, i) => ({
             source: flagMapping[d.originalMarket] ? 'flags/' + flagMapping[d.originalMarket] : null,
             xref: 'paper',
@@ -412,7 +387,8 @@ function updateRaceChart(data, year) {
                     color: interpolatedData.map(d => d.color)
                 },
                 text: interpolatedData.map(d => d.value.toFixed(1))
-            }]
+            }],
+            layout: updatedLayout
         });
     }
 
@@ -421,11 +397,11 @@ function updateRaceChart(data, year) {
     try {
         if (!window.baseTrace) {
             console.error('baseTrace is undefined! This might cause animation errors.');
-            return;
+            return; // 如果缺少必要数据，提前返回
         }
         if (!window.raceChartLayout) {
             console.error('raceChartLayout is undefined! This might cause animation errors.');
-            return;
+            return; // 如果缺少必要数据，提前返回
         }
 
         Plotly.animate('race-chart', frames, {
@@ -437,8 +413,16 @@ function updateRaceChart(data, year) {
                 duration: 800 / frameCount,
                 redraw: false
             },
-            mode: 'immediate',
-            layout: updatedLayout
+            mode: 'immediate'
+        }).then(() => {
+            console.log('Animation completed successfully! ✅');
+        }).catch(error => {
+            console.error('Animation error details:', error);
+            console.error('Error type:', typeof error);
+            console.error('Error properties:', Object.keys(error || {}));
+            if (error && error.stack) {
+                console.error('Error stack:', error.stack);
+            }
         });
     } catch (error) {
         console.error('Animation execution error details:', error);

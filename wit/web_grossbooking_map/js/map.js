@@ -47,8 +47,23 @@ async function init() {
         // 自动开始动画
         startAnimation();
 
-        // 在初始化完成后添加source和note
-        addSourceAndNote();
+        // 添加source和note
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.left = '0';
+        container.style.bottom = '20px';  // 距离底部的距离
+        container.style.width = '80%';
+        container.style.fontFamily = 'Monda';
+        container.style.fontSize = '11px';
+        container.style.color = '#666666';
+        container.style.padding = '0 20px';  // 左右padding
+
+        container.innerHTML = `
+            <div>Source: Phocuswright, Travel Market Gross Bookings by Region</div>
+            <div style="margin-top: 5px">Note: Rest of Europe uses EU flag, Scandinavia uses Sweden flag</div>
+        `;
+
+        document.body.appendChild(container);
     } catch (error) {
         console.error('Error loading data:', error);
         document.getElementById('map-container').innerHTML = `
@@ -213,18 +228,18 @@ function scaleMarkerSize(value) {
 
 // Function to create timeline
 function createTimeline() {
-    const timelineWidth = document.getElementById('timeline').offsetWidth;
-    const margin = { left: 80, right: 80 }; // 增加左右边距
+    const timelineWidth = 1000;  // 匹配地图宽度
+    const margin = { left: 80, right: 80, top: 20 }; // 增加顶部边距
     const width = timelineWidth - margin.left - margin.right;
 
     // Create SVG
     const svg = d3.select('#timeline')
         .append('svg')
         .attr('width', timelineWidth)
-        .attr('height', 60);
+        .attr('height', 80);  // 增加高度
 
     const g = svg.append('g')
-        .attr('transform', `translate(${margin.left}, 30)`);
+        .attr('transform', `translate(${margin.left}, ${margin.top + 30})`);
 
     // Create scale
     const xScale = d3.scaleLinear()
@@ -282,13 +297,12 @@ function updateTimeline(year) {
 
 // Create the map visualization
 const layout = {
-    width: 1000,  // 调整为更合适的宽度
-    height: 500,  // 相应调整高度保持比例
-    autosize: false,  // 禁用自动调整大小
+    width: 1000,  // 减小地图宽度
+    height: 600,  // 地图高度
     margin: {
         l: 0,
         r: 0,
-        t: 30,  // 增加顶部边距，为标题留出空间
+        t: 40,  // 顶部留空
         b: 0
     },
     paper_bgcolor: 'rgba(0,0,0,0)',
@@ -344,13 +358,6 @@ const layout = {
     }
 };
 
-// 创建配置
-const config = {
-    displayModeBar: false,
-    responsive: false,  // 禁用响应式
-    scrollZoom: false
-};
-
 function createMap(data, year) {
     console.log('Creating map with data for year:', year);
     console.log('Sample data point:', data[0]);
@@ -362,10 +369,18 @@ function createMap(data, year) {
     const yearData = data.filter(d => d.frame === yearStr);
     console.log(`Filtered ${yearData.length} points for year ${year}`);
 
+    const config = {
+        displayModeBar: false,
+        responsive: true,
+        scrollZoom: false
+    };
+
     try {
         Plotly.newPlot('map-container', yearData, layout, config)
             .then(() => {
                 console.log('Map created successfully');
+                // 强制重新计算布局
+                window.dispatchEvent(new Event('resize'));
             })
             .catch(error => {
                 console.error('Error creating map:', error);
@@ -550,28 +565,4 @@ function updateVisualization(year) {
 }
 
 // Initialize when the page loads
-document.addEventListener('DOMContentLoaded', init);
-
-// 在初始化完成后添加source和note
-function addSourceAndNote() {
-    const container = document.querySelector('.visualization-container');
-    if (!container) return;
-
-    const sourceNote = document.createElement('div');
-    sourceNote.style.cssText = `
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        font-family: Monda;
-        font-size: 11px;
-        color: #666666;
-        z-index: 1000;
-    `;
-
-    sourceNote.innerHTML = `
-        <div style="margin-bottom: 5px;">Source: Phocuswright, Travel Market Gross Bookings by Region</div>
-        <div>Note: Rest of Europe uses EU flag, Scandinavia uses Sweden flag</div>
-    `;
-
-    container.appendChild(sourceNote);
-} 
+document.addEventListener('DOMContentLoaded', init); 
