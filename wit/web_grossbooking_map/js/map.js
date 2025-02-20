@@ -8,6 +8,10 @@ let animationFrameId = null;
 let processedData = null;
 let originalData = null;
 
+// 添加全局变量用于时间控制
+let currentExactYear = null;
+let timelineAnimationId = null;
+
 // Initialize the visualization
 async function init() {
     try {
@@ -226,25 +230,67 @@ function scaleMarkerSize(value) {
     return size;
 }
 
+// 分离的时间轴动画系统
+function startTimelineAnimation() {
+    let startTime = null;
+    const animationDuration = 30000; // 30秒循环
+    let lastX = 0; // 记录上一次的位置
+    
+    function animateTimeline(currentTime) {
+        if (!startTime) {
+            startTime = currentTime;
+            if (timeline && timeline.triangle) {
+                lastX = 0; // 从最左边开始
+            }
+        }
+        
+        const elapsed = currentTime - startTime;
+        const totalProgress = (elapsed % animationDuration) / animationDuration;
+        
+        // 完全线性移动，不考虑年份刻度
+        if (timeline && timeline.triangle) {
+            const width = timeline.scale.range()[1] - timeline.scale.range()[0];
+            const currentX = timeline.scale.range()[0] + width * totalProgress;
+            
+            timeline.triangle
+                .attr('transform', `translate(${currentX}, -10) rotate(180)`);
+                
+            lastX = currentX;
+        }
+        
+        // 为了保持其他组件的更新，仍然需要计算一个年份
+        const startYear = years[0];
+        const endYear = years[years.length - 1];
+        currentExactYear = startYear + (endYear - startYear) * totalProgress;
+        
+        // 继续动画
+        if (isPlaying) {
+            timelineAnimationId = requestAnimationFrame(animateTimeline);
+        }
+    }
+    
+    timelineAnimationId = requestAnimationFrame(animateTimeline);
+}
+
 // Function to create timeline
 function createTimeline() {
-    const timelineWidth = 1000;  // 匹配地图宽度
-    const margin = { left: 100, right: 100, top: 40, bottom: 20 }; // 增加顶部边距
+    const timelineWidth = 1200;  // 增加时间轴宽度
+    const margin = { left: 100, right: 100, top: 40, bottom: 20 };
     const width = timelineWidth - margin.left - margin.right;
-    const height = 60;  // 时间轴高度
+    const height = 60;
 
     // Create SVG
     const svg = d3.select('#timeline')
         .append('svg')
         .attr('width', timelineWidth)
-        .attr('height', height + margin.top + margin.bottom)  // 增加SVG的总高度
-        .style('margin', '20px auto 0')  // 增加顶部外边距
-        .style('display', 'block');  // 块级元素
+        .attr('height', height + margin.top + margin.bottom)
+        .style('margin', '20px auto 0')
+        .style('display', 'block');
 
     const g = svg.append('g')
         .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
-    // Create scale
+    // Create scale (现在只用于绘制轴，不用于动画)
     const xScale = d3.scaleLinear()
         .domain([d3.min(years), d3.max(years)])
         .range([0, width]);
@@ -264,10 +310,11 @@ function createTimeline() {
         .style('font-family', 'Monda')
         .style('font-size', '12px');
 
+    // 创建指针，初始位置在最左边
     const triangle = g.append('path')
         .attr('d', d3.symbol().type(d3.symbolTriangle).size(100))
         .attr('fill', '#4CAF50')
-        .attr('transform', `translate(${xScale(years[currentFrame])}, -10) rotate(180)`);
+        .attr('transform', `translate(0, -10) rotate(180)`);
 
     timeline = {
         scale: xScale,
@@ -392,94 +439,81 @@ function createMap(data, year) {
     }
 }
 
-// Start the animation
+// 修改startAnimation函数
 function startAnimation() {
     isPlaying = true;
-    let startTime = null;
-    const animationDuration = 30000; // 30秒循环，与web_region_bubble保持一致
-    const frameInterval = 16; // 约60fps
+    let lastUpdateTime = 0;
+    const updateInterval = 50; // 每50ms更新一次地图和图表
     
     function animate(currentTime) {
-        if (!startTime) startTime = currentTime;
-        
-        const elapsed = currentTime - startTime;
-        const totalProgress = (elapsed % animationDuration) / animationDuration;
-        
-        // 计算精确的年份（包括小数）
-        const startYear = years[0];
-        const endYear = years[years.length - 1];
-        const exactYear = startYear + (endYear - startYear) * totalProgress;
-        
-        // 找到相邻的两个年份
-        const lowerIndex = Math.floor((years.length - 1) * totalProgress);
-        const upperIndex = Math.min(years.length - 1, lowerIndex + 1);
-        const lowerYear = years[lowerIndex];
-        const upperYear = years[upperIndex];
-        
-        // 计算两个年份之间的插值比例
-        const yearProgress = (exactYear - lowerYear) / (upperYear - lowerYear);
-        
-        // 获取相邻两年的数据
-        const lowerYearData = processedData.filter(d => d.frame === lowerYear.toString());
-        const upperYearData = processedData.filter(d => d.frame === upperYear.toString());
-        
-        // 创建插值后的数据
-        const interpolatedData = lowerYearData.map((lower, i) => {
-            const upper = upperYearData.find(u => u.text[0] === lower.text[0]) || lower;
+        if (currentTime - lastUpdateTime >= updateInterval) {
+            // 找到相邻的两个年份
+            const progress = (currentExactYear - years[0]) / (years[years.length - 1] - years[0]);
+            const lowerIndex = Math.floor((years.length - 1) * progress);
+            const upperIndex = Math.min(years.length - 1, lowerIndex + 1);
+            const lowerYear = years[lowerIndex];
+            const upperYear = years[upperIndex];
             
-            // 计算插值后的大小
-            const lowerValue = parseFloat(lower.customdata[0][0]);
-            const upperValue = parseFloat(upper.customdata[0][0]);
-            const interpolatedValue = lowerValue + (upperValue - lowerValue) * yearProgress;
+            // 计算两个年份之间的插值比例
+            const yearProgress = (currentExactYear - lowerYear) / (upperYear - lowerYear);
             
-            return {
-                type: 'scattergeo',
-                lon: lower.lon,
-                lat: lower.lat,
-                text: lower.text,
-                customdata: [[interpolatedValue.toFixed(1), Math.round(exactYear * 10) / 10]],
-                mode: 'markers',
-                marker: {
-                    size: scaleMarkerSize(interpolatedValue),
-                    color: lower.marker.color,
-                    line: {
-                        color: 'rgba(255, 255, 255, 0.1)',
-                        width: 0.2
+            // 获取相邻两年的数据
+            const lowerYearData = processedData.filter(d => d.frame === lowerYear.toString());
+            const upperYearData = processedData.filter(d => d.frame === upperYear.toString());
+            
+            // 创建插值后的数据
+            const interpolatedData = lowerYearData.map((lower, i) => {
+                const upper = upperYearData.find(u => u.text[0] === lower.text[0]) || lower;
+                
+                const lowerValue = parseFloat(lower.customdata[0][0]);
+                const upperValue = parseFloat(upper.customdata[0][0]);
+                const interpolatedValue = lowerValue + (upperValue - lowerValue) * yearProgress;
+                
+                return {
+                    type: 'scattergeo',
+                    lon: lower.lon,
+                    lat: lower.lat,
+                    text: lower.text,
+                    customdata: [[interpolatedValue.toFixed(1), Math.round(currentExactYear * 10) / 10]],
+                    mode: 'markers',
+                    marker: {
+                        size: scaleMarkerSize(interpolatedValue),
+                        color: lower.marker.color,
+                        line: {
+                            color: 'rgba(255, 255, 255, 0.1)',
+                            width: 0.2
+                        },
+                        sizemode: 'area',
+                        sizeref: 0.15,
+                        opacity: 0.9
                     },
-                    sizemode: 'area',
-                    sizeref: 0.15,
-                    opacity: 0.9
-                },
-                name: lower.name,
-                legendgroup: lower.legendgroup,
-                showlegend: lower.showlegend,
-                hovertemplate: lower.hovertemplate
-            };
-        });
+                    name: lower.name,
+                    legendgroup: lower.legendgroup,
+                    showlegend: lower.showlegend,
+                    hovertemplate: lower.hovertemplate
+                };
+            });
 
-        // 更新地图
-        Plotly.animate('map-container', {
-            data: interpolatedData,
-            traces: Array.from({ length: interpolatedData.length }, (_, i) => i)
-        }, {
-            transition: {
-                duration: 0
-            },
-            frame: {
-                duration: 0,
-                redraw: true
+            // 更新地图
+            Plotly.animate('map-container', {
+                data: interpolatedData,
+                traces: Array.from({ length: interpolatedData.length }, (_, i) => i)
+            }, {
+                transition: {
+                    duration: 0
+                },
+                frame: {
+                    duration: 0,
+                    redraw: true
+                }
+            });
+            
+            // 更新race chart（只在整年时更新）
+            if (Math.abs(currentExactYear - Math.round(currentExactYear)) < 0.05) {
+                updateRaceChart(originalData, Math.round(currentExactYear));
             }
-        });
-        
-        // 平滑更新时间轴
-        if (timeline && timeline.triangle) {
-            timeline.triangle
-                .attr('transform', `translate(${timeline.scale(exactYear)}, -10) rotate(180)`);
-        }
-        
-        // 更新race chart
-        if (Math.abs(exactYear - Math.round(exactYear)) < 0.05) {
-            updateRaceChart(originalData, Math.round(exactYear));
+            
+            lastUpdateTime = currentTime;
         }
         
         // 继续动画
@@ -487,6 +521,9 @@ function startAnimation() {
             requestAnimationFrame(animate);
         }
     }
+    
+    // 启动时间轴动画
+    startTimelineAnimation();
     
     // 初始化地图
     const initialData = processedData.filter(d => d.frame === years[0].toString());
@@ -497,6 +534,15 @@ function startAnimation() {
     }).then(() => {
         requestAnimationFrame(animate);
     });
+}
+
+// 修改停止动画的逻辑
+function stopAnimation() {
+    isPlaying = false;
+    if (timelineAnimationId) {
+        cancelAnimationFrame(timelineAnimationId);
+        timelineAnimationId = null;
+    }
 }
 
 // Update the map for a specific year
