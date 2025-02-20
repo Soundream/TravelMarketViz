@@ -30,7 +30,7 @@ function createRaceChart(data, year) {
         'Italy': 'Italy Icon.png',
         'Rest of Europe': 'Europe Icon.png',
         'India': 'India Icon.png',
-        'Scandinavia': 'Sweden Icon.png'
+        'Scandinavia': 'Sweden Flags.png'
     };
 
     // 添加国家代码映射
@@ -388,7 +388,21 @@ function updateRaceChart(data, year) {
                 },
                 text: interpolatedData.map(d => d.value.toFixed(1))
             }],
-            layout: updatedLayout
+            layout: {
+                ...updatedLayout,
+                images: interpolatedData.map((d, i) => ({
+                    source: flagMapping[d.originalMarket] ? 'flags/' + flagMapping[d.originalMarket] : null,
+                    xref: 'paper',
+                    yref: 'y',
+                    x: -0.15,
+                    y: i,
+                    sizex: 0.25,
+                    sizey: 1.2,
+                    xanchor: 'right',
+                    yanchor: 'middle',
+                    visible: flagMapping[d.originalMarket] ? true : false
+                }))
+            }
         });
     }
 
