@@ -237,7 +237,6 @@ function createTimeline() {
         .style('font-family', 'Monda')
         .style('font-size', '12px');
 
-    // Add triangle marker
     const triangle = g.append('path')
         .attr('d', d3.symbol().type(d3.symbolTriangle).size(100))
         .attr('fill', '#4CAF50')
@@ -258,6 +257,7 @@ function createTimeline() {
             updateVisualization(year);
         }
     });
+    
 }
 
 // Function to update timeline

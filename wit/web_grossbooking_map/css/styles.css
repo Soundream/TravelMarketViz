@@ -33,6 +33,7 @@ body {
 }
 
 .controls {
+    margin-top: 50px;
     margin-bottom: 40px;
     padding: 0 80px;
     background-color: transparent;

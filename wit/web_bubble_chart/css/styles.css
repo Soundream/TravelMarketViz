@@ -87,10 +87,11 @@ h1 {
 
 #race-chart {
     position: absolute;
-    top: 230px;
-    right: -10px;
-    width: 450px;
-    height: 300px;
+    top: 100px;
+    right: 0;
+    width: 40%;
+    height: calc(100% - 50px);
+    z-index: 1;
     background-color: white;
     padding: 0;
     margin: 0;

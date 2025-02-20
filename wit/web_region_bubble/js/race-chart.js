@@ -20,8 +20,16 @@ function createRaceChart(data, year) {
         texttemplate: '%{text:$.1f}B',
         textfont: {
             family: 'Monda',
-            size: 12
-        }
+            size: 14
+        },
+        cliponaxis: false,  // 防止文本被裁剪
+        textangle: 0,
+        outsidetextfont: {
+            family: 'Monda',
+            size: 14
+        },
+        offsetgroup: 1,
+        textoffset: 15
     };
 
     // 处理数据
@@ -54,9 +62,9 @@ function createRaceChart(data, year) {
                 text: 'Gross Bookings (USD bn)',
                 font: {
                     family: 'Monda',
-                    size: 12
+                    size: 14
                 },
-                standoff: 10  // 添加标签与轴的距离
+                standoff: 30  // 增加标题与轴的距离
             },
             showgrid: true,
             gridcolor: '#eee',
@@ -65,32 +73,34 @@ function createRaceChart(data, year) {
             zerolinecolor: '#eee',
             tickfont: {
                 family: 'Monda',
-                size: 10
+                size: 13
             },
-            range: [0, maxValue * 1.5],  // 增加范围到1.2倍最大值
-            fixedrange: true  // 固定范围，防止自动调整
+            range: [0, maxValue * 1.3],  // 增加范围给标签留出更多空间
+            fixedrange: true,
+            ticklen: 10,  // 增加刻度线长度
+            ticksuffix: '   '  // 在刻度标签后添加空格
         },
         yaxis: {
             showgrid: false,
             tickfont: {
                 family: 'Monda',
-                size: 10
+                size: 13
             },
-            fixedrange: true,  // 固定范围，防止自动调整
-            ticklabelposition: 'outside left'  // 调整y轴标签位置
+            fixedrange: true,
+            ticklabelposition: 'outside left'
         },
         margin: {
             l: 120,
-            r: 0,
-            t: -20,  // 使用负值来减少与上方地图的距离
-            b: 30
+            r: 100,  // 增加右边距
+            t: 20,   // 增加顶部边距
+            b: 60    // 增加底部边距
         },
-        height: 300,
+        height: 300,  // 恢复原有高度
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         showlegend: false,
         barmode: 'group',
-        bargap: 0.15,
+        bargap: 0.25,
         font: {
             family: 'Monda'
         }
@@ -125,9 +135,23 @@ function updateRaceChart(data, year) {
         y: [sortedData.map(d => d.region)],
         x: [sortedData.map(d => d.value)],
         'marker.color': [sortedData.map(d => d.color)],
-        text: [sortedData.map(d => d.value)]
+        text: [sortedData.map(d => d.value)],
+        texttemplate: ['%{text:$.1f}B'],
+        textposition: ['outside'],
+        textfont: [{
+            family: 'Monda',
+            size: 14
+        }],
+        cliponaxis: [false],
+        textangle: [0],
+        outsidetextfont: [{
+            family: 'Monda',
+            size: 14
+        }],
+        offsetgroup: [1],
+        textoffset: [15]
     };
 
-    // 使用Plotly.restyle而不是animate来更新数据
+    // 使用Plotly.restyle来更新数据
     Plotly.restyle('race-chart', updateData);
 } 
