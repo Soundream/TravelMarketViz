@@ -30,7 +30,7 @@ function createRaceChart(data, year) {
         'Italy': 'Italy Icon.png',
         'Rest of Europe': 'Europe Icon.png',
         'India': 'India Icon.png',
-        'Scandinavia': 'Sweden Flags.png'
+        'Scandinavia': 'Sweden Icon.png'
     };
 
     // 添加国家代码映射
@@ -229,9 +229,6 @@ function createRaceChart(data, year) {
 
 // 更新race chart的函数
 function updateRaceChart(data, year) {
-    console.clear(); // 清除之前的控制台输出
-    console.log(`\n====== Starting Race Chart Update for Year ${year} ======`);
-
     const flagMapping = {
         'Japan': 'Japan Icon.png',
         'China': 'China Icon.png',
@@ -285,29 +282,12 @@ function updateRaceChart(data, year) {
 
     const yearData = data.filter(d => d.Year === year);
     
-    // 输出数据处理信息
-    console.log(`\n1. Raw Data Analysis for ${year}:`);
-    console.log(`Total countries in data: ${yearData.length}`);
-    console.log('All countries:', yearData.map(d => d.Market).sort().join(', '));
-    
-    // 创建缺失国旗的列表
-    const missingFlags = [];
-    
     // 处理目标数据
     const targetData = yearData
         .map(d => {
             const market = d.Market;
             const bookings = parseFloat(d['Gross Bookings']) || 0;
             
-            // 收集缺失国旗的信息
-            if (!flagMapping[market]) {
-                missingFlags.push({
-                    market: market,
-                    region: d.Region,
-                    bookings: bookings * (appConfig.dataProcessing?.bookingsScaleFactor || 1e-9)
-                });
-            }
-
             return {
                 market: market,
                 originalMarket: market,
@@ -319,27 +299,18 @@ function updateRaceChart(data, year) {
         .sort((a, b) => b.value - a.value)
         .slice(0, 15);
 
-    // 输出缺失国旗的信息
-    if (missingFlags.length > 0) {
-        console.log('\n2. Missing Flags Report:');
-        missingFlags.forEach(item => {
-            console.log(`⚠️ ${item.market} (${item.region}) - ${item.bookings.toFixed(1)}B USD`);
-        });
-    } else {
-        console.log('\n2. Missing Flags Report: All countries have flags! ✅');
-    }
+    // 更新图表数据
+    const updatedData = [{
+        ...window.baseTrace,
+        y: targetData.map(d => d.market),
+        x: targetData.map(d => d.value),
+        marker: {
+            color: targetData.map(d => d.color)
+        },
+        text: targetData.map(d => d.value.toFixed(1))
+    }];
 
-    // 输出前15名国家
-    console.log('\n3. Top 15 Countries:');
-    targetData.forEach((d, i) => {
-        const hasFlag = flagMapping[d.market] ? '🏳️' : '❌';
-        console.log(`${i + 1}. ${hasFlag} ${d.market} (${d.region}) - ${d.value.toFixed(1)}B USD`);
-    });
-
-    // 获取当前数据
-    const currentData = window.currentRaceData || targetData;
-
-    // 更新布局中的图标位置
+    // 更新布局
     const updatedLayout = {
         ...window.raceChartLayout,
         yaxis: {
@@ -360,94 +331,9 @@ function updateRaceChart(data, year) {
         }))
     };
 
-    // 创建动画帧
-    console.log('\n4. Preparing Animation:');
-    const frameCount = 30;
-    console.log(`Creating ${frameCount} animation frames...`);
-    const frames = [];
-    
-    for (let i = 0; i <= frameCount; i++) {
-        const progress = i / frameCount;
-        
-        const interpolatedData = targetData.map(target => {
-            const current = currentData.find(c => c.originalMarket === target.originalMarket) || target;
-            const value = current.value + (target.value - current.value) * progress;
-            return {
-                ...target,
-                value: value
-            };
-        }).sort((a, b) => b.value - a.value);
-
-        frames.push({
-            data: [{
-                ...window.baseTrace,
-                y: interpolatedData.map(d => d.market),
-                x: interpolatedData.map(d => d.value),
-                marker: {
-                    color: interpolatedData.map(d => d.color)
-                },
-                text: interpolatedData.map(d => d.value.toFixed(1))
-            }],
-            layout: {
-                ...updatedLayout,
-                images: interpolatedData.map((d, i) => ({
-                    source: flagMapping[d.originalMarket] ? 'flags/' + flagMapping[d.originalMarket] : null,
-                    xref: 'paper',
-                    yref: 'y',
-                    x: -0.15,
-                    y: i,
-                    sizex: 0.25,
-                    sizey: 1.2,
-                    xanchor: 'right',
-                    yanchor: 'middle',
-                    visible: flagMapping[d.originalMarket] ? true : false
-                }))
-            }
-        });
-    }
-
-    // 执行动画
-    console.log('\n5. Attempting Animation:');
-    try {
-        if (!window.baseTrace) {
-            console.error('baseTrace is undefined! This might cause animation errors.');
-            return; // 如果缺少必要数据，提前返回
-        }
-        if (!window.raceChartLayout) {
-            console.error('raceChartLayout is undefined! This might cause animation errors.');
-            return; // 如果缺少必要数据，提前返回
-        }
-
-        Plotly.animate('race-chart', frames, {
-            transition: {
-                duration: 800 / frameCount,
-                easing: 'linear'
-            },
-            frame: {
-                duration: 800 / frameCount,
-                redraw: false
-            },
-            mode: 'immediate'
-        }).then(() => {
-            console.log('Animation completed successfully! ✅');
-        }).catch(error => {
-            console.error('Animation error details:', error);
-            console.error('Error type:', typeof error);
-            console.error('Error properties:', Object.keys(error || {}));
-            if (error && error.stack) {
-                console.error('Error stack:', error.stack);
-            }
-        });
-    } catch (error) {
-        console.error('Animation execution error details:', error);
-        console.error('Error type:', typeof error);
-        console.error('Error properties:', Object.keys(error || {}));
-        if (error && error.stack) {
-            console.error('Error stack:', error.stack);
-        }
-    }
+    // 直接更新图表
+    Plotly.react('race-chart', updatedData, updatedLayout);
 
     // 更新当前数据
     window.currentRaceData = targetData;
-    console.log('\n====== Race Chart Update Completed ======\n');
 } 

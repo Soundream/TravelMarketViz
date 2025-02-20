@@ -229,17 +229,20 @@ function scaleMarkerSize(value) {
 // Function to create timeline
 function createTimeline() {
     const timelineWidth = 1000;  // 匹配地图宽度
-    const margin = { left: 80, right: 80, top: 20 }; // 增加顶部边距
+    const margin = { left: 100, right: 100, top: 20, bottom: 20 }; // 调整边距
     const width = timelineWidth - margin.left - margin.right;
+    const height = 60;  // 减小高度
 
     // Create SVG
     const svg = d3.select('#timeline')
         .append('svg')
         .attr('width', timelineWidth)
-        .attr('height', 80);  // 增加高度
+        .attr('height', height)
+        .style('margin', '0 auto')  // 居中显示
+        .style('display', 'block');  // 块级元素
 
     const g = svg.append('g')
-        .attr('transform', `translate(${margin.left}, ${margin.top + 30})`);
+        .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
     // Create scale
     const xScale = d3.scaleLinear()
@@ -281,7 +284,6 @@ function createTimeline() {
             updateVisualization(year);
         }
     });
-    
 }
 
 // Function to update timeline
@@ -394,7 +396,7 @@ function createMap(data, year) {
 function startAnimation() {
     isPlaying = true;
     let startTime = null;
-    const animationDuration = 20000; // 20秒循环
+    const animationDuration = 30000; // 30秒循环，与web_region_bubble保持一致
     const frameInterval = 16; // 约60fps
     
     function animate(currentTime) {
