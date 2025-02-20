@@ -5,19 +5,16 @@ function createRaceChart(data, year) {
         return bookings * (appConfig.dataProcessing?.bookingsScaleFactor || 1e-9);
     }));
 
+    // 保存全局最大值供后续使用
+    window.globalMaxValue = maxValue;
+
     // 按国家分组并计算总预订量
     const yearData = data.filter(d => d.Year === year);
 
     // 创建条形图数据
-    const barData = {
+    const baseTrace = {
         type: 'bar',
-        x: [],
-        y: [],
         orientation: 'h',
-        marker: {
-            color: [],
-        },
-        text: [],
         textposition: 'outside',
         hoverinfo: 'text',
         texttemplate: '%{text:$.1f}B',
@@ -33,7 +30,7 @@ function createRaceChart(data, year) {
         },
         offsetgroup: 1,
         textoffset: 12,
-        width: Array(15).fill(0.35) // 减小柱子高度
+        width: Array(15).fill(0.25)
     };
 
     // 处理数据
@@ -49,14 +46,19 @@ function createRaceChart(data, year) {
                 region: d.Region
             };
         })
-        .sort((a, b) => b.value - a.value) // 降序排序
-        .slice(0, 15); // 只取前15个国家
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 15);
 
     // 填充图表数据
-    barData.y = sortedData.map(d => d.market);
-    barData.x = sortedData.map(d => d.value);
-    barData.marker.color = sortedData.map(d => d.color);
-    barData.text = sortedData.map(d => d.value);
+    const barData = {
+        ...baseTrace,
+        y: sortedData.map(d => d.market),
+        x: sortedData.map(d => d.value),
+        marker: {
+            color: sortedData.map(d => d.color)
+        },
+        text: sortedData.map(d => d.value)
+    };
 
     // 创建布局
     const layout = {
@@ -134,8 +136,10 @@ function createRaceChart(data, year) {
     // 渲染图表
     Plotly.newPlot('race-chart', [barData], layout, config);
 
-    // 保存当前数据用于插值
+    // 保存当前数据和布局用于插值
     window.currentRaceData = sortedData;
+    window.raceChartLayout = layout;
+    window.baseTrace = baseTrace;
 }
 
 // 更新race chart的函数
@@ -160,15 +164,9 @@ function updateRaceChart(data, year) {
 
     // 获取当前数据
     const currentData = window.currentRaceData || targetData;
-    
-    // 更新布局
-    Plotly.relayout('race-chart', {
-        bargap: 0.05,
-        bargroupgap: 0.01
-    });
 
     // 创建动画帧
-    const frameCount = 60;
+    const frameCount = 30;
     const frames = [];
     
     for (let i = 0; i <= frameCount; i++) {
@@ -185,25 +183,26 @@ function updateRaceChart(data, year) {
 
         frames.push({
             data: [{
+                ...window.baseTrace,
                 y: interpolatedData.map(d => d.market),
                 x: interpolatedData.map(d => d.value),
                 marker: {
                     color: interpolatedData.map(d => d.color)
                 },
-                text: interpolatedData.map(d => d.value.toFixed(1)),
-                width: Array(15).fill(0.25)  // 进一步减小柱子高度
-            }]
+                text: interpolatedData.map(d => d.value.toFixed(1))
+            }],
+            layout: window.raceChartLayout
         });
     }
 
     // 执行动画
     Plotly.animate('race-chart', frames, {
         transition: {
-            duration: 1000 / frameCount,
-            easing: 'cubic-in-out'
+            duration: 800 / frameCount,
+            easing: 'linear'
         },
         frame: {
-            duration: 1000 / frameCount,
+            duration: 800 / frameCount,
             redraw: false
         },
         mode: 'immediate'
