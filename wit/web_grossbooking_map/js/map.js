@@ -59,7 +59,7 @@ async function init() {
         container.style.padding = '0 20px';  // 左右padding
 
         container.innerHTML = `
-            <div>Source: Phocuswright, Travel Market Gross Bookings by Region</div>
+            <div>Source: Phocuswright</div>
             <div style="margin-top: 5px">Note: Rest of Europe uses EU flag, Scandinavia uses Sweden flag</div>
         `;
 
@@ -229,16 +229,16 @@ function scaleMarkerSize(value) {
 // Function to create timeline
 function createTimeline() {
     const timelineWidth = 1000;  // 匹配地图宽度
-    const margin = { left: 100, right: 100, top: 20, bottom: 20 }; // 调整边距
+    const margin = { left: 100, right: 100, top: 40, bottom: 20 }; // 增加顶部边距
     const width = timelineWidth - margin.left - margin.right;
-    const height = 60;  // 减小高度
+    const height = 60;  // 时间轴高度
 
     // Create SVG
     const svg = d3.select('#timeline')
         .append('svg')
         .attr('width', timelineWidth)
-        .attr('height', height)
-        .style('margin', '0 auto')  // 居中显示
+        .attr('height', height + margin.top + margin.bottom)  // 增加SVG的总高度
+        .style('margin', '20px auto 0')  // 增加顶部外边距
         .style('display', 'block');  // 块级元素
 
     const g = svg.append('g')

@@ -176,6 +176,7 @@ function createRaceChart(data, year) {
             tickmode: 'array',
             tickvals: Array.from({length: sortedData.length}, (_, i) => i),
             ticklabelposition: 'inside',
+            autorange: 'reversed'
         },
         images: sortedData.map((d, i) => ({
             source: flagMapping[d.originalMarket] ? 'flags/' + flagMapping[d.originalMarket] : null,
@@ -315,7 +316,8 @@ function updateRaceChart(data, year) {
         ...window.raceChartLayout,
         yaxis: {
             ...window.raceChartLayout.yaxis,
-            ticktext: targetData.map(d => flagMapping[d.originalMarket] ? '' : (countryCodeMapping[d.originalMarket] || d.originalMarket))
+            ticktext: targetData.map(d => flagMapping[d.originalMarket] ? '' : (countryCodeMapping[d.originalMarket] || d.originalMarket)),
+            autorange: 'reversed'
         },
         images: targetData.map((d, i) => ({
             source: flagMapping[d.originalMarket] ? 'flags/' + flagMapping[d.originalMarket] : null,
