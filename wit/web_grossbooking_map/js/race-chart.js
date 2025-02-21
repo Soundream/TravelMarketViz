@@ -80,7 +80,7 @@ function createRaceChart(data, year) {
         orientation: 'h',
         textposition: 'outside',
         hoverinfo: 'text',
-        texttemplate: '%{x:.1f}B',
+        texttemplate: '%{text}B',
         textfont: {
             family: 'Monda',
             size: 11,
@@ -272,96 +272,54 @@ function createRaceChart(data, year) {
 
 // 更新race chart的函数
 function updateRaceChart(data, year) {
-    const flagMapping = {
-        'Japan': 'Japan Icon.png',
-        'China': 'China Icon.png',
-        'Russia': 'Russia Icon.png',
-        'Hong Kong': 'Hong Kong Icon.png',
-        'U.K.': 'UK Icon.png',
-        'Chile': 'Chile Icon.png',
-        'U.S.': 'USA Icon.png',
-        'Brazil': 'Brazil Icon.png',
-        'Colombia': 'Colombia Icon.png',
-        'Spain': 'Spain Icon.png',
-        'Mexico': 'Mexico Icon.png',
-        'Canada': 'Canada Icon.png',
-        'U.A.E.': 'UAE Icon.png',
-        'Australia-New Zealand': 'Australia Icon.png',
-        'France': 'France Icon.png',
-        'Germany': 'Germany Icon.png',
-        'Italy': 'Italy Icon.png',
-        'Rest of Europe': 'Europe Icon.png',
-        'India': 'India Icon.png',
-        'Scandinavia': 'Sweden Icon.png'
-    };
-
-    const countryCodeMapping = {
-        'Japan': 'JPN',
-        'China': 'CHN',
-        'Russia': 'RUS',
-        'Hong Kong': 'HKG',
-        'U.K.': 'GBR',
-        'Chile': 'CHL',
-        'U.S.': 'USA',
-        'Brazil': 'BRA',
-        'Colombia': 'COL',
-        'Spain': 'ESP',
-        'Mexico': 'MEX',
-        'Canada': 'CAN',
-        'U.A.E.': 'UAE',
-        'Australia-New Zealand': 'AUS',
-        'India': 'IND',
-        'Singapore': 'SGP',
-        'Indonesia': 'IDN',
-        'Malaysia': 'MYS',
-        'Thailand': 'THA',
-        'Taiwan': 'TWN',
-        'France': 'FRA',
-        'Germany': 'DEU',
-        'Italy': 'ITA',
-        'South Korea': 'KOR',
-        'Rest of Europe': 'EUR'
-    };
-
     const yearData = data.filter(d => d.Year === year);
     
-    // 处理目标数据
-    const targetData = yearData
-        .map(d => {
-            const market = d.Market;
-            const bookings = parseFloat(d['Gross Bookings']) || 0;
-            const penetration = parseFloat(d['Online Penetration']) || 0;
-            
-            return {
-                market: market,
-                originalMarket: market,
-                value: bookings * (appConfig.dataProcessing?.bookingsScaleFactor || 1e-9),
-                penetration: penetration,
-                color: (appConfig.colorDict?.[market] || appConfig.regionColors?.[d.Region] || '#999999'),
-                region: d.Region
-            };
-        })
+    // 处理数据
+    const sortedData = yearData
+        .map(d => ({
+            market: d.Market,
+            originalMarket: d.Market,
+            value: d['Gross Bookings'] * (appConfig.dataProcessing?.bookingsScaleFactor || 1e-9),
+            penetration: parseFloat(d['Online Penetration']) || 0,
+            color: (appConfig.colorDict?.[d.Market] || appConfig.regionColors?.[d.Region] || '#999999'),
+            region: d.Region
+        }))
         .sort((a, b) => b.value - a.value)
         .slice(0, 15);
 
     // 更新图表数据
     const updatedData = [{
         ...window.baseTrace,
-        y: targetData.map(d => d.market),
-        x: targetData.map(d => d.value),
+        y: sortedData.map(d => d.market),
+        x: sortedData.map(d => d.value),
         marker: {
-            color: targetData.map(d => d.color)
+            color: sortedData.map(d => d.color)
         },
-        text: targetData.map(d => d.value.toFixed(1)),
+        text: sortedData.map(d => d.value.toFixed(1)),
         textposition: 'outside',
-        hovertemplate: '%{y}<br>Gross Bookings: $%{x:.1f}B<extra></extra>'
+        texttemplate: '%{text}B',
+        textfont: {
+            family: 'Monda',
+            size: 11,
+            color: '#333'
+        },
+        cliponaxis: false,
+        textangle: 0,
+        outsidetextfont: {
+            family: 'Monda',
+            size: 11,
+            color: '#333'
+        },
+        offsetgroup: 1,
+        width: 0.6,
+        constraintext: false
     },
     {
         type: 'scatter',
         mode: 'text',
-        x: Array(targetData.length).fill(-0.5),
-        y: targetData.map(d => d.market),
-        text: targetData.map(d => `${(d.penetration * 100).toFixed(1)}%`),
+        x: Array(sortedData.length).fill(-0.5),
+        y: sortedData.map(d => d.market),
+        text: sortedData.map(d => `${(d.penetration * 100).toFixed(1)}%`),
         textposition: 'middle left',
         textfont: {
             family: 'Monda',
@@ -372,31 +330,9 @@ function updateRaceChart(data, year) {
         showlegend: false
     }];
 
-    // 更新布局
-    const updatedLayout = {
-        ...window.raceChartLayout,
-        yaxis: {
-            ...window.raceChartLayout.yaxis,
-            ticktext: targetData.map(d => flagMapping[d.originalMarket] ? '' : (countryCodeMapping[d.originalMarket] || d.originalMarket)),
-            autorange: 'reversed'
-        },
-        images: targetData.map((d, i) => ({
-            source: flagMapping[d.originalMarket] ? 'flags/' + flagMapping[d.originalMarket] : null,
-            xref: 'paper',
-            yref: 'y',
-            x: -0.15,
-            y: i,
-            sizex: 0.25,
-            sizey: 1.2,
-            xanchor: 'right',
-            yanchor: 'middle',
-            visible: flagMapping[d.originalMarket] ? true : false
-        }))
-    };
-
-    // 直接更新图表
-    Plotly.react('race-chart', updatedData, updatedLayout);
+    // 使用 Plotly.react 来更新图表
+    Plotly.react('race-chart', updatedData, window.raceChartLayout);
 
     // 更新当前数据
-    window.currentRaceData = targetData;
+    window.currentRaceData = sortedData;
 } 
