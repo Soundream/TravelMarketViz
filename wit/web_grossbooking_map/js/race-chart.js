@@ -80,17 +80,22 @@ function createRaceChart(data, year) {
         orientation: 'h',
         textposition: 'outside',
         hoverinfo: 'text',
-        texttemplate: '%{text:$.1f}B',
+        texttemplate: '%{x:.1f}B',
         textfont: {
             family: 'Monda',
-            size: 11
+            size: 11,
+            color: '#333'
         },
-        cliponaxis: true,
+        cliponaxis: false,
         textangle: 0,
         offsetgroup: 1,
         width: 0.6,
-        textposition: 'auto',
-        constraintext: 'both'
+        constraintext: false,
+        outsidetextfont: {
+            family: 'Monda',
+            size: 11,
+            color: '#333'
+        }
     };
 
     // 处理数据
@@ -98,6 +103,7 @@ function createRaceChart(data, year) {
         .map(d => {
             const market = d.Market;
             const bookings = parseFloat(d['Gross Bookings']) || 0;
+            const penetration = parseFloat(d['Online Penetration']) || 0;
             
             // 检查并输出没有国旗的国家
             if (!flagMapping[market]) {
@@ -108,6 +114,7 @@ function createRaceChart(data, year) {
                 market: market,
                 originalMarket: market,
                 value: bookings * (appConfig.dataProcessing?.bookingsScaleFactor || 1e-9),
+                penetration: penetration,
                 color: (appConfig.colorDict?.[market] || appConfig.regionColors?.[d.Region] || '#999999'),
                 region: d.Region
             };
@@ -123,13 +130,32 @@ function createRaceChart(data, year) {
         marker: {
             color: sortedData.map(d => d.color)
         },
-        text: sortedData.map(d => d.value)
+        text: sortedData.map(d => d.value.toFixed(1)),
+        textposition: 'outside',
+        hovertemplate: '%{y}<br>Gross Bookings: $%{x:.1f}B<extra></extra>'
+    };
+
+    // 添加在线渗透率数据
+    const penetrationData = {
+        type: 'scatter',
+        mode: 'text',
+        x: Array(sortedData.length).fill(-0.5),  // 放在条形图左侧
+        y: sortedData.map(d => d.market),
+        text: sortedData.map(d => `${(d.penetration * 100).toFixed(1)}%`),
+        textposition: 'middle left',
+        textfont: {
+            family: 'Monda',
+            size: 11,
+            color: '#666'
+        },
+        hoverinfo: 'none',
+        showlegend: false
     };
 
     // 创建布局
     const layout = {
-        width: 450,  // 增加宽度
-        height: 400,  // 固定高度
+        width: 450,
+        height: 400,
         title: {
             text: '',
             font: {
@@ -155,11 +181,12 @@ function createRaceChart(data, year) {
                 family: 'Monda',
                 size: 11
             },
-            range: [0, maxValue * 1.2],
+            range: [-1, maxValue * 1.4],  // 增加空间以显示数值
             fixedrange: true,
             ticklen: 6,
             ticksuffix: ' ',
-            automargin: true
+            automargin: true,
+            layer: 'below traces'  // 确保轴线在数据下方
         },
         yaxis: {
             showgrid: false,
@@ -176,7 +203,8 @@ function createRaceChart(data, year) {
             tickmode: 'array',
             tickvals: Array.from({length: sortedData.length}, (_, i) => i),
             ticklabelposition: 'inside',
-            autorange: 'reversed'
+            autorange: 'reversed',
+            layer: 'below traces'  // 确保轴线在数据下方
         },
         images: sortedData.map((d, i) => ({
             source: flagMapping[d.originalMarket] ? 'flags/' + flagMapping[d.originalMarket] : null,
@@ -191,11 +219,11 @@ function createRaceChart(data, year) {
             visible: flagMapping[d.originalMarket] ? true : false
         })),
         margin: {
-            l: 120,  // 增加左边距以容纳国旗
-            r: 100,
+            l: 150,
+            r: 150,  // 增加右边距以确保数值标签显示
             t: 40,
             b: 50,
-            autoexpand: false  // 禁用自动扩展
+            autoexpand: false
         },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
@@ -206,9 +234,23 @@ function createRaceChart(data, year) {
         font: {
             family: 'Monda'
         },
+        annotations: [{
+            x: -0.5,
+            y: 1.1,
+            xref: 'paper',
+            yref: 'paper',
+            text: 'Online<br>Penetration',
+            showarrow: false,
+            font: {
+                family: 'Monda',
+                size: 11,
+                color: '#666'
+            },
+            align: 'center'
+        }],
         uniformtext: {
-            mode: 'hide',
-            minsize: 10
+            mode: 'show',
+            minsize: 8
         }
     };
 
@@ -220,7 +262,7 @@ function createRaceChart(data, year) {
     };
 
     // 渲染图表
-    Plotly.newPlot('race-chart', [barData], layout, config);
+    Plotly.newPlot('race-chart', [barData, penetrationData], layout, config);
 
     // 保存当前数据和布局用于插值
     window.currentRaceData = sortedData;
@@ -288,11 +330,13 @@ function updateRaceChart(data, year) {
         .map(d => {
             const market = d.Market;
             const bookings = parseFloat(d['Gross Bookings']) || 0;
+            const penetration = parseFloat(d['Online Penetration']) || 0;
             
             return {
                 market: market,
                 originalMarket: market,
                 value: bookings * (appConfig.dataProcessing?.bookingsScaleFactor || 1e-9),
+                penetration: penetration,
                 color: (appConfig.colorDict?.[market] || appConfig.regionColors?.[d.Region] || '#999999'),
                 region: d.Region
             };
@@ -308,7 +352,24 @@ function updateRaceChart(data, year) {
         marker: {
             color: targetData.map(d => d.color)
         },
-        text: targetData.map(d => d.value.toFixed(1))
+        text: targetData.map(d => d.value.toFixed(1)),
+        textposition: 'outside',
+        hovertemplate: '%{y}<br>Gross Bookings: $%{x:.1f}B<extra></extra>'
+    },
+    {
+        type: 'scatter',
+        mode: 'text',
+        x: Array(targetData.length).fill(-0.5),
+        y: targetData.map(d => d.market),
+        text: targetData.map(d => `${(d.penetration * 100).toFixed(1)}%`),
+        textposition: 'middle left',
+        textfont: {
+            family: 'Monda',
+            size: 11,
+            color: '#666'
+        },
+        hoverinfo: 'none',
+        showlegend: false
     }];
 
     // 更新布局

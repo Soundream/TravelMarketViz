@@ -11,6 +11,41 @@ let currentTraces;
 let layout;
 let config;
 
+// Function to load image and convert to base64
+async function loadBackgroundImage() {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const base64String = canvas.toDataURL();
+            layout.images = [{
+                source: base64String,
+                xref: "paper",
+                yref: "paper",
+                x: 0,
+                y: 1,
+                sizex: 1,
+                sizey: 1,
+                sizing: "stretch",
+                opacity: 0.15,
+                layer: "below"
+            }];
+            console.log("Background image loaded successfully!");
+            resolve();
+        };
+        img.onerror = function(error) {
+            console.error('Error loading image:', error);
+            reject(error); // Changed to reject on error
+        };
+        img.src = '../../assets/mascot.png'; // Fixed path to point to correct location
+    });
+}
+
 // Add getEraText function at the top level
 function getEraText(year) {
     const yearNum = parseInt(year);
@@ -562,10 +597,13 @@ async function init() {
         years = [...new Set(processedData.map(d => d.Year))].sort();
         currentYearIndex = years.indexOf(appConfig.chart.defaultYear);
         
-        // 创建时间轴
+        // Load background image
+        await loadBackgroundImage();
+        
+        // Create timeline
         createTimeline();
         
-        // 先创建初始图表数据
+        // Create initial chart
         createBubbleChart(processedData, years[currentYearIndex]);
 
         // 清空并重新创建地图图例

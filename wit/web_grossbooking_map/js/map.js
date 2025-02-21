@@ -357,6 +357,19 @@ const layout = {
     paper_bgcolor: 'rgba(0,0,0,0)',
     plot_bgcolor: 'rgba(0,0,0,0)',
     showlegend: true,
+    images: [{
+        source: '../assets/mascot.png',
+        xref: 'paper',
+        yref: 'paper',
+        x: 0.5,
+        y: 0.5,
+        sizex: 0.8,
+        sizey: 0.8,
+        xanchor: 'center',
+        yanchor: 'middle',
+        layer: 'below',
+        opacity: 0.2
+    }],
     geo: {
         scope: 'world',
         projection: {
