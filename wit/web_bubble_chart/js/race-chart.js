@@ -20,16 +20,16 @@ function createRaceChart(data, year) {
         texttemplate: '%{text:$.1f}B',
         textfont: {
             family: 'Monda',
-            size: 14
+            size: 32
         },
         cliponaxis: false,  // 防止文本被裁剪
         textangle: 0,
         textfont: {
             family: 'Monda',
-            size: 13
+            size: 32
         },
         
-        textoffset: 15  // 增加文本偏移量
+        textoffset: 25  // 增加文本偏移量
     };
 
     // 处理数据
