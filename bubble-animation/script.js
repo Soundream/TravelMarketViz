@@ -214,7 +214,7 @@ function processData(csvText) {
                 maxRevenue = Math.max(maxRevenue, revenue);
 
                 processedData.push({
-                    quarter,
+                quarter,
                     company,
                     revenueGrowth: revenueGrowth,
                     ebitdaMargin: ebitdaMargin,
@@ -591,165 +591,142 @@ function updateBubbleChart(quarter, sheetData) {
         }, animation);
     } else {
         // Initial render without animation
-        Plotly.react('bubble-chart', bubbleData, layout, {responsive: true});
+    Plotly.react('bubble-chart', bubbleData, layout, {responsive: true});
     }
 }
 
 function updateBarChart(quarter, sheetData) {
-    const fixedBarHeight = 30; // Fixed height for each bar
-    const barPadding = 10; // Padding between bars
-    const maxChartHeight = 600; // Optional: Maximum height before enabling scroll
-    const margin = { top: 30, right: 50, bottom: 50, left: 50 };
+    const margin = { 
+        l: 120,  // 左边距用于公司名称
+        r: 120,  // 右边距用于数值标签
+        t: 40,
+        b: 50,
+        autoexpand: false
+    };
+    const width = 450;
+    const height = 400;
 
+    // Filter and sort data in ascending order
     const quarterData = sheetData
         .filter(d => d.quarter === quarter && selectedCompanies.includes(d.company))
-        .sort((a, b) => b.revenue - a.revenue);
+        .sort((a, b) => b.revenue - a.revenue)  // 保持升序排列
+        .slice(0, 15);
 
-    const numberOfCompanies = quarterData.length;
-    const calculatedHeight = margin.top + margin.bottom + numberOfCompanies * (fixedBarHeight + barPadding);
-    const chartHeight = Math.min(calculatedHeight, maxChartHeight);
-    const isScrollable = calculatedHeight > maxChartHeight;
-
-    const chartContainer = d3.select("#bar-chart");
-    chartContainer
-        .style("height", `${chartHeight}px`)
-        .style("overflow-y", isScrollable ? "auto" : "hidden");
-
-    let svg = chartContainer.select("svg");
-    if (svg.empty()) {
-        const width = chartContainer.node().clientWidth;
-
-        svg = chartContainer.append("svg")
-            .attr("width", width)
-            .attr("height", calculatedHeight); 
-
-        svg.append("g").attr("class", "y-axis");
-        svg.append("g").attr("class", "bar-labels");
-
-        // Add title to the bar chart
-        svg.append("text")
-            .attr("x", width / 2)
-            .attr("y", margin.top / 2)
-            .attr("text-anchor", "middle")
-            .attr("class", "chart-title")
-            .style("font-size", "16px")
-            .text(`Revenue for ${quarter}`);  // Dynamic title with the selected quarter
-
-        window.addEventListener('resize', () => {
-            const newWidth = chartContainer.node().clientWidth;
-            svg.attr("width", newWidth);
-            x.range([margin.left, newWidth - margin.right]);
-
-            svg.select(".x-axis")
-                .attr("transform", `translate(0,${chartHeight - margin.bottom})`)
-                .call(d3.axisBottom(x).ticks(5).tickFormat(d3.format("$.2s")));
-
-            svg.selectAll(".bar")
-                .attr("width", d => x(d.revenue) - x(0));
-            svg.selectAll(".bar-label")
-                .attr("x", d => x(d.revenue) + 5);
-
-            // Reposition title on resize
-            svg.select(".chart-title")
-                .attr("x", newWidth / 2);
-        });
-    } else {
-        svg.attr("height", calculatedHeight);
-        svg.select(".chart-title").text(`Revenue for ${quarter}`);
+    if (quarterData.length === 0) {
+        Plotly.purge('bar-chart');
+        return;
     }
 
-    const width = parseInt(svg.attr("width"));
-    const height = parseInt(svg.attr("height"));
+    // Prepare the bar chart data
+    const barData = {
+        type: 'bar',
+        x: quarterData.map(d => d.revenue),
+        y: quarterData.map(d => d.company),
+        orientation: 'h',
+        marker: {
+            color: quarterData.map(d => color_dict[d.company] || '#999999')
+        },
+        text: quarterData.map(d => d3.format("$,.1f")(d.revenue) + "M"),
+        textposition: 'outside',
+        hoverinfo: 'text',
+        textfont: {
+            family: 'Monda',
+            size: 11,
+            color: '#333'
+        },
+        cliponaxis: false,
+        textangle: 0,
+        offsetgroup: 1,
+        width: 0.6,  // 条形宽度
+        constraintext: 'none'
+    };
 
-    const x = d3.scaleLinear()
-        .domain([0, maxRevenueValue])
-        .range([margin.left, width - margin.right]);
+    // Create layout
+    const layout = {
+        width: width,
+        height: height,
+        xaxis: {
+            title: {
+                text: 'Revenue (USD M)',
+                font: {
+                    family: 'Monda',
+                    size: 12
+                },
+                standoff: 20
+            },
+            showgrid: true,
+            gridcolor: '#eee',
+            gridwidth: 1,
+            zeroline: true,
+            zerolinecolor: '#eee',
+            tickfont: {
+                family: 'Monda',
+                size: 11
+            },
+            range: [0, maxRevenueValue * 1.3],
+            fixedrange: true,
+            ticklen: 6,
+            ticksuffix: '   ',
+            automargin: true
+        },
+        yaxis: {
+            showgrid: false,
+            tickfont: {
+                family: 'Monda',
+                size: 11
+            },
+            fixedrange: true,
+            ticklabelposition: 'outside left',  // 将标签放在左侧
+            automargin: true,
+            range: [14.5, -0.5],  // 反转y轴范围，使较大的值显示在顶部
+            dtick: 1,
+            side: 'left',  // 确保标签在左侧
+            autorange: false  // 禁用自动范围以保持顺序
+        },
+        margin: margin,
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        showlegend: false,
+        barmode: 'group',
+        bargap: 0.15,  // 调整条形间距
+        bargroupgap: 0.1,
+        font: {
+            family: 'Monda'
+        },
+        uniformtext: {
+            mode: 'show',
+            minsize: 10
+        }
+    };
 
-    const y = d3.scaleBand()
-        .domain(quarterData.map(d => d.company))
-        .range([margin.top, margin.top + numberOfCompanies * (fixedBarHeight + barPadding)])
-        .padding(0.1);
+    // Configuration
+    const config = {
+        displayModeBar: false,
+        responsive: true,
+        staticPlot: false
+    };
 
-    svg.select(".x-axis")
-        .attr("transform", `translate(0,${height - margin.bottom})`)
-        .transition()
-        .duration(500)
-        .call(d3.axisBottom(x).ticks(5).tickFormat(d3.format("$.2s")));
-
-    svg.select(".y-axis")
-        .attr("transform", `translate(${margin.left},0)`)
-        .transition()
-        .duration(500)
-        .call(d3.axisLeft(y));
-
-    const bars = svg.selectAll(".bar")
-        .data(quarterData, d => d.company);
-
-    bars.transition()
-        .duration(500)
-        .attr("x", x(0))
-        .attr("y", d => y(d.company))
-        .attr("height", y.bandwidth())
-        .attr("width", d => x(d.revenue) - x(0))
-        .style("fill", d => color_dict[d.company] || '#2E86C1');
-
-    bars.enter().append("rect")
-        .attr("class", "bar")
-        .attr("x", x(0))
-        .attr("y", d => y(d.company))
-        .attr("height", y.bandwidth())
-        .attr("width", d => x(d.revenue) - x(0))
-        .style("fill", d => color_dict[d.company] || '#2E86C1')
-        .on("mouseover", function(event, d) {
-            d3.select(this).style("fill", d3.rgb(color_dict[d.company] || '#2E86C1').darker(1));
-            showTooltip(event, `${d.company}<br>Revenue: $${d3.format(",")(d.revenue)}M`);
-        })
-        .on("mousemove", function(event) {
-            moveTooltip(event);
-        })
-        .on("mouseout", function(event, d) {
-            d3.select(this).style("fill", color_dict[d.company] || '#2E86C1');
-            hideTooltip();
+    // Check if the chart exists
+    const chartDiv = document.getElementById('bar-chart');
+    if (chartDiv.data && chartDiv.data.length > 0) {
+        // Update with animation
+        Plotly.animate('bar-chart', {
+            data: [barData],
+            layout: layout
+        }, {
+            transition: {
+                duration: 500,
+                easing: 'cubic-in-out'
+            },
+            frame: {
+                duration: 500,
+                redraw: true
+            }
         });
-
-    bars.exit()
-        .transition()
-        .duration(500)
-        .attr("width", 0)
-        .remove();
-
-    const labels = svg.selectAll(".bar-label")
-        .data(quarterData, d => d.company);
-
-    labels.exit()
-        .transition()
-        .duration(500)
-        .attr("x", x(0))
-        .remove();
-
-    labels.transition()
-        .duration(500)
-        .attr("x", d => x(d.revenue) + 5)
-        .attr("y", d => y(d.company) + y.bandwidth() / 2)
-        .text(d => d3.format("$.2s")(d.revenue));
-
-    labels.enter().append("text")
-        .attr("class", "bar-label")
-        .attr("x", d => x(d.revenue) + 5)
-        .attr("y", d => y(d.company) + y.bandwidth() / 2)
-        .attr("dy", ".35em")
-        .attr("font-size", "12px")
-        .attr("fill", "black")
-        .text(d => d3.format("$.2s")(d.revenue))
-        .on("mouseover", function(event, d) {
-            showTooltip(event, `${d.company}<br>Revenue: $${d3.format(",")(d.revenue)}M`);
-        })
-        .on("mousemove", function(event) {
-            moveTooltip(event);
-        })
-        .on("mouseout", function(event, d) {
-            hideTooltip();
-        });
+    } else {
+        // Initial render
+        Plotly.newPlot('bar-chart', [barData], layout, config);
+    }
 }
 
 function updateLineCharts(mergedData) {
@@ -883,12 +860,12 @@ function updateLineCharts(mergedData) {
     
     // Plot the charts using Plotly
     try {
-        Plotly.react('line-chart-ebitda-margin', ebitdaMarginTraces, layoutEbitdaMargin, { responsive: true });
-        Plotly.react('line-chart-revenue-growth', revenueGrowthTraces, layoutRevenueGrowth, { responsive: true });
-        Plotly.react('line-chart-revenue', revenueTraces, layoutRevenue, { responsive: true });
+    Plotly.react('line-chart-ebitda-margin', ebitdaMarginTraces, layoutEbitdaMargin, { responsive: true });
+    Plotly.react('line-chart-revenue-growth', revenueGrowthTraces, layoutRevenueGrowth, { responsive: true });
+    Plotly.react('line-chart-revenue', revenueTraces, layoutRevenue, { responsive: true });
     } catch (error) {
         console.error('Error updating line charts:', error);
-    }
+}
 }
 
 // Function to handle the Play/Pause button
