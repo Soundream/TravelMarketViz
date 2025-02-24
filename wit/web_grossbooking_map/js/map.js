@@ -11,6 +11,8 @@ let originalData = null;
 // 添加全局变量用于时间控制
 let currentExactYear = null;
 let timelineAnimationId = null;
+let globalStartTime = null;
+const ANIMATION_DURATION = 30000; // 30秒循环
 
 // Initialize the visualization
 async function init() {
@@ -64,7 +66,7 @@ async function init() {
 
         container.innerHTML = `
             <div>Source: Phocuswright</div>
-            <div style="margin-top: 5px">Note: Rest of Europe includes Austria, Greece, Balkans, and others (EU flag).</div>
+            <div style="margin-top: 5px">Note: Rest of Europe uses EU flag, Scandinavia uses Sweden flag</div>
         `;
 
         document.body.appendChild(container);
@@ -228,48 +230,6 @@ function scaleMarkerSize(value) {
            Math.min(appConfig.map.maxBubbleSize, 
            Math.sqrt(value) * 2));  // 调整系数使气泡大小更合适
     return size;
-}
-
-// 分离的时间轴动画系统
-function startTimelineAnimation() {
-    let startTime = null;
-    const animationDuration = 30000; // 30秒循环
-    let lastX = 0; // 记录上一次的位置
-    
-    function animateTimeline(currentTime) {
-        if (!startTime) {
-            startTime = currentTime;
-            if (timeline && timeline.triangle) {
-                lastX = 0; // 从最左边开始
-            }
-        }
-        
-        const elapsed = currentTime - startTime;
-        const totalProgress = (elapsed % animationDuration) / animationDuration;
-        
-        // 完全线性移动，不考虑年份刻度
-        if (timeline && timeline.triangle) {
-            const width = timeline.scale.range()[1] - timeline.scale.range()[0];
-            const currentX = timeline.scale.range()[0] + width * totalProgress;
-            
-            timeline.triangle
-                .attr('transform', `translate(${currentX}, -10) rotate(180)`);
-                
-            lastX = currentX;
-        }
-        
-        // 为了保持其他组件的更新，仍然需要计算一个年份
-        const startYear = years[0];
-        const endYear = years[years.length - 1];
-        currentExactYear = startYear + (endYear - startYear) * totalProgress;
-        
-        // 继续动画
-        if (isPlaying) {
-            timelineAnimationId = requestAnimationFrame(animateTimeline);
-        }
-    }
-    
-    timelineAnimationId = requestAnimationFrame(animateTimeline);
 }
 
 // Function to create timeline
@@ -450,104 +410,187 @@ function createMap(data, year) {
 // 修改startAnimation函数
 function startAnimation() {
     isPlaying = true;
-    const animationDuration = 30000; // 30秒完成一个循环
-    let startTime = null;
+    globalStartTime = null;
+    let lastRoundedYear = null;
+    
+    // 预计算所有年份的数据结构
+    const baseData = processedData[0];
+    const preCalculatedData = {};
+    const preCalculatedRaceData = {};
+    
+    // 获取所有市场和区域
+    const allMarkets = new Set();
+    const allRegions = new Set();
+    processedData.forEach(d => {
+        allMarkets.add(d.text[0]);
+        allRegions.add(d.name);
+    });
+
+    // 预计算race chart数据
+    years.forEach(year => {
+        const yearData = originalData.filter(d => d.Year === year);
+        preCalculatedRaceData[year] = yearData
+            .map(d => ({
+                market: d.Market,
+                value: parseFloat(d['Gross Bookings']),
+                color: appConfig.colorDict[d.Market] || '#999999',
+                region: d.Region
+            }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 15);
+    });
+
+    // 创建基础数据结构
+    const baseTraces = Array.from(allMarkets).map(market => {
+        const basePoint = processedData.find(d => d.text[0] === market);
+        if (!basePoint) return null;
+
+        return {
+            type: 'scattergeo',
+            lon: [basePoint.lon[0]],
+            lat: [basePoint.lat[0]],
+            text: [market],
+            mode: 'markers',
+            marker: {
+                color: basePoint.marker.color,
+                line: basePoint.marker.line,
+                sizemode: 'area',
+                sizeref: 0.15,
+                opacity: 0.9
+            },
+            name: basePoint.name,
+            legendgroup: basePoint.legendgroup,
+            showlegend: !allRegions.has(basePoint.name),
+            hovertemplate: basePoint.hovertemplate
+        };
+    }).filter(Boolean);
+
+    // 确保每个区域只显示一次图例
+    allRegions.clear();
+    baseTraces.forEach(d => {
+        if (!allRegions.has(d.name)) {
+            d.showlegend = true;
+            allRegions.add(d.name);
+        }
+    });
+
+    // 预计算每个年份的地图数据
+    years.forEach(year => {
+        const yearData = processedData.filter(d => d.frame === year.toString());
+        preCalculatedData[year] = baseTraces.map(baseTrace => {
+            const yearPoint = yearData.find(d => d.text[0] === baseTrace.text[0]);
+            const trace = { ...baseTrace };
+            
+            if (yearPoint) {
+                const value = parseFloat(yearPoint.customdata[0][0]);
+                trace.marker.size = scaleMarkerSize(value);
+                trace.customdata = [[value.toFixed(1), year]];
+            } else {
+                trace.marker.size = 0;
+                trace.customdata = [[0, year]];
+            }
+            
+            return trace;
+        });
+    });
     
     function animate(currentTime) {
-        if (!isPlaying) return;
-
-        if (!startTime) startTime = currentTime;
-        const elapsed = currentTime - startTime;
+        if (!globalStartTime) globalStartTime = currentTime;
         
-        // 计算当前进度 (0 到 1)
-        const totalProgress = (elapsed % animationDuration) / animationDuration;
+        const elapsed = currentTime - globalStartTime;
+        const totalProgress = (elapsed % ANIMATION_DURATION) / ANIMATION_DURATION;
         
-        // 计算当前年份（线性插值）
+        // 计算当前年份（包括小数部分）
         const startYear = years[0];
         const endYear = years[years.length - 1];
         currentExactYear = startYear + (endYear - startYear) * totalProgress;
         
-        // 找到相邻的两个年份
-        const lowerIndex = Math.floor((years.length - 1) * totalProgress);
-        const upperIndex = Math.min(years.length - 1, lowerIndex + 1);
-        const lowerYear = years[lowerIndex];
-        const upperYear = years[upperIndex];
+        // 获取当前年份的整数部分和小数部分
+        const currentYearInt = Math.floor(currentExactYear);
+        const currentYearFraction = currentExactYear - currentYearInt;
         
-        // 计算两个年份之间的插值比例
-        const yearProgress = (currentExactYear - lowerYear) / (upperYear - lowerYear);
+        // 找到当前年份在years数组中的位置
+        const currentYearIndex = years.findIndex(y => y >= currentYearInt);
+        if (currentYearIndex === -1) return;
         
-        // 获取相邻两年的数据
-        const lowerYearData = processedData.filter(d => d.frame === lowerYear.toString());
-        const upperYearData = processedData.filter(d => d.frame === upperYear.toString());
+        // 获取当前和下一个年份
+        const currentYear = years[currentYearIndex];
+        const nextYear = years[Math.min(currentYearIndex + 1, years.length - 1)];
         
-        // 创建插值后的数据
-        const interpolatedData = lowerYearData.map((lower, i) => {
-            const upper = upperYearData.find(u => u.text[0] === lower.text[0]) || lower;
+        // 更新时间轴位置
+        if (timeline && timeline.triangle) {
+            const currentX = timeline.scale(currentExactYear);
+            timeline.triangle.attr('transform', `translate(${currentX}, -10) rotate(180)`);
+        }
+
+        // 使用预计算的数据进行插值
+        const currentData = preCalculatedData[currentYear];
+        const nextData = preCalculatedData[nextYear];
+        
+        // 创建地图插值数据
+        const interpolatedMapData = currentData.map((current, index) => {
+            const next = nextData[index];
+            const trace = { ...current };
             
-            const lowerValue = parseFloat(lower.customdata[0][0]);
-            const upperValue = parseFloat(upper.customdata[0][0]);
-            const interpolatedValue = lowerValue + (upperValue - lowerValue) * yearProgress;
+            const currentValue = parseFloat(current.customdata[0][0]);
+            const nextValue = parseFloat(next.customdata[0][0]);
+            const interpolatedValue = currentValue + (nextValue - currentValue) * currentYearFraction;
             
-            return {
-                type: 'scattergeo',
-                lon: lower.lon,
-                lat: lower.lat,
-                text: lower.text,
-                customdata: [[interpolatedValue.toFixed(1), Math.round(currentExactYear * 10) / 10]],
-                mode: 'markers',
-                marker: {
-                    size: scaleMarkerSize(interpolatedValue),
-                    color: lower.marker.color,
-                    line: {
-                        color: 'rgba(255, 255, 255, 0.1)',
-                        width: 0.2
-                    },
-                    sizemode: 'area',
-                    sizeref: 0.15,
-                    opacity: 0.9
-                },
-                name: lower.name,
-                legendgroup: lower.legendgroup,
-                showlegend: lower.showlegend,
-                hovertemplate: lower.hovertemplate
-            };
+            trace.marker.size = scaleMarkerSize(interpolatedValue);
+            trace.customdata = [[interpolatedValue.toFixed(1), Math.round(currentExactYear)]];
+            
+            return trace;
         });
 
         // 更新地图
         Plotly.animate('map-container', {
-            data: interpolatedData,
-            traces: Array.from({ length: interpolatedData.length }, (_, i) => i)
+            data: interpolatedMapData
         }, {
             transition: {
                 duration: 0
             },
             frame: {
                 duration: 0,
-                redraw: true
+                redraw: false
             }
         });
         
-        // 更新时间轴位置
-        if (timeline && timeline.triangle) {
-            const width = timeline.scale.range()[1] - timeline.scale.range()[0];
-            const currentX = timeline.scale.range()[0] + width * totalProgress;
-            timeline.triangle.attr('transform', `translate(${currentX}, -10) rotate(180)`);
-        }
+        // 使用预计算的race chart数据进行插值
+        const currentRaceData = preCalculatedRaceData[currentYear];
+        const nextRaceData = preCalculatedRaceData[nextYear];
         
-        // 暂时注释掉 race chart 更新
-        /*
-        if (Math.abs(currentExactYear - Math.round(currentExactYear)) < 0.05) {
-            updateRaceChart(originalData, Math.round(currentExactYear));
-        }
-        */
+        // 创建一个包含所有市场的集合
+        const allRaceMarkets = new Set([
+            ...currentRaceData.map(d => d.market),
+            ...nextRaceData.map(d => d.market)
+        ]);
+
+        // 创建race chart的插值数据
+        const interpolatedRaceData = Array.from(allRaceMarkets).map(market => {
+            const current = currentRaceData.find(d => d.market === market) || 
+                          { market, value: 0, color: appConfig.colorDict[market] || '#999999' };
+            const next = nextRaceData.find(d => d.market === market) || 
+                        { market, value: 0, color: appConfig.colorDict[market] || '#999999' };
+            
+            return {
+                Market: market,
+                'Gross Bookings': current.value + (next.value - current.value) * currentYearFraction,
+                Year: Math.round(currentExactYear),
+                Region: current.region || next.region
+            };
+        });
+        
+        // 更新race chart
+        updateRaceChart(interpolatedRaceData, Math.round(currentExactYear));
         
         // 继续动画
-        requestAnimationFrame(animate);
+        if (isPlaying) {
+            requestAnimationFrame(animate);
+        }
     }
     
-    // 初始化地图
-    const initialData = processedData.filter(d => d.frame === years[0].toString());
-    Plotly.newPlot('map-container', initialData, layout, {
+    // 初始化地图，使用预计算的第一年数据
+    Plotly.newPlot('map-container', preCalculatedData[years[0]], layout, {
         displayModeBar: false,
         responsive: true,
         scrollZoom: false
