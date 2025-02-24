@@ -1180,7 +1180,7 @@ const initChart = () => {
         .attr("class", "logo")
         .attr("xlink:href", d => logoDict[d.company] || "")
         .attr("x", -logoSize/2)
-        .attr("y", -logoSize/2)
+        .attr("y", -logoSize/2 - 25)
         .attr("width", logoSize)
         .attr("height", logoSize)
         .style("pointer-events", "auto");
@@ -1189,7 +1189,7 @@ const initChart = () => {
       logoGroups.insert("rect", "image")
         .attr("class", "logo-hit-area")
         .attr("x", -logoSize/2)
-        .attr("y", -logoSize/2)
+        .attr("y", -logoSize/2 - 20)
         .attr("width", logoSize)
         .attr("height", logoSize)
         .attr("fill", "transparent");

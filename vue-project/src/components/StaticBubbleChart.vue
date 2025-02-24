@@ -556,7 +556,7 @@ const initChart = () => {
           // Calculate initial position (centered on the data point)
           const logoSize = 96; // Increased from 80 to 96 (1.2x larger)
           const x = xScale(d.ebitdaMargin) - logoSize/2;
-          const y = yScale(d.revenueGrowth) - logoSize/2;
+          const y = yScale(d.revenueGrowth) - logoSize/2 - 30; // Added -20 to move logo up
           
           // Add the logo image
           logoGroup.append('image')
