@@ -341,15 +341,25 @@ function initializeVisualization(data) {
     currentQuarterIndex = uniqueQuarters.length - 1;
 
     // Extract unique years and find Q1 indices
-    const uniqueYears = [...new Set(uniqueQuarters.map(q => {
+    let uniqueYears = [...new Set(uniqueQuarters.map(q => {
         const parts = q.split("'");
         return parts[0] || "";
     }))].filter(year => year !== "");
+
+    // Add 2025 if it's not already included
+    if (!uniqueYears.includes("2025")) {
+        uniqueYears.push("2025");
+    }
 
     const yearIndices = uniqueQuarters.reduce((acc, q, i) => {
         if (q.includes("Q1")) acc.push(i);
         return acc;
     }, []);
+
+    // Add index for 2025 if it's not already included
+    if (!yearIndices.includes(uniqueQuarters.length)) {
+        yearIndices.push(uniqueQuarters.length);
+    }
 
     // Initialize company filters
     initializeCompanyFilters(data);
@@ -374,28 +384,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Function to create the interactive timeline using D3.js
 function createTimeline(quarters, data, yearIndices, uniqueYears) {
-    const width = document.getElementById('timeline').clientWidth;
-    const height = timelineHeight;
+    const timelineWidth = document.getElementById('timeline').offsetWidth;
+    const margin = { left: 80, right: 80 };
+    const width = timelineWidth - margin.left - margin.right;
+    const height = 60;
     
     // Clear any existing timeline
     d3.select("#timeline svg").remove();
     
-    const svg = d3.select("#timeline").append("svg")
-        .attr("width", width)
-        .attr("height", height);
+    const svg = d3.select("#timeline")
+        .append('svg')
+        .attr('width', timelineWidth)
+        .attr('height', height);
     
-    // Define the linear scale for the timeline
+    const g = svg.append('g')
+        .attr('transform', `translate(${margin.left}, 30)`);
+    
+    // Create scale with extended domain to include 2025
     xScaleTimeline = d3.scaleLinear()
-        .domain([0, quarters.length - 1])
-        .range([50, width - 50]);
+        .domain([0, quarters.length])  // Extended by 1 to include 2025
+        .range([0, width]);
     
-    // Define tick values for every quarter
-    const allTickValues = d3.range(0, quarters.length);
+    // Define tick values for every quarter plus 2025
+    const allTickValues = d3.range(0, quarters.length + 1);  // Added +1 to include 2025
     
-    // Define the tick format to show year labels only for Q1
+    // Define the tick format to show year labels only for Q1 and 2025
     const axisBottom = d3.axisBottom(xScaleTimeline)
         .tickValues(allTickValues)
         .tickFormat((d, i) => {
+            if (i === quarters.length) {
+                return '2025';
+            }
             if (yearIndices.includes(i)) {
                 const yearIndex = yearIndices.indexOf(i);
                 return uniqueYears[yearIndex] || '';
@@ -404,60 +423,42 @@ function createTimeline(quarters, data, yearIndices, uniqueYears) {
         });
     
     // Append the x-axis to the SVG
-    svg.append("g")
-        .attr("class", "x-axis")
-        .attr("transform", `translate(0, ${height - 30})`)
+    g.append("g")
+        .attr("class", "timeline-axis")
         .call(axisBottom)
         .selectAll("text")
-        .attr("transform", "rotate(0)")
-        .style("text-anchor", "middle");
+        .style("text-anchor", "middle")
+        .style("font-family", "Monda")
+        .style("font-size", "12px");
+    
+    // Style the axis lines
+    g.selectAll(".timeline-axis path, .timeline-axis line")
+        .style("stroke", "#ccc")
+        .style("stroke-width", "1px");
     
     // Differentiate tick lengths
-    svg.selectAll(".x-axis .tick line")
-        .attr("y2", d => yearIndices.includes(d) ? 8 : 4)
-        .attr("stroke", "#000");
+    g.selectAll(".timeline-axis .tick line")
+        .attr("y2", d => yearIndices.includes(d) || d === quarters.length ? 8 : 4)
+        .attr("stroke", "#ccc");
     
-    // Define the path for the triangle indicator
-    const trianglePath = d3.symbol().type(d3.symbolTriangle).size(200);
-    
-    // Define the drag behavior
-    const drag = d3.drag()
-        .on("drag", function(event) {
-            if (isPlaying) return;
-
-            let x = Math.min(Math.max(50, event.x), width - 50);
-            d3.select(this)
-                .attr("transform", `translate(${x}, ${height / 2}) rotate(180)`);
-
-            const index = Math.round(xScaleTimeline.invert(x));
-            if (index >= 0 && index < quarters.length) {
-                currentQuarterIndex = index;
-                const selectedQuarter = quarters[index];
-                updateBubbleChart(selectedQuarter, data);
-                updateBarChart(selectedQuarter, data);
-            }
-        });
-    
-    // Create the triangle and make it draggable
-    timelineTriangle = svg.append("path")
-        .attr("d", trianglePath)
-        .attr("transform", `translate(${xScaleTimeline(currentQuarterIndex)}, ${height / 2}) rotate(180)`)
-        .attr("fill", "#7f8284")
-        .attr("stroke", "#000")
-        .attr("stroke-width", 1)
-        .call(drag);
+    // Create the triangle indicator
+    timelineTriangle = g.append("path")
+        .attr("d", d3.symbol().type(d3.symbolTriangle).size(100))
+        .attr("fill", "#4CAF50")
+        .attr("transform", `translate(${xScaleTimeline(currentQuarterIndex)}, -10) rotate(180)`);
 
     // Make the timeline responsive
     window.addEventListener('resize', () => {
-        const newWidth = document.getElementById('timeline').clientWidth;
+        const newWidth = document.getElementById('timeline').offsetWidth;
+        const width = newWidth - margin.left - margin.right;
         svg.attr("width", newWidth);
-        xScaleTimeline.range([50, newWidth - 50]);
-        svg.select(".x-axis")
+        xScaleTimeline.range([0, width]);
+        g.select(".timeline-axis")
             .call(axisBottom.scale(xScaleTimeline));
 
         const newX = xScaleTimeline(currentQuarterIndex);
         timelineTriangle
-            .attr("transform", `translate(${newX}, ${height / 2}) rotate(180)`);
+            .attr("transform", `translate(${newX}, -10) rotate(180)`);
     });
 }
 
@@ -465,13 +466,17 @@ function createTimeline(quarters, data, yearIndices, uniqueYears) {
 function updateTimelineTriangle(index) {
     if (!timelineTriangle) return;
     
-    const width = document.getElementById('timeline').clientWidth;
-    xScaleTimeline.range([50, width - 50]);
+    const timelineWidth = document.getElementById('timeline').offsetWidth;
+    const margin = { left: 80, right: 80 };
+    const width = timelineWidth - margin.left - margin.right;
+    xScaleTimeline.range([0, width]);
+    
     const x = xScaleTimeline(index);
     timelineTriangle
         .transition()
         .duration(300)
-        .attr("transform", `translate(${x}, ${timelineHeight / 2}) rotate(180)`);
+        .ease(d3.easeCubicInOut)
+        .attr("transform", `translate(${x}, -10) rotate(180)`);
 }
 
 // Function to update the bubble chart
@@ -485,8 +490,8 @@ function updateBubbleChart(quarter, sheetData) {
 
     // Prepare the bubble data
     const bubbleData = [{
-        x: quarterData.map(d => d.ebitdaMargin),  // No need to multiply by 100 here anymore
-        y: quarterData.map(d => d.revenueGrowth), // No need to multiply by 100 here anymore
+        x: quarterData.map(d => d.ebitdaMargin),
+        y: quarterData.map(d => d.revenueGrowth),
         text: quarterData.map(d => d.company),
         mode: 'markers',
         marker: {
@@ -564,8 +569,30 @@ function updateBubbleChart(quarter, sheetData) {
         ]
     };
 
-    // Render the bubble chart with images
-    Plotly.react('bubble-chart', bubbleData, layout, {responsive: true});
+    // Animation configuration
+    const animation = {
+        transition: {
+            duration: 500,
+            easing: 'cubic-in-out'
+        },
+        frame: {
+            duration: 500,
+            redraw: true
+        }
+    };
+
+    // Check if the chart already exists
+    const chartDiv = document.getElementById('bubble-chart');
+    if (chartDiv.data && chartDiv.data.length > 0) {
+        // Update existing chart with animation
+        Plotly.animate('bubble-chart', {
+            data: bubbleData,
+            layout: layout
+        }, animation);
+    } else {
+        // Initial render without animation
+        Plotly.react('bubble-chart', bubbleData, layout, {responsive: true});
+    }
 }
 
 function updateBarChart(quarter, sheetData) {
@@ -991,11 +1018,11 @@ d3.select("#deselect-all").on("click", () => {
 const playTooltip = d3.select("#play-tooltip");
 
 d3.select("#play-button")
-    .on("mouseover", function() {
+    .on("mouseover", function(event) {
         playTooltip
             .style("opacity", 1)
-            .style("left", (d3.event.pageX + 10) + "px")
-            .style("top", (d3.event.pageY - 10) + "px")
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 10) + "px")
             .text(isPlaying ? "Click to Pause" : "Click to Play");
     })
     .on("mousemove", function(event) {
