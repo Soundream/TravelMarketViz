@@ -64,7 +64,7 @@ async function init() {
 
         container.innerHTML = `
             <div>Source: Phocuswright</div>
-            <div style="margin-top: 5px">Note: Rest of Europe uses EU flag, Scandinavia uses Sweden flag</div>
+            <div style="margin-top: 5px">Note: Rest of Europe includes Austria, Greece, Balkans, and others (EU flag).</div>
         `;
 
         document.body.appendChild(container);
@@ -346,13 +346,13 @@ function updateTimeline(year) {
 
 // Create the map visualization
 const layout = {
-    width: 1000,  // 减小地图宽度
-    height: 600,  // 地图高度
+    width: 1000,
+    height: 600,
     margin: {
         l: 0,
         r: 0,
-        t: 40,  // 顶部留空
-        b: 0
+        t: 40,
+        b: 80  // 增加底部边距以容纳图例
     },
     paper_bgcolor: 'rgba(0,0,0,0)',
     plot_bgcolor: 'rgba(0,0,0,0)',
@@ -360,7 +360,12 @@ const layout = {
     geo: {
         scope: 'world',
         projection: {
-            type: 'equirectangular'
+            type: 'equirectangular',
+            rotation: {
+                lon: 0,
+                lat: 0,
+                roll: 0
+            }
         },
         showland: true,
         landcolor: 'rgba(255, 255, 255, 0)',
@@ -379,13 +384,16 @@ const layout = {
         lataxis: {
             showgrid: true,
             gridwidth: 0.5,
-            range: [-90, 90],
+            range: [-60, 85],  // 限制南极区域显示
             dtick: 30
         }
     },
     legend: {
-        x: 0.1,
-        y: 0.4,
+        x: 0.5,
+        y: -0.2,  // 放在地图下方
+        xanchor: 'center',
+        yanchor: 'top',
+        orientation: 'h',  // 水平排列
         bgcolor: 'rgba(255, 255, 255, 0.9)',
         bordercolor: 'rgba(0, 0, 0, 0.1)',
         borderwidth: 1,
@@ -442,88 +450,100 @@ function createMap(data, year) {
 // 修改startAnimation函数
 function startAnimation() {
     isPlaying = true;
-    let lastUpdateTime = 0;
-    const updateInterval = 50; // 每50ms更新一次地图和图表
+    const animationDuration = 30000; // 30秒完成一个循环
+    let startTime = null;
     
     function animate(currentTime) {
-        if (currentTime - lastUpdateTime >= updateInterval) {
-            // 找到相邻的两个年份
-            const progress = (currentExactYear - years[0]) / (years[years.length - 1] - years[0]);
-            const lowerIndex = Math.floor((years.length - 1) * progress);
-            const upperIndex = Math.min(years.length - 1, lowerIndex + 1);
-            const lowerYear = years[lowerIndex];
-            const upperYear = years[upperIndex];
-            
-            // 计算两个年份之间的插值比例
-            const yearProgress = (currentExactYear - lowerYear) / (upperYear - lowerYear);
-            
-            // 获取相邻两年的数据
-            const lowerYearData = processedData.filter(d => d.frame === lowerYear.toString());
-            const upperYearData = processedData.filter(d => d.frame === upperYear.toString());
-            
-            // 创建插值后的数据
-            const interpolatedData = lowerYearData.map((lower, i) => {
-                const upper = upperYearData.find(u => u.text[0] === lower.text[0]) || lower;
-                
-                const lowerValue = parseFloat(lower.customdata[0][0]);
-                const upperValue = parseFloat(upper.customdata[0][0]);
-                const interpolatedValue = lowerValue + (upperValue - lowerValue) * yearProgress;
-                
-                return {
-                    type: 'scattergeo',
-                    lon: lower.lon,
-                    lat: lower.lat,
-                    text: lower.text,
-                    customdata: [[interpolatedValue.toFixed(1), Math.round(currentExactYear * 10) / 10]],
-                    mode: 'markers',
-                    marker: {
-                        size: scaleMarkerSize(interpolatedValue),
-                        color: lower.marker.color,
-                        line: {
-                            color: 'rgba(255, 255, 255, 0.1)',
-                            width: 0.2
-                        },
-                        sizemode: 'area',
-                        sizeref: 0.15,
-                        opacity: 0.9
-                    },
-                    name: lower.name,
-                    legendgroup: lower.legendgroup,
-                    showlegend: lower.showlegend,
-                    hovertemplate: lower.hovertemplate
-                };
-            });
+        if (!isPlaying) return;
 
-            // 更新地图
-            Plotly.animate('map-container', {
-                data: interpolatedData,
-                traces: Array.from({ length: interpolatedData.length }, (_, i) => i)
-            }, {
-                transition: {
-                    duration: 0
+        if (!startTime) startTime = currentTime;
+        const elapsed = currentTime - startTime;
+        
+        // 计算当前进度 (0 到 1)
+        const totalProgress = (elapsed % animationDuration) / animationDuration;
+        
+        // 计算当前年份（线性插值）
+        const startYear = years[0];
+        const endYear = years[years.length - 1];
+        currentExactYear = startYear + (endYear - startYear) * totalProgress;
+        
+        // 找到相邻的两个年份
+        const lowerIndex = Math.floor((years.length - 1) * totalProgress);
+        const upperIndex = Math.min(years.length - 1, lowerIndex + 1);
+        const lowerYear = years[lowerIndex];
+        const upperYear = years[upperIndex];
+        
+        // 计算两个年份之间的插值比例
+        const yearProgress = (currentExactYear - lowerYear) / (upperYear - lowerYear);
+        
+        // 获取相邻两年的数据
+        const lowerYearData = processedData.filter(d => d.frame === lowerYear.toString());
+        const upperYearData = processedData.filter(d => d.frame === upperYear.toString());
+        
+        // 创建插值后的数据
+        const interpolatedData = lowerYearData.map((lower, i) => {
+            const upper = upperYearData.find(u => u.text[0] === lower.text[0]) || lower;
+            
+            const lowerValue = parseFloat(lower.customdata[0][0]);
+            const upperValue = parseFloat(upper.customdata[0][0]);
+            const interpolatedValue = lowerValue + (upperValue - lowerValue) * yearProgress;
+            
+            return {
+                type: 'scattergeo',
+                lon: lower.lon,
+                lat: lower.lat,
+                text: lower.text,
+                customdata: [[interpolatedValue.toFixed(1), Math.round(currentExactYear * 10) / 10]],
+                mode: 'markers',
+                marker: {
+                    size: scaleMarkerSize(interpolatedValue),
+                    color: lower.marker.color,
+                    line: {
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        width: 0.2
+                    },
+                    sizemode: 'area',
+                    sizeref: 0.15,
+                    opacity: 0.9
                 },
-                frame: {
-                    duration: 0,
-                    redraw: true
-                }
-            });
-            
-            // 更新race chart（只在整年时更新）
-            if (Math.abs(currentExactYear - Math.round(currentExactYear)) < 0.05) {
-                updateRaceChart(originalData, Math.round(currentExactYear));
+                name: lower.name,
+                legendgroup: lower.legendgroup,
+                showlegend: lower.showlegend,
+                hovertemplate: lower.hovertemplate
+            };
+        });
+
+        // 更新地图
+        Plotly.animate('map-container', {
+            data: interpolatedData,
+            traces: Array.from({ length: interpolatedData.length }, (_, i) => i)
+        }, {
+            transition: {
+                duration: 0
+            },
+            frame: {
+                duration: 0,
+                redraw: true
             }
-            
-            lastUpdateTime = currentTime;
+        });
+        
+        // 更新时间轴位置
+        if (timeline && timeline.triangle) {
+            const width = timeline.scale.range()[1] - timeline.scale.range()[0];
+            const currentX = timeline.scale.range()[0] + width * totalProgress;
+            timeline.triangle.attr('transform', `translate(${currentX}, -10) rotate(180)`);
         }
         
-        // 继续动画
-        if (isPlaying) {
-            requestAnimationFrame(animate);
+        // 暂时注释掉 race chart 更新
+        /*
+        if (Math.abs(currentExactYear - Math.round(currentExactYear)) < 0.05) {
+            updateRaceChart(originalData, Math.round(currentExactYear));
         }
+        */
+        
+        // 继续动画
+        requestAnimationFrame(animate);
     }
-    
-    // 启动时间轴动画
-    startTimelineAnimation();
     
     // 初始化地图
     const initialData = processedData.filter(d => d.frame === years[0].toString());
