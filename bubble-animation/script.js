@@ -100,7 +100,6 @@ const companyNames = {
     "FLT": "Flight Centre",
     "Almosafer": "Almosafer",
 
-    // Add more mappings as needed...
 };
 
 // Array of company symbols to be selected by default (after companyNames is defined)
@@ -395,9 +394,51 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Initial chart updates with the first quarter
         const firstQuarter = uniqueQuarters[0];
+
+        // Select all companies by default
+        d3.selectAll("#company-filters input[type='checkbox']")
+            .property("checked", true)
+            .each(function() {
+                const company = this.value;
+                if (!selectedCompanies.includes(company)) {
+                    selectedCompanies.push(company);
+                }
+            });
+
+        // Update charts with all companies selected
         updateBubbleChart(firstQuarter, mergedData);
         updateBarChart(firstQuarter, mergedData);
         updateLineCharts(mergedData);
+
+        // Add a button for video generation
+        const videoButton = document.createElement('button');
+        videoButton.innerHTML = '<i class="fas fa-video"></i> Generate Video';
+        videoButton.className = 'control-button';
+        videoButton.style.marginLeft = '10px';
+        document.getElementById('controls').appendChild(videoButton);
+
+        // Add click event listener to the video button
+        videoButton.addEventListener('click', async () => {
+            videoButton.disabled = true;
+            videoButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+            try {
+                await generateRaceBarChartVideo();
+                videoButton.innerHTML = '<i class="fas fa-video"></i> Generate Video';
+            } catch (error) {
+                console.error('Error generating video:', error);
+                videoButton.innerHTML = '<i class="fas fa-video"></i> Retry Generate';
+            }
+            videoButton.disabled = false;
+        });
+
+        // Automatically start playing the animation
+        setTimeout(() => {
+            const playButton = document.getElementById('play-button');
+            if (playButton && !isPlaying) {
+                playButton.click();
+            }
+        }, 1000); // Wait 1 second before starting the animation
+
     } catch (error) {
         console.error('Failed to load data:', error);
     }
@@ -501,14 +542,40 @@ function updateTimelineTriangle(position) {
 
 // Function to update the bubble chart
 function updateBubbleChart(quarter, sheetData) {
-    // Filter data for the selected quarter and selected companies
+    // Get the next quarter's data
+    const quarters = [...new Set(sheetData.map(d => d.quarter))].sort();
+    const currentQuarterIndex = quarters.indexOf(quarter);
+    const nextQuarter = quarters[currentQuarterIndex + 1];
+    
+    // Filter data for the current quarter and selected companies
     const quarterData = sheetData
         .filter(d => {
             // Only include companies that have both revenue growth and EBITDA margin data
-            return d.quarter === quarter && 
+            // AND are within the plot range for current quarter
+            const isInCurrentRange = d.quarter === quarter && 
                    selectedCompanies.includes(d.company) && 
                    d.revenueGrowth != null && 
-                   d.ebitdaMargin != null;
+                   d.ebitdaMargin != null &&
+                   d.ebitdaMargin >= -60 && d.ebitdaMargin <= 60 && // Within x-axis range
+                   d.revenueGrowth >= -40 && d.revenueGrowth <= 110; // Within y-axis range
+            
+            // If there's a next quarter, check if the company will be in range
+            if (isInCurrentRange && nextQuarter) {
+                const nextQuarterData = sheetData.find(nd => 
+                    nd.quarter === nextQuarter && 
+                    nd.company === d.company
+                );
+                
+                // If company has data in next quarter, check if it will be in range
+                if (nextQuarterData) {
+                    return nextQuarterData.ebitdaMargin >= -60 && 
+                           nextQuarterData.ebitdaMargin <= 60 && 
+                           nextQuarterData.revenueGrowth >= -40 && 
+                           nextQuarterData.revenueGrowth <= 110;
+                }
+            }
+            
+            return isInCurrentRange;
         });
 
     if (quarterData.length === 0) {
@@ -521,105 +588,110 @@ function updateBubbleChart(quarter, sheetData) {
         x: quarterData.map(d => d.ebitdaMargin),
         y: quarterData.map(d => d.revenueGrowth),
         text: quarterData.map(d => d.company),
-        mode: 'markers',
+        mode: 'markers+text',
+        textposition: 'top center',
+        textfont: {
+            family: 'Monda',
+            size: 10,
+            color: quarterData.map(d => color_dict[d.company] || '#999999')
+        },
         marker: {
-            size: quarterData.map(d => Math.sqrt(Math.abs(d.revenue))),
-            color: quarterData.map(d => color_dict[d.company] || 'gray'),
+            size: quarterData.map(d => Math.sqrt(Math.abs(d.revenue)) * 0.3),
+            color: quarterData.map(d => color_dict[d.company] || '#999999'),
             sizemode: 'area',
-            sizeref: 2.0 * Math.max(...quarterData.map(d => Math.sqrt(Math.abs(d.revenue)))) / (20**2),
-            sizemin: 4
+            sizeref: 2.0 * Math.max(...quarterData.map(d => Math.sqrt(Math.abs(d.revenue)))) / (15**2),
+            sizemin: 3,
+            line: {
+                color: 'white',
+                width: 1
+            }
         },
         customdata: quarterData.map(d => d.company),
-        hoverinfo: 'text+x+y+marker.size',
+        hoverinfo: 'text',
         hovertext: quarterData.map(d => `${d.company}<br>Revenue Growth: ${d.revenueGrowth.toFixed(1)}%<br>EBITDA Margin: ${d.ebitdaMargin.toFixed(1)}%<br>Revenue: $${d3.format(",")(d.revenue)}M`)
     }];
 
-    // Prepare images for each company
-    const images = quarterData.map(d => {
-        const logoPath = companyLogos[d.company];
-        if (!logoPath) return null; // Skip if no logo defined
-        return {
-            source: logoPath,
-            xref: 'x',
-            yref: 'y',
-            x: d.ebitdaMargin,
-            y: d.revenueGrowth + 5,
-            sizex: 10,
-            sizey: 10,
-            xanchor: 'center',
-            yanchor: 'bottom',
-            layer: 'above',
-            sizing: 'contain',
-            opacity: 1
-        };
-    }).filter(img => img !== null);
-
-    // Define the layout with images
+    // Define the layout
     const layout = {
-        title: `Revenue Growth vs EBITDA Margin for ${quarter}`,
+        title: {
+            text: `Revenue Growth vs EBITDA Margin for ${quarter}`,
+            font: {
+                family: 'Monda',
+                size: 16
+            }
+        },
         xaxis: { 
-            title: 'EBITDA Margin (%)', 
+            title: {
+                text: 'EBITDA Margin (%)',
+                font: {
+                    family: 'Monda',
+                    size: 12
+                }
+            },
             range: [-60, 60], 
             gridcolor: '#eee',
             zeroline: true,
             zerolinecolor: '#4e843d',
-            zerolinewidth: 1
+            zerolinewidth: 1,
+            tickfont: {
+                family: 'Monda',
+                size: 10
+            }
         },
         yaxis: { 
-            title: 'Revenue Growth YoY (%)', 
+            title: {
+                text: 'Revenue Growth YoY (%)',
+                font: {
+                    family: 'Monda',
+                    size: 12
+                }
+            },
             range: [-40, 110], 
             gridcolor: '#eee',
             zeroline: true,
             zerolinecolor: '#4e843d',
-            zerolinewidth: 1
+            zerolinewidth: 1,
+            tickfont: {
+                family: 'Monda',
+                size: 10
+            }
         },
         margin: { t: 60, l: 80, r: 80, b: 80 },
-        images: images,
         showlegend: false,
         hovermode: 'closest',
         plot_bgcolor: 'white',
         paper_bgcolor: 'white',
-        annotations: [
-            {
-                xref: 'paper',
-                yref: 'paper',
-                x: -0.1,
-                y: -0.18,
-                xanchor: 'left',
-                yanchor: 'bottom',
-                text: "Note: Values are shown in percentages.",
-                showarrow: false,
-                font: {
-                    size: 12,
-                    color: 'gray'
-                }
-            }
-        ]
+        font: {
+            family: 'Monda'
+        }
     };
 
-    // Animation configuration
+    // Animation configuration for immediate updates
     const animation = {
         transition: {
-            duration: 0, // Remove transition duration for immediate update
+            duration: 0,
             easing: 'linear'
         },
         frame: {
             duration: 0,
-            redraw: false
+            redraw: true
         }
     };
 
     // Check if the chart already exists
     const chartDiv = document.getElementById('bubble-chart');
     if (chartDiv.data && chartDiv.data.length > 0) {
-        // Update existing chart with animation
-        Plotly.animate('bubble-chart', {
-            data: bubbleData,
-            layout: layout
-        }, animation);
+        // Update existing chart with no animation
+        Plotly.react('bubble-chart', bubbleData, layout, {
+            displayModeBar: false,
+            responsive: true
+        });
     } else {
-        // Initial render without animation
-        Plotly.react('bubble-chart', bubbleData, layout, {responsive: true});
+        // Initial render
+        Plotly.newPlot('bubble-chart', bubbleData, layout, {
+            displayModeBar: false,
+            responsive: true
+        });
     }
 }
 
@@ -769,7 +841,7 @@ function renderBarChart(data) {
     const barData = [{
         type: 'bar',
         x: sortedData.map(d => d.revenue),
-        y: sortedData.map(d => d.companyName || companyNames[d.company] || d.company), // Use provided companyName or lookup
+        y: sortedData.map(d => d.company), // Use company symbol instead of full name
         orientation: 'h',
         marker: {
             color: sortedData.map(d => d.color || color_dict[d.company] || '#999999') // Use provided color or lookup
@@ -783,7 +855,7 @@ function renderBarChart(data) {
         }),
         textposition: 'outside',
         hoverinfo: 'text',
-        hovertext: sortedData.map(d => `${d.companyName || companyNames[d.company] || d.company}: $${d3.format(",")(d.revenue)}M`),
+        hovertext: sortedData.map(d => `${companyNames[d.company] || d.company}: $${d3.format(",")(d.revenue)}M`), // Keep full name in hover text
         textfont: {
             family: 'Monda',
             size: 11,
@@ -1041,15 +1113,16 @@ function handlePlayPause() {
         playButton.appendChild(document.createTextNode(' Pause'));
         isPlaying = true;
         
-        const interpolationDuration = 800; // Duration for each year transition
+        // Calculate timing for 30-second total duration
+        const totalDuration = 30000; // 30 seconds in milliseconds
+        const uniqueYears = [...new Set(uniqueQuarters.map(q => q.split("'")[0]))].sort();
+        const transitionDuration = totalDuration / (uniqueYears.length - 1); // Duration for each year transition
         const frameInterval = 1000 / 60; // 60 FPS for smooth animation
+        
         let lastTimestamp = null;
         let elapsedTime = 0;
-
-        // Get unique years from the data
-        const uniqueYears = [...new Set(uniqueQuarters.map(q => q.split("'")[0]))].sort();
         let currentYearIndex = 0;
-        let nextYearIndex = 1; // Declare nextYearIndex in the outer scope
+        let nextYearIndex = 1;
         
         function animate(timestamp) {
             if (!isPlaying) return;
@@ -1065,16 +1138,8 @@ function handlePlayPause() {
             if (!isInterpolating) {
                 // Get current and next year's Q2 data
                 const currentYear = uniqueYears[currentYearIndex];
-                nextYearIndex = (currentYearIndex + 1) % uniqueYears.length; // Update nextYearIndex
-                
-                // Special handling for the last year (2024)
-                let nextYear;
-                if (currentYear === "2024") {
-                    nextYear = "2024"; // Stay at 2024 for the last frame
-                    nextYearIndex = currentYearIndex; // Keep nextYearIndex same as currentYearIndex for 2024
-                } else {
-                    nextYear = uniqueYears[nextYearIndex];
-                }
+                nextYearIndex = (currentYearIndex + 1) % uniqueYears.length;
+                const nextYear = uniqueYears[nextYearIndex];
                 
                 const currentData = getQ2DataForYear(raceBarChartData, currentYear)
                     .filter(d => d.revenue > 0)
@@ -1090,11 +1155,16 @@ function handlePlayPause() {
             }
             
             if (isInterpolating) {
-                // Calculate linear progress (no easing)
-                const progress = Math.min(elapsedTime / interpolationDuration, 1);
+                // Calculate linear progress based on transitionDuration
+                const progress = Math.min(elapsedTime / transitionDuration, 1);
                 
                 // Update timeline position with linear interpolation
-                const timelinePosition = currentYearIndex * 4 + 1 + progress * 4; // Multiply by 4 for quarters
+                let timelinePosition;
+                if (uniqueYears[currentYearIndex] === "2024") {
+                    timelinePosition = currentYearIndex * 4 + 1 + progress * 2; // Move from Q2 (1) to Q4 (3)
+                } else {
+                    timelinePosition = currentYearIndex * 4 + 1 + progress * 4;
+                }
                 updateTimelineTriangle(timelinePosition);
                 
                 // Calculate current frame based on progress
@@ -1121,23 +1191,67 @@ function handlePlayPause() {
                     // Update bubble chart with interpolated position
                     const currentQuarter = uniqueQuarters[currentYearIndex * 4 + 1]; // Q2
                     const nextQuarter = uniqueQuarters[nextYearIndex * 4 + 1]; // Next year's Q2
-                    updateBubbleChart(progress < 0.5 ? currentQuarter : nextQuarter, mergedData);
+                    
+                    // Calculate interpolated data for bubble chart
+                    const currentBubbleData = mergedData.filter(d => d.quarter === currentQuarter);
+                    const nextBubbleData = mergedData.filter(d => d.quarter === nextQuarter);
+                    
+                    // Create interpolated data for bubble chart
+                    const interpolatedBubbleData = currentBubbleData
+                        .filter(current => {
+                            // Check if current position is within range
+                            const isCurrentInRange = current.ebitdaMargin >= -60 && 
+                                                   current.ebitdaMargin <= 60 && 
+                                                   current.revenueGrowth >= -40 && 
+                                                   current.revenueGrowth <= 110;
+                            
+                            // Find corresponding next data point
+                            const next = nextBubbleData.find(d => d.company === current.company);
+                            
+                            // If no next data point or current point is out of range, exclude
+                            if (!isCurrentInRange || !next) return false;
+                            
+                            // Check if next position is within range
+                            const isNextInRange = next.ebitdaMargin >= -60 && 
+                                                next.ebitdaMargin <= 60 && 
+                                                next.revenueGrowth >= -40 && 
+                                                next.revenueGrowth <= 110;
+                            
+                            // Only include if both current and next positions are in range
+                            return isCurrentInRange && isNextInRange;
+                        })
+                        .map(current => {
+                            const next = nextBubbleData.find(d => d.company === current.company);
+                            
+                            return {
+                                company: current.company,
+                                quarter: current.quarter,
+                                revenueGrowth: current.revenueGrowth + (next.revenueGrowth - current.revenueGrowth) * progress,
+                                ebitdaMargin: current.ebitdaMargin + (next.ebitdaMargin - current.ebitdaMargin) * progress,
+                                revenue: current.revenue + (next.revenue - current.revenue) * progress
+                            };
+                        });
+                    
+                    // Update bubble chart with interpolated data
+                    updateBubbleChart(currentQuarter, interpolatedBubbleData);
                 }
                 
                 // Check if interpolation is complete
                 if (progress >= 1) {
                     isInterpolating = false;
                     
-                    // Only increment year if not at 2024
-                    if (uniqueYears[currentYearIndex] !== "2024") {
-                        currentYearIndex = (currentYearIndex + 1) % uniqueYears.length;
-                    } else {
-                        // Stop playing when reaching 2024 Q2
-                        isPlaying = false;
-                        playButton.textContent = '';
-                        playButton.appendChild(playIcon);
-                        playButton.appendChild(document.createTextNode(' Play'));
+                    // Reset to beginning if at 2024 Q4, otherwise continue to next year
+                    if (uniqueYears[currentYearIndex] === "2024") {
+                        currentYearIndex = 0; // Reset to beginning
+                        // Add a small pause at the end of the loop
+                        setTimeout(() => {
+                            if (isPlaying) {
+                                requestAnimationFrame(animate);
+                            }
+                        }, 1000); // 1 second pause
                         return;
+                    } else {
+                        currentYearIndex = nextYearIndex;
                     }
                     
                     updateTimelineTriangle(currentYearIndex * 4 + 1); // Point to Q2
@@ -1408,6 +1522,93 @@ async function fetchRaceBarData() {
         
     } catch (error) {
         console.error('Error importing Race Bar Chart data:', error);
+        throw error;
+    }
+}
+
+// Function to generate and download race bar chart video
+async function generateRaceBarChartVideo() {
+    // Ensure the bar chart is visible and rendered
+    const barChart = document.getElementById('bar-chart');
+    if (!barChart) {
+        throw new Error('Bar chart element not found');
+    }
+
+    // Create MediaRecorder with high quality settings
+    const stream = barChart.captureStream(60); // 60fps
+    const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm;codecs=vp9',
+        videoBitsPerSecond: 5000000 // 5Mbps for high quality
+    });
+
+    const chunks = [];
+    mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+    
+    // Create a promise that resolves when recording is complete
+    const recordingPromise = new Promise((resolve, reject) => {
+        mediaRecorder.onstop = () => {
+            try {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'race_bar_chart.webm';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                resolve();
+            } catch (error) {
+                reject(error);
+            }
+        };
+    });
+
+    // Start recording
+    mediaRecorder.start();
+    console.log('Started recording...');
+
+    // Simulate the animation for video
+    const uniqueYears = [...new Set(uniqueQuarters.map(q => q.split("'")[0]))].sort();
+    let currentYearIndex = 0;
+    const totalDuration = 30000; // 30 seconds
+    const transitionDuration = totalDuration / (uniqueYears.length - 1);
+
+    try {
+        while (currentYearIndex < uniqueYears.length - 1) {
+            const currentYear = uniqueYears[currentYearIndex];
+            const nextYear = uniqueYears[currentYearIndex + 1];
+            
+            const currentData = getQ2DataForYear(raceBarChartData, currentYear)
+                .filter(d => d.revenue > 0)
+                .sort((a, b) => b.revenue - a.revenue);
+            const nextData = getQ2DataForYear(raceBarChartData, nextYear)
+                .filter(d => d.revenue > 0)
+                .sort((a, b) => b.revenue - a.revenue);
+            
+            const frames = createInterpolatedFrames(currentData, nextData, 60);
+            const frameDelay = transitionDuration / frames.length;
+            
+            for (let i = 0; i < frames.length; i++) {
+                const frameData = frames[i];
+                renderBarChart(frameData);
+                await new Promise(resolve => setTimeout(resolve, frameDelay));
+            }
+            
+            currentYearIndex++;
+        }
+
+        // Ensure we stay on the last frame for a moment
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Stop recording and wait for the file to be processed
+        mediaRecorder.stop();
+        await recordingPromise;
+        
+        console.log('Video generation completed');
+    } catch (error) {
+        console.error('Error during video generation:', error);
+        mediaRecorder.stop();
         throw error;
     }
 }
