@@ -669,11 +669,8 @@ function createInterpolatedFrames(startData, endData, numFrames = 60) {
     
     // Create interpolation for each frame
     for (let frame = 0; frame <= numFrames; frame++) {
+        // Use linear interpolation (no easing)
         const t = frame / numFrames;
-        // Use cubic easing for smoother transitions
-        const easedT = t < 0.5
-            ? 4 * t * t * t
-            : 1 - Math.pow(-2 * t + 2, 3) / 2;
             
         const frameData = [];
         
@@ -686,32 +683,27 @@ function createInterpolatedFrames(startData, endData, numFrames = 60) {
                 let startRevenue = startPoint ? startPoint.revenue : 0;
                 let endRevenue = endPoint ? endPoint.revenue : 0;
                 
-                // If the revenue hasn't changed, find the next different value
-                if (startRevenue === endRevenue && startRevenue > 0) {
-                    const nextDifferentValue = findNextDifferentValue(company, startPoint.quarter, raceBarChartData);
-                    if (nextDifferentValue !== null && nextDifferentValue !== startRevenue) {
-                        // Create a small variation for animation
-                        endRevenue = nextDifferentValue;
-                        // Adjust the interpolation to be subtle
-                        const variation = Math.abs(endRevenue - startRevenue) * 0.1;
-                        endRevenue = startRevenue + (endRevenue > startRevenue ? variation : -variation);
-
-                        // Log Booking.com interpolation data if this is Booking.com
-                        if (company === 'BKNG') {
-                            console.log(`Frame ${frame}: Booking.com interpolated revenue:`, 
-                                startRevenue * (1 - easedT) + endRevenue * easedT);
-                        }
-                    }
+                // If company only appears in end data, fade it in
+                if (!startPoint && endPoint) {
+                    startRevenue = 0;
                 }
                 
-                const interpolatedRevenue = startRevenue * (1 - easedT) + endRevenue * easedT;
+                // If company only appears in start data, fade it out
+                if (startPoint && !endPoint) {
+                    endRevenue = 0;
+                }
+                
+                const interpolatedRevenue = startRevenue * (1 - t) + endRevenue * t;
                 
                 // Only include if the interpolated revenue is greater than 0
                 if (interpolatedRevenue > 0) {
                     frameData.push({
                         company,
                         revenue: interpolatedRevenue,
-                        quarter: startPoint?.quarter || endPoint?.quarter
+                        quarter: startPoint?.quarter || endPoint?.quarter,
+                        // Always include company name and color
+                        companyName: companyNames[company] || company,
+                        color: color_dict[company] || '#999999'
                     });
                 }
             }
@@ -768,16 +760,21 @@ function renderBarChart(data) {
     // Calculate the maximum revenue across all quarters for consistent scaling
     const maxRevenue = Math.max(...raceBarChartData.map(d => d.revenue));
 
+    // Sort data by revenue in descending order and limit to maxBars
+    const sortedData = data
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, maxBars);
+
     // Prepare the bar chart data
     const barData = [{
         type: 'bar',
-        x: data.map(d => d.revenue),
-        y: data.map(d => companyNames[d.company] || d.company),
+        x: sortedData.map(d => d.revenue),
+        y: sortedData.map(d => d.companyName || companyNames[d.company] || d.company), // Use provided companyName or lookup
         orientation: 'h',
         marker: {
-            color: data.map(d => color_dict[d.company] || '#999999')
+            color: sortedData.map(d => d.color || color_dict[d.company] || '#999999') // Use provided color or lookup
         },
-        text: data.map(d => {
+        text: sortedData.map(d => {
             const value = d.revenue;
             if (value < 1) {
                 return d3.format("$,.2f")(value) + "M";
@@ -786,6 +783,7 @@ function renderBarChart(data) {
         }),
         textposition: 'outside',
         hoverinfo: 'text',
+        hovertext: sortedData.map(d => `${d.companyName || companyNames[d.company] || d.company}: $${d3.format(",")(d.revenue)}M`),
         textfont: {
             family: 'Monda',
             size: 11,
@@ -800,7 +798,7 @@ function renderBarChart(data) {
     // Create layout with fixed range for both x and y axes
     const layout = {
         title: {
-            text: `Revenue by Company (${data[0]?.quarter || ''})`,
+            text: `Revenue by Company (${sortedData[0]?.quarter || ''})`,
             font: { family: 'Monda', size: 16 }
         },
         width: width,
@@ -863,7 +861,7 @@ function renderBarChart(data) {
             },
             frame: {
                 duration: 0,
-                redraw: false
+                redraw: true // Set to true to ensure proper redraw of bars
             }
         });
     } else {
@@ -1015,6 +1013,15 @@ function updateLineCharts(mergedData) {
 }
 }
 
+// Function to get Q2 data for a specific year
+function getQ2DataForYear(data, year) {
+    return data.filter(d => {
+        const quarter = d.quarter;
+        const [dataYear, quarterNum] = quarter.split("'Q");
+        return dataYear === year && quarterNum === "2";
+    });
+}
+
 // Function to handle the Play/Pause button
 function handlePlayPause() {
     const playButton = document.getElementById('play-button');
@@ -1034,10 +1041,15 @@ function handlePlayPause() {
         playButton.appendChild(document.createTextNode(' Pause'));
         isPlaying = true;
         
-        const interpolationDuration = 800; // Duration for each quarter transition
+        const interpolationDuration = 800; // Duration for each year transition
         const frameInterval = 1000 / 60; // 60 FPS for smooth animation
         let lastTimestamp = null;
         let elapsedTime = 0;
+
+        // Get unique years from the data
+        const uniqueYears = [...new Set(uniqueQuarters.map(q => q.split("'")[0]))].sort();
+        let currentYearIndex = 0;
+        let nextYearIndex = 1; // Declare nextYearIndex in the outer scope
         
         function animate(timestamp) {
             if (!isPlaying) return;
@@ -1051,16 +1063,24 @@ function handlePlayPause() {
             elapsedTime += deltaTime;
             
             if (!isInterpolating) {
-                // Get current and next quarter data
-                const currentQuarter = uniqueQuarters[currentQuarterIndex];
-                const nextQuarterIndex = (currentQuarterIndex + 1) % uniqueQuarters.length;
-                const nextQuarter = uniqueQuarters[nextQuarterIndex];
+                // Get current and next year's Q2 data
+                const currentYear = uniqueYears[currentYearIndex];
+                nextYearIndex = (currentYearIndex + 1) % uniqueYears.length; // Update nextYearIndex
                 
-                const currentData = raceBarChartData
-                    .filter(d => d.quarter === currentQuarter && d.revenue > 0)
+                // Special handling for the last year (2024)
+                let nextYear;
+                if (currentYear === "2024") {
+                    nextYear = "2024"; // Stay at 2024 for the last frame
+                    nextYearIndex = currentYearIndex; // Keep nextYearIndex same as currentYearIndex for 2024
+                } else {
+                    nextYear = uniqueYears[nextYearIndex];
+                }
+                
+                const currentData = getQ2DataForYear(raceBarChartData, currentYear)
+                    .filter(d => d.revenue > 0)
                     .sort((a, b) => b.revenue - a.revenue);
-                const nextData = raceBarChartData
-                    .filter(d => d.quarter === nextQuarter && d.revenue > 0)
+                const nextData = getQ2DataForYear(raceBarChartData, nextYear)
+                    .filter(d => d.revenue > 0)
                     .sort((a, b) => b.revenue - a.revenue);
                 
                 interpolationFrames = createInterpolatedFrames(currentData, nextData, 60);
@@ -1074,7 +1094,7 @@ function handlePlayPause() {
                 const progress = Math.min(elapsedTime / interpolationDuration, 1);
                 
                 // Update timeline position with linear interpolation
-                const timelinePosition = currentQuarterIndex + progress;
+                const timelinePosition = currentYearIndex * 4 + 1 + progress * 4; // Multiply by 4 for quarters
                 updateTimelineTriangle(timelinePosition);
                 
                 // Calculate current frame based on progress
@@ -1085,28 +1105,51 @@ function handlePlayPause() {
                 
                 if (frameIndex !== currentInterpolationFrame) {
                     currentInterpolationFrame = frameIndex;
-                    renderBarChart(interpolationFrames[currentInterpolationFrame]);
+                    const frameData = interpolationFrames[currentInterpolationFrame];
+                    
+                    // Sort the frame data by revenue to ensure proper ordering
+                    frameData.sort((a, b) => b.revenue - a.revenue);
+                    
+                    // Ensure company names and colors are properly set for all bars
+                    frameData.forEach(d => {
+                        d.companyName = companyNames[d.company] || d.company;
+                        d.color = color_dict[d.company] || '#999999';
+                    });
+                    
+                    renderBarChart(frameData);
                     
                     // Update bubble chart with interpolated position
-                    const currentQuarter = uniqueQuarters[currentQuarterIndex];
-                    const nextQuarter = uniqueQuarters[(currentQuarterIndex + 1) % uniqueQuarters.length];
+                    const currentQuarter = uniqueQuarters[currentYearIndex * 4 + 1]; // Q2
+                    const nextQuarter = uniqueQuarters[nextYearIndex * 4 + 1]; // Next year's Q2
                     updateBubbleChart(progress < 0.5 ? currentQuarter : nextQuarter, mergedData);
                 }
                 
                 // Check if interpolation is complete
                 if (progress >= 1) {
                     isInterpolating = false;
-                    currentQuarterIndex = (currentQuarterIndex + 1) % uniqueQuarters.length;
-                    updateTimelineTriangle(currentQuarterIndex);
+                    
+                    // Only increment year if not at 2024
+                    if (uniqueYears[currentYearIndex] !== "2024") {
+                        currentYearIndex = (currentYearIndex + 1) % uniqueYears.length;
+                    } else {
+                        // Stop playing when reaching 2024 Q2
+                        isPlaying = false;
+                        playButton.textContent = '';
+                        playButton.appendChild(playIcon);
+                        playButton.appendChild(document.createTextNode(' Play'));
+                        return;
+                    }
+                    
+                    updateTimelineTriangle(currentYearIndex * 4 + 1); // Point to Q2
                     
                     // Ensure final state is shown
-                    const finalQuarter = uniqueQuarters[currentQuarterIndex];
+                    const finalQuarter = uniqueQuarters[currentYearIndex * 4 + 1];
                     updateBubbleChart(finalQuarter, mergedData);
                     updateBarChart(finalQuarter, mergedData);
                 }
             }
             
-            // Request next frame
+            // Request next frame only if still playing
             if (isPlaying) {
                 requestAnimationFrame(animate);
             }
