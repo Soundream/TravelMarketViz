@@ -388,11 +388,9 @@ function initializeVisualization(data) {
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await importFromGoogleSheet();
-        // Store race bar chart data globally
         raceBarChartData = await fetchRaceBarData();
         console.log('Successfully fetched race bar chart data');
         
-        // Initial chart updates with the first quarter
         const firstQuarter = uniqueQuarters[0];
 
         // Select all companies by default
@@ -410,12 +408,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateBarChart(firstQuarter, mergedData);
         updateLineCharts(mergedData);
 
-        // Add a button for video generation
+        // 确保 controls 元素存在
+        let controlsElement = document.getElementById('controls');
+        if (!controlsElement) {
+            controlsElement = document.createElement('div');
+            controlsElement.id = 'controls';
+            document.body.appendChild(controlsElement);
+        }
+
+        // 添加视频生成按钮
         const videoButton = document.createElement('button');
         videoButton.innerHTML = '<i class="fas fa-video"></i> Generate Video';
         videoButton.className = 'control-button';
         videoButton.style.marginLeft = '10px';
-        document.getElementById('controls').appendChild(videoButton);
+        controlsElement.appendChild(videoButton);
 
         // Add click event listener to the video button
         videoButton.addEventListener('click', async () => {
@@ -424,7 +430,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 await generateRaceBarChartVideo();
                 videoButton.innerHTML = '<i class="fas fa-video"></i> Generate Video';
-            } catch (error) {
+    } catch (error) {
                 console.error('Error generating video:', error);
                 videoButton.innerHTML = '<i class="fas fa-video"></i> Retry Generate';
             }
@@ -437,7 +443,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (playButton && !isPlaying) {
                 playButton.click();
             }
-        }, 1000); // Wait 1 second before starting the animation
+        }, 1000);
 
     } catch (error) {
         console.error('Failed to load data:', error);
@@ -542,12 +548,7 @@ function updateTimelineTriangle(position) {
 
 // Function to update the bubble chart
 function updateBubbleChart(quarter, sheetData) {
-    // Get the next quarter's data
-    const quarters = [...new Set(sheetData.map(d => d.quarter))].sort();
-    const currentQuarterIndex = quarters.indexOf(quarter);
-    const nextQuarter = quarters[currentQuarterIndex + 1];
-    
-    // Filter data for the current quarter and selected companies
+    // Filter data for the selected quarter and selected companies
     const quarterData = sheetData
         .filter(d => {
             // Only include companies that have both revenue growth and EBITDA margin data
@@ -558,23 +559,6 @@ function updateBubbleChart(quarter, sheetData) {
                    d.ebitdaMargin != null &&
                    d.ebitdaMargin >= -60 && d.ebitdaMargin <= 60 && // Within x-axis range
                    d.revenueGrowth >= -40 && d.revenueGrowth <= 110; // Within y-axis range
-            
-            // If there's a next quarter, check if the company will be in range
-            if (isInCurrentRange && nextQuarter) {
-                const nextQuarterData = sheetData.find(nd => 
-                    nd.quarter === nextQuarter && 
-                    nd.company === d.company
-                );
-                
-                // If company has data in next quarter, check if it will be in range
-                if (nextQuarterData) {
-                    return nextQuarterData.ebitdaMargin >= -60 && 
-                           nextQuarterData.ebitdaMargin <= 60 && 
-                           nextQuarterData.revenueGrowth >= -40 && 
-                           nextQuarterData.revenueGrowth <= 110;
-                }
-            }
-            
             return isInCurrentRange;
         });
 
@@ -587,14 +571,8 @@ function updateBubbleChart(quarter, sheetData) {
     const bubbleData = [{
         x: quarterData.map(d => d.ebitdaMargin),
         y: quarterData.map(d => d.revenueGrowth),
-        text: quarterData.map(d => d.company),
-        mode: 'markers+text',
-        textposition: 'top center',
-        textfont: {
-            family: 'Monda',
-            size: 10,
-            color: quarterData.map(d => color_dict[d.company] || '#999999')
-        },
+        text: quarterData.map(d => ''),  // Remove text
+        mode: 'markers',
         marker: {
             size: quarterData.map(d => Math.sqrt(Math.abs(d.revenue)) * 0.3),
             color: quarterData.map(d => color_dict[d.company] || '#999999'),
@@ -611,7 +589,26 @@ function updateBubbleChart(quarter, sheetData) {
         hovertext: quarterData.map(d => `${d.company}<br>Revenue Growth: ${d.revenueGrowth.toFixed(1)}%<br>EBITDA Margin: ${d.ebitdaMargin.toFixed(1)}%<br>Revenue: $${d3.format(",")(d.revenue)}M`)
     }];
 
-    // Define the layout
+    // Prepare images for each company
+    const images = quarterData.map(d => {
+        const logoPath = companyLogos[d.company];
+        if (!logoPath) return null; // Skip if no logo defined
+        return {
+            source: logoPath,
+            xref: 'x',
+            yref: 'y',
+            x: d.ebitdaMargin,
+            y: d.revenueGrowth,
+            sizex: 8,
+            sizey: 8,
+            xanchor: 'center',
+            yanchor: 'center',
+            layer: 'above',
+            sizing: 'contain'
+        };
+    }).filter(img => img !== null);
+
+    // Define the layout with images
     const layout = {
         title: {
             text: `Revenue Growth vs EBITDA Margin for ${quarter}`,
@@ -661,21 +658,10 @@ function updateBubbleChart(quarter, sheetData) {
         hovermode: 'closest',
         plot_bgcolor: 'white',
         paper_bgcolor: 'white',
-        font: {
+                font: {
             family: 'Monda'
-        }
-    };
-
-    // Animation configuration for immediate updates
-    const animation = {
-        transition: {
-            duration: 0,
-            easing: 'linear'
         },
-        frame: {
-            duration: 0,
-            redraw: true
-        }
+        images: images
     };
 
     // Check if the chart already exists
@@ -1240,21 +1226,26 @@ function handlePlayPause() {
                 if (progress >= 1) {
                     isInterpolating = false;
                     
-                    // Reset to beginning if at 2024 Q4, otherwise continue to next year
+                    // If we're at 2024, pause for 2 seconds before resetting
                     if (uniqueYears[currentYearIndex] === "2024") {
-                        currentYearIndex = 0; // Reset to beginning
-                        // Add a small pause at the end of the loop
+                        // Stay at 2024Q2
+                        const q2_2024 = uniqueQuarters.find(q => q.includes("2024'Q2"));
+                        if (q2_2024) {
+                            updateBubbleChart(q2_2024, mergedData);
+                            updateBarChart(q2_2024, mergedData);
+                        }
+                        
+                        // Add a longer pause at 2024Q2
                         setTimeout(() => {
                             if (isPlaying) {
+                                currentYearIndex = 0; // Reset to beginning
                                 requestAnimationFrame(animate);
                             }
-                        }, 1000); // 1 second pause
+                        }, 3000); // 3 second pause at 2024Q2
                         return;
                     } else {
                         currentYearIndex = nextYearIndex;
                     }
-                    
-                    updateTimelineTriangle(currentYearIndex * 4 + 1); // Point to Q2
                     
                     // Ensure final state is shown
                     const finalQuarter = uniqueQuarters[currentYearIndex * 4 + 1];
