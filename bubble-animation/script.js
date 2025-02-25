@@ -5,7 +5,7 @@ const sheetId = '2PACX-1vQYwQTSYwig7AZ0fjPniLVfUUJnLz3PP4f4fBtqkBNPYqrkKtQyZDaB9
 const sheetNames = {
     revenueGrowth: 'Revenue Growth YoY',
     ebitdaMargin: 'EBITDA_MARGIN',
-    revenue: 'Quarterly Revenue&EBITDA'
+    revenue: 'Revenue'
 };
 
 // Array of company symbols to be selected by default
@@ -117,7 +117,6 @@ let timelineTriangle;
 let xScaleTimeline;
 let timelineHeight = 80;
 let selectedCompanies = defaultSelectedCompanies.slice(); // Initialize with default companies
-let revenueMap = new Map(); // Initialize revenueMap globally
 
 // Function to clean the color dictionary by trimming keys
 function cleanColorDict(rawDict) {
@@ -145,7 +144,7 @@ function processData(csvText) {
         })
     );
 
-    // Find EBITDA row and Revenue row
+    // Find EBITDA row
     const ebitdaStartIndex = rows.findIndex(row => 
         row[0] && String(row[0]).toLowerCase().includes('ebitda margin')
     );
@@ -155,62 +154,86 @@ function processData(csvText) {
     }
 
     // Get headers (company names)
-    const headers = rows[0].slice(1).map(h => h ? String(h).trim() : null).filter(Boolean);
+    const headers = rows[0].slice(1).map(h => h ? h.trim() : null).filter(Boolean);
     console.log('Processed headers:', headers);
 
     // Process data rows
     const processedData = [];
     const quarters = new Set();
-
+    let maxRevenue = 0;
+    
     // Process rows between headers and EBITDA row
+    let currentYear = null;
+    let quarterCount = 0;
+
     for (let i = 1; i < ebitdaStartIndex; i++) {
         const row = rows[i];
-        if (!row || !row[0]) continue;
-
-        const quarter = String(row[0]).trim();
-        if (!quarter || quarter === '') continue;
-
-        quarters.add(quarter);
-
+        
+        if (!row || !row[0]) {
+            console.log(`Skipping row ${i}: Empty row`);
+            continue;
+        }
+        
+        // Get year from first column
+        const year = String(row[0]).trim();
+        if (!year || year === 'Revenue Growth YoY') {
+            console.log(`Skipping row ${i}: Invalid year or header row`);
+            continue;
+        }
+        
+        // Reset quarter count when year changes
+        if (year !== currentYear) {
+            currentYear = year;
+            quarterCount = 1;
+        } else {
+            quarterCount++;
+        }
+        
+        // Get corresponding EBITDA row
+        const ebitdaRow = rows[ebitdaStartIndex + (i - 1)];
+        if (!ebitdaRow) {
+            console.log(`Skipping row ${i}: No corresponding EBITDA row`);
+            continue;
+        }
+        
+        const quarter = `${year}'Q${quarterCount}`;
+        
+        // Process each company's data
         headers.forEach((company, j) => {
-            const value = row[j + 1];
-            if (value === undefined || value === null || value === '') return;
+            const colIndex = j + 1;
+            let revenueGrowth = parseFloat(row[colIndex]);
+            let ebitdaMargin = parseFloat(ebitdaRow[colIndex]);
+            
+            if (!isNaN(revenueGrowth) && !isNaN(ebitdaMargin)) {
+                // Convert to percentage if the values are in decimal format
+                revenueGrowth = revenueGrowth <= 1 && revenueGrowth >= -1 ? revenueGrowth * 100 : revenueGrowth;
+                ebitdaMargin = ebitdaMargin <= 1 && ebitdaMargin >= -1 ? ebitdaMargin * 100 : ebitdaMargin;
+                
+                // Use a scaled revenue value for bubble size
+                const revenue = 1000 + Math.abs(revenueGrowth * 50); // Adjusted scaling factor
+                maxRevenue = Math.max(maxRevenue, revenue);
 
-            processedData.push({
-                company: company,
-                quarter: quarter,
-                revenueGrowth: typeof value === 'number' ? value / 100 : 0,
-                ebitdaMargin: 0  // Will be updated later
-            });
-        });
-    }
-
-    // Process EBITDA margin data
-    for (let i = ebitdaStartIndex + 1; i < rows.length; i++) {
-        const row = rows[i];
-        if (!row || !row[0]) continue;
-
-        const quarter = String(row[0]).trim();
-        if (!quarter || quarter === '') continue;
-
-        headers.forEach((company, j) => {
-            const value = row[j + 1];
-            if (value === undefined || value === null || value === '') return;
-
-            const dataPoint = processedData.find(d => 
-                d.company === company && d.quarter === quarter
-            );
-            if (dataPoint) {
-                dataPoint.ebitdaMargin = typeof value === 'number' ? value / 100 : 0;
+                processedData.push({
+                quarter,
+                    company,
+                    revenueGrowth: revenueGrowth,
+                    ebitdaMargin: ebitdaMargin,
+                    revenue: revenue
+                });
+                quarters.add(quarter);
             }
         });
     }
+
+    // Update global maxRevenueValue
+    maxRevenueValue = maxRevenue;
 
     console.log('Final processed data:', {
         totalQuarters: quarters.size,
         quarters: Array.from(quarters).sort(),
         totalDataPoints: processedData.length,
-        sampleData: processedData.slice(0, 5)
+        sampleData: processedData.slice(0, 5),
+        maxRevenue: maxRevenue
     });
 
     return processedData;
@@ -267,128 +290,27 @@ function handleFilterChange() {
 
 // Function to fetch and process data from Google Sheet
 async function importFromGoogleSheet() {
-    // URLs for the published sheets - using direct published URLs
-    const baseUrl = 'https://docs.google.com/spreadsheets/d/e';
-    const ttmUrl = `${baseUrl}/${sheetId}/pub?output=csv`;
-    const revenueUrl = `${baseUrl}/${sheetId}/pub?gid=621483928&output=csv`;
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/e/${sheetId}/pub?output=csv`;
     
     try {
         console.log('Starting Google Sheet import...');
-        
-        // Fetch data from both sheets
-        const [ttmResponse, revenueResponse] = await Promise.all([
-            fetch(ttmUrl),
-            fetch(revenueUrl)
-        ]);
-        
-        if (!ttmResponse.ok || !revenueResponse.ok) {
-            throw new Error('Failed to fetch data from one or more sheets');
-        }
-        
-        const [ttmCsv, revenueCsv] = await Promise.all([
-            ttmResponse.text(),
-            revenueResponse.text()
-        ]);
-
-        // Clear existing revenue map before processing new data
-        revenueMap.clear();
-
-        // First, replace commas in numbers but preserve commas that are actual CSV delimiters
-        const processedCsv = revenueCsv.replace(/(\d),(\d)/g, '$1$2');
-
-        // Parse revenue data from the gid sheet
-        const revenueRows = processedCsv.split('\n').map(row => 
-            row.split(',').map(cell => cell.trim().replace(/^["']|["']$/g, ''))
-        );
-
-        // Get headers (company names)
-        const headers = revenueRows[0].slice(1).map(h => h ? h.trim() : null).filter(Boolean);
-        console.log('Revenue headers:', headers);
-        
-        // Find the Revenue row index
-        const revenueStartIndex = revenueRows.findIndex(row => 
-            row[0] && String(row[0]).toLowerCase().includes('revenue')
-        );
-
-        if (revenueStartIndex === -1) {
-            throw new Error('Revenue row not found in Quarterly Revenue&EBITDA sheet');
-        }
-
-        console.log('Revenue start index:', revenueStartIndex);
-
-        // Process revenue data row by row (quarter by quarter)
-        let currentYear = null;
-        let quarterCount = 0;
-        let maxRevenue = 0;
-
-        for (let i = revenueStartIndex + 1; i < revenueRows.length; i++) {
-            const row = revenueRows[i];
-            if (!row || !row[0]) continue;
-            
-            const firstCol = String(row[0]).trim();
-            if (firstCol.toLowerCase().includes('ebitda')) break;
-            
-            // Skip if not a year
-            if (!/^\d{4}$/.test(firstCol)) continue;
-            
-            const year = firstCol;
-            
-            // Reset quarter count for new year
-            if (year !== currentYear) {
-                currentYear = year;
-                quarterCount = 1;
-            } else {
-                quarterCount++;
+        console.log('Using sheet URL:', sheetUrl);
+        const response = await fetch(sheetUrl, {
+            mode: 'cors',
+            headers: {
+                'Accept': 'text/csv'
             }
-            
-            if (quarterCount > 4) continue;
-            
-            const quarter = `${year}'Q${quarterCount}`;
-            console.log(`\nProcessing ${quarter}:`);
-            
-            // Process each company's revenue for this quarter
-            headers.forEach((company, j) => {
-                const cellValue = row[j + 1];
-                if (!cellValue || cellValue === '') {
-                    console.log(`Skipping empty value for ${company}`);
-                    return;
-                }
-
-                let revenue;
-                if (typeof cellValue === 'number') {
-                    revenue = cellValue;
-                    console.log(`${company}: numeric value ${revenue}`);
-                } else {
-                    // Handle string values with currency symbols and commas
-                    const cleanedValue = String(cellValue).replace(/[$,]/g, '');
-                    revenue = parseFloat(cleanedValue);
-                    console.log(`${company}: string value "${cellValue}" -> cleaned "${cleanedValue}" -> parsed ${revenue}`);
-                }
-
-                if (!isNaN(revenue)) {
-                    const key = `${quarter}|${company}`;
-                    revenueMap.set(key, revenue);
-                    maxRevenue = Math.max(maxRevenue, revenue);
-                    console.log(`${company}: Successfully stored $${revenue}M`);
-                }
-            });
-        }
-
-        // Update global maxRevenueValue
-        maxRevenueValue = maxRevenue;
-        
-        // Process the main TTM data for growth and margins
-        mergedData = processData(ttmCsv);
-        
-        // Update revenue values from revenueMap
-        mergedData = mergedData.map(item => {
-            const key = `${item.quarter}|${item.company}`;
-            const revenue = revenueMap.get(key) || 0;
-            return {
-                ...item,
-                revenue: revenue
-            };
         });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch data from Google Sheet');
+        }
+        
+        const csvText = await response.text();
+        console.log('Received CSV response length:', csvText.length);
+        
+        // Process the data
+        mergedData = processData(csvText);
         
         // Initialize the visualization
         initializeVisualization(mergedData);
@@ -402,20 +324,6 @@ async function importFromGoogleSheet() {
 
 // Function to initialize the visualization
 function initializeVisualization(data) {
-    // Print 2024'Q4 data for debugging
-    console.log('\n=== 2024\'Q4 Data ===');
-    const q4Data = data.filter(d => d.quarter === '2024\'Q4');
-    console.log('Number of companies in 2024\'Q4:', q4Data.length);
-    console.log('Companies and their data:');
-    q4Data.forEach(d => {
-        console.log(`${d.company}:`, {
-            revenue: d.revenue.toFixed(2) + 'M',
-            revenueGrowth: d.revenueGrowth.toFixed(2) + '%',
-            ebitdaMargin: d.ebitdaMargin.toFixed(2) + '%'
-        });
-    });
-    console.log('=== End of 2024\'Q4 Data ===\n');
-
     // Sort quarters chronologically
     uniqueQuarters = [...new Set(data.map(d => d.quarter))].sort((a, b) => {
         // Parse YYYY'QN format
@@ -575,40 +483,27 @@ function updateTimelineTriangle(index) {
 function updateBubbleChart(quarter, sheetData) {
     // Filter data for the selected quarter and selected companies
     const quarterData = sheetData.filter(d => d.quarter === quarter && selectedCompanies.includes(d.company));
-    
-    console.log(`Bubble chart data for ${quarter}:`, quarterData);
-    
     if (quarterData.length === 0) {
         Plotly.react('bubble-chart', [], { title: `No data available for ${quarter}` });
         return;
     }
 
-    // Calculate size reference for bubbles
-    const maxRevenue = Math.max(...quarterData.map(d => d.revenue));
-    const sizeref = 2.0 * maxRevenue / (40**2);
-
     // Prepare the bubble data
     const bubbleData = [{
-        x: quarterData.map(d => d.ebitdaMargin * 100), // Convert to percentage
-        y: quarterData.map(d => d.revenueGrowth * 100), // Convert to percentage
+        x: quarterData.map(d => d.ebitdaMargin),
+        y: quarterData.map(d => d.revenueGrowth),
         text: quarterData.map(d => d.company),
         mode: 'markers',
         marker: {
-            size: quarterData.map(d => Math.sqrt(d.revenue) * 2),
+            size: quarterData.map(d => Math.sqrt(Math.abs(d.revenue))),
             color: quarterData.map(d => color_dict[d.company] || 'gray'),
             sizemode: 'area',
-            sizeref: sizeref,
-            sizemin: 6,
-            line: {
-                color: 'white',
-                width: 1
-            }
+            sizeref: 2.0 * Math.max(...quarterData.map(d => Math.sqrt(Math.abs(d.revenue)))) / (20**2),
+            sizemin: 4
         },
         customdata: quarterData.map(d => d.company),
-        hoverinfo: 'text',
-        hovertext: quarterData.map(d => 
-            `${d.company}<br>Revenue Growth: ${(d.revenueGrowth * 100).toFixed(1)}%<br>EBITDA Margin: ${(d.ebitdaMargin * 100).toFixed(1)}%<br>Revenue: $${d3.format(",")(d.revenue)}M`
-        )
+        hoverinfo: 'text+x+y+marker.size',
+        hovertext: quarterData.map(d => `${d.company}<br>Revenue Growth: ${d.revenueGrowth.toFixed(1)}%<br>EBITDA Margin: ${d.ebitdaMargin.toFixed(1)}%<br>Revenue: $${d3.format(",")(d.revenue)}M`)
     }];
 
     // Prepare images for each company
@@ -619,8 +514,8 @@ function updateBubbleChart(quarter, sheetData) {
             source: logoPath,
             xref: 'x',
             yref: 'y',
-            x: d.ebitdaMargin * 100,
-            y: d.revenueGrowth * 100 + 5,
+            x: d.ebitdaMargin,
+            y: d.revenueGrowth + 5,
             sizex: 10,
             sizey: 10,
             xanchor: 'center',
@@ -655,7 +550,23 @@ function updateBubbleChart(quarter, sheetData) {
         showlegend: false,
         hovermode: 'closest',
         plot_bgcolor: 'white',
-        paper_bgcolor: 'white'
+        paper_bgcolor: 'white',
+        annotations: [
+            {
+                xref: 'paper',
+                yref: 'paper',
+                x: -0.1,
+                y: -0.18,
+                xanchor: 'left',
+                yanchor: 'bottom',
+                text: "Note: Values are shown in percentages.",
+                showarrow: false,
+                font: {
+                    size: 12,
+                    color: 'gray'
+                }
+            }
+        ]
     };
 
     // Animation configuration
@@ -680,35 +591,34 @@ function updateBubbleChart(quarter, sheetData) {
         }, animation);
     } else {
         // Initial render without animation
-        Plotly.react('bubble-chart', bubbleData, layout, {responsive: true});
+    Plotly.react('bubble-chart', bubbleData, layout, {responsive: true});
     }
 }
 
 function updateBarChart(quarter, sheetData) {
-    // Filter and sort data
+    const margin = { 
+        l: 120,  // 左边距用于公司名称
+        r: 120,  // 右边距用于数值标签
+        t: 40,
+        b: 50,
+        autoexpand: false
+    };
+    const width = 450;
+    const height = 400;
+
+    // Filter and sort data in ascending order
     const quarterData = sheetData
         .filter(d => d.quarter === quarter && selectedCompanies.includes(d.company))
-        .sort((a, b) => b.revenue - a.revenue)
-        .slice(0, 15);  // Show only top 15 companies
-
-    console.log(`Bar chart data for ${quarter}:`, quarterData);
+        .sort((a, b) => b.revenue - a.revenue)  // 保持升序排列
+        .slice(0, 15);
 
     if (quarterData.length === 0) {
         Plotly.purge('bar-chart');
         return;
     }
 
-    // Calculate the maximum revenue for dynamic x-axis range
-    const maxRevenue = Math.max(...quarterData.map(d => d.revenue));
-    // Round up to the nearest thousand and add 20% padding
-    const xAxisMax = Math.ceil(maxRevenue * 1.2 / 1000) * 1000;
-    // Find minimum revenue
-    const minRevenue = Math.min(...quarterData.map(d => d.revenue));
-    // Round down to the nearest thousand
-    const xAxisMin = Math.floor(minRevenue * 0.8 / 1000) * 1000;
-
     // Prepare the bar chart data
-    const barData = [{
+    const barData = {
         type: 'bar',
         x: quarterData.map(d => d.revenue),
         y: quarterData.map(d => d.company),
@@ -716,10 +626,9 @@ function updateBarChart(quarter, sheetData) {
         marker: {
             color: quarterData.map(d => color_dict[d.company] || '#999999')
         },
-        text: quarterData.map(d => `$${d3.format(",")(d.revenue)}M`),
+        text: quarterData.map(d => d3.format("$,.1f")(d.revenue) + "M"),
         textposition: 'outside',
         hoverinfo: 'text',
-        hovertext: quarterData.map(d => `${d.company}: $${d3.format(",")(d.revenue)}M`),
         textfont: {
             family: 'Monda',
             size: 11,
@@ -727,20 +636,15 @@ function updateBarChart(quarter, sheetData) {
         },
         cliponaxis: false,
         textangle: 0,
-        width: 0.6
-    }];
+        offsetgroup: 1,
+        width: 0.6,  // 条形宽度
+        constraintext: 'none'
+    };
 
-    // Create layout with dynamic x-axis range
+    // Create layout
     const layout = {
-        width: 450,
-        height: 400,
-        title: {
-            text: `Revenue by Company (${quarter})`,
-            font: {
-                family: 'Monda',
-                size: 16
-            }
-        },
+        width: width,
+        height: height,
         xaxis: {
             title: {
                 text: 'Revenue (USD M)',
@@ -759,12 +663,11 @@ function updateBarChart(quarter, sheetData) {
                 family: 'Monda',
                 size: 11
             },
-            range: [xAxisMin, xAxisMax],  // Dynamic range based on data
+            range: [0, maxRevenueValue * 1.3],
             fixedrange: true,
             ticklen: 6,
             ticksuffix: '   ',
-            automargin: true,
-            dtick: Math.ceil((xAxisMax - xAxisMin) / 5 / 1000) * 1000  // Dynamic tick intervals
+            automargin: true
         },
         yaxis: {
             showgrid: false,
@@ -773,27 +676,26 @@ function updateBarChart(quarter, sheetData) {
                 size: 11
             },
             fixedrange: true,
-            ticklabelposition: 'outside left',
+            ticklabelposition: 'outside left',  // 将标签放在左侧
             automargin: true,
-            range: [14.5, -0.5],  // Reverse range to show highest values at top
+            range: [14.5, -0.5],  // 反转y轴范围，使较大的值显示在顶部
             dtick: 1,
-            side: 'left'
+            side: 'left',  // 确保标签在左侧
+            autorange: false  // 禁用自动范围以保持顺序
         },
-        margin: {
-            l: 120,  // Left margin for company names
-            r: 120,  // Right margin for value labels
-            t: 40,
-            b: 50,
-            autoexpand: false
-        },
+        margin: margin,
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         showlegend: false,
         barmode: 'group',
-        bargap: 0.2,
+        bargap: 0.15,  // 调整条形间距
         bargroupgap: 0.1,
         font: {
             family: 'Monda'
+        },
+        uniformtext: {
+            mode: 'show',
+            minsize: 10
         }
     };
 
@@ -809,7 +711,7 @@ function updateBarChart(quarter, sheetData) {
     if (chartDiv.data && chartDiv.data.length > 0) {
         // Update with animation
         Plotly.animate('bar-chart', {
-            data: barData,
+            data: [barData],
             layout: layout
         }, {
             transition: {
@@ -823,7 +725,7 @@ function updateBarChart(quarter, sheetData) {
         });
     } else {
         // Initial render
-        Plotly.newPlot('bar-chart', barData, layout, config);
+        Plotly.newPlot('bar-chart', [barData], layout, config);
     }
 }
 
@@ -833,16 +735,16 @@ function updateLineCharts(mergedData) {
 
     // Sort the quarters in chronological order
     quarters.sort((a, b) => {
-        const [yearA, quarterA] = a.split("'");
-        const [yearB, quarterB] = b.split("'");
-        if (!yearA || !yearB || !quarterA || !quarterB) return 0;
-        
-        const yearDiff = parseInt(yearA) - parseInt(yearB);
-        if (yearDiff !== 0) return yearDiff;
-        
-        const qA = parseInt(quarterA.substring(1));
-        const qB = parseInt(quarterB.substring(1));
-        return qA - qB;
+        try {
+            const [aYear, aQ] = a.split("'");
+            const [bYear, bQ] = b.split("'");
+            const aQuarter = parseInt(aQ.substring(1));
+            const bQuarter = parseInt(bQ.substring(1));
+            return (parseInt(aYear) - parseInt(bYear)) || (aQuarter - bQuarter);
+        } catch (error) {
+            console.warn('Error parsing quarter:', error);
+            return 0;
+        }
     });
     
     // For each selected company, create traces for each metric
@@ -958,19 +860,12 @@ function updateLineCharts(mergedData) {
     
     // Plot the charts using Plotly
     try {
-        // Check if elements exist before plotting
-        if (document.getElementById('line-chart-ebitda-margin')) {
-            Plotly.react('line-chart-ebitda-margin', ebitdaMarginTraces, layoutEbitdaMargin, { responsive: true });
-        }
-        if (document.getElementById('line-chart-revenue-growth')) {
-            Plotly.react('line-chart-revenue-growth', revenueGrowthTraces, layoutRevenueGrowth, { responsive: true });
-        }
-        if (document.getElementById('line-chart-revenue')) {
-            Plotly.react('line-chart-revenue', revenueTraces, layoutRevenue, { responsive: true });
-        }
+    Plotly.react('line-chart-ebitda-margin', ebitdaMarginTraces, layoutEbitdaMargin, { responsive: true });
+    Plotly.react('line-chart-revenue-growth', revenueGrowthTraces, layoutRevenueGrowth, { responsive: true });
+    Plotly.react('line-chart-revenue', revenueTraces, layoutRevenue, { responsive: true });
     } catch (error) {
         console.error('Error updating line charts:', error);
-    }
+}
 }
 
 // Function to handle the Play/Pause button
@@ -1119,3 +1014,106 @@ d3.select("#play-button")
 
 // Event listener for the Play/Pause button
 document.getElementById('play-button').addEventListener('click', handlePlayPause);
+
+// Function to fetch and process race bar chart data
+async function fetchRaceBarData() {
+    const sheetId = '2PACX-1vQYwQTSYwig7AZ0fjPniLVfUUJnLz3PP4f4fBtqkBNPYqrkKtQyZDaB99kHk2eCzuCh5i8oxTPCHeQ9';
+    const gid = '621483928';  // Specific sheet ID for Revenue data
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/e/${sheetId}/pub?gid=${gid}&output=csv`;
+    
+    try {
+        console.log('Starting Race Bar Chart data import...');
+        console.log('Using sheet URL:', sheetUrl);
+        
+        const response = await fetch(sheetUrl, {
+            mode: 'cors',
+            headers: {
+                'Accept': 'text/csv'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch Race Bar Chart data');
+        }
+        
+        const csvText = await response.text();
+        console.log('Received Race Bar CSV response length:', csvText.length);
+        
+        // Split into lines first
+        const lines = csvText.split('\n');
+        
+        // Process each line, properly handling quoted fields that may contain commas
+        const rows = lines.map(line => {
+            const row = [];
+            let inQuotes = false;
+            let currentValue = '';
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                    continue;
+                }
+                
+                if (char === ',' && !inQuotes) {
+                    row.push(currentValue.trim());
+                    currentValue = '';
+                    continue;
+                }
+                
+                currentValue += char;
+            }
+            
+            // Push the last value
+            row.push(currentValue.trim());
+            return row;
+        });
+        
+        // Get headers (company names)
+        const headers = rows[0].filter(Boolean);
+        console.log('Race Bar Chart Headers (Companies):', headers);
+        
+        // Process data rows
+        const processedData = [];
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row[0]) continue;  // Skip empty rows
+            
+            const quarter = row[0];
+            headers.forEach((company, j) => {
+                // Remove any remaining quotes and commas from the number
+                const rawValue = row[j + 1]?.replace(/[",]/g, '');
+                const revenue = parseFloat(rawValue);
+                if (!isNaN(revenue)) {
+                    processedData.push({
+                        quarter,
+                        company,
+                        revenue
+                    });
+                }
+            });
+        }
+        
+        console.log('Race Bar Chart Processed Data Sample:', processedData.slice(0, 5));
+        console.log('Total Race Bar Chart Data Points:', processedData.length);
+        
+        return processedData;
+        
+    } catch (error) {
+        console.error('Error importing Race Bar Chart data:', error);
+        throw error;
+    }
+}
+
+// Add event listener to test the new function
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await importFromGoogleSheet();
+        // Test the race bar chart data fetching
+        const raceBarData = await fetchRaceBarData();
+        console.log('Successfully fetched race bar chart data');
+    } catch (error) {
+        console.error('Failed to load data:', error);
+    }
+});
