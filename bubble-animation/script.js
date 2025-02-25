@@ -610,7 +610,14 @@ function updateBubbleChart(quarter, sheetData) {
 function updateBarChart(quarter, sheetData) {
     // If we have race bar chart data, use it instead of the old data
     if (raceBarChartData) {
-        const quarterData = raceBarChartData.filter(d => d.quarter === quarter);
+        // Get all unique companies across all quarters
+        const allCompanies = [...new Set(raceBarChartData.map(d => d.company))];
+        const maxCompanies = allCompanies.length;
+
+        // Filter and sort data for current quarter
+        const quarterData = raceBarChartData
+            .filter(d => d.quarter === quarter && d.revenue > 0)
+            .sort((a, b) => b.revenue - a.revenue);
         
         if (quarterData.length === 0) {
             Plotly.purge('bar-chart');
@@ -618,26 +625,26 @@ function updateBarChart(quarter, sheetData) {
         }
 
         const margin = { 
-            l: 120,  // 左边距用于公司名称
-            r: 120,  // 右边距用于数值标签
+            l: 120,
+            r: 120,
             t: 40,
             b: 50,
             autoexpand: false
         };
         const width = 450;
-        const height = 400;
+        const height = Math.max(400, maxCompanies * 25); // Adjust height based on total number of companies
 
-        // Sort data by revenue in descending order
-        quarterData.sort((a, b) => b.revenue - a.revenue);
+        // Calculate the maximum revenue for this quarter
+        const maxRevenue = Math.max(...quarterData.map(d => d.revenue));
 
         // Prepare the bar chart data
-        const barData = {
+        const barData = [{
             type: 'bar',
             x: quarterData.map(d => d.revenue),
-            y: quarterData.map(d => d.company),
+            y: quarterData.map(d => companyNames[d.company] || d.company),
             orientation: 'h',
             marker: {
-                color: quarterData.map(d => color_dict[d.company.toLowerCase()] || '#999999')
+                color: quarterData.map(d => color_dict[d.company] || '#999999')
             },
             text: quarterData.map(d => d3.format("$,.0f")(d.revenue) + "M"),
             textposition: 'outside',
@@ -650,12 +657,19 @@ function updateBarChart(quarter, sheetData) {
             cliponaxis: false,
             textangle: 0,
             offsetgroup: 1,
-            width: 0.6,  // 条形宽度
+            width: 0.4,  // Fixed bar width
             constraintext: 'none'
-        };
+        }];
 
         // Create layout
         const layout = {
+            title: {
+                text: `Revenue by Company (${quarter})`,
+                font: {
+                    family: 'Monda',
+                    size: 16
+                }
+            },
             width: width,
             height: height,
             xaxis: {
@@ -676,7 +690,7 @@ function updateBarChart(quarter, sheetData) {
                     family: 'Monda',
                     size: 11
                 },
-                range: [0, Math.max(...quarterData.map(d => d.revenue)) * 1.3],
+                range: [0, maxRevenue * 1.1],
                 fixedrange: true,
                 ticklen: 6,
                 ticksuffix: '   ',
@@ -691,7 +705,7 @@ function updateBarChart(quarter, sheetData) {
                 fixedrange: true,
                 ticklabelposition: 'outside left',
                 automargin: true,
-                range: [quarterData.length - 0.5, -0.5],
+                range: [maxCompanies - 0.5, -0.5], // Fixed range based on total possible companies
                 dtick: 1,
                 side: 'left',
                 autorange: false
@@ -701,15 +715,30 @@ function updateBarChart(quarter, sheetData) {
             plot_bgcolor: 'rgba(0,0,0,0)',
             showlegend: false,
             barmode: 'group',
-            bargap: 0.15,
-            bargroupgap: 0.1,
+            bargap: 0.05,  // Fixed gap between bars
+            bargroupgap: 0.02,  // Fixed gap between bar groups
             font: {
                 family: 'Monda'
             },
             uniformtext: {
                 mode: 'show',
                 minsize: 10
-            }
+            },
+            annotations: [{
+                xref: 'paper',
+                yref: 'paper',
+                x: 1,
+                xanchor: 'right',
+                y: 1.1,
+                yanchor: 'top',
+                text: quarter,
+                showarrow: false,
+                font: {
+                    family: 'Monda',
+                    size: 14,
+                    color: '#666'
+                }
+            }]
         };
 
         // Configuration
@@ -724,25 +753,23 @@ function updateBarChart(quarter, sheetData) {
         if (chartDiv.data && chartDiv.data.length > 0) {
             // Update with animation
             Plotly.animate('bar-chart', {
-                data: [barData],
-                layout: layout
+                data: barData,
+                layout: layout,
+                traces: [0]
             }, {
                 transition: {
-                    duration: 500,
-                    easing: 'cubic-in-out'
+                    duration: 300,
+                    easing: 'linear'  // Use linear easing for constant speed
                 },
                 frame: {
-                    duration: 500,
-                    redraw: true
+                    duration: 300,
+                    redraw: false
                 }
             });
         } else {
             // Initial render
-            Plotly.newPlot('bar-chart', [barData], layout, config);
+            Plotly.newPlot('bar-chart', barData, layout, config);
         }
-    } else {
-        // If no race bar chart data available, use the old implementation
-        // ... (keep the old implementation here as fallback)
     }
 }
 
@@ -912,7 +939,7 @@ function handlePlayPause() {
             // Update the bubble and bar charts based on selected companies
             updateBubbleChart(selectedQuarter, mergedData);
             updateBarChart(selectedQuarter, mergedData);
-        }, 500); // Adjusted interval to accommodate transition durations
+        }, 400); // Reduce interval for smoother animation
     }
 }
 
