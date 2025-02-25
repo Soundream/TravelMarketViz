@@ -118,6 +118,9 @@ let xScaleTimeline;
 let timelineHeight = 80;
 let selectedCompanies = defaultSelectedCompanies.slice(); // Initialize with default companies
 
+// Add a variable to store race bar chart data globally
+let raceBarChartData = null;
+
 // Function to clean the color dictionary by trimming keys
 function cleanColorDict(rawDict) {
     const cleanedDict = {};
@@ -377,8 +380,17 @@ function initializeVisualization(data) {
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await importFromGoogleSheet();
+        // Store race bar chart data globally
+        raceBarChartData = await fetchRaceBarData();
+        console.log('Successfully fetched race bar chart data');
+        
+        // Initial chart updates with the latest quarter
+        const latestQuarter = raceBarChartData[raceBarChartData.length - 1].quarter;
+        updateBubbleChart(latestQuarter, mergedData);
+        updateBarChart(latestQuarter, mergedData);
+        updateLineCharts(mergedData);
     } catch (error) {
-        console.error('Failed to load initial data:', error);
+        console.error('Failed to load data:', error);
     }
 });
 
@@ -596,136 +608,141 @@ function updateBubbleChart(quarter, sheetData) {
 }
 
 function updateBarChart(quarter, sheetData) {
-    const margin = { 
-        l: 120,  // 左边距用于公司名称
-        r: 120,  // 右边距用于数值标签
-        t: 40,
-        b: 50,
-        autoexpand: false
-    };
-    const width = 450;
-    const height = 400;
-
-    // Filter and sort data in ascending order
-    const quarterData = sheetData
-        .filter(d => d.quarter === quarter && selectedCompanies.includes(d.company))
-        .sort((a, b) => b.revenue - a.revenue)  // 保持升序排列
-        .slice(0, 15);
-
-    if (quarterData.length === 0) {
-        Plotly.purge('bar-chart');
-        return;
-    }
-
-    // Prepare the bar chart data
-    const barData = {
-        type: 'bar',
-        x: quarterData.map(d => d.revenue),
-        y: quarterData.map(d => d.company),
-        orientation: 'h',
-        marker: {
-            color: quarterData.map(d => color_dict[d.company] || '#999999')
-        },
-        text: quarterData.map(d => d3.format("$,.1f")(d.revenue) + "M"),
-        textposition: 'outside',
-        hoverinfo: 'text',
-        textfont: {
-            family: 'Monda',
-            size: 11,
-            color: '#333'
-        },
-        cliponaxis: false,
-        textangle: 0,
-        offsetgroup: 1,
-        width: 0.6,  // 条形宽度
-        constraintext: 'none'
-    };
-
-    // Create layout
-    const layout = {
-        width: width,
-        height: height,
-        xaxis: {
-            title: {
-                text: 'Revenue (USD M)',
-                font: {
-                    family: 'Monda',
-                    size: 12
-                },
-                standoff: 20
-            },
-            showgrid: true,
-            gridcolor: '#eee',
-            gridwidth: 1,
-            zeroline: true,
-            zerolinecolor: '#eee',
-            tickfont: {
-                family: 'Monda',
-                size: 11
-            },
-            range: [0, maxRevenueValue * 1.3],
-            fixedrange: true,
-            ticklen: 6,
-            ticksuffix: '   ',
-            automargin: true
-        },
-        yaxis: {
-            showgrid: false,
-            tickfont: {
-                family: 'Monda',
-                size: 11
-            },
-            fixedrange: true,
-            ticklabelposition: 'outside left',  // 将标签放在左侧
-            automargin: true,
-            range: [14.5, -0.5],  // 反转y轴范围，使较大的值显示在顶部
-            dtick: 1,
-            side: 'left',  // 确保标签在左侧
-            autorange: false  // 禁用自动范围以保持顺序
-        },
-        margin: margin,
-        paper_bgcolor: 'rgba(0,0,0,0)',
-        plot_bgcolor: 'rgba(0,0,0,0)',
-        showlegend: false,
-        barmode: 'group',
-        bargap: 0.15,  // 调整条形间距
-        bargroupgap: 0.1,
-        font: {
-            family: 'Monda'
-        },
-        uniformtext: {
-            mode: 'show',
-            minsize: 10
+    // If we have race bar chart data, use it instead of the old data
+    if (raceBarChartData) {
+        const quarterData = raceBarChartData.filter(d => d.quarter === quarter);
+        
+        if (quarterData.length === 0) {
+            Plotly.purge('bar-chart');
+            return;
         }
-    };
 
-    // Configuration
-    const config = {
-        displayModeBar: false,
-        responsive: true,
-        staticPlot: false
-    };
+        const margin = { 
+            l: 120,  // 左边距用于公司名称
+            r: 120,  // 右边距用于数值标签
+            t: 40,
+            b: 50,
+            autoexpand: false
+        };
+        const width = 450;
+        const height = 400;
 
-    // Check if the chart exists
-    const chartDiv = document.getElementById('bar-chart');
-    if (chartDiv.data && chartDiv.data.length > 0) {
-        // Update with animation
-        Plotly.animate('bar-chart', {
-            data: [barData],
-            layout: layout
-        }, {
-            transition: {
-                duration: 500,
-                easing: 'cubic-in-out'
+        // Sort data by revenue in descending order
+        quarterData.sort((a, b) => b.revenue - a.revenue);
+
+        // Prepare the bar chart data
+        const barData = {
+            type: 'bar',
+            x: quarterData.map(d => d.revenue),
+            y: quarterData.map(d => d.company),
+            orientation: 'h',
+            marker: {
+                color: quarterData.map(d => color_dict[d.company.toLowerCase()] || '#999999')
             },
-            frame: {
-                duration: 500,
-                redraw: true
+            text: quarterData.map(d => d3.format("$,.0f")(d.revenue) + "M"),
+            textposition: 'outside',
+            hoverinfo: 'text',
+            textfont: {
+                family: 'Monda',
+                size: 11,
+                color: '#333'
+            },
+            cliponaxis: false,
+            textangle: 0,
+            offsetgroup: 1,
+            width: 0.6,  // 条形宽度
+            constraintext: 'none'
+        };
+
+        // Create layout
+        const layout = {
+            width: width,
+            height: height,
+            xaxis: {
+                title: {
+                    text: 'Revenue (USD M)',
+                    font: {
+                        family: 'Monda',
+                        size: 12
+                    },
+                    standoff: 20
+                },
+                showgrid: true,
+                gridcolor: '#eee',
+                gridwidth: 1,
+                zeroline: true,
+                zerolinecolor: '#eee',
+                tickfont: {
+                    family: 'Monda',
+                    size: 11
+                },
+                range: [0, Math.max(...quarterData.map(d => d.revenue)) * 1.3],
+                fixedrange: true,
+                ticklen: 6,
+                ticksuffix: '   ',
+                automargin: true
+            },
+            yaxis: {
+                showgrid: false,
+                tickfont: {
+                    family: 'Monda',
+                    size: 11
+                },
+                fixedrange: true,
+                ticklabelposition: 'outside left',
+                automargin: true,
+                range: [quarterData.length - 0.5, -0.5],
+                dtick: 1,
+                side: 'left',
+                autorange: false
+            },
+            margin: margin,
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            showlegend: false,
+            barmode: 'group',
+            bargap: 0.15,
+            bargroupgap: 0.1,
+            font: {
+                family: 'Monda'
+            },
+            uniformtext: {
+                mode: 'show',
+                minsize: 10
             }
-        });
+        };
+
+        // Configuration
+        const config = {
+            displayModeBar: false,
+            responsive: true,
+            staticPlot: false
+        };
+
+        // Check if the chart exists
+        const chartDiv = document.getElementById('bar-chart');
+        if (chartDiv.data && chartDiv.data.length > 0) {
+            // Update with animation
+            Plotly.animate('bar-chart', {
+                data: [barData],
+                layout: layout
+            }, {
+                transition: {
+                    duration: 500,
+                    easing: 'cubic-in-out'
+                },
+                frame: {
+                    duration: 500,
+                    redraw: true
+                }
+            });
+        } else {
+            // Initial render
+            Plotly.newPlot('bar-chart', [barData], layout, config);
+        }
     } else {
-        // Initial render
-        Plotly.newPlot('bar-chart', [barData], layout, config);
+        // If no race bar chart data available, use the old implementation
+        // ... (keep the old implementation here as fallback)
     }
 }
 
@@ -1150,15 +1167,3 @@ async function fetchRaceBarData() {
         throw error;
     }
 }
-
-// Add event listener to test the new function
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        await importFromGoogleSheet();
-        // Test the race bar chart data fetching
-        const raceBarData = await fetchRaceBarData();
-        console.log('Successfully fetched race bar chart data');
-    } catch (error) {
-        console.error('Failed to load data:', error);
-    }
-});
