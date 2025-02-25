@@ -19,11 +19,8 @@
       </div>
     </div>
   </header>
-  <!-- TODO: share the data to the front end -->
-  <!-- TODO: - make the page more elegant + add a sidebar and figure out the filtering conditions + add filtering sections in the front end page -->
   <main class="pt-16">
     <div class="relative isolate overflow-hidden">
-      <!-- Secondary navigation -->
       <header class="pb-4 pt-6 sm:pb-6">
         <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-6 px-4 sm:flex-nowrap sm:px-6 lg:px-8">
           <h1 class="text-xl font-semibold text-gray-900">Travel Market Visualization</h1>
