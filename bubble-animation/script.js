@@ -5,7 +5,7 @@ const sheetId = '2PACX-1vQYwQTSYwig7AZ0fjPniLVfUUJnLz3PP4f4fBtqkBNPYqrkKtQyZDaB9
 const sheetNames = {
     revenueGrowth: 'Revenue Growth YoY',
     ebitdaMargin: 'EBITDA_MARGIN',
-    revenue: 'Revenue'
+    revenue: 'Quarterly Revenue&EBITDA'
 };
 
 // Array of company symbols to be selected by default
@@ -214,7 +214,7 @@ function processData(csvText) {
                 maxRevenue = Math.max(maxRevenue, revenue);
 
                 processedData.push({
-                    quarter,
+                quarter,
                     company,
                     revenueGrowth: revenueGrowth,
                     ebitdaMargin: ebitdaMargin,
@@ -290,29 +290,33 @@ function handleFilterChange() {
 
 // Function to fetch and process data from Google Sheet
 async function importFromGoogleSheet() {
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/e/${sheetId}/pub?output=csv`;
+    // URLs for the published sheets - using direct published URLs
+    const baseUrl = 'https://docs.google.com/spreadsheets/d/e';
+    const ttmUrl = `${baseUrl}/${sheetId}/pub?output=csv`;
+    const revenueUrl = `${baseUrl}/${sheetId}/pub?gid=621483928&output=csv`;
     
     try {
         console.log('Starting Google Sheet import...');
-        console.log('Using sheet URL:', sheetUrl);
+        console.log('TTM URL:', ttmUrl);
+        console.log('Revenue URL:', revenueUrl);
         
-        // Fetch data from all sheets
-        const [revenueGrowthResponse, ebitdaMarginResponse, revenueResponse] = await Promise.all([
-            fetch(`${sheetUrl}&sheet=${encodeURIComponent(sheetNames.revenueGrowth)}`),
-            fetch(`${sheetUrl}&sheet=${encodeURIComponent(sheetNames.ebitdaMargin)}`),
-            fetch(`${sheetUrl}&sheet=${encodeURIComponent(sheetNames.revenue)}`)
+        // Fetch data from both sheets
+        const [ttmResponse, revenueResponse] = await Promise.all([
+            fetch(ttmUrl),
+            fetch(revenueUrl)
         ]);
         
-        if (!revenueGrowthResponse.ok || !ebitdaMarginResponse.ok || !revenueResponse.ok) {
+        if (!ttmResponse.ok || !revenueResponse.ok) {
+            console.error('TTM Response status:', ttmResponse.status);
+            console.error('Revenue Response status:', revenueResponse.status);
             throw new Error('Failed to fetch data from one or more sheets');
         }
         
-        const [revenueGrowthCsv, ebitdaMarginCsv, revenueCsv] = await Promise.all([
-            revenueGrowthResponse.text(),
-            ebitdaMarginResponse.text(),
+        const [ttmCsv, revenueCsv] = await Promise.all([
+            ttmResponse.text(),
             revenueResponse.text()
         ]);
-        
+
         // Parse revenue data
         const revenueRows = revenueCsv.split('\n').map(row => 
             row.split(',').map(cell => {
@@ -321,7 +325,17 @@ async function importFromGoogleSheet() {
                 return isNaN(num) ? cleaned : num;
             })
         );
-        
+
+        // Print Revenue sheet data for debugging
+        console.log('\n=== Revenue Sheet Data ===');
+        console.log('Headers:', revenueRows[0]);
+        console.log('First few rows of data:');
+        revenueRows.slice(1, 6).forEach((row, index) => {
+            console.log(`Row ${index + 1}:`, row);
+        });
+        console.log('Total rows in Revenue sheet:', revenueRows.length);
+        console.log('=== End of Revenue Sheet Data ===\n');
+
         // Create a map of revenue data
         const revenueMap = new Map();
         const headers = revenueRows[0].slice(1).map(h => h ? h.trim() : null).filter(Boolean);
@@ -330,38 +344,49 @@ async function importFromGoogleSheet() {
         let quarterCount = 0;
         let maxRevenue = 0;  // Track maximum revenue
         
-        for (let i = 2; i < revenueRows.length; i++) {  // Start from row 3 (index 2)
+        // Find the Revenue row index
+        const revenueStartIndex = revenueRows.findIndex(row => 
+            row[0] && String(row[0]).toLowerCase().includes('revenue')
+        );
+
+        if (revenueStartIndex === -1) {
+            throw new Error('Revenue row not found in Quarterly Revenue&EBITDA sheet');
+        }
+
+        // Process revenue data
+        for (let i = revenueStartIndex + 1; i < revenueRows.length; i++) {
             const row = revenueRows[i];
-            if (!row || !row[0]) continue;
+            if (!row || !row[0] || row[0].toLowerCase().includes('ebitda')) break;
             
-            const year = String(row[0]).trim();
-            if (!year) continue;
+            const quarterInfo = String(row[0]).trim();
+            if (!quarterInfo || quarterInfo === '') continue;
+
+            // Extract year and quarter from the row
+            const match = quarterInfo.match(/(\d{4}).*?([1-4])/);
+            if (!match) continue;
+
+            const [_, year, quarterNum] = match;
+            const quarter = `${year}'Q${quarterNum}`;
             
-            if (year !== currentYear) {
-                currentYear = year;
-                quarterCount = 1;
-            } else {
-                quarterCount++;
-            }
-            
-            const quarter = `${year}'Q${quarterCount}`;
-            
+            // Print each quarter's data for debugging
+            console.log(`\nProcessing ${quarter}:`);
             headers.forEach((company, j) => {
                 const revenue = parseFloat(row[j + 1]);
                 if (!isNaN(revenue)) {
                     const key = `${quarter}|${company}`;
                     revenueMap.set(key, revenue);
-                    maxRevenue = Math.max(maxRevenue, revenue);  // Update maximum revenue
+                    maxRevenue = Math.max(maxRevenue, revenue);
+                    console.log(`${company}: $${revenue}M`);
                 }
             });
         }
         
         // Update global maxRevenueValue
         maxRevenueValue = maxRevenue;
-        console.log('Maximum revenue value:', maxRevenueValue);
+        console.log('\nMaximum revenue value:', maxRevenueValue);
         
         // Process the main data
-        mergedData = processData(revenueGrowthCsv);
+        mergedData = processData(ttmCsv);
         
         // Update revenue values
         mergedData = mergedData.map(item => {
@@ -385,6 +410,20 @@ async function importFromGoogleSheet() {
 
 // Function to initialize the visualization
 function initializeVisualization(data) {
+    // Print 2024'Q4 data for debugging
+    console.log('\n=== 2024\'Q4 Data ===');
+    const q4Data = data.filter(d => d.quarter === '2024\'Q4');
+    console.log('Number of companies in 2024\'Q4:', q4Data.length);
+    console.log('Companies and their data:');
+    q4Data.forEach(d => {
+        console.log(`${d.company}:`, {
+            revenue: d.revenue.toFixed(2) + 'M',
+            revenueGrowth: d.revenueGrowth.toFixed(2) + '%',
+            ebitdaMargin: d.ebitdaMargin.toFixed(2) + '%'
+        });
+    });
+    console.log('=== End of 2024\'Q4 Data ===\n');
+
     // Sort quarters chronologically
     uniqueQuarters = [...new Set(data.map(d => d.quarter))].sort((a, b) => {
         // Parse YYYY'QN format
@@ -657,29 +696,24 @@ function updateBubbleChart(quarter, sheetData) {
 }
 
 function updateBarChart(quarter, sheetData) {
-    const margin = { 
-        l: 120,  // 左边距用于公司名称
-        r: 120,  // 右边距用于数值标签
-        t: 40,
-        b: 50,
-        autoexpand: false
-    };
-    const width = 450;
-    const height = 400;
-
-    // Filter and sort data in ascending order
+    // Filter and sort data
     const quarterData = sheetData
         .filter(d => d.quarter === quarter && selectedCompanies.includes(d.company))
-        .sort((a, b) => b.revenue - a.revenue)  // 按收入降序排列
-        .slice(0, 15);  // 只显示前15家公司
+        .sort((a, b) => b.revenue - a.revenue)  // Sort by revenue in descending order
+        .slice(0, 15);  // Show only top 15 companies
 
     if (quarterData.length === 0) {
         Plotly.purge('bar-chart');
         return;
     }
 
+    // Calculate the maximum revenue for dynamic x-axis range
+    const maxRevenue = Math.max(...quarterData.map(d => d.revenue));
+    // Round up to the nearest thousand and add 20% padding
+    const xAxisMax = Math.ceil(maxRevenue * 1.2 / 1000) * 1000;
+
     // Prepare the bar chart data
-    const barData = {
+    const barData = [{
         type: 'bar',
         x: quarterData.map(d => d.revenue),
         y: quarterData.map(d => d.company),
@@ -687,7 +721,7 @@ function updateBarChart(quarter, sheetData) {
         marker: {
             color: quarterData.map(d => color_dict[d.company] || '#999999')
         },
-        text: quarterData.map(d => d3.format("$,.0f")(d.revenue) + "M"),  // 使用整数格式
+        text: quarterData.map(d => d3.format("$,.0f")(d.revenue) + "M"),
         textposition: 'outside',
         hoverinfo: 'text',
         textfont: {
@@ -697,15 +731,13 @@ function updateBarChart(quarter, sheetData) {
         },
         cliponaxis: false,
         textangle: 0,
-        offsetgroup: 1,
-        width: 0.6,
-        constraintext: 'none'
-    };
+        width: 0.6
+    }];
 
-    // Create layout
+    // Create layout with dynamic x-axis range
     const layout = {
-        width: width,
-        height: height,
+        width: 450,
+        height: 400,
         title: {
             text: `Revenue by Company (${quarter})`,
             font: {
@@ -731,11 +763,12 @@ function updateBarChart(quarter, sheetData) {
                 family: 'Monda',
                 size: 11
             },
-            range: [0, maxRevenueValue * 1.1],  // 调整为1.1以留出足够空间
+            range: [0, xAxisMax],  // Dynamic range based on data
             fixedrange: true,
             ticklen: 6,
             ticksuffix: '   ',
-            automargin: true
+            automargin: true,
+            dtick: Math.ceil(xAxisMax / 5 / 1000) * 1000  // Dynamic tick intervals
         },
         yaxis: {
             showgrid: false,
@@ -746,24 +779,25 @@ function updateBarChart(quarter, sheetData) {
             fixedrange: true,
             ticklabelposition: 'outside left',
             automargin: true,
-            range: [14.5, -0.5],  // 反转y轴范围，使较大的值显示在顶部
+            range: [14.5, -0.5],  // Reverse range to show highest values at top
             dtick: 1,
-            side: 'left',
-            autorange: false
+            side: 'left'
         },
-        margin: margin,
+        margin: {
+            l: 120,  // Left margin for company names
+            r: 120,  // Right margin for value labels
+            t: 40,
+            b: 50,
+            autoexpand: false
+        },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         showlegend: false,
         barmode: 'group',
-        bargap: 0.15,
+        bargap: 0.2,
         bargroupgap: 0.1,
         font: {
             family: 'Monda'
-        },
-        uniformtext: {
-            mode: 'show',
-            minsize: 10
         }
     };
 
@@ -779,7 +813,7 @@ function updateBarChart(quarter, sheetData) {
     if (chartDiv.data && chartDiv.data.length > 0) {
         // Update with animation
         Plotly.animate('bar-chart', {
-            data: [barData],
+            data: barData,
             layout: layout
         }, {
             transition: {
@@ -793,7 +827,7 @@ function updateBarChart(quarter, sheetData) {
         });
     } else {
         // Initial render
-        Plotly.newPlot('bar-chart', [barData], layout, config);
+        Plotly.newPlot('bar-chart', barData, layout, config);
     }
 }
 
