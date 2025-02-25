@@ -600,12 +600,12 @@ function updateBubbleChart(quarter, sheetData) {
     // Animation configuration
     const animation = {
         transition: {
-            duration: 500,
-            easing: 'cubic-in-out'
+            duration: 0, // Remove transition duration for immediate update
+            easing: 'linear'
         },
         frame: {
-            duration: 500,
-            redraw: true
+            duration: 0,
+            redraw: false
         }
     };
 
@@ -619,7 +619,7 @@ function updateBubbleChart(quarter, sheetData) {
         }, animation);
     } else {
         // Initial render without animation
-    Plotly.react('bubble-chart', bubbleData, layout, {responsive: true});
+        Plotly.react('bubble-chart', bubbleData, layout, {responsive: true});
     }
 }
 
@@ -858,11 +858,11 @@ function renderBarChart(data) {
             traces: [0]
         }, {
             transition: {
-                duration: 300,
+                duration: 0, // Remove transition duration for immediate update
                 easing: 'linear'
             },
             frame: {
-                duration: 300,
+                duration: 0,
                 redraw: false
             }
         });
@@ -1034,7 +1034,7 @@ function handlePlayPause() {
         playButton.appendChild(document.createTextNode(' Pause'));
         isPlaying = true;
         
-        const interpolationDuration = 400; // Duration for each quarter transition
+        const interpolationDuration = 800; // Duration for each quarter transition
         const frameInterval = 1000 / 60; // 60 FPS for smooth animation
         let lastTimestamp = null;
         let elapsedTime = 0;
@@ -1063,7 +1063,7 @@ function handlePlayPause() {
                     .filter(d => d.quarter === nextQuarter && d.revenue > 0)
                     .sort((a, b) => b.revenue - a.revenue);
                 
-                interpolationFrames = createInterpolatedFrames(currentData, nextData, 30);
+                interpolationFrames = createInterpolatedFrames(currentData, nextData, 60);
                 currentInterpolationFrame = 0;
                 isInterpolating = true;
                 elapsedTime = 0;
@@ -1087,9 +1087,10 @@ function handlePlayPause() {
                     currentInterpolationFrame = frameIndex;
                     renderBarChart(interpolationFrames[currentInterpolationFrame]);
                     
-                    // Update bubble chart with current quarter
+                    // Update bubble chart with interpolated position
                     const currentQuarter = uniqueQuarters[currentQuarterIndex];
-                    updateBubbleChart(currentQuarter, mergedData);
+                    const nextQuarter = uniqueQuarters[(currentQuarterIndex + 1) % uniqueQuarters.length];
+                    updateBubbleChart(progress < 0.5 ? currentQuarter : nextQuarter, mergedData);
                 }
                 
                 // Check if interpolation is complete
@@ -1097,11 +1098,18 @@ function handlePlayPause() {
                     isInterpolating = false;
                     currentQuarterIndex = (currentQuarterIndex + 1) % uniqueQuarters.length;
                     updateTimelineTriangle(currentQuarterIndex);
+                    
+                    // Ensure final state is shown
+                    const finalQuarter = uniqueQuarters[currentQuarterIndex];
+                    updateBubbleChart(finalQuarter, mergedData);
+                    updateBarChart(finalQuarter, mergedData);
                 }
             }
             
             // Request next frame
-            requestAnimationFrame(animate);
+            if (isPlaying) {
+                requestAnimationFrame(animate);
+            }
         }
         
         // Start the animation loop
