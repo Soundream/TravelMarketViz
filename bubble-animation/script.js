@@ -1041,6 +1041,7 @@ async function fetchRaceBarData() {
         
         // Split into lines first
         const lines = csvText.split('\n');
+        console.log('Total number of lines:', lines.length);
         
         // Process each line, properly handling quoted fields that may contain commas
         const rows = lines.map(line => {
@@ -1073,30 +1074,74 @@ async function fetchRaceBarData() {
         // Get headers (company names)
         const headers = rows[0].filter(Boolean);
         console.log('Race Bar Chart Headers (Companies):', headers);
+        console.log('Number of companies:', headers.length);
+        
+        // Debug: Print first few rows of raw data
+        console.log('=== Raw Data Sample ===');
+        for (let i = 0; i < Math.min(5, rows.length); i++) {
+            console.log(`Row ${i}:`, rows[i]);
+        }
         
         // Process data rows
         const processedData = [];
+        const quarterData = {}; // Object to store data by quarter
+        
+        // Function to clean and parse revenue values
+        function parseRevenue(value) {
+            if (!value || value.trim() === '') return null;
+            
+            // Remove $ sign, commas, and any quotes
+            const cleanValue = value.replace(/[$,'"]/g, '');
+            
+            // Parse the clean value
+            const number = parseFloat(cleanValue);
+            
+            // Return null if not a valid number or negative
+            return !isNaN(number) ? number : null;
+        }
+        
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            if (!row[0]) continue;  // Skip empty rows
+            if (!row[0] || row[0] === 'Revenue') continue;  // Skip empty rows and the 'Revenue' row
             
             const quarter = row[0];
+            if (!quarterData[quarter]) {
+                quarterData[quarter] = [];
+            }
+            
             headers.forEach((company, j) => {
-                // Remove any remaining quotes and commas from the number
-                const rawValue = row[j + 1]?.replace(/[",]/g, '');
-                const revenue = parseFloat(rawValue);
-                if (!isNaN(revenue)) {
-                    processedData.push({
+                const revenue = parseRevenue(row[j + 1]);
+                if (revenue !== null) {
+                    const dataPoint = {
                         quarter,
                         company,
                         revenue
-                    });
+                    };
+                    processedData.push(dataPoint);
+                    quarterData[quarter].push(dataPoint);
                 }
             });
         }
         
-        console.log('Race Bar Chart Processed Data Sample:', processedData.slice(0, 5));
-        console.log('Total Race Bar Chart Data Points:', processedData.length);
+        // Log detailed information about the data
+        console.log('=== Race Bar Chart Data Summary ===');
+        console.log('Total data points:', processedData.length);
+        console.log('Quarters found:', Object.keys(quarterData).filter(q => quarterData[q].length > 0));
+        console.log('\nData by Quarter:');
+        Object.entries(quarterData).forEach(([quarter, data]) => {
+            if (data.length > 0) {  // Only show quarters with data
+                console.log(`\n${quarter}:`);
+                console.log('Number of companies:', data.length);
+                console.log('Companies and revenues:');
+                data.sort((a, b) => b.revenue - a.revenue)  // Sort by revenue in descending order
+                    .forEach(({company, revenue}) => {
+                        console.log(`${company}: ${revenue.toLocaleString()}`);
+                    });
+            }
+        });
+        
+        console.log('\nSample of processed data:', processedData.slice(0, 5));
+        console.log('=== End of Race Bar Chart Data Summary ===');
         
         return processedData;
         
