@@ -8,9 +8,6 @@ const sheetNames = {
     revenue: 'Revenue'
 };
 
-// Array of company symbols to be selected by default
-const defaultSelectedCompanies = ["Almosafer", "Cleartrip", "EaseMyTrip", "Ixigo", "MMYT", "Skyscanner", "Wego", "Yatra"];
-
 // Company logos mapping
 const companyLogos = {
     "ABNB": "logos/ABNB_logo.png",
@@ -106,6 +103,9 @@ const companyNames = {
     // Add more mappings as needed...
 };
 
+// Array of company symbols to be selected by default (after companyNames is defined)
+const defaultSelectedCompanies = []; // Initialize with no companies selected
+
 // Global variables
 let maxRevenueValue = 10000; // Initialize with a default value
 let isPlaying = false;
@@ -116,7 +116,7 @@ let mergedData;
 let timelineTriangle;
 let xScaleTimeline;
 let timelineHeight = 80;
-let selectedCompanies = defaultSelectedCompanies.slice(); // Initialize with default companies
+let selectedCompanies = []; // Initialize with no companies selected
 
 // Add a variable to store race bar chart data globally
 let raceBarChartData = null;
@@ -138,6 +138,13 @@ function cleanColorDict(rawDict) {
 
 // Cleaned color dictionary without leading/trailing spaces
 const color_dict = cleanColorDict(color_dict_raw);
+
+// Function to get companies with data for a specific quarter
+function getCompaniesWithData(quarter, data) {
+    return data
+        .filter(d => d.quarter === quarter && d.revenue != null && d.revenue > 0)
+        .map(d => d.company);
+}
 
 // Function to parse CSV data into a usable array of objects
 function processData(csvText) {
@@ -269,7 +276,7 @@ function initializeCompanyFilters(data) {
             .attr("type", "checkbox")
             .attr("id", id)
             .attr("value", companySymbol)
-            .property("checked", selectedCompanies.includes(companySymbol))
+            .property("checked", false) // Initialize all checkboxes as unchecked
             .on("change", handleFilterChange);
 
         label.append("span")
@@ -285,10 +292,6 @@ function handleFilterChange() {
         .map(d => d.value);
 
     selectedCompanies = checkedBoxes;
-
-    if (selectedCompanies.length === 0) {
-        console.warn("No companies selected. Charts will be empty.");
-    }
 
     const selectedQuarter = uniqueQuarters[currentQuarterIndex];
     updateBubbleChart(selectedQuarter, mergedData);
@@ -346,7 +349,8 @@ function initializeVisualization(data) {
         return parseInt(quarterA.substring(1)) - parseInt(quarterB.substring(1));
     });
 
-    currentQuarterIndex = uniqueQuarters.length - 1;
+    // Set initial quarter index to 0 (first quarter) instead of the last quarter
+    currentQuarterIndex = 0;
 
     // Extract unique years and find Q1 indices
     let uniqueYears = [...new Set(uniqueQuarters.map(q => {
@@ -389,10 +393,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         raceBarChartData = await fetchRaceBarData();
         console.log('Successfully fetched race bar chart data');
         
-        // Initial chart updates with the latest quarter
-        const latestQuarter = raceBarChartData[raceBarChartData.length - 1].quarter;
-        updateBubbleChart(latestQuarter, mergedData);
-        updateBarChart(latestQuarter, mergedData);
+        // Initial chart updates with the first quarter
+        const firstQuarter = uniqueQuarters[0];
+        updateBubbleChart(firstQuarter, mergedData);
+        updateBarChart(firstQuarter, mergedData);
         updateLineCharts(mergedData);
     } catch (error) {
         console.error('Failed to load data:', error);
@@ -498,7 +502,15 @@ function updateTimelineTriangle(position) {
 // Function to update the bubble chart
 function updateBubbleChart(quarter, sheetData) {
     // Filter data for the selected quarter and selected companies
-    const quarterData = sheetData.filter(d => d.quarter === quarter && selectedCompanies.includes(d.company));
+    const quarterData = sheetData
+        .filter(d => {
+            // Only include companies that have both revenue growth and EBITDA margin data
+            return d.quarter === quarter && 
+                   selectedCompanies.includes(d.company) && 
+                   d.revenueGrowth != null && 
+                   d.ebitdaMargin != null;
+        });
+
     if (quarterData.length === 0) {
         Plotly.react('bubble-chart', [], { title: `No data available for ${quarter}` });
         return;
@@ -611,8 +623,42 @@ function updateBubbleChart(quarter, sheetData) {
     }
 }
 
+// Function to find the next different value for a company
+function findNextDifferentValue(company, currentQuarter, data) {
+    const allQuarters = [...new Set(data.map(d => d.quarter))].sort();
+    const currentIndex = allQuarters.indexOf(currentQuarter);
+    
+    // Look forward
+    for (let i = currentIndex + 1; i < allQuarters.length; i++) {
+        const nextValue = data.find(d => d.company === company && d.quarter === allQuarters[i])?.revenue;
+        if (nextValue !== undefined && nextValue > 0) {
+            return nextValue;
+        }
+    }
+    
+    // If not found looking forward, look backward
+    for (let i = currentIndex - 1; i >= 0; i--) {
+        const prevValue = data.find(d => d.company === company && d.quarter === allQuarters[i])?.revenue;
+        if (prevValue !== undefined && prevValue > 0) {
+            return prevValue;
+        }
+    }
+    
+    return null;
+}
+
 // Function to create interpolated frames between two quarters
-function createInterpolatedFrames(startData, endData, numFrames = 30) {
+function createInterpolatedFrames(startData, endData, numFrames = 60) {
+    // Log Booking.com data for debugging
+    const startBooking = startData.find(d => d.company === 'BKNG');
+    const endBooking = endData.find(d => d.company === 'BKNG');
+    console.log('=== Booking.com Data ===');
+    console.log('Start Quarter:', startBooking ? startBooking.quarter : 'No data');
+    console.log('Start Revenue:', startBooking ? startBooking.revenue : 'No data');
+    console.log('End Quarter:', endBooking ? endBooking.quarter : 'No data');
+    console.log('End Revenue:', endBooking ? endBooking.revenue : 'No data');
+    console.log('======================');
+
     const frames = [];
     
     // Get all unique companies that have data in either quarter
@@ -624,17 +670,41 @@ function createInterpolatedFrames(startData, endData, numFrames = 30) {
     // Create interpolation for each frame
     for (let frame = 0; frame <= numFrames; frame++) {
         const t = frame / numFrames;
+        // Use cubic easing for smoother transitions
+        const easedT = t < 0.5
+            ? 4 * t * t * t
+            : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            
         const frameData = [];
         
         allCompanies.forEach(company => {
             const startPoint = startData.find(d => d.company === company);
             const endPoint = endData.find(d => d.company === company);
             
-            // Only include if company has data in either quarter
-            if (startPoint || endPoint) {
-                const startRevenue = startPoint ? startPoint.revenue : 0;
-                const endRevenue = endPoint ? endPoint.revenue : 0;
-                const interpolatedRevenue = startRevenue * (1 - t) + endRevenue * t;
+            // Only include if company has data in either quarter and is selected
+            if ((startPoint || endPoint) && selectedCompanies.includes(company)) {
+                let startRevenue = startPoint ? startPoint.revenue : 0;
+                let endRevenue = endPoint ? endPoint.revenue : 0;
+                
+                // If the revenue hasn't changed, find the next different value
+                if (startRevenue === endRevenue && startRevenue > 0) {
+                    const nextDifferentValue = findNextDifferentValue(company, startPoint.quarter, raceBarChartData);
+                    if (nextDifferentValue !== null && nextDifferentValue !== startRevenue) {
+                        // Create a small variation for animation
+                        endRevenue = nextDifferentValue;
+                        // Adjust the interpolation to be subtle
+                        const variation = Math.abs(endRevenue - startRevenue) * 0.1;
+                        endRevenue = startRevenue + (endRevenue > startRevenue ? variation : -variation);
+
+                        // Log Booking.com interpolation data if this is Booking.com
+                        if (company === 'BKNG') {
+                            console.log(`Frame ${frame}: Booking.com interpolated revenue:`, 
+                                startRevenue * (1 - easedT) + endRevenue * easedT);
+                        }
+                    }
+                }
+                
+                const interpolatedRevenue = startRevenue * (1 - easedT) + endRevenue * easedT;
                 
                 // Only include if the interpolated revenue is greater than 0
                 if (interpolatedRevenue > 0) {
@@ -664,9 +734,19 @@ function updateBarChart(quarter, sheetData) {
         return;
     }
 
-    // Get data for current quarter
+    // Get companies that have data for this quarter
+    const companiesWithData = getCompaniesWithData(quarter, raceBarChartData);
+
+    // Get data for current quarter, filtering out companies with zero or null revenue
+    // and only include companies that are both selected and have data
     const quarterData = raceBarChartData
-        .filter(d => d.quarter === quarter && d.revenue > 0)
+        .filter(d => {
+            return d.quarter === quarter && 
+                   d.revenue != null && 
+                   d.revenue > 0 &&
+                   selectedCompanies.includes(d.company) &&
+                   companiesWithData.includes(d.company);
+        })
         .sort((a, b) => b.revenue - a.revenue);
 
     renderBarChart(quarterData);
@@ -683,7 +763,7 @@ function renderBarChart(data) {
     const height = 400; // Fixed height
     const barHeight = 0.4; // Fixed bar height
     const maxBars = 15; // Maximum number of bars to show
-    const barSpacing = 1; // Space between bars
+    const barSpacing = 0.15; // Fixed spacing between bars
 
     // Calculate the maximum revenue across all quarters for consistent scaling
     const maxRevenue = Math.max(...raceBarChartData.map(d => d.revenue));
@@ -713,7 +793,6 @@ function renderBarChart(data) {
         },
         cliponaxis: false,
         textangle: 0,
-        offsetgroup: 1,
         width: barHeight,
         constraintext: 'none'
     }];
@@ -760,8 +839,8 @@ function renderBarChart(data) {
         plot_bgcolor: 'rgba(0,0,0,0)',
         showlegend: false,
         barmode: 'group',
-        bargap: 0.15,
-        bargroupgap: 0.02,
+        bargap: barSpacing,
+        bargroupgap: 0,
         font: { family: 'Monda' },
         uniformtext: {
             mode: 'show',
@@ -955,11 +1034,22 @@ function handlePlayPause() {
         playButton.appendChild(document.createTextNode(' Pause'));
         isPlaying = true;
         
-        let interpolationProgress = 0;
-        const interpolationDuration = 800; // Total duration for each quarter transition
-        const frameInterval = interpolationDuration / 30; // 30 frames per transition
+        const interpolationDuration = 400; // Duration for each quarter transition
+        const frameInterval = 1000 / 60; // 60 FPS for smooth animation
+        let lastTimestamp = null;
+        let elapsedTime = 0;
         
-        playInterval = setInterval(() => {
+        function animate(timestamp) {
+            if (!isPlaying) return;
+            
+            if (!lastTimestamp) {
+                lastTimestamp = timestamp;
+            }
+            
+            const deltaTime = timestamp - lastTimestamp;
+            lastTimestamp = timestamp;
+            elapsedTime += deltaTime;
+            
             if (!isInterpolating) {
                 // Get current and next quarter data
                 const currentQuarter = uniqueQuarters[currentQuarterIndex];
@@ -973,37 +1063,49 @@ function handlePlayPause() {
                     .filter(d => d.quarter === nextQuarter && d.revenue > 0)
                     .sort((a, b) => b.revenue - a.revenue);
                 
-                // Create interpolation frames
-                interpolationFrames = createInterpolatedFrames(currentData, nextData);
+                interpolationFrames = createInterpolatedFrames(currentData, nextData, 30);
                 currentInterpolationFrame = 0;
                 isInterpolating = true;
-                interpolationProgress = 0;
+                elapsedTime = 0;
             }
             
             if (isInterpolating) {
-                // Calculate timeline position for smooth movement
-                const progress = interpolationProgress / interpolationDuration;
+                // Calculate linear progress (no easing)
+                const progress = Math.min(elapsedTime / interpolationDuration, 1);
+                
+                // Update timeline position with linear interpolation
                 const timelinePosition = currentQuarterIndex + progress;
                 updateTimelineTriangle(timelinePosition);
                 
-                // Render current interpolation frame for race bar chart
-                renderBarChart(interpolationFrames[currentInterpolationFrame]);
+                // Calculate current frame based on progress
+                const frameIndex = Math.min(
+                    Math.floor(progress * interpolationFrames.length),
+                    interpolationFrames.length - 1
+                );
                 
-                // Update bubble chart with current quarter
-                const currentQuarter = uniqueQuarters[currentQuarterIndex];
-                updateBubbleChart(currentQuarter, mergedData);
-                
-                currentInterpolationFrame++;
-                interpolationProgress += frameInterval;
+                if (frameIndex !== currentInterpolationFrame) {
+                    currentInterpolationFrame = frameIndex;
+                    renderBarChart(interpolationFrames[currentInterpolationFrame]);
+                    
+                    // Update bubble chart with current quarter
+                    const currentQuarter = uniqueQuarters[currentQuarterIndex];
+                    updateBubbleChart(currentQuarter, mergedData);
+                }
                 
                 // Check if interpolation is complete
-                if (currentInterpolationFrame >= interpolationFrames.length) {
+                if (progress >= 1) {
                     isInterpolating = false;
                     currentQuarterIndex = (currentQuarterIndex + 1) % uniqueQuarters.length;
                     updateTimelineTriangle(currentQuarterIndex);
                 }
             }
-        }, frameInterval);
+            
+            // Request next frame
+            requestAnimationFrame(animate);
+        }
+        
+        // Start the animation loop
+        requestAnimationFrame(animate);
     }
 }
 
