@@ -574,11 +574,11 @@ function updateBubbleChart(quarter, sheetData) {
         text: quarterData.map(d => ''),  // Remove text
         mode: 'markers',
         marker: {
-            size: quarterData.map(d => Math.sqrt(Math.abs(d.revenue)) * 0.3),
+            size: quarterData.map(d => Math.sqrt(Math.abs(d.revenue)) * 0.5),
             color: quarterData.map(d => color_dict[d.company] || '#999999'),
             sizemode: 'area',
-            sizeref: 2.0 * Math.max(...quarterData.map(d => Math.sqrt(Math.abs(d.revenue)))) / (15**2),
-            sizemin: 3,
+            sizeref: 2.0 * Math.max(...quarterData.map(d => Math.sqrt(Math.abs(d.revenue)))) / (25**2),
+            sizemin: 5,
             line: {
                 color: 'white',
                 width: 1
@@ -598,13 +598,16 @@ function updateBubbleChart(quarter, sheetData) {
             xref: 'x',
             yref: 'y',
             x: d.ebitdaMargin,
-            y: d.revenueGrowth,
-            sizex: 8,
-            sizey: 8,
+            y: d.revenueGrowth + 14, // 在 y 轴上向上偏移 3 个单位
+            sizex: 16,
+            sizey: 16,
             xanchor: 'center',
             yanchor: 'center',
             layer: 'above',
-            sizing: 'contain'
+            sizing: 'contain',
+            opacity: 1,
+            rendering: 'crispEdges',
+            visible: true
         };
     }).filter(img => img !== null);
 
@@ -658,10 +661,16 @@ function updateBubbleChart(quarter, sheetData) {
         hovermode: 'closest',
         plot_bgcolor: 'white',
         paper_bgcolor: 'white',
-                font: {
+        font: {
             family: 'Monda'
         },
-        images: images
+        images: images,
+        datarevision: Date.now(),
+        config: {
+            responsive: true,
+            displayModeBar: false,
+            staticPlot: false
+        }
     };
 
     // Check if the chart already exists
@@ -670,13 +679,27 @@ function updateBubbleChart(quarter, sheetData) {
         // Update existing chart with no animation
         Plotly.react('bubble-chart', bubbleData, layout, {
             displayModeBar: false,
-            responsive: true
+            responsive: true,
+            toImageButtonOptions: {
+                format: 'png',
+                filename: 'bubble_chart',
+                height: 1000,
+                width: 1000,
+                scale: 2
+            }
         });
     } else {
         // Initial render
         Plotly.newPlot('bubble-chart', bubbleData, layout, {
             displayModeBar: false,
-            responsive: true
+            responsive: true,
+            toImageButtonOptions: {
+                format: 'png',
+                filename: 'bubble_chart',
+                height: 1000,
+                width: 1000,
+                scale: 2
+            }
         });
     }
 }
