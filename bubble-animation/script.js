@@ -121,6 +121,11 @@ let selectedCompanies = defaultSelectedCompanies.slice(); // Initialize with def
 // Add a variable to store race bar chart data globally
 let raceBarChartData = null;
 
+// Global variables for interpolation
+let currentInterpolationFrame = 0;
+let interpolationFrames = [];
+let isInterpolating = false;
+
 // Function to clean the color dictionary by trimming keys
 function cleanColorDict(rawDict) {
     const cleanedDict = {};
@@ -474,8 +479,8 @@ function createTimeline(quarters, data, yearIndices, uniqueYears) {
     });
 }
 
-// Function to update the timeline triangle position
-function updateTimelineTriangle(index) {
+// Function to update the timeline triangle position with fractional positions
+function updateTimelineTriangle(position) {
     if (!timelineTriangle) return;
     
     const timelineWidth = document.getElementById('timeline').offsetWidth;
@@ -483,11 +488,10 @@ function updateTimelineTriangle(index) {
     const width = timelineWidth - margin.left - margin.right;
     xScaleTimeline.range([0, width]);
     
-    const x = xScaleTimeline(index);
+    const x = xScaleTimeline(position);
     timelineTriangle
         .transition()
-        .duration(300)
-        .ease(d3.easeCubicInOut)
+        .duration(0) // Immediate update for smooth movement
         .attr("transform", `translate(${x}, -10) rotate(180)`);
 }
 
@@ -607,169 +611,189 @@ function updateBubbleChart(quarter, sheetData) {
     }
 }
 
-function updateBarChart(quarter, sheetData) {
-    // If we have race bar chart data, use it instead of the old data
-    if (raceBarChartData) {
-        // Get all unique companies across all quarters
-        const allCompanies = [...new Set(raceBarChartData.map(d => d.company))];
-        const maxCompanies = allCompanies.length;
-
-        // Filter and sort data for current quarter
-        const quarterData = raceBarChartData
-            .filter(d => d.quarter === quarter && d.revenue > 0)
-            .sort((a, b) => b.revenue - a.revenue);
+// Function to create interpolated frames between two quarters
+function createInterpolatedFrames(startData, endData, numFrames = 30) {
+    const frames = [];
+    
+    // Get all unique companies that have data in either quarter
+    const allCompanies = new Set([
+        ...startData.map(d => d.company),
+        ...endData.map(d => d.company)
+    ]);
+    
+    // Create interpolation for each frame
+    for (let frame = 0; frame <= numFrames; frame++) {
+        const t = frame / numFrames;
+        const frameData = [];
         
-        if (quarterData.length === 0) {
-            Plotly.purge('bar-chart');
-            return;
-        }
+        allCompanies.forEach(company => {
+            const startPoint = startData.find(d => d.company === company);
+            const endPoint = endData.find(d => d.company === company);
+            
+            // Only include if company has data in either quarter
+            if (startPoint || endPoint) {
+                const startRevenue = startPoint ? startPoint.revenue : 0;
+                const endRevenue = endPoint ? endPoint.revenue : 0;
+                const interpolatedRevenue = startRevenue * (1 - t) + endRevenue * t;
+                
+                // Only include if the interpolated revenue is greater than 0
+                if (interpolatedRevenue > 0) {
+                    frameData.push({
+                        company,
+                        revenue: interpolatedRevenue,
+                        quarter: startPoint?.quarter || endPoint?.quarter
+                    });
+                }
+            }
+        });
+        
+        // Sort by revenue and add to frames
+        frames.push(frameData.sort((a, b) => b.revenue - a.revenue));
+    }
+    
+    return frames;
+}
 
-        const margin = { 
-            l: 120,
-            r: 120,
-            t: 40,
-            b: 50,
-            autoexpand: false
-        };
-        const width = 450;
-        const height = Math.max(400, maxCompanies * 25); // Adjust height based on total number of companies
+function updateBarChart(quarter, sheetData) {
+    if (!raceBarChartData) return;
 
-        // Calculate the maximum revenue for this quarter
-        const maxRevenue = Math.max(...quarterData.map(d => d.revenue));
+    // If we're currently interpolating, use the current interpolation frame
+    if (isInterpolating && interpolationFrames.length > 0) {
+        const frameData = interpolationFrames[currentInterpolationFrame];
+        renderBarChart(frameData);
+        return;
+    }
 
-        // Prepare the bar chart data
-        const barData = [{
-            type: 'bar',
-            x: quarterData.map(d => d.revenue),
-            y: quarterData.map(d => companyNames[d.company] || d.company),
-            orientation: 'h',
-            marker: {
-                color: quarterData.map(d => color_dict[d.company] || '#999999')
-            },
-            text: quarterData.map(d => d3.format("$,.0f")(d.revenue) + "M"),
-            textposition: 'outside',
-            hoverinfo: 'text',
-            textfont: {
-                family: 'Monda',
-                size: 11,
-                color: '#333'
-            },
-            cliponaxis: false,
-            textangle: 0,
-            offsetgroup: 1,
-            width: 0.4,  // Fixed bar width
-            constraintext: 'none'
-        }];
+    // Get data for current quarter
+    const quarterData = raceBarChartData
+        .filter(d => d.quarter === quarter && d.revenue > 0)
+        .sort((a, b) => b.revenue - a.revenue);
 
-        // Create layout
-        const layout = {
+    renderBarChart(quarterData);
+}
+
+function renderBarChart(data) {
+    if (data.length === 0) {
+        Plotly.purge('bar-chart');
+        return;
+    }
+
+    const margin = { l: 120, r: 120, t: 40, b: 50, autoexpand: false };
+    const width = 450;
+    const height = 400; // Fixed height
+    const barHeight = 0.4; // Fixed bar height
+    const maxBars = 15; // Maximum number of bars to show
+    const barSpacing = 1; // Space between bars
+
+    // Calculate the maximum revenue across all quarters for consistent scaling
+    const maxRevenue = Math.max(...raceBarChartData.map(d => d.revenue));
+
+    // Prepare the bar chart data
+    const barData = [{
+        type: 'bar',
+        x: data.map(d => d.revenue),
+        y: data.map(d => companyNames[d.company] || d.company),
+        orientation: 'h',
+        marker: {
+            color: data.map(d => color_dict[d.company] || '#999999')
+        },
+        text: data.map(d => {
+            const value = d.revenue;
+            if (value < 1) {
+                return d3.format("$,.2f")(value) + "M";
+            }
+            return d3.format("$,.1f")(value) + "M";
+        }),
+        textposition: 'outside',
+        hoverinfo: 'text',
+        textfont: {
+            family: 'Monda',
+            size: 11,
+            color: '#333'
+        },
+        cliponaxis: false,
+        textangle: 0,
+        offsetgroup: 1,
+        width: barHeight,
+        constraintext: 'none'
+    }];
+
+    // Create layout with fixed range for both x and y axes
+    const layout = {
+        title: {
+            text: `Revenue by Company (${data[0]?.quarter || ''})`,
+            font: { family: 'Monda', size: 16 }
+        },
+        width: width,
+        height: height,
+        xaxis: {
             title: {
-                text: `Revenue by Company (${quarter})`,
-                font: {
-                    family: 'Monda',
-                    size: 16
-                }
+                text: 'Revenue (USD M)',
+                font: { family: 'Monda', size: 12 },
+                standoff: 20
             },
-            width: width,
-            height: height,
-            xaxis: {
-                title: {
-                    text: 'Revenue (USD M)',
-                    font: {
-                        family: 'Monda',
-                        size: 12
-                    },
-                    standoff: 20
-                },
-                showgrid: true,
-                gridcolor: '#eee',
-                gridwidth: 1,
-                zeroline: true,
-                zerolinecolor: '#eee',
-                tickfont: {
-                    family: 'Monda',
-                    size: 11
-                },
-                range: [0, maxRevenue * 1.1],
-                fixedrange: true,
-                ticklen: 6,
-                ticksuffix: '   ',
-                automargin: true
-            },
-            yaxis: {
-                showgrid: false,
-                tickfont: {
-                    family: 'Monda',
-                    size: 11
-                },
-                fixedrange: true,
-                ticklabelposition: 'outside left',
-                automargin: true,
-                range: [maxCompanies - 0.5, -0.5], // Fixed range based on total possible companies
-                dtick: 1,
-                side: 'left',
-                autorange: false
-            },
-            margin: margin,
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            showlegend: false,
-            barmode: 'group',
-            bargap: 0.05,  // Fixed gap between bars
-            bargroupgap: 0.02,  // Fixed gap between bar groups
-            font: {
-                family: 'Monda'
-            },
-            uniformtext: {
-                mode: 'show',
-                minsize: 10
-            },
-            annotations: [{
-                xref: 'paper',
-                yref: 'paper',
-                x: 1,
-                xanchor: 'right',
-                y: 1.1,
-                yanchor: 'top',
-                text: quarter,
-                showarrow: false,
-                font: {
-                    family: 'Monda',
-                    size: 14,
-                    color: '#666'
-                }
-            }]
-        };
+            showgrid: true,
+            gridcolor: '#eee',
+            gridwidth: 1,
+            zeroline: true,
+            zerolinecolor: '#eee',
+            tickfont: { family: 'Monda', size: 11 },
+            range: [0, maxRevenue * 1.1],
+            fixedrange: true,
+            ticklen: 6,
+            ticksuffix: '   ',
+            automargin: true
+        },
+        yaxis: {
+            showgrid: false,
+            tickfont: { family: 'Monda', size: 11 },
+            fixedrange: true,
+            ticklabelposition: 'outside left',
+            automargin: true,
+            range: [maxBars - 0.5, -0.5], // Fixed range based on maxBars
+            dtick: 1,
+            side: 'left',
+            autorange: false
+        },
+        margin: margin,
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        showlegend: false,
+        barmode: 'group',
+        bargap: 0.15,
+        bargroupgap: 0.02,
+        font: { family: 'Monda' },
+        uniformtext: {
+            mode: 'show',
+            minsize: 10
+        }
+    };
 
-        // Configuration
-        const config = {
+    // Check if the chart exists
+    const chartDiv = document.getElementById('bar-chart');
+    if (chartDiv.data && chartDiv.data.length > 0) {
+        // Update with animation
+        Plotly.animate('bar-chart', {
+            data: barData,
+            layout: layout,
+            traces: [0]
+        }, {
+            transition: {
+                duration: 300,
+                easing: 'linear'
+            },
+            frame: {
+                duration: 300,
+                redraw: false
+            }
+        });
+    } else {
+        // Initial render
+        Plotly.newPlot('bar-chart', barData, layout, {
             displayModeBar: false,
             responsive: true,
             staticPlot: false
-        };
-
-        // Check if the chart exists
-        const chartDiv = document.getElementById('bar-chart');
-        if (chartDiv.data && chartDiv.data.length > 0) {
-            // Update with animation
-            Plotly.animate('bar-chart', {
-                data: barData,
-                layout: layout,
-                traces: [0]
-            }, {
-                transition: {
-                    duration: 300,
-                    easing: 'linear'  // Use linear easing for constant speed
-                },
-                frame: {
-                    duration: 300,
-                    redraw: false
-                }
-            });
-        } else {
-            // Initial render
-            Plotly.newPlot('bar-chart', barData, layout, config);
-        }
+        });
     }
 }
 
@@ -923,23 +947,63 @@ function handlePlayPause() {
         playButton.appendChild(playIcon);
         playButton.appendChild(document.createTextNode(' Play'));
         isPlaying = false;
+        isInterpolating = false;
     } else {
         // Start the auto-play
         playButton.textContent = '';
         playButton.appendChild(playIcon);
         playButton.appendChild(document.createTextNode(' Pause'));
         isPlaying = true;
+        
+        let interpolationProgress = 0;
+        const interpolationDuration = 800; // Total duration for each quarter transition
+        const frameInterval = interpolationDuration / 30; // 30 frames per transition
+        
         playInterval = setInterval(() => {
-            currentQuarterIndex = (currentQuarterIndex + 1) % uniqueQuarters.length;
-            const selectedQuarter = uniqueQuarters[currentQuarterIndex];
+            if (!isInterpolating) {
+                // Get current and next quarter data
+                const currentQuarter = uniqueQuarters[currentQuarterIndex];
+                const nextQuarterIndex = (currentQuarterIndex + 1) % uniqueQuarters.length;
+                const nextQuarter = uniqueQuarters[nextQuarterIndex];
+                
+                const currentData = raceBarChartData
+                    .filter(d => d.quarter === currentQuarter && d.revenue > 0)
+                    .sort((a, b) => b.revenue - a.revenue);
+                const nextData = raceBarChartData
+                    .filter(d => d.quarter === nextQuarter && d.revenue > 0)
+                    .sort((a, b) => b.revenue - a.revenue);
+                
+                // Create interpolation frames
+                interpolationFrames = createInterpolatedFrames(currentData, nextData);
+                currentInterpolationFrame = 0;
+                isInterpolating = true;
+                interpolationProgress = 0;
+            }
             
-            // Update the position of the triangle on the timeline
-            updateTimelineTriangle(currentQuarterIndex);
-            
-            // Update the bubble and bar charts based on selected companies
-            updateBubbleChart(selectedQuarter, mergedData);
-            updateBarChart(selectedQuarter, mergedData);
-        }, 400); // Reduce interval for smoother animation
+            if (isInterpolating) {
+                // Calculate timeline position for smooth movement
+                const progress = interpolationProgress / interpolationDuration;
+                const timelinePosition = currentQuarterIndex + progress;
+                updateTimelineTriangle(timelinePosition);
+                
+                // Render current interpolation frame for race bar chart
+                renderBarChart(interpolationFrames[currentInterpolationFrame]);
+                
+                // Update bubble chart with current quarter
+                const currentQuarter = uniqueQuarters[currentQuarterIndex];
+                updateBubbleChart(currentQuarter, mergedData);
+                
+                currentInterpolationFrame++;
+                interpolationProgress += frameInterval;
+                
+                // Check if interpolation is complete
+                if (currentInterpolationFrame >= interpolationFrames.length) {
+                    isInterpolating = false;
+                    currentQuarterIndex = (currentQuarterIndex + 1) % uniqueQuarters.length;
+                    updateTimelineTriangle(currentQuarterIndex);
+                }
+            }
+        }, frameInterval);
     }
 }
 
