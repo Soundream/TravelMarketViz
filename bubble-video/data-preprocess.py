@@ -40,47 +40,82 @@ def process_revenue(value):
             return revenue
             
     except (ValueError, TypeError):
-        return value  # 如果无法转换为数值，返回原值
+        return None  # 如果无法转换为数值，返回None而不是原值
+
+# 定义安全的数值转换函数
+def safe_convert_to_float(value):
+    try:
+        if isinstance(value, str):
+            value = value.replace(',', '').replace('%', '')
+        return float(value)
+    except (ValueError, TypeError):
+        return None
+
+# 打印原始数据的基本信息
+print("\n原始数据信息:")
+print(f"TTM (bounded) sheet 形状: {ttm_bounded_df.shape}")
+print(f"Revenue sheet 形状: {revenue_df.shape}")
 
 # 找到指标的起始位置
 first_col = ttm_bounded_df.iloc[:, 0].astype(str)
 revenue_growth_start = first_col[first_col == "Revenue Growth YoY"].index[0]
 ebitda_margin_start = first_col[first_col == "EBITDA Margin"].index[0]
 
-# 获取季度列表
-quarters = []
-for value in first_col[revenue_growth_start + 1:ebitda_margin_start]:
-    year_quarter = extract_year_quarter(value)
-    if year_quarter is not None:
-        quarters.append((year_quarter, value))
+print(f"\n找到的指标位置:")
+print(f"Revenue Growth YoY 起始行: {revenue_growth_start}")
+print(f"EBITDA Margin 起始行: {ebitda_margin_start}")
 
-if not quarters:
-    raise ValueError("未找到有效的年份季度，请检查 Excel 文件。")
+# 获取所有季度
+all_quarters = []
+# 从Revenue sheet获取季度
+revenue_quarters = revenue_df.iloc[:, 0].dropna().tolist()
+# 从TTM sheet获取季度
+ttm_quarters = first_col[revenue_growth_start + 1:ebitda_margin_start].dropna().tolist()
+
+# 合并所有季度并去重
+all_quarters = list(set(revenue_quarters + ttm_quarters))
+all_quarters = [q for q in all_quarters if extract_year_quarter(q) is not None]
+all_quarters.sort(key=lambda x: extract_year_quarter(x))
+
+print(f"\n季度范围:")
+print(f"最早季度: {all_quarters[0]}")
+print(f"最晚季度: {all_quarters[-1]}")
+print(f"总季度数: {len(all_quarters)}")
+
+# 获取公司列表（从第二列开始）
+companies = revenue_df.columns[1:].tolist()
+print(f"\n公司列表 ({len(companies)}家):")
+print(companies)
 
 # 创建一个空的列表来存储所有季度的数据
 all_data = []
 
 # 处理每个季度的数据
-for numeric_year, quarter_str in quarters:
-    # 找到当前季度在两个指标中的行索引
-    revenue_growth_index = revenue_growth_start + 1 + [q[1] for q in quarters].index(quarter_str)
-    ebitda_margin_index = ebitda_margin_start + 1 + [q[1] for q in quarters].index(quarter_str)
-    
-    # 获取指标数据（假设数据在第二列）
-    revenue_growth = ttm_bounded_df.iloc[revenue_growth_index, 1]
-    ebitda_margin = ttm_bounded_df.iloc[ebitda_margin_index, 1]
-    
-    # 从 Revenue sheet 获取收入数据
-    companies = revenue_df.columns[1:]  # 假设第一列是季度，其他列是公司
-    try:
-        # 获取该季度的收入数据
-        quarter_data = revenue_df.loc[revenue_df.iloc[:, 0] == quarter_str].iloc[0, 1:]
-        # 处理每个公司的收入数据
-        quarter_revenues = [process_revenue(rev) for rev in quarter_data.values]
+for quarter_str in all_quarters:
+    numeric_year = extract_year_quarter(quarter_str)
+    if numeric_year is None:
+        continue
         
-        # 为每个公司创建一条记录
-        for company, revenue in zip(companies, quarter_revenues):
-            if pd.notna(revenue) and pd.notna(ebitda_margin) and pd.notna(revenue_growth):
+    # 在两个DataFrame中查找对应的季度数据
+    revenue_row = revenue_df[revenue_df.iloc[:, 0] == quarter_str]
+    ttm_revenue_growth_idx = first_col[first_col == quarter_str].index
+    ttm_revenue_growth_idx = [idx for idx in ttm_revenue_growth_idx if revenue_growth_start < idx < ebitda_margin_start]
+    ttm_ebitda_margin_idx = first_col[first_col == quarter_str].index
+    ttm_ebitda_margin_idx = [idx for idx in ttm_ebitda_margin_idx if idx > ebitda_margin_start]
+    
+    if not revenue_row.empty and ttm_revenue_growth_idx and ttm_ebitda_margin_idx:
+        revenue_data = revenue_row.iloc[0, 1:]
+        revenue_growth_data = ttm_bounded_df.iloc[ttm_revenue_growth_idx[0], 1:len(companies) + 1]
+        ebitda_margin_data = ttm_bounded_df.iloc[ttm_ebitda_margin_idx[0], 1:len(companies) + 1]
+        
+        # 处理每个公司的数据
+        for i, company in enumerate(companies):
+            revenue = process_revenue(revenue_data.iloc[i])
+            revenue_growth = safe_convert_to_float(revenue_growth_data.iloc[i])
+            ebitda_margin = safe_convert_to_float(ebitda_margin_data.iloc[i])
+            
+            # 只添加至少有一个非空值的数据点
+            if not (pd.isna(revenue) and pd.isna(ebitda_margin) and pd.isna(revenue_growth)):
                 all_data.append({
                     "Company": company,
                     "Numeric_Year": numeric_year,
@@ -89,9 +124,8 @@ for numeric_year, quarter_str in quarters:
                     "EBITDA Margin (%)": ebitda_margin,
                     "Revenue Growth (%)": revenue_growth
                 })
-    except IndexError:
-        print(f"警告: 在Revenue sheet中未找到季度 {quarter_str} 的数据")
-        continue
+    else:
+        print(f"警告: 季度 {quarter_str} 在某些表格中未找到完整数据")
 
 # 创建 DataFrame
 formatted_df = pd.DataFrame(all_data)
@@ -99,19 +133,38 @@ formatted_df = pd.DataFrame(all_data)
 # 按公司和时间排序
 formatted_df.sort_values(["Company", "Numeric_Year"], inplace=True)
 
+# 数据验证
+print("\n数据验证:")
+for company in companies:
+    company_data = formatted_df[formatted_df['Company'] == company]
+    if not company_data.empty:
+        print(f"\n{company}:")
+        print(f"数据范围: {company_data['Quarter'].min()} 到 {company_data['Quarter'].max()}")
+        print(f"数据点数量: {len(company_data)}")
+        
+        # 安全地计算数值统计
+        revenue_data = pd.to_numeric(company_data['Revenue'], errors='coerce')
+        ebitda_data = pd.to_numeric(company_data['EBITDA Margin (%)'], errors='coerce')
+        growth_data = pd.to_numeric(company_data['Revenue Growth (%)'], errors='coerce')
+        
+        if not revenue_data.empty and not revenue_data.isna().all():
+            print(f"Revenue范围: {revenue_data.min():.2f} 到 {revenue_data.max():.2f}")
+        if not ebitda_data.empty and not ebitda_data.isna().all():
+            print(f"EBITDA Margin范围: {ebitda_data.min():.2f} 到 {ebitda_data.max():.2f}")
+        if not growth_data.empty and not growth_data.isna().all():
+            print(f"Revenue Growth范围: {growth_data.min():.2f} 到 {growth_data.max():.2f}")
+
 # 保存结果
 formatted_df.to_excel("formatted_data.xlsx", index=False)
-print(f"数据处理完成，已保存为 formatted_data.xlsx")
-print(f"\n数据统计:")
+print(f"\n数据处理完成，已保存为 formatted_data.xlsx")
+print(f"\n总体统计:")
 print(f"总行数: {len(formatted_df)}")
 print(f"公司数量: {len(formatted_df['Company'].unique())}")
 print(f"季度范围: {formatted_df['Quarter'].min()} 到 {formatted_df['Quarter'].max()}")
-print("\n收入范围:")
-print(f"最小值: {formatted_df['Revenue'].min():.2f}")
-print(f"最大值: {formatted_df['Revenue'].max():.2f}")
-print(f"中位数: {formatted_df['Revenue'].median():.2f}")
 
-# 打印调试信息
-print(f"\n调试信息:")
-print(f"Revenue Growth YoY 起始行: {revenue_growth_start}")
-print(f"EBITDA Margin 起始行: {ebitda_margin_start}")
+# 安全地计算总体数值统计
+revenue_all = pd.to_numeric(formatted_df['Revenue'], errors='coerce')
+print("\n收入范围:")
+print(f"最小值: {revenue_all.min():.2f}")
+print(f"最大值: {revenue_all.max():.2f}")
+print(f"中位数: {revenue_all.median():.2f}")

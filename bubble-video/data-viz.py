@@ -53,59 +53,103 @@ print("Loading data...")
 data = pd.read_excel('formatted_data.xlsx')
 print(f"Loaded {len(data)} rows of data")
 
+# Check if the values are in decimal format (between -1 and 1)
+if data['Revenue Growth (%)'].abs().max() <= 1 or data['EBITDA Margin (%)'].abs().max() <= 1:
+    print("Converting decimal values to percentages...")
+    data['Revenue Growth (%)'] = data['Revenue Growth (%)'] * 100
+    data['EBITDA Margin (%)'] = data['EBITDA Margin (%)'] * 100
+
 # Interpolate the data for smoother animation
 def interpolate_data(data, multiple=30):
-    interp_data = pd.DataFrame()
+    """
+    对每个公司的数据进行独立插值
+    data: 包含原始数据的DataFrame
+    multiple: 插值点数的倍数
+    """
+    # 创建一个空的列表来存储所有插值结果
+    all_interpolated = []
     
+    # 按公司分组处理数据
     for company in data['Company'].unique():
-        temp_df = pd.DataFrame()
-        company_df = data[data['Company'] == company]
-        
-        if len(company_df) < 2:
-            print(f"Not enough data to interpolate for {company}")
+        # 获取当前公司的数据
+        company_data = data[data['Company'] == company].copy()
+        company_data = company_data.sort_values('Numeric_Year')
+        print(company_data)
+        # 检查是否有足够的数据点进行插值
+        if len(company_data) < 2:
+            print(f"Warning: Not enough data points for {company}")
             continue
             
-        # Calculate the number of interpolation points
-        num_points = len(company_df) * multiple - (multiple - 1)
-        years = np.linspace(company_df['Numeric_Year'].min(), company_df['Numeric_Year'].max(), num_points)
+        # 获取该公司的有效时间范围
+        company_min_year = company_data['Numeric_Year'].min()
+        company_max_year = company_data['Numeric_Year'].max()
         
-        # Initialize the temporary DataFrame
-        temp_df = pd.DataFrame({
-            'Numeric_Year': years,
-            'Revenue': np.nan,
-            'EBITDA Margin (%)': np.nan,
-            'Revenue Growth (%)': np.nan,
-            'Company': company
-        })
+        # 计算该公司的插值点数
+        time_span = company_max_year - company_min_year
+        num_points = int(time_span * 4 * multiple) + 1  # 每季度multiple个点
         
-        # Handle each field separately
-        for field in ['Revenue', 'EBITDA Margin (%)', 'Revenue Growth (%)']:
-            field_values = company_df.dropna(subset=[field])  # Drop rows where the field is NaN
-            
-            if len(field_values) > 1:
-                valid_years = field_values['Numeric_Year']
-                valid_values = field_values[field]
-                interp_values = np.interp(years, valid_years, valid_values)
+        # 创建该公司的时间点数组
+        time_points = np.linspace(company_min_year, company_max_year, num_points)
+        
+        # 创建该公司的插值DataFrame
+        company_interp = pd.DataFrame()
+        company_interp['Numeric_Year'] = time_points
+        company_interp['Company'] = company
+        
+        # 对每个字段进行插值
+        fields = ['Revenue', 'EBITDA Margin (%)', 'Revenue Growth (%)']
+        for field in fields:
+            # 获取非NaN的数据点
+            valid_data = company_data[company_data[field].notna()]
+            if len(valid_data) >= 2:
+                # 使用线性插值
+                company_interp[field] = np.interp(
+                    time_points,
+                    valid_data['Numeric_Year'].values,
+                    valid_data[field].values
+                )
                 
-                # Create indices for placing interpolated values but only within the bounds of the first and last non-NaN data
-                first_valid_index = valid_years.min()
-                last_valid_index = valid_years.max()
-                
-                # Apply interpolation only between the first and last actual data points
-                bounded_indices = (temp_df['Numeric_Year'] >= first_valid_index) & (temp_df['Numeric_Year'] <= last_valid_index)
-                temp_df.loc[bounded_indices, field] = interp_values[bounded_indices.values]
-        
-        # Concatenate the interpolated data to the main DataFrame
-        interp_data = pd.concat([interp_data, temp_df], ignore_index=True)
+                # 确保在原始数据点上的值保持不变
+                for _, row in valid_data.iterrows():
+                    mask = np.abs(time_points - row['Numeric_Year']) < 1e-10
+                    if any(mask):
+                        company_interp.loc[mask, field] = row[field]
+            else:
+                print(f"Warning: Not enough valid data points for {company} - {field}")
+                company_interp[field] = np.nan
+        # 将该公司的插值结果添加到列表中
+        all_interpolated.append(company_interp)
+
+    if not all_interpolated:
+        raise ValueError("No data to interpolate")
     
-    return interp_data
+    # 合并所有公司的数据
+    result = pd.concat(all_interpolated, ignore_index=True)
+    # 确保按照时间和公司正确排序
+    result = result.sort_values(['Numeric_Year', 'Company']).reset_index(drop=True)
+    
+    # 打印每个公司在每个时间点的数据，用于调试
+    for company in result['Company'].unique():
+        company_data = result[result['Company'] == company].head(3)
+        
+    return result
 
 # Generate interpolated data
 print("\nInterpolating data...")
 interp_data = interpolate_data(data)
-print(f"Interpolated to {len(interp_data)} data points")
-print(f"Time range: {interp_data['Numeric_Year'].min():.2f} to {interp_data['Numeric_Year'].max():.2f}")
-print(f"Number of companies: {len(interp_data['Company'].unique())}")
+
+
+# Save interpolated data to Excel
+output_file = 'output/interpolated_data.xlsx'
+if not os.path.exists('output'):
+    os.makedirs('output')
+interp_data.to_excel(output_file, index=False)
+print(f"\nSaved interpolated data to {output_file}")
+
+# After interpolation, check the ranges
+print(f"\nValue ranges after processing:")
+print(f"Revenue Growth range: {interp_data['Revenue Growth (%)'].min():.1f}% to {interp_data['Revenue Growth (%)'].max():.1f}%")
+print(f"EBITDA Margin range: {interp_data['EBITDA Margin (%)'].min():.1f}% to {interp_data['EBITDA Margin (%)'].max():.1f}%")
 
 # Cap extreme values for better visualization
 interp_data['Revenue Growth (%)'] = interp_data['Revenue Growth (%)'].clip(-30, 100)
@@ -405,14 +449,18 @@ ax = fig.add_subplot(gs[1, 0])
 # Bar chart (bottom-right)
 ax_barchart = fig.add_subplot(gs[1, 1])
 
-# Define desired width in inches for the logos
-desired_width_in_inches = 0.005
+# Change the desired width for logos to make them smaller
+desired_width_in_inches = 0.003  # Slightly larger than before for better visibility
 
 # After helper functions and before preview generation
 # Define the update function first
 def update(frame, preview=False):
-    """ Update function for the animation. """
-    # Add progress indicator
+    """
+    更新动画帧
+    frame: 当前时间点
+    preview: 是否为预览模式
+    """
+    # Add progress indicator and debug info
     if not preview and hasattr(update, 'last_frame_time'):
         time_diff = time.time() - update.last_frame_time
         print(f"\rProcessing frame {frame:.2f} ({time_diff:.1f}s per frame)", end="", flush=True)
@@ -423,26 +471,42 @@ def update(frame, preview=False):
         current_fig = fig_preview
         current_ax = ax_preview
         current_ax_timeline = ax_timeline_preview
-        current_ax_barchart = ax_barchart_preview
+        current_ax_bar = ax_barchart_preview
     else:
         current_fig = fig
         current_ax = ax
         current_ax_timeline = ax_timeline
-        current_ax_barchart = ax_barchart
+        current_ax_bar = ax_barchart
     
-    current_ax.clear()  # Clear the current plot to redraw
+    # Clear the current plot
+    current_ax.clear()
     current_ax_timeline.clear()
-    current_ax_barchart.clear()
+    current_ax_bar.clear()
     
-    # Set symmetric axes limits around zero for the bubble chart
-    current_ax.set_xlim(-50, 50)
+    # Set symmetric axes limits for bubble chart
+    current_ax.set_xlim(-30, 100)
     current_ax.set_ylim(-30, 100)
 
-    # Filter data for the specific frame
-    yearly_data = interp_data[interp_data['Numeric_Year'] == frame].copy()
+    # Filter data for the specific frame with a small time tolerance
+    time_tolerance = 0.001  # 允许的时间误差范围
+    yearly_data = interp_data[
+        (interp_data['Numeric_Year'] >= frame - time_tolerance) & 
+        (interp_data['Numeric_Year'] <= frame + time_tolerance)
+    ].copy()
+    
+    # 确保每个公司只有一个数据点，选择最接近当前frame的数据点
+    if len(yearly_data) > len(yearly_data['Company'].unique()):
+        yearly_data['time_diff'] = abs(yearly_data['Numeric_Year'] - frame)
+        yearly_data = yearly_data.sort_values('time_diff').groupby('Company', as_index=False).first()
+        yearly_data = yearly_data.drop('time_diff', axis=1)
+    
+    # Print debug information for the current frame
+    print(f"\nData points for frame {frame:.3f}:")
+    for _, row in yearly_data.iterrows():
+        print(f"Company: {row['Company']}, EBITDA: {row['EBITDA Margin (%)']:.1f}, Growth: {row['Revenue Growth (%)']:.1f}, Revenue: {row['Revenue']:.1f}")
 
     # Ensure the correct color mapping from color_dict
-    yearly_data['color'] = yearly_data['Company'].map(lambda x: color_dict.get(x, '#808080'))  # Default to gray if no color found
+    yearly_data['color'] = yearly_data['Company'].map(lambda x: color_dict.get(x, '#808080'))
     
     # Print debug information for companies without color mapping
     missing_colors = yearly_data[~yearly_data['Company'].isin(color_dict.keys())]['Company'].unique()
@@ -486,18 +550,27 @@ def update(frame, preview=False):
             s=bubble_size,  # Bubble size proportional to revenue
             alpha=0.8,  # Slight transparency for better visibility
             edgecolors="white", 
-            linewidths=2
+            linewidths=2,
+            zorder=2  # Ensure dots are above the background text
         )
         dots_and_logos.append(dot)
         
-        # Replace text with logo images above the dots
+        # Replace text with logo images centered on the dots
         if point['Company'] in logos:
             image_path = logos[point['Company']]
-            zoom_factor = get_zoom_factor(image_path, desired_width_in_inches, current_ax)
+            # Adjust zoom factor based on the bubble size
+            base_zoom = get_zoom_factor(image_path, desired_width_in_inches, current_ax)
+            # Scale zoom factor with bubble size, but not linearly to prevent extreme sizes
+            relative_size = (point['Revenue'] / max_revenue_value) ** 0.5  # Square root for less extreme scaling
+            zoom_factor = base_zoom * (0.8 + 0.4 * relative_size)  # Scale between 80% and 120% of base size
+            
             imagebox = OffsetImage(image_path, zoom=zoom_factor)
-
-            # Offset image to be placed above the dot
-            ab = AnnotationBbox(imagebox, (point['EBITDA Margin (%)'], point['Revenue Growth (%)'] + 5), frameon=False)
+            # Place logo exactly at the bubble's center position using data coordinates
+            ab = AnnotationBbox(imagebox, 
+                              (float(point['EBITDA Margin (%)']), float(point['Revenue Growth (%)'])),
+                              frameon=False,
+                              box_alignment=(0.5, 0.5),
+                              zorder=3)  # Ensure logos are above the dots
             current_ax.add_artist(ab)
             dots_and_logos.append(ab)
 
@@ -528,7 +601,7 @@ def update(frame, preview=False):
     # Add background text directly to the axes, using zorder to place it behind the bubbles
     current_ax.text(
         0.485, 0.45, time_period_label, transform=current_ax.transAxes, fontsize=50, 
-        color="lightgrey", alpha=0.8, ha='center', fontproperties=open_sans_font, zorder=0
+        color="lightgrey", alpha=0.8, ha='center', fontproperties=open_sans_font, zorder=1
     )
 
     # Static secondary axes for the bubble chart
@@ -591,7 +664,7 @@ def update(frame, preview=False):
     bar_colors = [color_dict.get(company, '#808080') for company in top_companies['Company']]
 
     # Create horizontal bar chart
-    bars = current_ax_barchart.barh(
+    bars = current_ax_bar.barh(
         y_positions,
         top_companies['Revenue'],
         color=bar_colors,  # Use the list of colors directly
@@ -599,20 +672,20 @@ def update(frame, preview=False):
     )
 
     # Set y-axis limits
-    current_ax_barchart.set_ylim(-0.5, max_bars - 0.5)
+    current_ax_bar.set_ylim(-0.5, max_bars - 0.5)
 
     # Add company names as y-tick labels
-    current_ax_barchart.set_yticks(y_positions)
-    current_ax_barchart.set_yticklabels(top_companies['Company'], fontproperties=open_sans_font)
+    current_ax_bar.set_yticks(y_positions)
+    current_ax_bar.set_yticklabels(top_companies['Company'], fontproperties=open_sans_font)
 
     # Invert y-axis to have highest revenue at the top
-    current_ax_barchart.invert_yaxis()
+    current_ax_bar.invert_yaxis()
 
     # Add revenue labels to the bars
     for bar, revenue in zip(bars, top_companies['Revenue']):
         width = bar.get_width()
         if width > 0:
-            current_ax_barchart.text(
+            current_ax_bar.text(
                 width,
                 bar.get_y() + bar.get_height() / 2,
                 f'{width:,.0f}',  # Format with commas for thousands and no decimals
@@ -623,31 +696,41 @@ def update(frame, preview=False):
             )
 
     # Adjust aesthetics
-    current_ax_barchart.set_xlim(0, max_revenue_value * 1.1)
-    current_ax_barchart.spines['top'].set_visible(False)
-    current_ax_barchart.spines['right'].set_visible(False)
-    current_ax_barchart.spines['left'].set_visible(False)
-    current_ax_barchart.spines['bottom'].set_visible(False)
-    current_ax_barchart.tick_params(axis='y', which='both', length=0)
-    current_ax_barchart.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
-    current_ax_barchart.set_xlabel('Revenue TTM (in Millions)', fontsize=14, fontproperties=open_sans_font, labelpad=33)
+    current_ax_bar.set_xlim(0, max_revenue_value * 1.1)
+    current_ax_bar.spines['top'].set_visible(False)
+    current_ax_bar.spines['right'].set_visible(False)
+    current_ax_bar.spines['left'].set_visible(False)
+    current_ax_bar.spines['bottom'].set_visible(False)
+    current_ax_bar.tick_params(axis='y', which='both', length=0)
+    current_ax_bar.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
+    current_ax_bar.set_xlabel('Revenue TTM (in Millions)', fontsize=14, fontproperties=open_sans_font, labelpad=33)
 
-    return dots_and_logos + [current_ax_timeline, current_ax_barchart]
+    return dots_and_logos + [current_ax_timeline, current_ax_bar]
 
 # Before animation, generate a static preview
 print("\nGenerating static preview for the latest time period...")
 preview_frame = interp_data['Numeric_Year'].max()
+print(f"Preview frame: Q{int((preview_frame % 1) * 4 + 1)}'{int(preview_frame)}")  # Show which quarter and year
+
+# Create preview figure and axes
 fig_preview = plt.figure(figsize=(19.2, 10.8), dpi=100)  # Lower DPI for preview
 gs_preview = fig_preview.add_gridspec(2, 2, width_ratios=[3, 1], height_ratios=[1, 5])
 ax_timeline_preview = fig_preview.add_subplot(gs_preview[0, :])
 ax_preview = fig_preview.add_subplot(gs_preview[1, 0])
 ax_barchart_preview = fig_preview.add_subplot(gs_preview[1, 1])
 
-# Add a two-line title to the preview figure
-fig_preview.suptitle("Evolution of Online Travel\n1999 - 2024",
+# Add a two-line title to the preview figure with the specific time period
+quarter = int((preview_frame % 1) * 4 + 1)
+year = int(preview_frame)
+fig_preview.suptitle(f"Evolution of Online Travel\nQ{quarter}'{str(year)[-2:]}",
              fontsize=22, fontproperties=open_sans_font, x=0.70, y=0.90, ha='left')
 
 # Call update function for preview with preview=True
+current_fig = fig_preview
+current_ax = ax_preview
+current_ax_timeline = ax_timeline_preview
+current_ax_bar = ax_barchart_preview
+
 update(preview_frame, preview=True)
 
 # Save preview
@@ -655,6 +738,13 @@ preview_path = os.path.join(output_dir, 'preview.png')
 plt.savefig(preview_path)
 plt.close(fig_preview)
 print(f"Preview saved as {preview_path}")
+
+# Create main figure and axes for animation
+fig = plt.figure(figsize=(19.2, 10.8), dpi=300)
+gs = fig.add_gridspec(2, 2, width_ratios=[3, 1], height_ratios=[1, 5])
+ax_timeline = fig.add_subplot(gs[0, :])
+ax = fig.add_subplot(gs[1, 0])
+ax_barchart = fig.add_subplot(gs[1, 1])
 
 # Add a two-line title to the main figure
 fig.suptitle("Evolution of Online Travel\n1999 - 2024",
