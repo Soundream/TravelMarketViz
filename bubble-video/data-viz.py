@@ -166,6 +166,7 @@ selected_companies = [
     'DESP',        # Despegar
     'EaseMyTrip',  # EaseMyTrip
     'EDR',         # Edreams
+    'EXPE',        # Expedia
     'LMN',         # Lastminute
     'OWW',         # Orbitz
     'SEERA',       # Seera Group
@@ -516,7 +517,7 @@ def update(frame, preview=False):
     current_ax_bar.clear()
     
     # Set symmetric axes limits for bubble chart
-    current_ax.set_xlim(-30, 100)
+    current_ax.set_xlim(-50, 50)
     current_ax.set_ylim(-30, 120)
 
     # Filter data for the specific frame with a small time tolerance
@@ -702,7 +703,7 @@ def update(frame, preview=False):
 
     # Set axis labels using Open Sans font
     current_ax.set_xlabel("EBITDA Margin TTM (%)", horizontalalignment='center', x=0.5, labelpad=140, fontproperties=open_sans_font, fontsize=14)
-    current_ax.set_ylabel("Revenue Growth TTM (%)", verticalalignment='center', y=0.5, labelpad=410, fontproperties=open_sans_font, fontsize=14)
+    current_ax.set_ylabel("Revenue Growth TTM (%)", verticalalignment='center', y=0.5, labelpad=110, fontproperties=open_sans_font, fontsize=14)
 
     # Hide ticks on the axes crossing at zero in the bubble chart
     current_ax.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
