@@ -703,7 +703,11 @@ def update(frame, preview=False):
 
     # Set axis labels using Open Sans font
     current_ax.set_xlabel("EBITDA Margin TTM (%)", horizontalalignment='center', x=0.5, labelpad=140, fontproperties=open_sans_font, fontsize=14)
-    current_ax.set_ylabel("Revenue Growth TTM (%)", verticalalignment='center', y=0.5, labelpad=110, fontproperties=open_sans_font, fontsize=14)
+    current_ax.set_ylabel("Revenue Growth TTM (%)", verticalalignment='center', y=0.5, labelpad=30, fontproperties=open_sans_font, fontsize=14)
+    current_ax.spines['left'].set_position('zero')
+    current_ax.yaxis.set_label_coords(-0.08, 0.5)
+    # Hide ticks on the axes crossing at zero in the bubble chart
+
 
     # Hide ticks on the axes crossing at zero in the bubble chart
     current_ax.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
