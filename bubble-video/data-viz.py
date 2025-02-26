@@ -485,7 +485,7 @@ def update(frame, preview=False):
     
     # Set symmetric axes limits for bubble chart
     current_ax.set_xlim(-30, 100)
-    current_ax.set_ylim(-30, 100)
+    current_ax.set_ylim(-30, 120)
 
     # Filter data for the specific frame with a small time tolerance
     time_tolerance = 0.001  # 允许的时间误差范围
@@ -515,7 +515,7 @@ def update(frame, preview=False):
 
     # Set up the timeline (spanning across both the bubble chart and bar chart)
     current_ax_timeline.set_xlim(1999, 2025)
-    current_ax_timeline.set_ylim(-0.04, 1)
+    current_ax_timeline.set_ylim(-0.04, 0.12)  # 增加上限以确保箭头可见
     current_ax_timeline.get_yaxis().set_visible(False)
     current_ax_timeline.spines['top'].set_visible(False)
     current_ax_timeline.spines['right'].set_visible(False)
@@ -534,48 +534,43 @@ def update(frame, preview=False):
 
     # Moving marker on timeline
     marker_position = frame  # frame should represent quarters, e.g., 1998.75 for Q4 of 1998
-    current_ax_timeline.plot([marker_position], [0.06], marker='v', color='red', markersize=15, 
-                           zorder=5, alpha=0.8, linewidth=2, markeredgecolor='white')
+    marker = current_ax_timeline.plot([marker_position], [0.06], marker='v', color='grey', markersize=10)[0]
+    artists_to_return = [marker]
 
     # Scatter plot for the specific year (bubble chart)
-    dots_and_logos = []
     for i, point in yearly_data.iterrows():
         # Scale the bubble size based on the revenue, and ensure a minimum size
-        bubble_size = max((point['Revenue'] / max_revenue_value) * 1500, 50)  # 1500 is the scale, 50 is the minimum size
+        bubble_size = max((point['Revenue'] / max_revenue_value) * 1500, 50)
 
-        # Plot the colored dot for each company using the color from the color_dict and size for revenue
+        # Plot the colored dot for each company
         dot = current_ax.scatter(
             x=point['EBITDA Margin (%)'],
             y=point['Revenue Growth (%)'],
-            color=point['color'],  # Color from the mapped column
-            s=bubble_size,  # Bubble size proportional to revenue
-            alpha=0.8,  # Slight transparency for better visibility
+            color=point['color'],
+            s=bubble_size,
+            alpha=0.8,
             edgecolors="white", 
             linewidths=2,
-            zorder=2  # Ensure dots are above the background text
+            zorder=2
         )
-        dots_and_logos.append(dot)
+        artists_to_return.append(dot)
         
-        # Replace text with logo images centered on the dots
+        # Add logos
         if point['Company'] in logos:
             image_path = logos[point['Company']]
-            # Adjust zoom factor based on the bubble size
             base_zoom = get_zoom_factor(image_path, desired_width_in_inches, current_ax)
-            # Scale zoom factor with bubble size, but not linearly to prevent extreme sizes
-            relative_size = (point['Revenue'] / max_revenue_value) ** 0.5  # Square root for less extreme scaling
-            zoom_factor = base_zoom * (0.8 + 0.4 * relative_size)  # Scale between 80% and 120% of base size
+            relative_size = (point['Revenue'] / max_revenue_value) ** 0.5
+            zoom_factor = base_zoom * (0.8 + 0.4 * relative_size)
             
             imagebox = OffsetImage(image_path, zoom=zoom_factor)
-            # Place logo above the bubble's center position using data coordinates
-            # 添加 y 轴偏移来将 logo 向上移动
-            y_offset = 2.5  # 调整这个值来控制向上偏移的距离
+            y_offset = 4
             ab = AnnotationBbox(imagebox, 
                               (float(point['EBITDA Margin (%)']), float(point['Revenue Growth (%)']) + y_offset),
                               frameon=False,
                               box_alignment=(0.5, 0.5),
-                              zorder=3)  # Ensure logos are above the dots
+                              zorder=3)
             current_ax.add_artist(ab)
-            dots_and_logos.append(ab)
+            artists_to_return.append(ab)
 
     # Adjust spines to put zero in the middle for the bubble chart
     current_ax.spines['left'].set_position('zero')
@@ -635,12 +630,6 @@ def update(frame, preview=False):
     fig_text(0.1, 0.01, "Note: Extreme values capped for display purposes. Revenue growth between -30% and +100%, EBITDA Margin within ±50%", 
             ha='left', va='bottom', fontsize=9, color='black', fig=current_fig, fontproperties=open_sans_font)
 
-    # Display the recent three events at the top of the chart
-    recent_events = get_recent_events(frame, events)
-
-    # Add the event text at the top of the figure
-    add_flag_images(current_fig, current_ax, recent_events)
-
     # Limit the number of bars to display
     max_bars = 16
 
@@ -670,9 +659,13 @@ def update(frame, preview=False):
     bars = current_ax_bar.barh(
         y_positions,
         top_companies['Revenue'],
-        color=bar_colors,  # Use the list of colors directly
+        color=bar_colors,
         height=bar_height
     )
+    
+    # Add all bars to the list of artists to return
+    for bar in bars:
+        artists_to_return.append(bar)
 
     # Set y-axis limits
     current_ax_bar.set_ylim(-0.5, max_bars - 0.5)
@@ -688,15 +681,16 @@ def update(frame, preview=False):
     for bar, revenue in zip(bars, top_companies['Revenue']):
         width = bar.get_width()
         if width > 0:
-            current_ax_bar.text(
+            label = current_ax_bar.text(
                 width,
                 bar.get_y() + bar.get_height() / 2,
-                f'{width:,.0f}',  # Format with commas for thousands and no decimals
+                f'{width:,.0f}',
                 va='center',
                 ha='left',
                 fontsize=9,
                 fontproperties=open_sans_font
             )
+            artists_to_return.append(label)
 
     # Adjust aesthetics
     current_ax_bar.set_xlim(0, max_revenue_value * 1.1)
@@ -708,7 +702,8 @@ def update(frame, preview=False):
     current_ax_bar.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
     current_ax_bar.set_xlabel('Revenue TTM (in Millions)', fontsize=14, fontproperties=open_sans_font, labelpad=33)
 
-    return dots_and_logos + [current_ax_timeline, current_ax_bar]
+    # Return all artists that need to be updated
+    return artists_to_return
 
 # Before animation, generate a static preview
 print("\nGenerating static preview for the latest time period...")
@@ -721,12 +716,6 @@ gs_preview = fig_preview.add_gridspec(2, 2, width_ratios=[3, 1], height_ratios=[
 ax_timeline_preview = fig_preview.add_subplot(gs_preview[0, :])
 ax_preview = fig_preview.add_subplot(gs_preview[1, 0])
 ax_barchart_preview = fig_preview.add_subplot(gs_preview[1, 1])
-
-# Add a two-line title to the preview figure with the specific time period
-quarter = int((preview_frame % 1) * 4 + 1)
-year = int(preview_frame)
-fig_preview.suptitle(f"Evolution of Online Travel\nQ{quarter}'{str(year)[-2:]}",
-             fontsize=22, fontproperties=open_sans_font, x=0.70, y=0.90, ha='left')
 
 # Call update function for preview with preview=True
 current_fig = fig_preview
@@ -749,10 +738,6 @@ ax_timeline = fig.add_subplot(gs[0, :])
 ax = fig.add_subplot(gs[1, 0])
 ax_barchart = fig.add_subplot(gs[1, 1])
 
-# Add a two-line title to the main figure
-fig.suptitle("Evolution of Online Travel\n1999 - 2024",
-             fontsize=22, fontproperties=open_sans_font, x=0.70, y=0.90, ha='left')
-
 # Before animation
 print("\nStarting animation generation...")
 print("This may take a while depending on the number of frames...")
@@ -762,8 +747,8 @@ print(f"Total frames to generate: {total_frames}")
 # Create the animation using FuncAnimation
 ani = FuncAnimation(fig, lambda frame: update(frame, preview=False), 
                    frames=np.unique(interp_data['Numeric_Year']), 
-                   repeat=False, blit=True,
-                   interval=100)  # 控制帧之间的间隔时间（毫秒）
+                   repeat=False, blit=True,  # 改回 True 以提高性能
+                   interval=50)  # 调整帧间隔
 
 # Before saving animation
 print("\nSaving animation...")
