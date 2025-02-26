@@ -167,6 +167,7 @@ selected_companies = [
     'EaseMyTrip',  # EaseMyTrip
     'EDR',         # Edreams
     'LMN',         # Lastminute
+    'OWW',         # Orbitz
     'SEERA',       # Seera Group
     'TCOM',        # Trip.com
     'TRIP',        # TripAdvisor
@@ -260,6 +261,7 @@ for company in unique_companies:
     if os.path.exists(logo_path):
         try:
             logos[company] = plt.imread(logo_path)
+            print(f"Successfully loaded logo for {company} from {logo_path}")
         except Exception as e:
             print(f"Error loading logo for {company}: {e}")
             # Create placeholder if loading fails
@@ -274,8 +276,8 @@ for company in unique_companies:
             plt.close(fig_temp)
             logos[company] = plt.imread(temp_logo_path)
     else:
+        print(f"Logo not found for {company} at {logo_path}")
         # Create a simple text-based placeholder
-        print(f"Logo not found for {company}. Creating placeholder.")
         plt.close('all')  # Close any existing figures
         fig_temp = plt.figure(figsize=(1, 1), dpi=100)
         ax_temp = fig_temp.add_subplot(111)
@@ -286,6 +288,19 @@ for company in unique_companies:
         fig_temp.savefig(temp_logo_path, format='png', transparent=True, bbox_inches='tight', pad_inches=0)
         plt.close(fig_temp)
         logos[company] = plt.imread(temp_logo_path)
+
+# 特别处理 PCLN logo
+pcln_logo_path = os.path.join(logos_dir, 'PCLN_logo.png')
+if os.path.exists(pcln_logo_path):
+    try:
+        logos['PCLN'] = plt.imread(pcln_logo_path)
+        print(f"Successfully loaded PCLN logo from {pcln_logo_path}")
+    except Exception as e:
+        print(f"Error loading PCLN logo: {e}")
+        logos['PCLN'] = logos.get('BKNG')  # 如果加载失败，使用 BKNG 的 logo
+else:
+    print(f"PCLN logo not found at {pcln_logo_path}")
+    logos['PCLN'] = logos.get('BKNG')  # 如果文件不存在，使用 BKNG 的 logo
 
 # Set a fixed maximum for the bar chart to ensure absolute sizes
 max_revenue_value = interp_data['Revenue'].max()
@@ -535,7 +550,9 @@ def update(frame, preview=False):
         print(f"Company: {row['Company']}, EBITDA: {row['EBITDA Margin (%)']:.1f}, Growth: {row['Revenue Growth (%)']:.1f}, Revenue: {row['Revenue']:.1f}")
 
     # Ensure the correct color mapping from color_dict
-    yearly_data['color'] = yearly_data['Company'].map(lambda x: color_dict.get(x, '#808080'))
+    yearly_data['color'] = yearly_data.apply(lambda row: 
+        '#800080' if row['Company'] == 'LMN' and frame < 2015.42 else 
+        color_dict.get(row['Company'], '#808080'), axis=1)
     
     # Print debug information for companies without color mapping
     missing_colors = yearly_data[~yearly_data['Company'].isin(color_dict.keys())]['Company'].unique()
@@ -564,8 +581,10 @@ def update(frame, preview=False):
 
     # Scatter plot for the specific year (bubble chart)
     for i, point in yearly_data.iterrows():
-        # Scale the bubble size based on the revenue, and ensure a minimum size
+        # Scale the bubble size based on the revenue, and ensure a minimum size for OWW
         bubble_size = max((point['Revenue'] / max_revenue_value) * 1500, 50)
+        if point['Company'] == 'OWW' and point['Revenue'] == 0:
+            bubble_size = 50  # Minimum size for OWW when revenue is zero
 
         # Plot the colored dot for each company
         dot = current_ax.scatter(
@@ -583,7 +602,8 @@ def update(frame, preview=False):
         # Add logos
         if point['Company'] in logos:
             # 根据时间点选择正确的logo
-            if point['Company'] == 'BKNG' and frame < 2018.08:
+            if point['Company'] == 'PCLN':
+                print(f"Displaying PCLN logo at frame {frame}")
                 image_path = logos['PCLN']
             elif point['Company'] == 'SEERA':
                 if frame < 2019:
@@ -604,7 +624,7 @@ def update(frame, preview=False):
             
             imagebox = OffsetImage(image_path, zoom=zoom_factor)
             # Special y_offset for BKNG/PCLN
-            y_offset = 9 if point['Company'] in ['BKNG', 'PCLN'] else 5
+            y_offset = 9 if point['Company'] in ['BKNG', 'PCLN'] and frame >= 2018.08 else 5
             ab = AnnotationBbox(imagebox, 
                               (float(point['EBITDA Margin (%)']), float(point['Revenue Growth (%)']) + y_offset),
                               frameon=False,
@@ -677,8 +697,11 @@ def update(frame, preview=False):
     # Set a constant height for the bars
     bar_height = 0.7
 
-    # Filter data for companies with revenue > 0
-    filtered_data = yearly_data[yearly_data['Revenue'] > 0].copy()
+    # Filter data for companies with revenue > 0 (except OWW which we want to show in bubble chart only)
+    filtered_data = yearly_data[
+        (yearly_data['Revenue'] > 0) & 
+        (yearly_data['Company'] != 'OWW')
+    ].copy()
 
     # Sort the data by revenue in ascending order
     sorted_data = filtered_data.sort_values(by='Revenue', ascending=True)
