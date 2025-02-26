@@ -2,13 +2,9 @@ import pandas as pd
 import re
 import numpy as np
 
-# 读取 Excel 文件
-file_path = "your_file.xlsx"  # 请替换为你的文件路径
-xls = pd.ExcelFile(file_path)
-
-# 读取相关 sheet
-ttm_bounded_df = xls.parse("TTM (bounded)")
-revenue_df = xls.parse("Revenue")
+# 读取 CSV 文件
+ttm_bounded_df = pd.read_csv("Animated Bubble Chart_ Historic Financials Online Travel Industry - TTM (bounded).csv")
+revenue_df = pd.read_csv("Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue.csv")
 
 # 定义提取年份和季度的函数
 def extract_year_quarter(value):

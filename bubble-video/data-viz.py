@@ -450,7 +450,7 @@ ax = fig.add_subplot(gs[1, 0])
 ax_barchart = fig.add_subplot(gs[1, 1])
 
 # Change the desired width for logos to make them smaller
-desired_width_in_inches = 0.003  # Slightly larger than before for better visibility
+desired_width_in_inches = 0.002  # 减小 logo 尺寸
 
 # After helper functions and before preview generation
 # Define the update function first
@@ -534,7 +534,8 @@ def update(frame, preview=False):
 
     # Moving marker on timeline
     marker_position = frame  # frame should represent quarters, e.g., 1998.75 for Q4 of 1998
-    current_ax_timeline.plot([marker_position], [0.06], marker='v', color='grey', markersize=10)
+    current_ax_timeline.plot([marker_position], [0.06], marker='v', color='red', markersize=15, 
+                           zorder=5, alpha=0.8, linewidth=2, markeredgecolor='white')
 
     # Scatter plot for the specific year (bubble chart)
     dots_and_logos = []
@@ -565,9 +566,11 @@ def update(frame, preview=False):
             zoom_factor = base_zoom * (0.8 + 0.4 * relative_size)  # Scale between 80% and 120% of base size
             
             imagebox = OffsetImage(image_path, zoom=zoom_factor)
-            # Place logo exactly at the bubble's center position using data coordinates
+            # Place logo above the bubble's center position using data coordinates
+            # 添加 y 轴偏移来将 logo 向上移动
+            y_offset = 2.5  # 调整这个值来控制向上偏移的距离
             ab = AnnotationBbox(imagebox, 
-                              (float(point['EBITDA Margin (%)']), float(point['Revenue Growth (%)'])),
+                              (float(point['EBITDA Margin (%)']), float(point['Revenue Growth (%)']) + y_offset),
                               frameon=False,
                               box_alignment=(0.5, 0.5),
                               zorder=3)  # Ensure logos are above the dots
@@ -759,14 +762,18 @@ print(f"Total frames to generate: {total_frames}")
 # Create the animation using FuncAnimation
 ani = FuncAnimation(fig, lambda frame: update(frame, preview=False), 
                    frames=np.unique(interp_data['Numeric_Year']), 
-                   repeat=False, blit=False)
+                   repeat=False, blit=True,
+                   interval=100)  # 控制帧之间的间隔时间（毫秒）
 
 # Before saving animation
 print("\nSaving animation...")
 start_time = time.time()
 
-# Save the animation
-ani.save('output/evolution_of_online_travel.mp4', writer='ffmpeg')
+# Save the animation with higher bitrate and fps
+ani.save('output/evolution_of_online_travel.mp4', 
+         writer='ffmpeg',
+         fps=24,  # 增加帧率
+         bitrate=5000)  # 增加比特率，提高视频质量
 
 # After saving animation
 end_time = time.time()
