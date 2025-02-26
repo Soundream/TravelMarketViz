@@ -18,9 +18,11 @@ def extract_year_quarter(value):
 # 定义收入数据处理函数
 def process_revenue(value):
     try:
-        # 如果是字符串，先移除逗号
+        # 如果是字符串，先移除美元符号、逗号和空格
         if isinstance(value, str):
-            value = value.replace(',', '')
+            value = value.replace('$', '').replace(',', '').strip()
+            if value == '' or value.lower() == 'nan':
+                return None
         
         # 将值转换为浮点数
         revenue = float(value)
@@ -42,7 +44,10 @@ def process_revenue(value):
 def safe_convert_to_float(value):
     try:
         if isinstance(value, str):
-            value = value.replace(',', '').replace('%', '')
+            # 移除百分号、美元符号、逗号和空格
+            value = value.replace('%', '').replace('$', '').replace(',', '').strip()
+            if value == '' or value.lower() == 'nan':
+                return None
         return float(value)
     except (ValueError, TypeError):
         return None
