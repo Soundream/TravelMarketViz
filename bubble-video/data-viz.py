@@ -531,6 +531,11 @@ def update(frame, preview=False):
         # 在这个时间段内，从数据中移除 LMN
         yearly_data = yearly_data[yearly_data['Company'] != 'LMN']
     
+    # 处理 EDR 的显示逻辑
+    if frame < 2013:
+        # 在2013年之前，从数据中移除 EDR
+        yearly_data = yearly_data[yearly_data['Company'] != 'EDR']
+    
     # 只保留选定的公司
     yearly_data = yearly_data[yearly_data['Company'].isin(selected_companies)]
     
@@ -604,17 +609,36 @@ def update(frame, preview=False):
             # 根据时间点选择正确的logo
             if point['Company'] == 'PCLN':
                 print(f"Displaying PCLN logo at frame {frame}")
-                image_path = logos['PCLN']
+                if 2014.25 <= frame < 2018.08:  # 2014年第二季度到2018年第一季度之前
+                    logo_path = os.path.join(logos_dir, '1PCLN_logo.png')
+                    if os.path.exists(logo_path):
+                        image_path = plt.imread(logo_path)
+                        print(f"Using 1PCLN logo at frame {frame}")
+                    else:
+                        print(f"Warning: 1PCLN logo not found at {logo_path}")
+                        image_path = logos['PCLN']
+                else:
+                    image_path = logos['PCLN']
             elif point['Company'] == 'SEERA':
                 if frame < 2019:
                     image_path = plt.imread(os.path.join(logos_dir, '1SEERA_logo.png'))
                 else:
                     image_path = logos['SEERA']
             elif point['Company'] == 'LMN':
-                if frame < 2015.42:  # 2015年第二季度之前
+                if frame < 2015.42 and frame > 2004:  # 2015年第二季度之前
                     image_path = plt.imread(os.path.join(logos_dir, '1LMN_logo.png'))
                 else:
                     image_path = logos['LMN']
+            elif point['Company'] == 'TRIP':
+                if frame < 2020:
+                    image_path = plt.imread(os.path.join(logos_dir, ' TRIP_logo.png'))
+                else:
+                    image_path = logos['TRIP']
+            elif point['Company'] == 'TCOM':
+                if frame < 2019.50:
+                    image_path = plt.imread(os.path.join(logos_dir, ' TCOM_logo.png'))
+                else:
+                    image_path = logos['TCOM']
             else:
                 image_path = logos[point['Company']]
             
@@ -801,7 +825,7 @@ for quarter in all_quarters:
     update(quarter, preview=True)
 
     # Save preview
-    quarter_str = f"Q{int((quarter % 1) * 4 + 1)}_{int(quarter)}"
+    quarter_str = f"{int(quarter)}_{int((quarter % 1) * 4 + 1)}"  # Changed format to put year first
     preview_path = os.path.join(preview_dir, f'preview_{quarter_str}.png')
     plt.savefig(preview_path)
     plt.close(fig_preview)
