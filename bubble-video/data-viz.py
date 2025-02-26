@@ -159,26 +159,42 @@ interp_data['EBITDA Margin (%)'] = interp_data['EBITDA Margin (%)'].clip(-50, 50
 interp_data.replace([np.inf, -np.inf], np.nan, inplace=True)
 interp_data.dropna(subset=['EBITDA Margin (%)', 'Revenue Growth (%)'], inplace=True)
 
+# Define the list of companies to display
+selected_companies = [
+    'ABNB',        # Airbnb
+    'BKNG',        # Booking.com
+    'DESP',        # Despegar
+    'EaseMyTrip',  # EaseMyTrip
+    'EDR',         # Edreams
+    'LMN',         # Lastminute
+    'SEERA',       # Seera Group
+    'TCOM',        # Trip.com
+    'TRIP',        # TripAdvisor
+    'TRVG',        # Trivago
+    'WEB',         # Webjet
+    'YTRA'         # Yatra.com
+]
+
 # Manually create the dictionary for colors
 color_dict = {
     'ABNB': '#ff5895',
-    'Almosafer': '#bb5387',
     'BKNG': '#003480',
+    'PCLN': '#003480',  # 使用和 BKNG 相同的颜色
     'DESP': '#755bd8',
-    'EXPE': '#fbcc33',
-    'EaseMyTrip': '#00a0e2',  # Changed from EASEMYTRIP to match the data
-    'IXIGO': '#e63946',
-    'MMYT': '#ff0000',
-    'TRIP': '#00af87',
-    'TRVG': '#c71585',
-    'Wego': '#4e843d',
-    'YTRA': '#800080',
-    'TCOM': '#2577e3',
+    'EaseMyTrip': '#00a0e2',
     'EDR': '#2577e3',
     'LMN': '#fc03b1',
-    'WEB': '#fa8072',
     'SEERA': '#750808',
-    'PCLN': '#003480',
+    'TCOM': '#2577e3',
+    'TRIP': '#00af87',
+    'TRVG': '#c71585',
+    'WEB': '#fa8072',
+    'YTRA': '#800080',
+    'Almosafer': '#bb5387',
+    'EXPE': '#fbcc33',
+    'IXIGO': '#e63946',
+    'MMYT': '#ff0000',
+    'Wego': '#4e843d',
     'OWW': '#8edbfa',
     'Travelocity': '#1d3e5c',
     'Traveloka': '#008080',
@@ -218,7 +234,7 @@ logo_filename_map = {
     'EDR': 'EDR_logo.png',
     'LMN': 'LMN_logo.png',
     'WEB': 'WEB_logo.png',
-    'SEERA': 'SEERA_logo.png',
+    'SEERA': 'SEERA_logo.png',  # Default SEERA logo
     'PCLN': 'PCLN_logo.png',
     'OWW': 'OWW_logo.png',
     'Travelocity': 'Travelocity_logo.png',
@@ -438,7 +454,8 @@ def add_flag_images(fig, ax, events, fig_position_y=0.92, fig_position_x=0.12, f
 
 # Setup the figure and gridspec for the layout
 fig = plt.figure(figsize=(19.2, 10.8), dpi=300)
-gs = fig.add_gridspec(2, 2, width_ratios=[3, 1], height_ratios=[1, 5])
+gs = fig.add_gridspec(2, 2, width_ratios=[3, 1], height_ratios=[0.4, 4.5], hspace=0.15,
+                     top=0.95, bottom=0.15)  # 调整height_ratios和hspace使图表上移
 
 # Timeline spanning both columns (top row)
 ax_timeline = fig.add_subplot(gs[0, :])
@@ -488,12 +505,24 @@ def update(frame, preview=False):
     current_ax.set_ylim(-30, 120)
 
     # Filter data for the specific frame with a small time tolerance
-    time_tolerance = 0.001  # 允许的时间误差范围
+    time_tolerance = 0.001
     yearly_data = interp_data[
         (interp_data['Numeric_Year'] >= frame - time_tolerance) & 
         (interp_data['Numeric_Year'] <= frame + time_tolerance)
     ].copy()
     
+    # 处理 Lastminute 的显示逻辑
+    if 2003.75 <= frame < 2014:
+        # 在这个时间段内，从数据中移除 LMN
+        yearly_data = yearly_data[yearly_data['Company'] != 'LMN']
+    
+    # 只保留选定的公司
+    yearly_data = yearly_data[yearly_data['Company'].isin(selected_companies)]
+    
+    # 根据时间点修改 BKNG/PCLN 的显示
+    if frame < 2018.08:  # 2018年第一季度之前
+        yearly_data.loc[yearly_data['Company'] == 'BKNG', 'Company'] = 'PCLN'
+
     # 确保每个公司只有一个数据点，选择最接近当前frame的数据点
     if len(yearly_data) > len(yearly_data['Company'].unique()):
         yearly_data['time_diff'] = abs(yearly_data['Numeric_Year'] - frame)
@@ -514,27 +543,23 @@ def update(frame, preview=False):
         print(f"Warning: Missing colors for companies: {missing_colors}")
 
     # Set up the timeline (spanning across both the bubble chart and bar chart)
-    current_ax_timeline.set_xlim(1999, 2025)
-    current_ax_timeline.set_ylim(-0.04, 0.12)  # 增加上限以确保箭头可见
+    current_ax_timeline.set_xlim(1998.8, 2025)  # 扩展左侧显示范围
+    current_ax_timeline.set_ylim(-0.04, 0.12)
     current_ax_timeline.get_yaxis().set_visible(False)
     current_ax_timeline.spines['top'].set_visible(False)
     current_ax_timeline.spines['right'].set_visible(False)
     current_ax_timeline.spines['left'].set_visible(False)
-
-    current_ax_timeline.xaxis.set_major_locator(MultipleLocator(1))
-    current_ax_timeline.xaxis.set_minor_locator(MultipleLocator(0.25))
-    current_ax_timeline.set_xticks(np.arange(1999, 2025, 1))
-    current_ax_timeline.tick_params(axis='x', which='major', labelsize=10)
-    for label in current_ax_timeline.get_xticklabels():
-        label.set_fontproperties(open_sans_font)
-
-    current_ax_timeline.tick_params(axis='x', which='both', labelsize=10)
-    current_ax_timeline.set_xticks(np.arange(1999, 2025, 0.25), minor=True)
-    current_ax_timeline.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{int(x)}'))
+    current_ax_timeline.spines['bottom'].set_position(('data', 0))
+    current_ax_timeline.spines['bottom'].set_color('black')  # Changed back to default color
+    current_ax_timeline.tick_params(axis='x', which='major', labelsize=10, colors='black')  # 改回黑色
+    current_ax_timeline.xaxis.set_major_locator(MultipleLocator(1))  # 设置主刻度为1年
+    current_ax_timeline.xaxis.set_minor_locator(MultipleLocator(0.25))  # 设置小刻度为季度
+    current_ax_timeline.set_xticks(np.arange(1999, 2025, 1))  # 设置显示的刻度位置
+    current_ax_timeline.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{int(x)}'))  # 格式化刻度标签
 
     # Moving marker on timeline
     marker_position = frame  # frame should represent quarters, e.g., 1998.75 for Q4 of 1998
-    marker = current_ax_timeline.plot([marker_position], [0.06], marker='v', color='grey', markersize=10)[0]
+    marker = current_ax_timeline.plot([marker_position], [0.02], marker='v', color='#4e843d', markersize=10)[0]  # 改为Wego的颜色
     artists_to_return = [marker]
 
     # Scatter plot for the specific year (bubble chart)
@@ -557,13 +582,29 @@ def update(frame, preview=False):
         
         # Add logos
         if point['Company'] in logos:
-            image_path = logos[point['Company']]
+            # 根据时间点选择正确的logo
+            if point['Company'] == 'BKNG' and frame < 2018.08:
+                image_path = logos['PCLN']
+            elif point['Company'] == 'SEERA':
+                if frame < 2019:
+                    image_path = plt.imread(os.path.join(logos_dir, '1SEERA_logo.png'))
+                else:
+                    image_path = logos['SEERA']
+            elif point['Company'] == 'LMN':
+                if frame < 2015.42:  # 2015年第二季度之前
+                    image_path = plt.imread(os.path.join(logos_dir, '1LMN_logo.png'))
+                else:
+                    image_path = logos['LMN']
+            else:
+                image_path = logos[point['Company']]
+            
             base_zoom = get_zoom_factor(image_path, desired_width_in_inches, current_ax)
             relative_size = (point['Revenue'] / max_revenue_value) ** 0.5
             zoom_factor = base_zoom * (0.8 + 0.4 * relative_size)
             
             imagebox = OffsetImage(image_path, zoom=zoom_factor)
-            y_offset = 4
+            # Special y_offset for BKNG/PCLN
+            y_offset = 9 if point['Company'] in ['BKNG', 'PCLN'] else 5
             ab = AnnotationBbox(imagebox, 
                               (float(point['EBITDA Margin (%)']), float(point['Revenue Growth (%)']) + y_offset),
                               frameon=False,
@@ -577,16 +618,16 @@ def update(frame, preview=False):
     current_ax.spines['bottom'].set_position('zero')
     current_ax.spines['right'].set_visible(False)
     current_ax.spines['top'].set_visible(False)
-    current_ax.spines['left'].set_color('green')
-    current_ax.spines['left'].set_linestyle('dashed')
-    current_ax.spines['bottom'].set_color('green')
-    current_ax.spines['bottom'].set_linestyle('dashed')
+    current_ax.spines['left'].set_color('#4e843d')  # Changed to Wego's color
+    current_ax.spines['left'].set_linestyle('solid')  # Changed from dashed to solid
+    current_ax.spines['bottom'].set_color('#4e843d')  # Changed to Wego's color
+    current_ax.spines['bottom'].set_linestyle('solid')  # Changed from dashed to solid
 
     # Custom formatting for axes in the bubble chart
     current_ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{x:.0f}%'))
     current_ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: f'{y:.0f}%'))
-    current_ax.tick_params(axis='x', which='both', labelsize=10)
-    current_ax.tick_params(axis='y', which='both', labelsize=10)
+    current_ax.tick_params(axis='x', which='both', labelsize=10, colors='#4e843d')  # Changed tick color
+    current_ax.tick_params(axis='y', which='both', labelsize=10, colors='#4e843d')  # Changed tick color
 
     for label in current_ax.get_xticklabels():
         label.set_fontproperties(open_sans_font)
@@ -705,35 +746,53 @@ def update(frame, preview=False):
     # Return all artists that need to be updated
     return artists_to_return
 
-# Before animation, generate a static preview
-print("\nGenerating static preview for the latest time period...")
-preview_frame = interp_data['Numeric_Year'].max()
-print(f"Preview frame: Q{int((preview_frame % 1) * 4 + 1)}'{int(preview_frame)}")  # Show which quarter and year
+# Before animation, generate preview images for each quarter
+print("\nGenerating preview images for each quarter...")
+preview_dir = os.path.join(output_dir, 'previews')
+if not os.path.exists(preview_dir):
+    os.makedirs(preview_dir)
 
-# Create preview figure and axes
-fig_preview = plt.figure(figsize=(19.2, 10.8), dpi=100)  # Lower DPI for preview
-gs_preview = fig_preview.add_gridspec(2, 2, width_ratios=[3, 1], height_ratios=[1, 5])
-ax_timeline_preview = fig_preview.add_subplot(gs_preview[0, :])
-ax_preview = fig_preview.add_subplot(gs_preview[1, 0])
-ax_barchart_preview = fig_preview.add_subplot(gs_preview[1, 1])
+# Get all unique quarters from original data (not interpolated)
+all_quarters = np.unique(data[data['Numeric_Year'] >= 1999]['Numeric_Year'])
+print(f"\nGenerating previews for {len(all_quarters)} quarters...")
 
-# Call update function for preview with preview=True
-current_fig = fig_preview
-current_ax = ax_preview
-current_ax_timeline = ax_timeline_preview
-current_ax_bar = ax_barchart_preview
+# Generate preview for each quarter
+for quarter in all_quarters:
+    print(f"\nGenerating preview for Q{int((quarter % 1) * 4 + 1)}'{int(quarter)}")
+    
+    # Create preview figure and axes
+    fig_preview = plt.figure(figsize=(19.2, 10.8), dpi=100)
+    gs_preview = fig_preview.add_gridspec(2, 2, width_ratios=[3, 1], height_ratios=[0.4, 4.5], hspace=0.15,
+                                        top=0.95, bottom=0.15)
+    ax_timeline_preview = fig_preview.add_subplot(gs_preview[0, :])
+    ax_preview = fig_preview.add_subplot(gs_preview[1, 0])
+    ax_barchart_preview = fig_preview.add_subplot(gs_preview[1, 1])
 
-update(preview_frame, preview=True)
+    # Set current figure and axes for the update function
+    current_fig = fig_preview
+    current_ax = ax_preview
+    current_ax_timeline = ax_timeline_preview
+    current_ax_bar = ax_barchart_preview
 
-# Save preview
-preview_path = os.path.join(output_dir, 'preview.png')
-plt.savefig(preview_path)
-plt.close(fig_preview)
-print(f"Preview saved as {preview_path}")
+    # Update the visualization for this quarter
+    update(quarter, preview=True)
+
+    # Save preview
+    quarter_str = f"Q{int((quarter % 1) * 4 + 1)}_{int(quarter)}"
+    preview_path = os.path.join(preview_dir, f'preview_{quarter_str}.png')
+    plt.savefig(preview_path)
+    plt.close(fig_preview)
+    print(f"Preview saved as {preview_path}")
+
+print("\nAll quarter previews generated. Starting animation generation...")
+print("This may take a while depending on the number of frames...")
+total_frames = len(all_quarters)
+print(f"Total frames to generate: {total_frames}")
 
 # Create main figure and axes for animation
 fig = plt.figure(figsize=(19.2, 10.8), dpi=300)
-gs = fig.add_gridspec(2, 2, width_ratios=[3, 1], height_ratios=[1, 5])
+gs = fig.add_gridspec(2, 2, width_ratios=[3, 1], height_ratios=[0.4, 4.5], hspace=0.15,
+                     top=0.95, bottom=0.15)  # 调整height_ratios和hspace使图表上移
 ax_timeline = fig.add_subplot(gs[0, :])
 ax = fig.add_subplot(gs[1, 0])
 ax_barchart = fig.add_subplot(gs[1, 1])
@@ -746,7 +805,7 @@ print(f"Total frames to generate: {total_frames}")
 
 # Create the animation using FuncAnimation
 ani = FuncAnimation(fig, lambda frame: update(frame, preview=False), 
-                   frames=np.unique(interp_data['Numeric_Year']), 
+                   frames=np.unique(interp_data[interp_data['Numeric_Year'] >= 1999]['Numeric_Year']), 
                    repeat=False, blit=True,  # 改回 True 以提高性能
                    interval=50)  # 调整帧间隔
 
