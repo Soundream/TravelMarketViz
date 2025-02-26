@@ -517,7 +517,7 @@ def update(frame, preview=False):
     current_ax_bar.clear()
     
     # Set symmetric axes limits for bubble chart
-    current_ax.set_xlim(-50, 50)
+    current_ax.set_xlim(-60, 60)
     current_ax.set_ylim(-30, 120)
 
     # Filter data for the specific frame with a small time tolerance
