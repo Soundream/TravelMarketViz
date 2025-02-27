@@ -35,48 +35,46 @@ for directory in [logos_dir, output_dir]:
 
 # Load the data from CSV
 print("Loading data...")
-data = pd.read_csv('Animated Bubble Chart_ Historic Financials Online Travel Industry - Raw_ Annual Revenue.csv')
+data = pd.read_csv('Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue.csv')
 print(f"Loaded {len(data)} rows of data")
 
-# Print data info for debugging
-print("\nData Info:")
-print(data.info())
-print("\nFirst few rows:")
-print(data.head())
+# Process the data to get annual Q1 data and special handling for 2024
+def process_quarterly_data(data):
+    # Remove the 'Revenue' row
+    data = data[data.iloc[:, 0] != 'Revenue'].copy()
+    
+    # Convert the first column to proper format for processing
+    # Extract year and quarter from the string (e.g., "2024'Q1" -> 2024.0)
+    data['Year'] = data.iloc[:, 0].apply(lambda x: float(x.split("'")[0]))
+    data['Quarter'] = data.iloc[:, 0].apply(lambda x: int(x.split("Q")[1]))
+    
+    # Convert all revenue columns to numeric
+    for col in data.columns[1:-2]:  # Skip the original year column and the new Year/Quarter columns
+        data[col] = data[col].apply(lambda x: float(str(x).replace('$', '').replace(',', '')) if pd.notnull(x) and str(x).strip() != '' else None)
+    
+    # For years before 2024, only keep Q1 data
+    pre_2024 = data[data['Year'] < 2024].copy()
+    pre_2024 = pre_2024[pre_2024['Quarter'] == 1]
+    
+    # For 2024, keep both Q1 and Q3
+    year_2024 = data[data['Year'] == 2024].copy()
+    year_2024 = year_2024[year_2024['Quarter'].isin([1, 3])]
+    
+    # Combine the data
+    processed_data = pd.concat([pre_2024, year_2024])
+    
+    # For 2024 Q3, set the year to 2025 for interpolation
+    processed_data.loc[(processed_data['Year'] == 2024) & (processed_data['Quarter'] == 3), 'Year'] = 2025.0
+    
+    # Drop the original year column and Quarter column
+    processed_data = processed_data.drop(columns=[processed_data.columns[0], 'Quarter'])
+    
+    return processed_data
 
-# Function to convert revenue string to numeric value
-def revenue_to_numeric(revenue):
-    try:
-        if pd.isna(revenue):
-            return None
-        if isinstance(revenue, (int, float)):
-            return float(revenue)
-        # Remove commas and spaces
-        revenue = str(revenue).replace(',', '').strip()
-        # Remove 'M' and convert to float
-        if revenue.endswith('M'):
-            return float(revenue[:-1])
-        return float(revenue)
-    except (ValueError, TypeError) as e:
-        print(f"Warning: Could not convert {revenue} to float: {e}")
-        return None
-
-# Function to convert year to numeric format
-def year_to_numeric(year):
-    try:
-        return float(year)
-    except (ValueError, TypeError) as e:
-        print(f"Warning: Could not convert {year} to float: {e}")
-        return None
-
-# Drop the first row that contains 'Revenue'
-data = data[data.iloc[:, 0] != 'Revenue'].copy()
-
-# Convert the first column to numeric year and clean data
-print("\nConverting years to numeric format...")
-data.iloc[:, 0] = data.iloc[:, 0].apply(year_to_numeric)
-data = data.dropna(subset=[data.columns[0]])
-print(f"After cleaning: {len(data)} rows")
+# Process the data
+print("\nProcessing quarterly data...")
+data = process_quarterly_data(data)
+print(f"After processing: {len(data)} rows")
 
 # Interpolate the data for smoother animation
 def interpolate_data(data, multiple=20):
@@ -92,11 +90,10 @@ def interpolate_data(data, multiple=20):
             print(f"\nProcessing {company}...")
             
             # Get current company's data
-            company_data = data[[data.columns[0], company]].copy()
+            company_data = data[['Year', company]].copy()
             company_data.columns = ['Year', 'Revenue']
             
-            # Convert revenue to numeric and drop NaN
-            company_data['Revenue'] = company_data['Revenue'].apply(revenue_to_numeric)
+            # Drop NaN values
             company_data = company_data.dropna()
             
             print(f"Valid data points for {company}: {len(company_data)}")
@@ -110,15 +107,25 @@ def interpolate_data(data, multiple=20):
             max_year = company_data['Year'].max()
             print(f"Year range for {company}: {min_year} to {max_year}")
             
-            # Create quarterly points
-            quarters = np.arange(min_year, max_year + 0.25, 0.25)
+            # Special handling for 2024-2025
+            has_2025_data = 2025.0 in company_data['Year'].values
+            
+            if has_2025_data:
+                # Company has data in 2024'Q3 (mapped to 2025)
+                # Create quarterly points up to 2024'Q1, then special handling for 2024'Q1 to 2025
+                quarters_before_2024 = np.arange(min_year, 2024.0, 0.25)
+                quarters_2024_2025 = np.array([2024.0, 2024.25, 2024.5, 2024.75, 2025.0])
+                quarters = np.concatenate([quarters_before_2024, quarters_2024_2025])
+            else:
+                # Company doesn't have 2024'Q3 data, only interpolate up to 2024'Q1
+                quarters = np.arange(min_year, 2024.25, 0.25)
             
             # Create additional points between quarters
             years = []
             for i in range(len(quarters)-1):
                 segment = np.linspace(quarters[i], quarters[i+1], multiple, endpoint=False)
                 years.extend(segment)
-            years.append(max_year)
+            years.append(quarters[-1])
             years = np.array(years)
             
             # Create interpolated DataFrame
@@ -143,7 +150,7 @@ def interpolate_data(data, multiple=20):
         except Exception as e:
             print(f"Error interpolating {company}: {e}")
             continue
-
+    
     if not all_interpolated:
         raise ValueError("No data could be interpolated. Please check your input data.")
     
@@ -441,21 +448,23 @@ def update(frame, preview=False):
     
     return bars
 
-# Generate preview frames for each quarter
-print("\nGenerating preview frames...")
+# Generate preview frames for 2024-2025 quarters
+print("\nGenerating preview frames for 2024-2025...")
 preview_dir = os.path.join(output_dir, 'previews')
 if not os.path.exists(preview_dir):
     os.makedirs(preview_dir)
 
-# 生成所有年份的预览
-preview_times = np.arange(1997, 2025, 1)  # 从1997到2024，每年一个点
+# Generate preview times for 2024-2025 only
+preview_times = [2024.0, 2024.25, 2024.5, 2024.75]  # 2024Q1-Q4
 
-# Generate preview for each year
-for year in preview_times:
-    print(f"\nGenerating preview for {year}")
+# Generate preview for each quarter
+for time_point in preview_times:
+    year = int(time_point)
+    quarter = int((time_point - year) * 4) + 1
+    print(f"\nGenerating preview for {year}'Q{quarter}")
     
     # Create preview figure and axes with the same layout as main figure
-    plt.close('all')  # Close any existing figures
+    plt.close('all')
     fig_preview = plt.figure(figsize=(19.2, 10.8), dpi=100)
     gs_preview = fig_preview.add_gridspec(2, 1, height_ratios=[0.3, 4], hspace=0.2,
                                         top=0.98, bottom=0.12)
@@ -465,17 +474,17 @@ for year in preview_times:
     # Set the current figure
     plt.figure(fig_preview.number)
 
-    # Update the visualization for this year
-    update(year, preview=True)
+    # Update the visualization for this quarter
+    update(time_point, preview=True)
 
-    # Save preview
-    preview_path = os.path.join(preview_dir, f'preview_{year}.png')
+    # Save preview with quarter information
+    preview_path = os.path.join(preview_dir, f'preview_{year}_Q{quarter}.png')
     plt.savefig(preview_path, dpi=300)
     plt.close(fig_preview)
     print(f"Preview saved as {preview_path}")
     time.sleep(0.1)  # Add a small delay to ensure proper cleanup
 
-print("\nAll preview frames saved in {preview_dir}")
+print(f"\nAll preview frames saved in {preview_dir}")
 
 # Ask user if they want to continue
 input("Previews generated. Press Enter to continue with animation generation...")
