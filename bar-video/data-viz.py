@@ -7,6 +7,7 @@ from matplotlib.ticker import FuncFormatter
 import matplotlib.font_manager as fm
 import os
 import time
+from matplotlib.ticker import MultipleLocator
 
 # Set up font configurations
 plt.rcParams['font.family'] = 'sans-serif'
@@ -175,6 +176,25 @@ color_dict = {
     'TRVG': '#c71585', 'WEB': '#fa8072', 'YTRA': '#800080'
 }
 
+# Company-specific settings for logos
+logo_settings = {
+    'ABNB': {'zoom': 0.12, 'offset': 100},
+    'BKNG': {'zoom': 0.15, 'offset': 120},
+    'PCLN': {'zoom': 0.15, 'offset': 120},
+    'DESP': {'zoom': 0.10, 'offset': 90},
+    'EaseMyTrip': {'zoom': 0.11, 'offset': 95},
+    'EDR': {'zoom': 0.12, 'offset': 100},
+    'EXPE': {'zoom': 0.13, 'offset': 110},
+    'LMN': {'zoom': 0.12, 'offset': 100},
+    'OWW': {'zoom': 0.11, 'offset': 95},
+    'SEERA': {'zoom': 0.12, 'offset': 100},
+    'TCOM': {'zoom': 0.11, 'offset': 95},
+    'TRIP': {'zoom': 0.12, 'offset': 100},
+    'TRVG': {'zoom': 0.11, 'offset': 95},
+    'WEB': {'zoom': 0.12, 'offset': 100},
+    'YTRA': {'zoom': 0.11, 'offset': 95}
+}
+
 # Load company logos
 logos = {}
 for company in selected_companies:
@@ -200,21 +220,55 @@ def get_quarter_year(time_value):
     quarter = int((time_value - year) * 4) + 1
     return f"{str(year)}'Q{quarter}"
 
-# Function to calculate zoom factor for logos with fixed scale
-def get_fixed_zoom_factor(image):
-    return 0.12  # Reduced zoom factor for smaller logos
+# Function to get logo settings for specific company
+def get_logo_settings(company):
+    default_settings = {'zoom': 0.12, 'offset': 100}
+    return logo_settings.get(company, default_settings)
 
 # Set up the figure with fixed dimensions and margins
 def setup_figure():
     fig = plt.figure(figsize=(19.2, 10.8), dpi=300)
-    ax = fig.add_subplot(111)
+    gs = fig.add_gridspec(2, 2, width_ratios=[3, 1], height_ratios=[0.4, 4.5], hspace=0.15,
+                         top=0.95, bottom=0.15)
+    
+    # Timeline spanning both columns (top row)
+    ax_timeline = fig.add_subplot(gs[0, :])
+    
+    # Bubble chart (bottom-left)
+    ax = fig.add_subplot(gs[1, 0])
+    
+    # Bar chart timeline (above bar chart)
+    ax_bar_timeline = fig.add_subplot(gs[0, 1])
+    
+    # Bar chart (bottom-right)
+    ax_barchart = fig.add_subplot(gs[1, 1])
+    
     # Set fixed margins to maintain consistent figure size
-    plt.subplots_adjust(left=0.2, right=0.95, top=0.95, bottom=0.1)
-    return fig, ax
+    plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.1)
+    
+    return fig, ax, ax_timeline, ax_barchart, ax_bar_timeline
 
 # Animation update function
-def update(frame):
-    ax.clear()
+def update(frame, preview=False):
+    # Use the correct figure and axes based on whether this is a preview or animation
+    if preview:
+        current_fig = fig_preview
+        current_ax = ax_preview
+        current_ax_timeline = ax_timeline_preview
+        current_ax_bar = ax_barchart_preview
+        current_ax_bar_timeline = ax_bar_timeline_preview
+    else:
+        current_fig = fig
+        current_ax = ax
+        current_ax_timeline = ax_timeline
+        current_ax_bar = ax_barchart
+        current_ax_bar_timeline = ax_bar_timeline
+    
+    # Clear all axes
+    current_ax.clear()
+    current_ax_timeline.clear()
+    current_ax_bar.clear()
+    current_ax_bar_timeline.clear()
     
     # Filter data for current frame
     yearly_data = interp_data[
@@ -232,12 +286,12 @@ def update(frame):
     # Sort by revenue in descending order (largest to smallest)
     sorted_data = yearly_data.sort_values('Revenue', ascending=False)
     
-    # Get available companies (might be less than 10)
+    # Get available companies (might be less than 15)
     available_companies = len(sorted_data)
     top_companies = sorted_data  # No need for tail since we want all companies
     
-    # Create fixed bar positions with equal spacing (always 10 positions)
-    num_bars = 10
+    # Create fixed bar positions with equal spacing (always 15 positions)
+    num_bars = 15
     bar_height = 0.6  # Fixed bar height
     spacing = 1.0  # Fixed spacing between bars
     all_positions = np.arange(num_bars) * spacing
@@ -250,13 +304,18 @@ def update(frame):
     current_x_limit = current_max_revenue * 1.4  # Add 40% margin
     
     # Create bars only for available companies
-    bars = ax.barh(y_positions, top_companies['Revenue'],
+    bars = current_ax.barh(y_positions, top_companies['Revenue'],
                    color=[color_dict.get(company, '#808080') for company in top_companies['Company']],
                    height=bar_height)
     
     # Set axis limits
-    ax.set_ylim((num_bars - 1) * spacing + spacing/2, -spacing/2)  # Fixed y-axis limits
-    ax.set_xlim(0, current_x_limit)  # Dynamic x-axis limits
+    current_ax.set_ylim((num_bars - 1) * spacing + spacing/2, -spacing/2)  # Fixed y-axis limits
+    current_ax.set_xlim(0, current_x_limit)  # Dynamic x-axis limits
+    
+    # Calculate figure width in pixels
+    fig_width_inches = current_fig.get_size_inches()[0]
+    dpi = current_fig.dpi
+    fig_width_pixels = fig_width_inches * dpi
     
     # Add labels and logos only for available companies
     for i, (bar, revenue, company) in enumerate(zip(bars, top_companies['Revenue'], top_companies['Company'].values)):
@@ -265,29 +324,33 @@ def update(frame):
         
         # Add revenue label with fixed offset from the end of the bar
         revenue_offset = current_x_limit * 0.02  # 2% of the x-axis range
-        ax.text(width + revenue_offset, y_pos, f'{width:,.0f}',
+        current_ax.text(width + revenue_offset, y_pos, f'{width:,.0f}',
                 va='center', ha='left', fontsize=14,
                 fontproperties=open_sans_font)
         
-        # Add logo with fixed size and position
+        # Add logo with company-specific size and position
         if company in logos:
             image = logos[company]
-            zoom = get_fixed_zoom_factor(image)
+            settings = get_logo_settings(company)
+            zoom = settings['zoom']
+            # Convert pixel offset to data coordinates
+            pixel_offset = settings['offset']
+            data_offset = (pixel_offset / fig_width_pixels) * current_x_limit
+            
             imagebox = OffsetImage(image, zoom=zoom)
-            # Use fixed offset from the end of the x-axis
-            logo_offset = current_x_limit * 0.15  # 15% of the x-axis range
-            ab = AnnotationBbox(imagebox, (width + logo_offset, y_pos),
+            # Position logo using the custom offset
+            ab = AnnotationBbox(imagebox, (width + data_offset, y_pos),
                               frameon=False, box_alignment=(0.5, 0.5))
-            ax.add_artist(ab)
+            current_ax.add_artist(ab)
     
     # Set y-ticks for all positions but only label the ones with companies
-    ax.set_yticks(all_positions)
+    current_ax.set_yticks(all_positions)
     labels = [''] * num_bars  # Initialize empty labels for all positions
     # Fill in labels from top to bottom
     companies_list = top_companies['Company'].values.tolist()
     for i, company in enumerate(companies_list):
         labels[i] = company
-    ax.set_yticklabels(labels, fontsize=14, fontproperties=open_sans_font)
+    current_ax.set_yticklabels(labels, fontsize=14, fontproperties=open_sans_font)
     
     # Add grid lines with fixed intervals based on current maximum revenue
     if current_x_limit > 10000:
@@ -300,67 +363,91 @@ def update(frame):
         interval = 200
     
     grid_positions = np.arange(0, current_x_limit, interval)
-    ax.set_xticks(grid_positions)
-    ax.grid(axis='x', linestyle='--', alpha=0.3, color='gray')
-    ax.set_xticklabels([f'{int(x):,}' for x in grid_positions], fontsize=12)
+    current_ax.set_xticks(grid_positions)
+    current_ax.grid(axis='x', linestyle='--', alpha=0.3, color='gray')
+    current_ax.set_xticklabels([f'{int(x):,}' for x in grid_positions], fontsize=12)
     
     # Customize appearance
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.set_xlabel('Revenue TTM (in Millions)', fontsize=16, labelpad=33)
+    current_ax.spines['top'].set_visible(False)
+    current_ax.spines['right'].set_visible(False)
+    current_ax.spines['left'].set_visible(False)
+    current_ax.spines['bottom'].set_visible(False)
+    current_ax.set_xlabel('Revenue TTM (in Millions)', fontsize=16, labelpad=33)
     
     # Add quarter/year text
-    ax.text(0.02, 0.98, get_quarter_year(frame),
-            transform=ax.transAxes, fontsize=20,
+    current_ax.text(0.02, 0.98, get_quarter_year(frame),
+            transform=current_ax.transAxes, fontsize=20,
             fontproperties=open_sans_font, va='top')
     
-    return bars
+    # Set up the bar chart timeline
+    current_ax_bar_timeline.set_xlim(1998.8, 2025)
+    current_ax_bar_timeline.set_ylim(-0.04, 0.12)
+    current_ax_bar_timeline.get_yaxis().set_visible(False)
+    current_ax_bar_timeline.spines['top'].set_visible(False)
+    current_ax_bar_timeline.spines['right'].set_visible(False)
+    current_ax_bar_timeline.spines['left'].set_visible(False)
+    current_ax_bar_timeline.spines['bottom'].set_position(('data', 0))
+    current_ax_bar_timeline.spines['bottom'].set_color('black')
+    current_ax_bar_timeline.tick_params(axis='x', which='major', labelsize=10, colors='black')
+    current_ax_bar_timeline.xaxis.set_major_locator(MultipleLocator(1))
+    current_ax_bar_timeline.xaxis.set_minor_locator(MultipleLocator(0.25))
+    current_ax_bar_timeline.set_xticks(np.arange(1999, 2025, 1))
+    current_ax_bar_timeline.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{int(x)}'))
+    
+    # Add marker to bar chart timeline
+    bar_marker = current_ax_bar_timeline.plot([frame], [0.02], marker='v', color='#4e843d', markersize=10)[0]
+    artists_to_return = [bar_marker]
+    
+    return artists_to_return
 
-# Generate preview frames for each quarter
-print("\nGenerating preview frames...")
+# Before preview generation
+print("\nGenerating preview images for each quarter...")
 preview_dir = os.path.join(output_dir, 'previews')
 if not os.path.exists(preview_dir):
     os.makedirs(preview_dir)
 
-# Get unique years and quarters for previews
+# Get all unique quarters from interpolated data
+all_quarters = []
 min_year = int(interp_data['Year'].min())
 max_year = int(interp_data['Year'].max())
-preview_times = []
 
-# Generate quarterly time points
+# Generate only actual quarter points (Q1, Q2, Q3, Q4) for each year
 for year in range(min_year, max_year + 1):
-    for quarter in range(4):
-        time_point = year + quarter * 0.25
-        if time_point >= interp_data['Year'].min() and time_point <= interp_data['Year'].max():
-            preview_times.append(time_point)
+    for quarter in [0, 0.25, 0.5, 0.75]:
+        quarter_point = year + quarter
+        if quarter_point >= min_year and quarter_point <= max_year:
+            all_quarters.append(quarter_point)
+
+all_quarters = sorted(all_quarters)
+print(f"\nGenerating previews for {len(all_quarters)} quarters...")
 
 # Generate preview for each quarter
-for time_point in preview_times:
-    # Create a new figure for each preview
-    plt.close('all')  # Close all existing figures
-    fig, ax = setup_figure()
+for quarter in all_quarters:
+    print(f"\nGenerating preview for Q{int((quarter % 1) * 4 + 1)}'{int(quarter)}")
     
-    # Generate frame for this time point
-    update(time_point)
+    # Create preview figure and axes with the new setup
+    fig_preview = plt.figure(figsize=(19.2, 10.8), dpi=100)
+    gs_preview = fig_preview.add_gridspec(2, 2, width_ratios=[3, 1], height_ratios=[0.4, 4.5], hspace=0.15,
+                                        top=0.95, bottom=0.15)
+    ax_timeline_preview = fig_preview.add_subplot(gs_preview[0, :])
+    ax_preview = fig_preview.add_subplot(gs_preview[1, 0])
+    ax_bar_timeline_preview = fig_preview.add_subplot(gs_preview[0, 1])
+    ax_barchart_preview = fig_preview.add_subplot(gs_preview[1, 1])
+    
+    # Set current figure and axes for the update function
+    current_fig = fig_preview
+    current_ax = ax_preview
+    current_ax_timeline = ax_timeline_preview
+    current_ax_bar = ax_barchart_preview
+    current_ax_bar_timeline = ax_bar_timeline_preview
+    
+    # Update the visualization for this quarter
+    update(quarter, preview=True)
+    
+    # ... [rest of the preview generation code remains the same] ...
 
-    # Save preview without tight layout
-    quarter_year = get_quarter_year(time_point)
-    preview_path = os.path.join(preview_dir, f'preview_{quarter_year}.png')
-    plt.savefig(preview_path, dpi=300, bbox_inches=None)
-    print(f"Generated preview for {quarter_year}")
-    plt.close(fig)  # Properly close the figure
-    time.sleep(0.1)  # Add a small delay to ensure proper cleanup
-
-print(f"\nAll preview frames saved in {preview_dir}")
-
-# Ask user if they want to continue
-input("Previews generated. Press Enter to continue with animation generation...")
-
-# Create a new figure for the animation
-plt.close('all')  # Close all existing figures
-fig, ax = setup_figure()
+# Create main figure and axes for animation with the new setup
+fig, ax, ax_timeline, ax_barchart, ax_bar_timeline = setup_figure()
 
 # Create animation
 print("\nGenerating animation...")
