@@ -221,15 +221,15 @@ logo_settings = {
     'SEERA': {'zoom': 0.06, 'offset': 380},
     'SEERA_pre2019': {'zoom': 0.06, 'offset': 380},
     'TCOM': {'zoom': 0.11, 'offset': 430},
-    'TCOM_pre2019': {'zoom': 0.05, 'offset': 450},
-    'TRIP': {'zoom': 0.07, 'offset': 420},
-    'TRIP_pre2020': {'zoom': 0.07, 'offset': 440},
+    'TCOM_pre2019': {'zoom': 0.05, 'offset': 380},
+    'TRIP': {'zoom': 0.07, 'offset': 480},
+    'TRIP_pre2020': {'zoom': 0.07, 'offset': 480},
     'TRVG': {'zoom': 0.07, 'offset': 400},
     'Webjet': {'zoom': 0.07, 'offset': 470},
     'Yatra': {'zoom': 0.06, 'offset': 400},
     'MMYT': {'zoom': 0.06, 'offset': 450},
-    'Ixigo': {'zoom': 0.07, 'offset': 400}
-}
+    'Ixigo': {'zoom': 0.07, 'offset': 400},
+    'LMN_2014_2015': {'zoom': 0.06, 'offset': 400}}
 
 # Load company logos
 logos = {}
@@ -345,9 +345,8 @@ def update(frame, preview=False):
             continue
         if company == 'MMYT' and frame < 2011.0:  # Before 2011
             continue
-        if company == 'LMN':
-            if frame >= 2003.75 and frame < 2014.0:  # 2003Q3 to 2014
-                continue
+        if company == 'LMN' and frame >= 2003.75 and frame < 2014.0:  # LMN should not appear between Q3 2003 and 2014
+            continue
         filtered_companies.append(company)
     
     yearly_data = yearly_data[yearly_data['Company'].isin(filtered_companies)]
