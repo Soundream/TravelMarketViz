@@ -178,21 +178,21 @@ color_dict = {
 
 # Company-specific settings for logos
 logo_settings = {
-    'ABNB': {'zoom': 0.12, 'offset': 100},
-    'BKNG': {'zoom': 0.15, 'offset': 120},
-    'PCLN': {'zoom': 0.15, 'offset': 120},
-    'DESP': {'zoom': 0.10, 'offset': 90},
-    'EaseMyTrip': {'zoom': 0.11, 'offset': 95},
-    'EDR': {'zoom': 0.12, 'offset': 100},
-    'EXPE': {'zoom': 0.06, 'offset': 150},
-    'LMN': {'zoom': 0.12, 'offset': 100},
-    'OWW': {'zoom': 0.11, 'offset': 95},
-    'SEERA': {'zoom': 0.12, 'offset': 100},
-    'TCOM': {'zoom': 0.11, 'offset': 95},
-    'TRIP': {'zoom': 0.12, 'offset': 100},
-    'TRVG': {'zoom': 0.11, 'offset': 95},
-    'WEB': {'zoom': 0.12, 'offset': 100},
-    'YTRA': {'zoom': 0.11, 'offset': 95}
+    'ABNB': {'zoom': 0.06, 'offset': 400},
+    'BKNG': {'zoom': 0.06, 'offset': 410},
+    'PCLN': {'zoom': 0.15, 'offset': 400},
+    'DESP': {'zoom': 0.08, 'offset': 400},
+    'EaseMyTrip': {'zoom': 0.11, 'offset': 400},
+    'EDR': {'zoom': 0.07, 'offset': 380},
+    'EXPE': {'zoom': 0.06, 'offset': 450},
+    'LMN': {'zoom': 0.22, 'offset': 450},
+    'OWW': {'zoom': 0.11, 'offset': 400},
+    'SEERA': {'zoom': 0.06, 'offset': 380},
+    'TCOM': {'zoom': 0.11, 'offset': 400},
+    'TRIP': {'zoom': 0.07, 'offset': 420},
+    'TRVG': {'zoom': 0.07, 'offset': 400},
+    'WEB': {'zoom': 0.12, 'offset': 400},
+    'YTRA': {'zoom': 0.11, 'offset': 400}
 }
 
 # Load company logos
@@ -408,53 +408,41 @@ def update(frame, preview=False):
     return bars
 
 # Generate preview frames for each quarter
-print("\nGenerating preview frames...")
+print("\nGenerating preview frame for 2022 Q2...")
 preview_dir = os.path.join(output_dir, 'previews')
 if not os.path.exists(preview_dir):
     os.makedirs(preview_dir)
 
-# Get unique years and quarters for previews
-min_year = int(interp_data['Year'].min())
-max_year = int(interp_data['Year'].max())
-preview_times = []
+# 只生成2022年第二季度的预览
+preview_time = 2022.5  # 2022年第二季度
 
-# Generate quarterly time points
-for year in range(min_year, max_year + 1):
-    for quarter in range(4):
-        time_point = year + quarter * 0.25
-        if time_point >= interp_data['Year'].min() and time_point <= interp_data['Year'].max():
-            preview_times.append(time_point)
+# Generate preview
+print(f"\nGenerating preview for 2022 Q2")
 
-# Generate preview for each quarter
-for quarter in preview_times:
-    print(f"\nGenerating preview for Q{int((quarter % 1) * 4 + 1)}'{int(quarter)}")
-    
-    # Create preview figure and axes with the same layout as main figure
-    plt.close('all')  # Close any existing figures
-    fig_preview = plt.figure(figsize=(19.2, 10.8), dpi=100)
-    gs_preview = fig_preview.add_gridspec(2, 1, height_ratios=[0.3, 4], hspace=0.2,
-                                        top=0.98, bottom=0.12)  # 同步预览图的布局
-    ax_timeline_preview = fig_preview.add_subplot(gs_preview[0])
-    ax_preview = fig_preview.add_subplot(gs_preview[1])
+# Create preview figure and axes with the same layout as main figure
+plt.close('all')  # Close any existing figures
+fig_preview = plt.figure(figsize=(19.2, 10.8), dpi=100)
+gs_preview = fig_preview.add_gridspec(2, 1, height_ratios=[0.3, 4], hspace=0.2,
+                                    top=0.98, bottom=0.12)
+ax_timeline_preview = fig_preview.add_subplot(gs_preview[0])
+ax_preview = fig_preview.add_subplot(gs_preview[1])
 
-    # Set the current figure
-    plt.figure(fig_preview.number)
+# Set the current figure
+plt.figure(fig_preview.number)
 
-    # Update the visualization for this quarter
-    update(quarter, preview=True)
+# Update the visualization for this quarter
+update(preview_time, preview=True)
 
-    # Save preview
-    quarter_str = f"{int(quarter)}_{int((quarter % 1) * 4 + 1)}"
-    preview_path = os.path.join(preview_dir, f'preview_{quarter_str}.png')
-    plt.savefig(preview_path, dpi=300)
-    plt.close(fig_preview)
-    print(f"Preview saved as {preview_path}")
-    time.sleep(0.1)  # Add a small delay to ensure proper cleanup
+# Save preview
+preview_path = os.path.join(preview_dir, 'preview_2022_2.png')
+plt.savefig(preview_path, dpi=300)
+plt.close(fig_preview)
+print(f"Preview saved as {preview_path}")
 
-print("\nAll preview frames saved in {preview_dir}")
+print("\nPreview frame saved in {preview_dir}")
 
 # Ask user if they want to continue
-input("Previews generated. Press Enter to continue with animation generation...")
+input("Preview generated. Press Enter to continue with animation generation...")
 
 # Create main figure and axes for animation with the same layout
 plt.close('all')
