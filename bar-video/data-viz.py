@@ -40,17 +40,33 @@ print(f"Loaded {len(data)} rows of data")
 
 # Process the data to get annual Q1 data and special handling for 2024
 def process_quarterly_data(data):
-    # Remove the 'Revenue' row
+    print("\nDebug: Original columns:", data.columns.tolist())
+    print("\nDebug: First few rows of original data:")
+    print(data.head())
+    
+    # Remove the 'Revenue' row and reset index
     data = data[data.iloc[:, 0] != 'Revenue'].copy()
+    data = data.reset_index(drop=True)  # Reset index after removing 'Revenue' row
+    
+    print("\nDebug: Data after removing Revenue row:")
+    print(data.head())
     
     # Convert the first column to proper format for processing
     # Extract year and quarter from the string (e.g., "2024'Q1" -> 2024.0)
     data['Year'] = data.iloc[:, 0].apply(lambda x: float(x.split("'")[0]))
     data['Quarter'] = data.iloc[:, 0].apply(lambda x: int(x.split("Q")[1]))
     
-    # Convert all revenue columns to numeric
+    # Convert all revenue columns to numeric, with better error handling
     for col in data.columns[1:-2]:  # Skip the original year column and the new Year/Quarter columns
-        data[col] = data[col].apply(lambda x: float(str(x).replace('$', '').replace(',', '')) if pd.notnull(x) and str(x).strip() != '' else None)
+        # First replace empty strings and 'nan' with NaN
+        data[col] = data[col].replace('', np.nan).replace('nan', np.nan)
+        # Then convert to numeric
+        data[col] = pd.to_numeric(data[col].apply(lambda x: str(x).replace('$', '').replace(',', '') if pd.notnull(x) else np.nan), errors='coerce')
+    
+    print("\nDebug: Data after numeric conversion:")
+    print(data.head())
+    print("\nDebug: ABNB column after conversion:")
+    print(data['ABNB'].head())
     
     # For years before 2024, only keep Q1 data
     pre_2024 = data[data['Year'] < 2024].copy()
@@ -60,6 +76,9 @@ def process_quarterly_data(data):
     year_2024 = data[data['Year'] == 2024].copy()
     year_2024 = year_2024[year_2024['Quarter'].isin([1, 3])]
     
+    print("\nDebug: 2024 data:")
+    print(year_2024)
+    
     # Combine the data
     processed_data = pd.concat([pre_2024, year_2024])
     
@@ -68,6 +87,11 @@ def process_quarterly_data(data):
     
     # Drop the original year column and Quarter column
     processed_data = processed_data.drop(columns=[processed_data.columns[0], 'Quarter'])
+    
+    print("\nDebug: Final processed data:")
+    print(processed_data.head())
+    print("\nDebug: ABNB in final data:")
+    print(processed_data['ABNB'].dropna())
     
     return processed_data
 
@@ -80,10 +104,10 @@ print(f"After processing: {len(data)} rows")
 def interpolate_data(data, multiple=20):
     all_interpolated = []
     
-    # Get all companies (excluding the first column which is year)
-    companies = data.columns[1:]
+    # Get all companies (excluding the Year column)
+    companies = [col for col in data.columns if col != 'Year']
     print(f"\nFound {len(companies)} companies to process:")
-    print(companies.tolist())
+    print(companies)
     
     for company in companies:
         try:
@@ -97,46 +121,55 @@ def interpolate_data(data, multiple=20):
             company_data = company_data.dropna()
             
             print(f"Valid data points for {company}: {len(company_data)}")
+            print(f"Data points for {company}:")
+        print(company_data)
             
-            if len(company_data) < 2:
+        if len(company_data) < 2:
                 print(f"Skipping {company} - insufficient data points")
-                continue
+            continue
             
             # Get time range
             min_year = company_data['Year'].min()
             max_year = company_data['Year'].max()
             print(f"Year range for {company}: {min_year} to {max_year}")
             
-            # Special handling for 2024-2025
-            has_2025_data = 2025.0 in company_data['Year'].values
-            
-            if has_2025_data:
-                # Company has data in 2024'Q3 (mapped to 2025)
-                # Create quarterly points up to 2024'Q1, then special handling for 2024'Q1 to 2025
-                quarters_before_2024 = np.arange(min_year, 2024.0, 0.25)
-                quarters_2024_2025 = np.array([2024.0, 2024.25, 2024.5, 2024.75, 2025.0])
-                quarters = np.concatenate([quarters_before_2024, quarters_2024_2025])
+            # Special handling for companies that only have recent data (like ABNB)
+            if min_year >= 2020:
+                # For companies that started after 2020, we'll use linear interpolation
+                years = np.linspace(min_year, max_year, int((max_year - min_year) * 4 * multiple))
+        company_interp = pd.DataFrame()
+                company_interp['Year'] = years
+        company_interp['Company'] = company
+                
+                # Use linear interpolation for newer companies
+                from scipy.interpolate import interp1d
+                f = interp1d(company_data['Year'], company_data['Revenue'])
+                company_interp['Revenue'] = f(years)
             else:
-                # Company doesn't have 2024'Q3 data, only interpolate up to 2024'Q1
-                quarters = np.arange(min_year, 2024.25, 0.25)
-            
-            # Create additional points between quarters
-            years = []
-            for i in range(len(quarters)-1):
-                segment = np.linspace(quarters[i], quarters[i+1], multiple, endpoint=False)
-                years.extend(segment)
-            years.append(quarters[-1])
-            years = np.array(years)
-            
-            # Create interpolated DataFrame
-            company_interp = pd.DataFrame()
-            company_interp['Year'] = years
-            company_interp['Company'] = company
-            
-            # Use cubic spline interpolation
-            from scipy.interpolate import CubicSpline
-            cs = CubicSpline(company_data['Year'], company_data['Revenue'])
-            company_interp['Revenue'] = cs(years)
+                # Original spline interpolation for companies with longer history
+                has_2025_data = 2025.0 in company_data['Year'].values
+                
+                if has_2025_data:
+                    quarters_before_2024 = np.arange(min_year, 2024.0, 0.25)
+                    quarters_2024_2025 = np.array([2024.0, 2024.25, 2024.5, 2024.75, 2025.0])
+                    quarters = np.concatenate([quarters_before_2024, quarters_2024_2025])
+                else:
+                    quarters = np.arange(min_year, 2024.25, 0.25)
+                
+                years = []
+                for i in range(len(quarters)-1):
+                    segment = np.linspace(quarters[i], quarters[i+1], multiple, endpoint=False)
+                    years.extend(segment)
+                years.append(quarters[-1])
+                years = np.array(years)
+                
+                company_interp = pd.DataFrame()
+                company_interp['Year'] = years
+                company_interp['Company'] = company
+                
+                from scipy.interpolate import CubicSpline
+                cs = CubicSpline(company_data['Year'], company_data['Revenue'])
+                company_interp['Revenue'] = cs(years)
             
             # Preserve original points
             for _, row in company_data.iterrows():
@@ -145,12 +178,12 @@ def interpolate_data(data, multiple=20):
                     company_interp.loc[mask, 'Revenue'] = row['Revenue']
             
             print(f"Successfully interpolated {len(company_interp)} points for {company}")
-            all_interpolated.append(company_interp)
+        all_interpolated.append(company_interp)
             
         except Exception as e:
             print(f"Error interpolating {company}: {e}")
             continue
-    
+
     if not all_interpolated:
         raise ValueError("No data could be interpolated. Please check your input data.")
     
@@ -158,6 +191,11 @@ def interpolate_data(data, multiple=20):
     print("\nCombining interpolated data...")
     result = pd.concat(all_interpolated, ignore_index=True)
     print(f"Final interpolated data shape: {result.shape}")
+    
+    # Print unique companies in final data
+    print("\nCompanies in final interpolated data:")
+    print(sorted(result['Company'].unique()))
+    
     return result.sort_values('Year').reset_index(drop=True)
 
 # Generate interpolated data
@@ -171,7 +209,7 @@ print(f"\nSaved interpolated data to output/interpolated_data.xlsx")
 # Define the list of companies to display
 selected_companies = [
     'ABNB', 'BKNG', 'DESP', 'EaseMyTrip', 'EDR', 'EXPE', 'LMN',
-    'OWW', 'SEERA', 'TCOM', 'TRIP', 'TRVG', 'WEB', 'YTRA'
+    'MMYT', 'Ixigo', 'OWW', 'SEERA', 'TCOM', 'TRIP', 'TRVG', 'Webjet', 'Yatra'
 ]
 
 # Color dictionary for companies
@@ -180,27 +218,30 @@ color_dict = {
     'DESP': '#755bd8', 'EaseMyTrip': '#00a0e2', 'EDR': '#2577e3',
     'EXPE': '#fbcc33', 'LMN': '#fc03b1', 'OWW': '#8edbfa',
     'SEERA': '#750808', 'TCOM': '#2577e3', 'TRIP': '#00af87',
-    'TRVG': '#c71585', 'WEB': '#fa8072', 'YTRA': '#800080'
+    'TRVG': '#c71585', 'Webjet': '#e74c3c', 'Yatra': '#e74c3c',
+    'MMYT': '#e74c3c', 'Ixigo': '#e74c3c'
 }
 
 # Company-specific settings for logos
 logo_settings = {
-    'ABNB': {'zoom': 0.06, 'offset': 400},
-    'BKNG': {'zoom': 0.06, 'offset': 410},
-    'PCLN_pre2014': {'zoom': 0.07, 'offset': 430},
-    'PCLN_post2014': {'zoom': 0.07, 'offset': 450},
-    'DESP': {'zoom': 0.08, 'offset': 400},
-    'EaseMyTrip': {'zoom': 0.11, 'offset': 400},
+    'ABNB': {'zoom': 0.06, 'offset': 430},
+    'BKNG': {'zoom': 0.06, 'offset': 440},
+    'PCLN_pre2014': {'zoom': 0.07, 'offset': 480},
+    'PCLN_post2014': {'zoom': 0.07, 'offset': 500},
+    'DESP': {'zoom': 0.08, 'offset': 440},
+    'EaseMyTrip': {'zoom': 0.07, 'offset': 490},
     'EDR': {'zoom': 0.07, 'offset': 380},
-    'EXPE': {'zoom': 0.06, 'offset': 450},
+    'EXPE': {'zoom': 0.06, 'offset': 490},
     'LMN': {'zoom': 0.22, 'offset': 450},
     'OWW': {'zoom': 0.11, 'offset': 400},
     'SEERA': {'zoom': 0.06, 'offset': 380},
-    'TCOM': {'zoom': 0.11, 'offset': 400},
+    'TCOM': {'zoom': 0.11, 'offset': 430},
     'TRIP': {'zoom': 0.07, 'offset': 420},
     'TRVG': {'zoom': 0.07, 'offset': 400},
-    'WEB': {'zoom': 0.12, 'offset': 400},
-    'YTRA': {'zoom': 0.11, 'offset': 400}
+    'Webjet': {'zoom': 0.07, 'offset': 470},
+    'Yatra': {'zoom': 0.06, 'offset': 400},
+    'MMYT': {'zoom': 0.06, 'offset': 450},
+    'Ixigo': {'zoom': 0.07, 'offset': 400}
 }
 
 # Load company logos
@@ -222,19 +263,19 @@ for company in selected_companies:
             logos['BKNG'] = plt.imread(bkng_logo_path)
     else:
         logo_path = os.path.join(logos_dir, f'{company}_logo.png')
-        if os.path.exists(logo_path):
-            try:
-                logos[company] = plt.imread(logo_path)
-            except Exception as e:
-                print(f"Error loading logo for {company}: {e}")
+    if os.path.exists(logo_path):
+        try:
+            logos[company] = plt.imread(logo_path)
+        except Exception as e:
+            print(f"Error loading logo for {company}: {e}")
                 # Create text-based placeholder
                 fig_temp = plt.figure(figsize=(1, 1))
-                ax_temp = fig_temp.add_subplot(111)
+            ax_temp = fig_temp.add_subplot(111)
                 ax_temp.text(0.5, 0.5, company, ha='center', va='center', fontsize=9)
-                ax_temp.axis('off')
+            ax_temp.axis('off')
                 temp_path = os.path.join(logos_dir, f'{company}_temp_logo.png')
                 fig_temp.savefig(temp_path, transparent=True, bbox_inches='tight')
-                plt.close(fig_temp)
+            plt.close(fig_temp)
                 logos[company] = plt.imread(temp_path)
 
 # Function to get quarter and year from numeric year
@@ -299,9 +340,9 @@ def update(frame, preview=False):
     available_companies = len(sorted_data)
     top_companies = sorted_data  # No need for tail since we want all companies
     
-    num_bars = 12  # 保持条数
-    bar_height = 0.9  # 增加条形高度
-    spacing = 1.4  # 增加条形间距
+    num_bars = 16  # 增加条数以适应更多公司
+    bar_height = 0.9  # 保持条形高度
+    spacing = 1.2  # 稍微减小间距以适应更多条形
     all_positions = np.arange(num_bars) * spacing
     
     # Calculate positions starting from the top
@@ -330,9 +371,15 @@ def update(frame, preview=False):
         width = bar.get_width()
         y_pos = bar.get_y() + bar.get_height() / 2
         
+        # Skip if LMN and revenue is negative or less than 0.009, or if revenue is zero for others
+        if (company == 'LMN' and (width < 0 or abs(width) < 0.009)) or abs(width) < 0.01:
+            continue
+        
         # Add revenue label with fixed offset from the end of the bar
         revenue_offset = current_x_limit * 0.02  # 2% of the x-axis range
-        current_ax.text(width + revenue_offset, y_pos, f'{width:,.0f}',
+        # Format revenue with 2 decimal places
+        revenue_text = f'{width:,.2f}'
+        current_ax.text(width + revenue_offset, y_pos, revenue_text,
                 va='center', ha='left', fontsize=14,
                 fontproperties=open_sans_font)
         
@@ -372,11 +419,18 @@ def update(frame, preview=False):
     # Set y-ticks for all positions but only label the ones with companies
     current_ax.set_yticks(all_positions)
     labels = [''] * num_bars  # Initialize empty labels for all positions
-    # Fill in labels from top to bottom
-    companies_list = top_companies['Company'].values.tolist()
-    for i, company in enumerate(companies_list):
-        labels[i] = company
-    current_ax.set_yticklabels(labels, fontsize=14, fontproperties=open_sans_font)
+    
+    # Fill in labels from top to bottom, skip companies with zero revenue
+    companies_with_revenue = []
+    positions_with_revenue = []
+    for i, (company, revenue) in enumerate(zip(top_companies['Company'], top_companies['Revenue'])):
+        if not ((company == 'LMN' and (revenue < 0 or abs(revenue) < 0.009)) or abs(revenue) < 0.01):
+            companies_with_revenue.append(company)
+            positions_with_revenue.append(all_positions[i])
+    
+    # Update y-ticks to only show positions with revenue
+    current_ax.set_yticks(positions_with_revenue)
+    current_ax.set_yticklabels(companies_with_revenue, fontsize=14, fontproperties=open_sans_font)
     
     # Add grid lines with fixed intervals based on current maximum revenue
     if current_x_limit > 10000:
@@ -448,14 +502,17 @@ def update(frame, preview=False):
     
     return bars
 
-# Generate preview frames for 2024-2025 quarters
-print("\nGenerating preview frames for 2024-2025...")
+# Generate preview frames for all quarters
+print("\nGenerating preview frames for all quarters...")
 preview_dir = os.path.join(output_dir, 'previews')
 if not os.path.exists(preview_dir):
     os.makedirs(preview_dir)
 
-# Generate preview times for 2024-2025 only
-preview_times = [2024.0, 2024.25, 2024.5, 2024.75]  # 2024Q1-Q4
+# Generate preview times for all quarters from 1997 to 2024
+preview_times = []
+for year in range(1997, 2025):  # From 1997 to 2024
+    for quarter in [0.0, 0.25, 0.5, 0.75]:  # Four quarters per year
+        preview_times.append(year + quarter)
 
 # Generate preview for each quarter
 for time_point in preview_times:
@@ -491,9 +548,9 @@ input("Previews generated. Press Enter to continue with animation generation..."
 
 # Create main figure and axes for animation with the same layout
 plt.close('all')
-fig = plt.figure(figsize=(19.2, 10.8), dpi=300)
+fig = plt.figure(figsize=(19.2, 10.8), dpi=150)  # 降低DPI从300到150
 gs = fig.add_gridspec(2, 1, height_ratios=[0.3, 4], hspace=0.2,
-                     top=0.98, bottom=0.12)  # 同步动画的布局
+                     top=0.98, bottom=0.12)
 ax_timeline = fig.add_subplot(gs[0])
 ax = fig.add_subplot(gs[1])
 
@@ -509,7 +566,7 @@ ani = FuncAnimation(fig, update,
 # Save animation
 print("\nSaving animation...")
 ani.save('output/evolution_of_online_travel.mp4', 
-         writer='ffmpeg', fps=24, bitrate=5000)
+         writer='ffmpeg', fps=24, bitrate=2000)  # 降低比特率从5000到2000
 
 print("\nAnimation saved successfully!")
 plt.show()
