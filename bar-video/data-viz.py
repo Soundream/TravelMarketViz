@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import pandas as pd
 import numpy as np
@@ -28,7 +27,8 @@ else:
 # Create required directories
 logos_dir = 'logos'
 output_dir = 'output'
-for directory in [logos_dir, output_dir]:
+frames_dir = os.path.join(output_dir, 'frames')
+for directory in [logos_dir, output_dir, frames_dir]:
     if not os.path.exists(directory):
         os.makedirs(directory)
         print(f"Created directory: {directory}")
@@ -229,7 +229,8 @@ logo_settings = {
     'Yatra': {'zoom': 0.06, 'offset': 400},
     'MMYT': {'zoom': 0.06, 'offset': 450},
     'Ixigo': {'zoom': 0.07, 'offset': 400},
-    'LMN_2014_2015': {'zoom': 0.06, 'offset': 400}}
+    'LMN_2014_2015': {'zoom': 0.06, 'offset': 400}
+}
 
 # Load company logos
 logos = {}
@@ -300,37 +301,17 @@ def get_logo_settings(company):
     default_settings = {'zoom': 0.12, 'offset': 100}
     return logo_settings.get(company, default_settings)
 
-# Setup the figure and gridspec for the layout
-fig = plt.figure(figsize=(19.2, 10.8), dpi=300)
-gs = fig.add_gridspec(2, 1, height_ratios=[0.3, 4], hspace=0.2,
-                     top=0.98, bottom=0.12)  # 增加底部边距以显示标签
-
-# Timeline spanning the full width (top row)
-ax_timeline = fig.add_subplot(gs[0])
-
-# Bubble chart (bottom)
-ax = fig.add_subplot(gs[1])
-
-# Animation update function
-def update(frame, preview=False):
+def create_frame(frame):
     """
-    更新动画帧
+    创建单个帧的图表
     frame: 当前时间点
-    preview: 是否为预览模式
     """
-    # Use the correct figure and axes based on whether this is a preview or animation
-    if preview:
-        current_fig = fig_preview
-        current_ax = ax_preview
-        current_ax_timeline = ax_timeline_preview
-    else:
-        current_fig = fig
-        current_ax = ax
-        current_ax_timeline = ax_timeline
-    
-    # Clear all axes
-    current_ax.clear()
-    current_ax_timeline.clear()
+    # Create figure and axes with lower DPI for consistent logo positioning
+    fig = plt.figure(figsize=(19.2, 10.8), dpi=100)  # Keep DPI at 100 for consistent positioning
+    gs = fig.add_gridspec(2, 1, height_ratios=[0.3, 4], hspace=0.2,
+                         top=0.98, bottom=0.12)
+    ax_timeline = fig.add_subplot(gs[0])
+    ax = fig.add_subplot(gs[1])
     
     # Filter data for current frame
     yearly_data = interp_data[
@@ -359,11 +340,11 @@ def update(frame, preview=False):
     sorted_data = yearly_data.sort_values('Revenue', ascending=False)
     
     available_companies = len(sorted_data)
-    top_companies = sorted_data  # No need for tail since we want all companies
+    top_companies = sorted_data
     
-    num_bars = 16  # 增加条数以适应更多公司
-    bar_height = 0.9  # 保持条形高度
-    spacing = 1.2  # 稍微减小间距以适应更多条形
+    num_bars = 16
+    bar_height = 0.9
+    spacing = 1.2
     all_positions = np.arange(num_bars) * spacing
     
     # Calculate positions starting from the top
@@ -374,52 +355,50 @@ def update(frame, preview=False):
     current_x_limit = current_max_revenue * 1.4  # Add 40% margin
     
     # Create bars only for available companies
-    bars = current_ax.barh(y_positions, top_companies['Revenue'],
+    bars = ax.barh(y_positions, top_companies['Revenue'],
                    color=[color_dict.get(company, '#808080') for company in top_companies['Company']],
                    height=bar_height)
     
     # Set axis limits
-    current_ax.set_ylim((num_bars - 1) * spacing + spacing/2, -spacing/2)  # Fixed y-axis limits
-    current_ax.set_xlim(0, current_x_limit)  # Dynamic x-axis limits
+    ax.set_ylim((num_bars - 1) * spacing + spacing/2, -spacing/2)
+    ax.set_xlim(0, current_x_limit)
     
     # Calculate figure width in pixels
-    fig_width_inches = current_fig.get_size_inches()[0]
-    dpi = current_fig.dpi
+    fig_width_inches = fig.get_size_inches()[0]
+    dpi = fig.dpi
     fig_width_pixels = fig_width_inches * dpi
     
-    # Add labels and logos only for available companies
+    # Add labels and logos
     for i, (bar, revenue, company) in enumerate(zip(bars, top_companies['Revenue'], top_companies['Company'].values)):
         width = bar.get_width()
         y_pos = bar.get_y() + bar.get_height() / 2
         
-        # Skip if LMN and revenue is negative or less than 0.009, or if revenue is zero for others
         if (company == 'LMN' and (width < 0 or abs(width) < 0.009)) or abs(width) < 0.01:
             continue
         
-        # Add revenue label with fixed offset from the end of the bar
-        revenue_offset = current_x_limit * 0.02  # 2% of the x-axis range
-        # Format revenue with 2 decimal places
+        # Add revenue label
+        revenue_offset = current_x_limit * 0.02
         revenue_text = f'{width:,.2f}'
-        current_ax.text(width + revenue_offset, y_pos, revenue_text,
+        ax.text(width + revenue_offset, y_pos, revenue_text,
                 va='center', ha='left', fontsize=14,
                 fontproperties=open_sans_font)
         
-        # Add logo with company-specific size and position
+        # Add logo with adjusted offset calculation
         if company == 'PCLN' or company == 'BKNG':
-            if frame < 2014.25:  # Before April 2014
+            if frame < 2014.25:
                 logo_key = 'PCLN_pre2014'
-            elif frame < 2018.08:  # Between April 2014 and BKNG change
+            elif frame < 2018.08:
                 logo_key = 'PCLN_post2014'
-            else:  # After BKNG change
+            else:
                 logo_key = 'BKNG'
         elif company == 'TCOM':
-            logo_key = 'TCOM_pre2019' if frame < 2019.75 else 'TCOM'  # 2019.75 represents September 2019
+            logo_key = 'TCOM_pre2019' if frame < 2019.75 else 'TCOM'
         elif company == 'TRIP':
             logo_key = 'TRIP_pre2020' if frame < 2020.0 else 'TRIP'
         elif company == 'SEERA':
-            logo_key = 'SEERA_pre2019' if frame < 2019.25 else 'SEERA'  # 2019.25 represents April 2019
+            logo_key = 'SEERA_pre2019' if frame < 2019.25 else 'SEERA'
         elif company == 'LMN':
-            if frame >= 2014.0 and frame < 2015.42:  # 2014 to May 2015
+            if frame >= 2014.0 and frame < 2015.42:
                 logo_key = 'LMN_2014_2015'
             else:
                 logo_key = 'LMN'
@@ -431,18 +410,19 @@ def update(frame, preview=False):
             settings = logo_settings.get(logo_key, logo_settings.get(company, {'zoom': 0.12, 'offset': 100}))
             zoom = settings['zoom']
             pixel_offset = settings['offset']
-            data_offset = (pixel_offset / fig_width_pixels) * current_x_limit
+            
+            # Use original calculation method with figure width
+            data_offset = (pixel_offset / fig_width_pixels) * current_x_limit * 3  # Added multiplier to adjust position
             
             imagebox = OffsetImage(image, zoom=zoom)
             ab = AnnotationBbox(imagebox, (width + data_offset, y_pos),
                               frameon=False, box_alignment=(0.5, 0.5))
-            current_ax.add_artist(ab)
+            ax.add_artist(ab)
     
-    # Set y-ticks for all positions but only label the ones with companies
-    current_ax.set_yticks(all_positions)
-    labels = [''] * num_bars  # Initialize empty labels for all positions
+    # Set y-ticks
+    ax.set_yticks(all_positions)
+    labels = [''] * num_bars
     
-    # Fill in labels from top to bottom, skip companies with zero revenue
     companies_with_revenue = []
     positions_with_revenue = []
     for i, (company, revenue) in enumerate(zip(top_companies['Company'], top_companies['Revenue'])):
@@ -450,11 +430,10 @@ def update(frame, preview=False):
             companies_with_revenue.append(company)
             positions_with_revenue.append(all_positions[i])
     
-    # Update y-ticks to only show positions with revenue
-    current_ax.set_yticks(positions_with_revenue)
-    current_ax.set_yticklabels(companies_with_revenue, fontsize=14, fontproperties=open_sans_font)
+    ax.set_yticks(positions_with_revenue)
+    ax.set_yticklabels(companies_with_revenue, fontsize=14, fontproperties=open_sans_font)
     
-    # Add grid lines with fixed intervals based on current maximum revenue
+    # Add grid lines
     if current_x_limit > 10000:
         interval = 2000
     elif current_x_limit > 5000:
@@ -465,130 +444,69 @@ def update(frame, preview=False):
         interval = 200
     
     grid_positions = np.arange(0, current_x_limit, interval)
-    current_ax.set_xticks(grid_positions)
-    current_ax.grid(axis='x', linestyle='--', alpha=0.3, color='gray')
-    current_ax.set_xticklabels([f'{int(x):,}' for x in grid_positions], fontsize=12)
+    ax.set_xticks(grid_positions)
+    ax.grid(axis='x', linestyle='--', alpha=0.3, color='gray')
+    ax.set_xticklabels([f'{int(x):,}' for x in grid_positions], fontsize=12)
     
     # Customize appearance
-    current_ax.spines['top'].set_visible(False)
-    current_ax.spines['right'].set_visible(False)
-    current_ax.spines['left'].set_visible(False)
-    current_ax.spines['bottom'].set_visible(False)
-    current_ax.set_xlabel('Revenue TTM (in Millions)', fontsize=16, labelpad=33)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.set_xlabel('Revenue TTM (in Millions)', fontsize=16, labelpad=33)
     
     # Set up the timeline
-    current_ax_timeline.set_xlim(1996.5, 2025.5)  # 保持时间轴范围
-    current_ax_timeline.set_ylim(-0.2, 0.2)  # 减小纵向范围使时间轴显得更宽
-    current_ax_timeline.get_yaxis().set_visible(False)
+    ax_timeline.set_xlim(1996.5, 2025.5)
+    ax_timeline.set_ylim(-0.2, 0.2)
+    ax_timeline.get_yaxis().set_visible(False)
 
-    # 增加时间轴的可见度
-    current_ax_timeline.spines['top'].set_visible(False)
-    current_ax_timeline.spines['right'].set_visible(False)
-    current_ax_timeline.spines['left'].set_visible(False)
-    current_ax_timeline.spines['bottom'].set_visible(True)
-    current_ax_timeline.spines['bottom'].set_linewidth(1.5)
-    current_ax_timeline.spines['bottom'].set_color('#808080')  # 改为灰色
-    current_ax_timeline.spines['bottom'].set_position(('data', 0))
+    ax_timeline.spines['top'].set_visible(False)
+    ax_timeline.spines['right'].set_visible(False)
+    ax_timeline.spines['left'].set_visible(False)
+    ax_timeline.spines['bottom'].set_visible(True)
+    ax_timeline.spines['bottom'].set_linewidth(1.5)
+    ax_timeline.spines['bottom'].set_color('#808080')
+    ax_timeline.spines['bottom'].set_position(('data', 0))
 
-    # 设置刻度
-    current_ax_timeline.tick_params(axis='x', which='major', labelsize=12, length=6, width=1, colors='#808080')  # 改为灰色
-    current_ax_timeline.xaxis.set_major_locator(MultipleLocator(1))  # 每年显示一次刻度
-    current_ax_timeline.xaxis.set_minor_locator(MultipleLocator(0.5))  # 保持每半年的小刻度
-    current_ax_timeline.set_xticks(np.arange(1997, 2025, 1))  # 每年显示一次年份
-    current_ax_timeline.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{int(x)}'))
+    ax_timeline.tick_params(axis='x', which='major', labelsize=12, length=6, width=1, colors='#808080')
+    ax_timeline.xaxis.set_major_locator(MultipleLocator(1))
+    ax_timeline.xaxis.set_minor_locator(MultipleLocator(0.5))
+    ax_timeline.set_xticks(np.arange(1997, 2025, 1))
+    ax_timeline.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{int(x)}'))
 
     # Moving marker on timeline
     marker_position = frame
-    marker_triangle = current_ax_timeline.plot([marker_position], [0.05], marker='v',  # 调整marker位置从0.02到0.01
-                                    color='#4e843d', markersize=10, zorder=5)[0]  # 同时稍微减小marker大小
+    ax_timeline.plot([marker_position], [0.05], marker='v',
+                    color='#4e843d', markersize=10, zorder=5)
 
-    # 添加年份标签和刻度（只在下方显示）
+    # Add year ticks and labels
     for year in range(1997, 2025):
-        # 年份刻度线
-        current_ax_timeline.vlines(year, -0.03, 0, colors='#808080', linewidth=1)  # 改为灰色
-        
-        # 只在偶数年显示年份标签
+        ax_timeline.vlines(year, -0.03, 0, colors='#808080', linewidth=1)
         if year % 2 == 0:
-            current_ax_timeline.text(year, -0.07, str(year), ha='center', va='top', fontsize=12, color='#808080')  # 改为灰色
-        
-        # 每季度刻度线
+            ax_timeline.text(year, -0.07, str(year), ha='center', va='top', fontsize=12, color='#808080')
         for quarter in [0.25, 0.5, 0.75]:
             quarter_year = year + quarter
             if quarter_year < 2025:
-                current_ax_timeline.vlines(quarter_year, -0.02, 0, colors='#808080', linewidth=0.5, alpha=0.7)  # 改为灰色
+                ax_timeline.vlines(quarter_year, -0.02, 0, colors='#808080', linewidth=0.5, alpha=0.7)
 
-    # 移除原有的x轴标签
-    current_ax_timeline.set_xticklabels([])
-
-    artists_to_return = [marker_triangle]
+    ax_timeline.set_xticklabels([])
     
-    return bars
-
-# Generate preview frames for all quarters
-print("\nGenerating preview frames for all quarters...")
-preview_dir = os.path.join(output_dir, 'previews')
-if not os.path.exists(preview_dir):
-    os.makedirs(preview_dir)
-
-# Generate preview times for all quarters from 1997 to 2024
-preview_times = []
-for year in range(1997, 2025):  # From 1997 to 2024
-    for quarter in [0.0, 0.25, 0.5, 0.75]:  # Four quarters per year
-        preview_times.append(year + quarter)
-
-# Generate preview for each quarter
-for time_point in preview_times:
-    year = int(time_point)
-    quarter = int((time_point - year) * 4) + 1
-    print(f"\nGenerating preview for {year}'Q{quarter}")
+    # Save the frame with high DPI
+    frame_number = int((frame - 1997) * 100)
+    frame_path = os.path.join(frames_dir, f'frame_{frame_number:04d}.png')
+    plt.savefig(frame_path, dpi=300)  # Save with high DPI
+    plt.close(fig)
     
-    # Create preview figure and axes with the same layout as main figure
-    plt.close('all')
-    fig_preview = plt.figure(figsize=(19.2, 10.8), dpi=100)
-    gs_preview = fig_preview.add_gridspec(2, 1, height_ratios=[0.3, 4], hspace=0.2,
-                                        top=0.98, bottom=0.12)
-    ax_timeline_preview = fig_preview.add_subplot(gs_preview[0])
-    ax_preview = fig_preview.add_subplot(gs_preview[1])
+    return frame_path
 
-    # Set the current figure
-    plt.figure(fig_preview.number)
+# Generate all frames
+print("\nGenerating frames...")
+unique_years = np.unique(interp_data['Year'])
+total_frames = len(unique_years)
 
-    # Update the visualization for this quarter
-    update(time_point, preview=True)
+for i, year in enumerate(unique_years):
+    print(f"\rGenerating frame {i+1}/{total_frames} (Year: {year:.2f})", end="", flush=True)
+    create_frame(year)
 
-    # Save preview with quarter information
-    preview_path = os.path.join(preview_dir, f'preview_{year}_Q{quarter}.png')
-    plt.savefig(preview_path, dpi=300)
-    plt.close(fig_preview)
-    print(f"Preview saved as {preview_path}")
-    time.sleep(0.1)  # Add a small delay to ensure proper cleanup
-
-print(f"\nAll preview frames saved in {preview_dir}")
-
-# Ask user if they want to continue
-input("Previews generated. Press Enter to continue with animation generation...")
-
-# Create main figure and axes for animation with the same layout
-plt.close('all')
-fig = plt.figure(figsize=(19.2, 10.8), dpi=150)  # 降低DPI从300到150
-gs = fig.add_gridspec(2, 1, height_ratios=[0.3, 4], hspace=0.2,
-                     top=0.98, bottom=0.12)
-ax_timeline = fig.add_subplot(gs[0])
-ax = fig.add_subplot(gs[1])
-
-# Set the current figure
-plt.figure(fig.number)
-
-# Create animation
-print("\nGenerating animation...")
-ani = FuncAnimation(fig, update,
-                   frames=np.unique(interp_data['Year']),
-                   interval=50, repeat=False)
-
-# Save animation
-print("\nSaving animation...")
-ani.save('output/evolution_of_online_travel.mp4', 
-         writer='ffmpeg', fps=24, bitrate=2000)  # 降低比特率从5000到2000
-
-print("\nAnimation saved successfully!")
-plt.show()
+print("\n\nAll frames generated successfully!")
+print(f"Frames are saved in: {frames_dir}")
