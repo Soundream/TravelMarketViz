@@ -104,7 +104,7 @@ def interpolate_data(data, multiple=20):
             if len(company_data) < 2:
                 print(f"Skipping {company} - insufficient data points")
                 continue
-                
+            
             # Get time range
             min_year = company_data['Year'].min()
             max_year = company_data['Year'].max()
@@ -184,7 +184,7 @@ logo_settings = {
     'DESP': {'zoom': 0.10, 'offset': 90},
     'EaseMyTrip': {'zoom': 0.11, 'offset': 95},
     'EDR': {'zoom': 0.12, 'offset': 100},
-    'EXPE': {'zoom': 0.13, 'offset': 110},
+    'EXPE': {'zoom': 0.06, 'offset': 150},
     'LMN': {'zoom': 0.12, 'offset': 100},
     'OWW': {'zoom': 0.11, 'offset': 95},
     'SEERA': {'zoom': 0.12, 'offset': 100},
@@ -225,50 +225,37 @@ def get_logo_settings(company):
     default_settings = {'zoom': 0.12, 'offset': 100}
     return logo_settings.get(company, default_settings)
 
-# Set up the figure with fixed dimensions and margins
-def setup_figure():
-    fig = plt.figure(figsize=(19.2, 10.8), dpi=300)
-    gs = fig.add_gridspec(2, 2, width_ratios=[3, 1], height_ratios=[0.4, 4.5], hspace=0.15,
-                         top=0.95, bottom=0.15)
-    
-    # Timeline spanning both columns (top row)
-    ax_timeline = fig.add_subplot(gs[0, :])
-    
-    # Bubble chart (bottom-left)
-    ax = fig.add_subplot(gs[1, 0])
-    
-    # Bar chart timeline (above bar chart)
-    ax_bar_timeline = fig.add_subplot(gs[0, 1])
-    
-    # Bar chart (bottom-right)
-    ax_barchart = fig.add_subplot(gs[1, 1])
-    
-    # Set fixed margins to maintain consistent figure size
-    plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.1)
-    
-    return fig, ax, ax_timeline, ax_barchart, ax_bar_timeline
+# Setup the figure and gridspec for the layout
+fig = plt.figure(figsize=(19.2, 10.8), dpi=300)
+gs = fig.add_gridspec(2, 1, height_ratios=[0.3, 4], hspace=0.2,
+                     top=0.98, bottom=0.12)  # 增加底部边距以显示标签
+
+# Timeline spanning the full width (top row)
+ax_timeline = fig.add_subplot(gs[0])
+
+# Bubble chart (bottom)
+ax = fig.add_subplot(gs[1])
 
 # Animation update function
 def update(frame, preview=False):
+    """
+    更新动画帧
+    frame: 当前时间点
+    preview: 是否为预览模式
+    """
     # Use the correct figure and axes based on whether this is a preview or animation
     if preview:
         current_fig = fig_preview
         current_ax = ax_preview
         current_ax_timeline = ax_timeline_preview
-        current_ax_bar = ax_barchart_preview
-        current_ax_bar_timeline = ax_bar_timeline_preview
     else:
         current_fig = fig
         current_ax = ax
         current_ax_timeline = ax_timeline
-        current_ax_bar = ax_barchart
-        current_ax_bar_timeline = ax_bar_timeline
-    
+
     # Clear all axes
     current_ax.clear()
     current_ax_timeline.clear()
-    current_ax_bar.clear()
-    current_ax_bar_timeline.clear()
     
     # Filter data for current frame
     yearly_data = interp_data[
@@ -286,14 +273,12 @@ def update(frame, preview=False):
     # Sort by revenue in descending order (largest to smallest)
     sorted_data = yearly_data.sort_values('Revenue', ascending=False)
     
-    # Get available companies (might be less than 15)
     available_companies = len(sorted_data)
     top_companies = sorted_data  # No need for tail since we want all companies
     
-    # Create fixed bar positions with equal spacing (always 15 positions)
-    num_bars = 15
-    bar_height = 0.6  # Fixed bar height
-    spacing = 1.0  # Fixed spacing between bars
+    num_bars = 12  # 保持条数
+    bar_height = 0.9  # 增加条形高度
+    spacing = 1.4  # 增加条形间距
     all_positions = np.arange(num_bars) * spacing
     
     # Calculate positions starting from the top
@@ -374,80 +359,113 @@ def update(frame, preview=False):
     current_ax.spines['bottom'].set_visible(False)
     current_ax.set_xlabel('Revenue TTM (in Millions)', fontsize=16, labelpad=33)
     
-    # Add quarter/year text
-    current_ax.text(0.02, 0.98, get_quarter_year(frame),
-            transform=current_ax.transAxes, fontsize=20,
-            fontproperties=open_sans_font, va='top')
-    
-    # Set up the bar chart timeline
-    current_ax_bar_timeline.set_xlim(1998.8, 2025)
-    current_ax_bar_timeline.set_ylim(-0.04, 0.12)
-    current_ax_bar_timeline.get_yaxis().set_visible(False)
-    current_ax_bar_timeline.spines['top'].set_visible(False)
-    current_ax_bar_timeline.spines['right'].set_visible(False)
-    current_ax_bar_timeline.spines['left'].set_visible(False)
-    current_ax_bar_timeline.spines['bottom'].set_position(('data', 0))
-    current_ax_bar_timeline.spines['bottom'].set_color('black')
-    current_ax_bar_timeline.tick_params(axis='x', which='major', labelsize=10, colors='black')
-    current_ax_bar_timeline.xaxis.set_major_locator(MultipleLocator(1))
-    current_ax_bar_timeline.xaxis.set_minor_locator(MultipleLocator(0.25))
-    current_ax_bar_timeline.set_xticks(np.arange(1999, 2025, 1))
-    current_ax_bar_timeline.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{int(x)}'))
-    
-    # Add marker to bar chart timeline
-    bar_marker = current_ax_bar_timeline.plot([frame], [0.02], marker='v', color='#4e843d', markersize=10)[0]
-    artists_to_return = [bar_marker]
-    
-    return artists_to_return
+    # Set up the timeline
+    current_ax_timeline.set_xlim(1996.5, 2025.5)  # 保持时间轴范围
+    current_ax_timeline.set_ylim(-0.2, 0.2)  # 减小纵向范围使时间轴显得更宽
+    current_ax_timeline.get_yaxis().set_visible(False)
 
-# Before preview generation
-print("\nGenerating preview images for each quarter...")
+    # 增加时间轴的可见度
+    current_ax_timeline.spines['top'].set_visible(False)
+    current_ax_timeline.spines['right'].set_visible(False)
+    current_ax_timeline.spines['left'].set_visible(False)
+    current_ax_timeline.spines['bottom'].set_visible(True)
+    current_ax_timeline.spines['bottom'].set_linewidth(1.5)
+    current_ax_timeline.spines['bottom'].set_color('#808080')  # 改为灰色
+    current_ax_timeline.spines['bottom'].set_position(('data', 0))
+
+    # 设置刻度
+    current_ax_timeline.tick_params(axis='x', which='major', labelsize=12, length=6, width=1, colors='#808080')  # 改为灰色
+    current_ax_timeline.xaxis.set_major_locator(MultipleLocator(1))  # 每年显示一次刻度
+    current_ax_timeline.xaxis.set_minor_locator(MultipleLocator(0.5))  # 保持每半年的小刻度
+    current_ax_timeline.set_xticks(np.arange(1997, 2025, 1))  # 每年显示一次年份
+    current_ax_timeline.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{int(x)}'))
+
+    # Moving marker on timeline
+    marker_position = frame
+    marker_triangle = current_ax_timeline.plot([marker_position], [0.01], marker='v',  # 调整marker位置从0.02到0.01
+                                    color='#4e843d', markersize=8, zorder=5)[0]  # 同时稍微减小marker大小
+
+    # 添加年份标签和刻度（只在下方显示）
+    for year in range(1997, 2025):
+        # 年份刻度线
+        current_ax_timeline.vlines(year, -0.03, 0, colors='#808080', linewidth=1)  # 改为灰色
+        
+        # 只在偶数年显示年份标签
+        if year % 2 == 0:
+            current_ax_timeline.text(year, -0.07, str(year), ha='center', va='top', fontsize=12, color='#808080')  # 改为灰色
+        
+        # 每季度刻度线
+        for quarter in [0.25, 0.5, 0.75]:
+            quarter_year = year + quarter
+            if quarter_year < 2025:
+                current_ax_timeline.vlines(quarter_year, -0.02, 0, colors='#808080', linewidth=0.5, alpha=0.7)  # 改为灰色
+
+    # 移除原有的x轴标签
+    current_ax_timeline.set_xticklabels([])
+
+    artists_to_return = [marker_triangle]
+    
+    return bars
+
+# Generate preview frames for each quarter
+print("\nGenerating preview frames...")
 preview_dir = os.path.join(output_dir, 'previews')
 if not os.path.exists(preview_dir):
     os.makedirs(preview_dir)
 
-# Get all unique quarters from interpolated data
-all_quarters = []
+# Get unique years and quarters for previews
 min_year = int(interp_data['Year'].min())
 max_year = int(interp_data['Year'].max())
+preview_times = []
 
-# Generate only actual quarter points (Q1, Q2, Q3, Q4) for each year
+# Generate quarterly time points
 for year in range(min_year, max_year + 1):
-    for quarter in [0, 0.25, 0.5, 0.75]:
-        quarter_point = year + quarter
-        if quarter_point >= min_year and quarter_point <= max_year:
-            all_quarters.append(quarter_point)
-
-all_quarters = sorted(all_quarters)
-print(f"\nGenerating previews for {len(all_quarters)} quarters...")
+    for quarter in range(4):
+        time_point = year + quarter * 0.25
+        if time_point >= interp_data['Year'].min() and time_point <= interp_data['Year'].max():
+            preview_times.append(time_point)
 
 # Generate preview for each quarter
-for quarter in all_quarters:
+for quarter in preview_times:
     print(f"\nGenerating preview for Q{int((quarter % 1) * 4 + 1)}'{int(quarter)}")
     
-    # Create preview figure and axes with the new setup
+    # Create preview figure and axes with the same layout as main figure
+    plt.close('all')  # Close any existing figures
     fig_preview = plt.figure(figsize=(19.2, 10.8), dpi=100)
-    gs_preview = fig_preview.add_gridspec(2, 2, width_ratios=[3, 1], height_ratios=[0.4, 4.5], hspace=0.15,
-                                        top=0.95, bottom=0.15)
-    ax_timeline_preview = fig_preview.add_subplot(gs_preview[0, :])
-    ax_preview = fig_preview.add_subplot(gs_preview[1, 0])
-    ax_bar_timeline_preview = fig_preview.add_subplot(gs_preview[0, 1])
-    ax_barchart_preview = fig_preview.add_subplot(gs_preview[1, 1])
-    
-    # Set current figure and axes for the update function
-    current_fig = fig_preview
-    current_ax = ax_preview
-    current_ax_timeline = ax_timeline_preview
-    current_ax_bar = ax_barchart_preview
-    current_ax_bar_timeline = ax_bar_timeline_preview
-    
+    gs_preview = fig_preview.add_gridspec(2, 1, height_ratios=[0.3, 4], hspace=0.2,
+                                        top=0.98, bottom=0.12)  # 同步预览图的布局
+    ax_timeline_preview = fig_preview.add_subplot(gs_preview[0])
+    ax_preview = fig_preview.add_subplot(gs_preview[1])
+
+    # Set the current figure
+    plt.figure(fig_preview.number)
+
     # Update the visualization for this quarter
     update(quarter, preview=True)
-    
-    # ... [rest of the preview generation code remains the same] ...
 
-# Create main figure and axes for animation with the new setup
-fig, ax, ax_timeline, ax_barchart, ax_bar_timeline = setup_figure()
+    # Save preview
+    quarter_str = f"{int(quarter)}_{int((quarter % 1) * 4 + 1)}"
+    preview_path = os.path.join(preview_dir, f'preview_{quarter_str}.png')
+    plt.savefig(preview_path, dpi=300)
+    plt.close(fig_preview)
+    print(f"Preview saved as {preview_path}")
+    time.sleep(0.1)  # Add a small delay to ensure proper cleanup
+
+print("\nAll preview frames saved in {preview_dir}")
+
+# Ask user if they want to continue
+input("Previews generated. Press Enter to continue with animation generation...")
+
+# Create main figure and axes for animation with the same layout
+plt.close('all')
+fig = plt.figure(figsize=(19.2, 10.8), dpi=300)
+gs = fig.add_gridspec(2, 1, height_ratios=[0.3, 4], hspace=0.2,
+                     top=0.98, bottom=0.12)  # 同步动画的布局
+ax_timeline = fig.add_subplot(gs[0])
+ax = fig.add_subplot(gs[1])
+
+# Set the current figure
+plt.figure(fig.number)
 
 # Create animation
 print("\nGenerating animation...")
