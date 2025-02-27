@@ -7,6 +7,7 @@ import matplotlib.font_manager as fm
 import os
 import time
 from matplotlib.ticker import MultipleLocator
+import glob
 
 # Set up font configurations
 plt.rcParams['font.family'] = 'sans-serif'
@@ -37,6 +38,9 @@ for directory in [logos_dir, output_dir, frames_dir]:
 print("Loading data...")
 data = pd.read_csv('Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue.csv')
 print(f"Loaded {len(data)} rows of data")
+
+# Add frame control parameter at the top of the file after imports
+FRAMES_PER_YEAR = 4  # Controls how many frames to generate per year (like 24fps)
 
 # Process the data to get annual Q1 data and special handling for 2024
 def process_quarterly_data(data):
@@ -184,7 +188,7 @@ def interpolate_data(data, multiple=20):
 
 # Generate interpolated data
 print("\nInterpolating data...")
-interp_data = interpolate_data(data)
+interp_data = interpolate_data(data, multiple=FRAMES_PER_YEAR)  # Pass the frames per year parameter
 
 # Save interpolated data for verification
 interp_data.to_excel('output/interpolated_data.xlsx', index=False)
@@ -502,14 +506,61 @@ def create_frame(frame):
     
     return frame_path
 
+def get_last_frame_number(frames_dir):
+    """
+    Get the number of the last generated frame from the frames directory
+    """
+    if not os.path.exists(frames_dir):
+        return -1
+        
+    frames = glob.glob(os.path.join(frames_dir, 'frame_*.png'))
+    if not frames:
+        return -1
+        
+    # Extract frame numbers and find the maximum
+    frame_numbers = []
+    for frame in frames:
+        try:
+            number = int(frame.split('frame_')[-1].split('.png')[0])
+            frame_numbers.append(number)
+        except:
+            continue
+            
+    return max(frame_numbers) if frame_numbers else -1
+
 # Generate all frames
 print("\nGenerating frames...")
 unique_years = np.unique(interp_data['Year'])
 total_frames = len(unique_years)
 
+# Get the last frame number
+last_frame = get_last_frame_number(frames_dir)
+if last_frame >= 0:
+    print(f"\nFound existing frames, continuing from frame {last_frame}")
+    # Calculate the corresponding year index
+    year_index = last_frame // 100  # Since frame numbers are year*100
+    if year_index < len(unique_years):
+        unique_years = unique_years[year_index:]
+        print(f"Continuing from year {unique_years[0]:.2f}")
+    else:
+        print("All frames have been generated!")
+        unique_years = []
+
 for i, year in enumerate(unique_years):
-    print(f"\rGenerating frame {i+1}/{total_frames} (Year: {year:.2f})", end="", flush=True)
-    create_frame(year)
+    frame_number = int((year - 1997) * 100)
+    frame_path = os.path.join(frames_dir, f'frame_{frame_number:04d}.png')
+    
+    # Skip if frame already exists
+    if os.path.exists(frame_path):
+        print(f"\rSkipping existing frame {frame_number:04d} (Year: {year:.2f})", end="", flush=True)
+        continue
+        
+    try:
+        print(f"\rGenerating frame {frame_number:04d}/{(unique_years[-1]-1997)*100:.0f} (Year: {year:.2f})", end="", flush=True)
+        create_frame(year)
+    except Exception as e:
+        print(f"\nError generating frame for year {year:.2f}: {e}")
+        continue
 
 print("\n\nAll frames generated successfully!")
 print(f"Frames are saved in: {frames_dir}")
