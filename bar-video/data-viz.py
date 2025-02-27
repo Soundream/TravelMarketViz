@@ -411,8 +411,11 @@ def create_frame(frame):
             zoom = settings['zoom']
             pixel_offset = settings['offset']
             
-            # Use original calculation method with figure width
-            data_offset = (pixel_offset / fig_width_pixels) * current_x_limit * 3  # Added multiplier to adjust position
+            # Use figure width in pixels for offset calculation
+            fig_width_inches = fig.get_size_inches()[0]
+            dpi = fig.dpi
+            fig_width_pixels = fig_width_inches * dpi
+            data_offset = (pixel_offset / fig_width_pixels) * current_x_limit
             
             imagebox = OffsetImage(image, zoom=zoom)
             ab = AnnotationBbox(imagebox, (width + data_offset, y_pos),
