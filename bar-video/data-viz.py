@@ -382,8 +382,8 @@ def update(frame, preview=False):
 
     # Moving marker on timeline
     marker_position = frame
-    marker_triangle = current_ax_timeline.plot([marker_position], [0.01], marker='v',  # 调整marker位置从0.02到0.01
-                                    color='#4e843d', markersize=8, zorder=5)[0]  # 同时稍微减小marker大小
+    marker_triangle = current_ax_timeline.plot([marker_position], [0.05], marker='v',  # 调整marker位置从0.02到0.01
+                                    color='#4e843d', markersize=10, zorder=5)[0]  # 同时稍微减小marker大小
 
     # 添加年份标签和刻度（只在下方显示）
     for year in range(1997, 2025):
