@@ -103,8 +103,6 @@ print(f"After processing: {len(data)} rows")
 # Interpolate the data for smoother animation
 def interpolate_data(data, multiple=20):
     all_interpolated = []
-    
-    # Get all companies (excluding the Year column)
     companies = [col for col in data.columns if col != 'Year']
     print(f"\nFound {len(companies)} companies to process:")
     print(companies)
@@ -112,41 +110,32 @@ def interpolate_data(data, multiple=20):
     for company in companies:
         try:
             print(f"\nProcessing {company}...")
-            
-            # Get current company's data
             company_data = data[['Year', company]].copy()
             company_data.columns = ['Year', 'Revenue']
-            
-            # Drop NaN values
             company_data = company_data.dropna()
             
             print(f"Valid data points for {company}: {len(company_data)}")
             print(f"Data points for {company}:")
-        print(company_data)
+            print(company_data)
             
-        if len(company_data) < 2:
+            if len(company_data) < 2:
                 print(f"Skipping {company} - insufficient data points")
-            continue
+                continue
             
-            # Get time range
             min_year = company_data['Year'].min()
             max_year = company_data['Year'].max()
             print(f"Year range for {company}: {min_year} to {max_year}")
             
-            # Special handling for companies that only have recent data (like ABNB)
             if min_year >= 2020:
-                # For companies that started after 2020, we'll use linear interpolation
                 years = np.linspace(min_year, max_year, int((max_year - min_year) * 4 * multiple))
-        company_interp = pd.DataFrame()
+                company_interp = pd.DataFrame()
                 company_interp['Year'] = years
-        company_interp['Company'] = company
+                company_interp['Company'] = company
                 
-                # Use linear interpolation for newer companies
                 from scipy.interpolate import interp1d
                 f = interp1d(company_data['Year'], company_data['Revenue'])
                 company_interp['Revenue'] = f(years)
             else:
-                # Original spline interpolation for companies with longer history
                 has_2025_data = 2025.0 in company_data['Year'].values
                 
                 if has_2025_data:
@@ -171,15 +160,13 @@ def interpolate_data(data, multiple=20):
                 cs = CubicSpline(company_data['Year'], company_data['Revenue'])
                 company_interp['Revenue'] = cs(years)
             
-            # Preserve original points
             for _, row in company_data.iterrows():
                 mask = np.abs(years - row['Year']) < 1e-10
                 if any(mask):
                     company_interp.loc[mask, 'Revenue'] = row['Revenue']
             
             print(f"Successfully interpolated {len(company_interp)} points for {company}")
-        all_interpolated.append(company_interp)
-            
+            all_interpolated.append(company_interp)
         except Exception as e:
             print(f"Error interpolating {company}: {e}")
             continue
@@ -187,12 +174,9 @@ def interpolate_data(data, multiple=20):
     if not all_interpolated:
         raise ValueError("No data could be interpolated. Please check your input data.")
     
-    # Combine all interpolated data
     print("\nCombining interpolated data...")
     result = pd.concat(all_interpolated, ignore_index=True)
     print(f"Final interpolated data shape: {result.shape}")
-    
-    # Print unique companies in final data
     print("\nCompanies in final interpolated data:")
     print(sorted(result['Company'].unique()))
     
@@ -232,11 +216,14 @@ logo_settings = {
     'EaseMyTrip': {'zoom': 0.07, 'offset': 490},
     'EDR': {'zoom': 0.07, 'offset': 380},
     'EXPE': {'zoom': 0.06, 'offset': 490},
-    'LMN': {'zoom': 0.22, 'offset': 450},
+    'LMN': {'zoom': 0.22, 'offset': 480},
     'OWW': {'zoom': 0.11, 'offset': 400},
     'SEERA': {'zoom': 0.06, 'offset': 380},
+    'SEERA_pre2019': {'zoom': 0.06, 'offset': 380},
     'TCOM': {'zoom': 0.11, 'offset': 430},
+    'TCOM_pre2019': {'zoom': 0.05, 'offset': 450},
     'TRIP': {'zoom': 0.07, 'offset': 420},
+    'TRIP_pre2020': {'zoom': 0.07, 'offset': 440},
     'TRVG': {'zoom': 0.07, 'offset': 400},
     'Webjet': {'zoom': 0.07, 'offset': 470},
     'Yatra': {'zoom': 0.06, 'offset': 400},
@@ -248,34 +235,58 @@ logo_settings = {
 logos = {}
 for company in selected_companies:
     if company == 'BKNG':
-        # Load both versions of PCLN logos and BKNG logo
         pcln_logo_path = os.path.join(logos_dir, 'PCLN_logo.png')
         pcln_logo_path_2014 = os.path.join(logos_dir, '1PCLN_logo.png')
         bkng_logo_path = os.path.join(logos_dir, 'BKNG_logo.png')
         
-        # Load PCLN logos (pre-2014 and post-2014)
         if os.path.exists(pcln_logo_path):
             logos['PCLN_pre2014'] = plt.imread(pcln_logo_path)
         if os.path.exists(pcln_logo_path_2014):
             logos['PCLN_post2014'] = plt.imread(pcln_logo_path_2014)
-        # Load BKNG logo
         if os.path.exists(bkng_logo_path):
             logos['BKNG'] = plt.imread(bkng_logo_path)
+    elif company == 'TCOM':
+        tcom_logo_old = os.path.join(logos_dir, '1TCOM_logo.png')
+        tcom_logo_new = os.path.join(logos_dir, 'TCOM_logo.png')
+        if os.path.exists(tcom_logo_old):
+            logos['TCOM_pre2019'] = plt.imread(tcom_logo_old)
+        if os.path.exists(tcom_logo_new):
+            logos['TCOM'] = plt.imread(tcom_logo_new)
+    elif company == 'TRIP':
+        trip_logo_old = os.path.join(logos_dir, '1TRIP_logo.png')
+        trip_logo_new = os.path.join(logos_dir, 'TRIP_logo.png')
+        if os.path.exists(trip_logo_old):
+            logos['TRIP_pre2020'] = plt.imread(trip_logo_old)
+        if os.path.exists(trip_logo_new):
+            logos['TRIP'] = plt.imread(trip_logo_new)
+    elif company == 'SEERA':
+        seera_logo_old = os.path.join(logos_dir, '1SEERA_logo.png')
+        seera_logo_new = os.path.join(logos_dir, 'SEERA_logo.png')
+        if os.path.exists(seera_logo_old):
+            logos['SEERA_pre2019'] = plt.imread(seera_logo_old)
+        if os.path.exists(seera_logo_new):
+            logos['SEERA'] = plt.imread(seera_logo_new)
+    elif company == 'LMN':
+        lmn_logo_old = os.path.join(logos_dir, '1LMN_logo.png')
+        lmn_logo_new = os.path.join(logos_dir, 'LMN_logo.png')
+        if os.path.exists(lmn_logo_old):
+            logos['LMN_2014_2015'] = plt.imread(lmn_logo_old)
+        if os.path.exists(lmn_logo_new):
+            logos['LMN'] = plt.imread(lmn_logo_new)
     else:
         logo_path = os.path.join(logos_dir, f'{company}_logo.png')
-    if os.path.exists(logo_path):
-        try:
-            logos[company] = plt.imread(logo_path)
-        except Exception as e:
-            print(f"Error loading logo for {company}: {e}")
-                # Create text-based placeholder
+        if os.path.exists(logo_path):
+            try:
+                logos[company] = plt.imread(logo_path)
+            except Exception as e:
+                print(f"Error loading logo for {company}: {e}")
                 fig_temp = plt.figure(figsize=(1, 1))
-            ax_temp = fig_temp.add_subplot(111)
+                ax_temp = fig_temp.add_subplot(111)
                 ax_temp.text(0.5, 0.5, company, ha='center', va='center', fontsize=9)
-            ax_temp.axis('off')
+                ax_temp.axis('off')
                 temp_path = os.path.join(logos_dir, f'{company}_temp_logo.png')
                 fig_temp.savefig(temp_path, transparent=True, bbox_inches='tight')
-            plt.close(fig_temp)
+                plt.close(fig_temp)
                 logos[company] = plt.imread(temp_path)
 
 # Function to get quarter and year from numeric year
@@ -327,8 +338,19 @@ def update(frame, preview=False):
         (interp_data['Year'] <= frame + 0.001)
     ].copy()
     
-    # Filter selected companies
-    yearly_data = yearly_data[yearly_data['Company'].isin(selected_companies)]
+    # Filter selected companies and apply time restrictions
+    filtered_companies = []
+    for company in selected_companies:
+        if company == 'TRVG' and frame < 2015.75:  # Before Q4 2015
+            continue
+        if company == 'MMYT' and frame < 2011.0:  # Before 2011
+            continue
+        if company == 'LMN':
+            if frame >= 2003.75 and frame < 2014.0:  # 2003Q3 to 2014
+                continue
+        filtered_companies.append(company)
+    
+    yearly_data = yearly_data[yearly_data['Company'].isin(filtered_companies)]
     
     # Handle BKNG/PCLN name change
     if frame < 2018.08:
@@ -384,7 +406,6 @@ def update(frame, preview=False):
                 fontproperties=open_sans_font)
         
         # Add logo with company-specific size and position
-        # Special handling for BKNG/PCLN logos based on time period
         if company == 'PCLN' or company == 'BKNG':
             if frame < 2014.25:  # Before April 2014
                 logo_key = 'PCLN_pre2014'
@@ -392,21 +413,23 @@ def update(frame, preview=False):
                 logo_key = 'PCLN_post2014'
             else:  # After BKNG change
                 logo_key = 'BKNG'
+        elif company == 'TCOM':
+            logo_key = 'TCOM_pre2019' if frame < 2019.75 else 'TCOM'  # 2019.75 represents September 2019
+        elif company == 'TRIP':
+            logo_key = 'TRIP_pre2020' if frame < 2020.0 else 'TRIP'
+        elif company == 'SEERA':
+            logo_key = 'SEERA_pre2019' if frame < 2019.25 else 'SEERA'  # 2019.25 represents April 2019
+        elif company == 'LMN':
+            if frame >= 2014.0 and frame < 2015.42:  # 2014 to May 2015
+                logo_key = 'LMN_2014_2015'
+            else:
+                logo_key = 'LMN'
+        else:
+            logo_key = company
             
-            if logo_key in logos:
-                image = logos[logo_key]
-                settings = logo_settings.get(logo_key, logo_settings['BKNG'])
-                zoom = settings['zoom']
-                pixel_offset = settings['offset']
-                data_offset = (pixel_offset / fig_width_pixels) * current_x_limit
-                
-                imagebox = OffsetImage(image, zoom=zoom)
-                ab = AnnotationBbox(imagebox, (width + data_offset, y_pos),
-                                  frameon=False, box_alignment=(0.5, 0.5))
-                current_ax.add_artist(ab)
-        elif company in logos:
-            image = logos[company]
-            settings = get_logo_settings(company)
+        if logo_key in logos:
+            image = logos[logo_key]
+            settings = logo_settings.get(logo_key, logo_settings.get(company, {'zoom': 0.12, 'offset': 100}))
             zoom = settings['zoom']
             pixel_offset = settings['offset']
             data_offset = (pixel_offset / fig_width_pixels) * current_x_limit
