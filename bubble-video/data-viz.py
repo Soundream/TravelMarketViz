@@ -60,7 +60,7 @@ if data['Revenue Growth (%)'].abs().max() <= 1 or data['EBITDA Margin (%)'].abs(
     data['EBITDA Margin (%)'] = data['EBITDA Margin (%)'] * 100
 
 # Interpolate the data for smoother animation
-def interpolate_data(data, multiple=30):
+def interpolate_data(data, multiple=5):
     """
     对每个公司的数据进行独立插值
     data: 包含原始数据的DataFrame
