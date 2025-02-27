@@ -180,7 +180,8 @@ color_dict = {
 logo_settings = {
     'ABNB': {'zoom': 0.06, 'offset': 400},
     'BKNG': {'zoom': 0.06, 'offset': 410},
-    'PCLN': {'zoom': 0.15, 'offset': 400},
+    'PCLN_pre2014': {'zoom': 0.07, 'offset': 430},
+    'PCLN_post2014': {'zoom': 0.07, 'offset': 450},
     'DESP': {'zoom': 0.08, 'offset': 400},
     'EaseMyTrip': {'zoom': 0.11, 'offset': 400},
     'EDR': {'zoom': 0.07, 'offset': 380},
@@ -198,21 +199,36 @@ logo_settings = {
 # Load company logos
 logos = {}
 for company in selected_companies:
-    logo_path = os.path.join(logos_dir, f'{company}_logo.png')
-    if os.path.exists(logo_path):
-        try:
-            logos[company] = plt.imread(logo_path)
-        except Exception as e:
-            print(f"Error loading logo for {company}: {e}")
-            # Create text-based placeholder
-            fig_temp = plt.figure(figsize=(1, 1))
-            ax_temp = fig_temp.add_subplot(111)
-            ax_temp.text(0.5, 0.5, company, ha='center', va='center', fontsize=9)
-            ax_temp.axis('off')
-            temp_path = os.path.join(logos_dir, f'{company}_temp_logo.png')
-            fig_temp.savefig(temp_path, transparent=True, bbox_inches='tight')
-            plt.close(fig_temp)
-            logos[company] = plt.imread(temp_path)
+    if company == 'BKNG':
+        # Load both versions of PCLN logos and BKNG logo
+        pcln_logo_path = os.path.join(logos_dir, 'PCLN_logo.png')
+        pcln_logo_path_2014 = os.path.join(logos_dir, '1PCLN_logo.png')
+        bkng_logo_path = os.path.join(logos_dir, 'BKNG_logo.png')
+        
+        # Load PCLN logos (pre-2014 and post-2014)
+        if os.path.exists(pcln_logo_path):
+            logos['PCLN_pre2014'] = plt.imread(pcln_logo_path)
+        if os.path.exists(pcln_logo_path_2014):
+            logos['PCLN_post2014'] = plt.imread(pcln_logo_path_2014)
+        # Load BKNG logo
+        if os.path.exists(bkng_logo_path):
+            logos['BKNG'] = plt.imread(bkng_logo_path)
+    else:
+        logo_path = os.path.join(logos_dir, f'{company}_logo.png')
+        if os.path.exists(logo_path):
+            try:
+                logos[company] = plt.imread(logo_path)
+            except Exception as e:
+                print(f"Error loading logo for {company}: {e}")
+                # Create text-based placeholder
+                fig_temp = plt.figure(figsize=(1, 1))
+                ax_temp = fig_temp.add_subplot(111)
+                ax_temp.text(0.5, 0.5, company, ha='center', va='center', fontsize=9)
+                ax_temp.axis('off')
+                temp_path = os.path.join(logos_dir, f'{company}_temp_logo.png')
+                fig_temp.savefig(temp_path, transparent=True, bbox_inches='tight')
+                plt.close(fig_temp)
+                logos[company] = plt.imread(temp_path)
 
 # Function to get quarter and year from numeric year
 def get_quarter_year(time_value):
@@ -252,7 +268,7 @@ def update(frame, preview=False):
         current_fig = fig
         current_ax = ax
         current_ax_timeline = ax_timeline
-
+    
     # Clear all axes
     current_ax.clear()
     current_ax_timeline.clear()
@@ -269,7 +285,7 @@ def update(frame, preview=False):
     # Handle BKNG/PCLN name change
     if frame < 2018.08:
         yearly_data.loc[yearly_data['Company'] == 'BKNG', 'Company'] = 'PCLN'
-    
+
     # Sort by revenue in descending order (largest to smallest)
     sorted_data = yearly_data.sort_values('Revenue', ascending=False)
     
@@ -314,16 +330,34 @@ def update(frame, preview=False):
                 fontproperties=open_sans_font)
         
         # Add logo with company-specific size and position
-        if company in logos:
+        # Special handling for BKNG/PCLN logos based on time period
+        if company == 'PCLN' or company == 'BKNG':
+            if frame < 2014.25:  # Before April 2014
+                logo_key = 'PCLN_pre2014'
+            elif frame < 2018.08:  # Between April 2014 and BKNG change
+                logo_key = 'PCLN_post2014'
+            else:  # After BKNG change
+                logo_key = 'BKNG'
+            
+            if logo_key in logos:
+                image = logos[logo_key]
+                settings = logo_settings.get(logo_key, logo_settings['BKNG'])
+                zoom = settings['zoom']
+                pixel_offset = settings['offset']
+                data_offset = (pixel_offset / fig_width_pixels) * current_x_limit
+                
+                imagebox = OffsetImage(image, zoom=zoom)
+                ab = AnnotationBbox(imagebox, (width + data_offset, y_pos),
+                                  frameon=False, box_alignment=(0.5, 0.5))
+                current_ax.add_artist(ab)
+        elif company in logos:
             image = logos[company]
             settings = get_logo_settings(company)
             zoom = settings['zoom']
-            # Convert pixel offset to data coordinates
             pixel_offset = settings['offset']
             data_offset = (pixel_offset / fig_width_pixels) * current_x_limit
             
             imagebox = OffsetImage(image, zoom=zoom)
-            # Position logo using the custom offset
             ab = AnnotationBbox(imagebox, (width + data_offset, y_pos),
                               frameon=False, box_alignment=(0.5, 0.5))
             current_ax.add_artist(ab)
@@ -408,41 +442,43 @@ def update(frame, preview=False):
     return bars
 
 # Generate preview frames for each quarter
-print("\nGenerating preview frame for 2022 Q2...")
+print("\nGenerating preview frames...")
 preview_dir = os.path.join(output_dir, 'previews')
 if not os.path.exists(preview_dir):
     os.makedirs(preview_dir)
 
-# 只生成2022年第二季度的预览
-preview_time = 2022.5  # 2022年第二季度
+# 生成所有年份的预览
+preview_times = np.arange(1997, 2025, 1)  # 从1997到2024，每年一个点
 
-# Generate preview
-print(f"\nGenerating preview for 2022 Q2")
+# Generate preview for each year
+for year in preview_times:
+    print(f"\nGenerating preview for {year}")
+    
+    # Create preview figure and axes with the same layout as main figure
+    plt.close('all')  # Close any existing figures
+    fig_preview = plt.figure(figsize=(19.2, 10.8), dpi=100)
+    gs_preview = fig_preview.add_gridspec(2, 1, height_ratios=[0.3, 4], hspace=0.2,
+                                        top=0.98, bottom=0.12)
+    ax_timeline_preview = fig_preview.add_subplot(gs_preview[0])
+    ax_preview = fig_preview.add_subplot(gs_preview[1])
 
-# Create preview figure and axes with the same layout as main figure
-plt.close('all')  # Close any existing figures
-fig_preview = plt.figure(figsize=(19.2, 10.8), dpi=100)
-gs_preview = fig_preview.add_gridspec(2, 1, height_ratios=[0.3, 4], hspace=0.2,
-                                    top=0.98, bottom=0.12)
-ax_timeline_preview = fig_preview.add_subplot(gs_preview[0])
-ax_preview = fig_preview.add_subplot(gs_preview[1])
+    # Set the current figure
+    plt.figure(fig_preview.number)
 
-# Set the current figure
-plt.figure(fig_preview.number)
+    # Update the visualization for this year
+    update(year, preview=True)
 
-# Update the visualization for this quarter
-update(preview_time, preview=True)
+    # Save preview
+    preview_path = os.path.join(preview_dir, f'preview_{year}.png')
+    plt.savefig(preview_path, dpi=300)
+    plt.close(fig_preview)
+    print(f"Preview saved as {preview_path}")
+    time.sleep(0.1)  # Add a small delay to ensure proper cleanup
 
-# Save preview
-preview_path = os.path.join(preview_dir, 'preview_2022_2.png')
-plt.savefig(preview_path, dpi=300)
-plt.close(fig_preview)
-print(f"Preview saved as {preview_path}")
-
-print("\nPreview frame saved in {preview_dir}")
+print("\nAll preview frames saved in {preview_dir}")
 
 # Ask user if they want to continue
-input("Preview generated. Press Enter to continue with animation generation...")
+input("Previews generated. Press Enter to continue with animation generation...")
 
 # Create main figure and axes for animation with the same layout
 plt.close('all')
