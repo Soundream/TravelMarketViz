@@ -817,9 +817,23 @@ const processExcelData = (file) => {
         // Remove any potential whitespace or special characters
         str = str.replace(/\s+/g, '');
         const quarterPattern = /^\d{4}'Q[1-4]$/;
-        const isValid = quarterPattern.test(str);
-        console.log('Checking quarter:', str, 'isValid:', isValid);
-        return isValid;
+        if (!quarterPattern.test(str)) {
+          console.log(`Quarter ${str} rejected: invalid format`);
+          return false;
+        }
+        
+        // Extract year and quarter
+        const [year, quarter] = str.split("'");
+        const yearNum = parseInt(year);
+        
+        // Only accept data between 2016'Q1 and 2024'Q4
+        if (yearNum < 2016 || yearNum > 2024) {
+          console.log(`Quarter ${str} rejected: year ${yearNum} outside range 2016-2024`);
+          return false;
+        }
+        
+        console.log(`Quarter ${str} accepted: within valid range`);
+        return true;
       };
       
       // Process revenue growth data
@@ -858,7 +872,6 @@ const processExcelData = (file) => {
         
         currentQuarter = String(rowData[0] || '').trim().replace(/\s+/g, '');
         if (isValidQuarter(currentQuarter)) {
-          console.log('Found valid revenue quarter:', currentQuarter);
           quarters.add(currentQuarter);
           
           // Store revenue growth data for this quarter
@@ -913,7 +926,7 @@ const processExcelData = (file) => {
         
         currentQuarter = String(rowData[0] || '').trim().replace(/\s+/g, '');
         if (isValidQuarter(currentQuarter)) {
-          console.log('Found valid EBITDA quarter:', currentQuarter);
+          console.log(`Processing EBITDA data for quarter: ${currentQuarter}`);
           
           // Update EBITDA margin for existing data points
           headers.forEach((company, j) => {
@@ -928,8 +941,11 @@ const processExcelData = (file) => {
               );
               
               if (existingDataPoint) {
+                console.log(`Updating EBITDA for ${company} in ${currentQuarter}: ${ebitdaMargin}`);
                 existingDataPoint.ebitdaMargin = ebitdaMargin / 100;
                 existingDataPoint.hasBothQuarters = true;
+              } else {
+                console.log(`No revenue data found for ${company} in ${currentQuarter}, EBITDA: ${ebitdaMargin}`);
               }
             }
           });
@@ -940,6 +956,13 @@ const processExcelData = (file) => {
       
       // Filter out incomplete data points
       mergedData.value = processedData.filter(d => d.hasBothQuarters);
+      
+      console.log('=== Data Processing Debug ===');
+      console.log('Total processed data points before filtering:', processedData.length);
+      console.log('Sample of processed data before filtering:', processedData.slice(0, 5));
+      console.log('Total merged data points after filtering:', mergedData.value.length);
+      console.log('Sample of merged data after filtering:', mergedData.value.slice(0, 5));
+      console.log('Quarters with data:', years.value);
       
       if (mergedData.value.length === 0) {
         throw new Error('No valid data points found after processing');
@@ -1170,7 +1193,6 @@ const initChart = () => {
       const currentData = mergedData.value.filter(d => {
         const isSelectedQuarter = d.quarter === years.value[quarterIndex];
         const isSelectedCompany = selectedCompanies.value[d.company] === true;
-        console.log(`Filtering ${d.company}: Quarter match: ${isSelectedQuarter}, Selected: ${isSelectedCompany}, Quarter: ${d.quarter} vs ${years.value[quarterIndex]}`);
         return isSelectedQuarter && isSelectedCompany;
       });
       

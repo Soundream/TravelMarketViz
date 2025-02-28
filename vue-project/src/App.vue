@@ -438,20 +438,26 @@ const importFromGoogleSheet = async () => {
     }
     
     // Find EBITDA Margin row
-    const ebitdaRowIndex = rows.findIndex(row => 
-      row[0] && String(row[0]) === 'EBITDA Margin % Quarterly'
+    const ebitdaStartIndex = rows.findIndex(row => 
+      row && row[0] && String(row[0]) === 'EBITDA Margin % Quarterly'
     );
     
     if (revenueGrowthRowIndex === -1) {
       throw new Error('未找到 Revenue Growth 数据行');
     }
     
-    if (ebitdaRowIndex === -1) {
+    if (ebitdaStartIndex === -1) {
       throw new Error('未找到 EBITDA Margin 数据行');
     }
     
-    console.log('Revenue Growth row index:', revenueGrowthRowIndex);
-    console.log('EBITDA row index:', ebitdaRowIndex);
+    console.log('Found EBITDA row at index:', ebitdaStartIndex);
+    console.log('EBITDA row content:', rows[ebitdaStartIndex]);
+    console.log('Next 5 rows after EBITDA:');
+    for (let i = ebitdaStartIndex + 1; i < ebitdaStartIndex + 6; i++) {
+      if (i < rows.length) {
+        console.log(`Row ${i}:`, rows[i]);
+      }
+    }
     
     // Get headers (company names)
     const headers = rows[0];
@@ -462,7 +468,7 @@ const importFromGoogleSheet = async () => {
     let quarterCount = 0;
     const quarters = [];
     
-    rows.slice(revenueGrowthRowIndex + 1, ebitdaRowIndex).forEach(row => {
+    rows.slice(revenueGrowthRowIndex + 1, ebitdaStartIndex).forEach(row => {
       const yearStr = row[0];
       if (isValidQuarter(yearStr)) {
         if (yearStr !== currentYear) {
@@ -485,7 +491,7 @@ const importFromGoogleSheet = async () => {
     processedRows.push(['Rev Growth YoY']);
     let currentQuarterIndex = 0;
     
-    rows.slice(revenueGrowthRowIndex + 1, ebitdaRowIndex).forEach(row => {
+    rows.slice(revenueGrowthRowIndex + 1, ebitdaStartIndex).forEach(row => {
       if (isValidQuarter(row[0])) {
         const quarterData = [...row];
         quarterData[0] = quarters[currentQuarterIndex]; // Replace year with quarter string
@@ -498,14 +504,24 @@ const importFromGoogleSheet = async () => {
     processedRows.push(['EBITDA Margin % Quarterly']);
     currentQuarterIndex = 0;
     
-    rows.slice(ebitdaRowIndex + 1).forEach(row => {
+    // Calculate total quarters from 2016'Q1 to 2024'Q4
+    const TOTAL_QUARTERS = 36; // (2024-2016+1) * 4 quarters per year
+    let processedQuarters = 0;
+    
+    rows.slice(ebitdaStartIndex + 1).forEach(row => {
+      // Stop processing after we've handled all quarters from 2016'Q1 to 2024'Q4
+      if (processedQuarters >= TOTAL_QUARTERS) return;
+      
       if (isValidQuarter(row[0]) && currentQuarterIndex < quarters.length) {
         const quarterData = [...row];
         quarterData[0] = quarters[currentQuarterIndex]; // Replace year with quarter string
         processedRows.push(quarterData);
         currentQuarterIndex++;
+        processedQuarters++;
       }
     });
+    
+    console.log(`Processed ${processedQuarters} quarters of EBITDA data`);
     
     // Create workbook
     const workbook = {
