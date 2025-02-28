@@ -788,10 +788,19 @@ const processExcelData = (file) => {
       // Initialize selected companies
       initializeSelectedCompanies();
       
+      // Find Revenue Growth row
+      const revenueGrowthRowIndex = jsonData.findIndex(row => 
+        row && row[0] && String(row[0]) === 'Rev Growth YoY'
+      );
+      
       // Find EBITDA Margin row
       const ebitdaStartIndex = jsonData.findIndex(row => 
-        row && row[0] && String(row[0]).toLowerCase().includes('ebitda margin')
+        row && row[0] && String(row[0]) === 'EBITDA Margin % Quarterly'
       );
+      
+      if (revenueGrowthRowIndex === -1) {
+        throw new Error('Revenue Growth row not found');
+      }
       
       if (ebitdaStartIndex === -1) {
         throw new Error('EBITDA Margin row not found');
@@ -801,123 +810,153 @@ const processExcelData = (file) => {
       const processedData = [];
       const quarters = new Set();
       
-      // Log the data structure
-      console.log('Data structure check:', {
-        totalRows: jsonData.length,
-        ebitdaStartIndex,
-        firstDataRow: jsonData[1],
-        firstEbitdaRow: jsonData[ebitdaStartIndex + 1]
-      });
+      // Function to check if a string is a valid quarter
+      const isValidQuarter = (str) => {
+        if (!str) return false;
+        str = String(str).trim();
+        // Remove any potential whitespace or special characters
+        str = str.replace(/\s+/g, '');
+        const quarterPattern = /^\d{4}'Q[1-4]$/;
+        const isValid = quarterPattern.test(str);
+        console.log('Checking quarter:', str, 'isValid:', isValid);
+        return isValid;
+      };
       
-      // Process rows between headers and EBITDA row
-      let currentYear = null;
-      let quarterCount = 0;
+      // Process revenue growth data
+      let currentRowIndex = revenueGrowthRowIndex + 1;
       
-      for (let i = 1; i < ebitdaStartIndex; i++) {
-        const row = jsonData[i];
-        
-        if (!row || !row[0]) {
-          console.log(`Skipping row ${i}: Empty row`);
-          continue;
-        }
-        
-        // Get year from first column
-        const year = String(row[0]).trim();
-        if (!year || year === 'Revenue Growth YoY') {
-          console.log(`Skipping row ${i}: Invalid year or header row`);
-          continue;
-        }
-        
-        // Reset quarter count when year changes
-        if (year !== currentYear) {
-          currentYear = year;
-          quarterCount = 1;
-        } else {
-          quarterCount++;
-        }
-        
-        // Get corresponding EBITDA row
-        const ebitdaRow = jsonData[ebitdaStartIndex + (i - 1)];
-        if (!ebitdaRow) {
-          console.log(`Skipping row ${i}: No corresponding EBITDA row`);
-          continue;
-        }
-        
-        // Check if the row has any valid data
-        let hasAnyData = false;
-        for (let j = 1; j < row.length; j++) {
-          if (row[j] !== undefined && row[j] !== null && row[j] !== '') {
-            hasAnyData = true;
-            break;
-          }
-        }
-        
-        if (!hasAnyData) {
-          console.log(`Skipping row ${i}: No data in row`);
-          continue;
-        }
-        
-        const quarter = `${year}'Q${quarterCount}`;
-        
-        let hasValidData = false;
-        let rowData = [];
-        
-        // Process each company's data
-        headers.forEach((company, j) => {
-          const colIndex = j + 1;
-          const revenueGrowth = parseFloat(row[colIndex]);
-          const ebitdaMargin = parseFloat(ebitdaRow[colIndex]);
-          
-          if (!isNaN(revenueGrowth) && !isNaN(ebitdaMargin)) {
-            const dataPoint = {
-              quarter,
-              company,
-              revenueGrowth: revenueGrowth / 100,
-              ebitdaMargin: ebitdaMargin / 100,
-              hasBothQuarters: true
-            };
-            processedData.push(dataPoint);
-            rowData.push(dataPoint);
-            hasValidData = true;
-          }
-        });
-        
-        if (hasValidData) {
-          quarters.add(quarter);
-          console.log(`Processed ${quarter}: ${rowData.length} valid data points`);
-        } else {
-          console.log(`No valid data for ${quarter}`);
-        }
+      // Debug log for revenue growth section
+      console.log('=== Revenue Growth Section ===');
+      console.log('First 5 rows after Revenue Growth:');
+      for (let i = revenueGrowthRowIndex; i < revenueGrowthRowIndex + 6; i++) {
+        console.log(`Row ${i}:`, jsonData[i]);
       }
       
-      console.log('Final processed data:', {
-        totalQuarters: quarters.size,
-        quarters: Array.from(quarters).sort(),
-        totalDataPoints: processedData.length,
-        sampleData: processedData.slice(0, 5)
-      });
+      let currentQuarter = jsonData[currentRowIndex]?.[0];
+      if (currentQuarter) {
+        currentQuarter = String(currentQuarter).trim().replace(/\s+/g, '');
+      }
       
-      if (processedData.length === 0) {
-        throw new Error('No valid data points found');
+      // Add safety check for data
+      if (!currentQuarter) {
+        console.error('No quarter data found at row:', currentRowIndex);
+        console.error('Row data:', jsonData[currentRowIndex]);
+        throw new Error('No valid quarter data found after Revenue Growth row');
+      }
+      
+      while (currentRowIndex < jsonData.length && currentRowIndex < ebitdaStartIndex) {
+        const rowData = jsonData[currentRowIndex];
+        if (!rowData || !Array.isArray(rowData)) {
+          console.warn(`Invalid row data at index ${currentRowIndex}`);
+          currentRowIndex++;
+          currentQuarter = jsonData[currentRowIndex]?.[0];
+          if (currentQuarter) {
+            currentQuarter = String(currentQuarter).trim().replace(/\s+/g, '');
+          }
+          continue;
+        }
+        
+        currentQuarter = String(rowData[0] || '').trim().replace(/\s+/g, '');
+        if (isValidQuarter(currentQuarter)) {
+          console.log('Found valid revenue quarter:', currentQuarter);
+          quarters.add(currentQuarter);
+          
+          // Store revenue growth data for this quarter
+          headers.forEach((company, j) => {
+            if (!company) return;
+            
+            const colIndex = j + 1;
+            const revenueGrowth = parseFloat(rowData[colIndex]);
+            
+            if (!isNaN(revenueGrowth)) {
+              processedData.push({
+                quarter: currentQuarter,
+                company,
+                revenueGrowth: revenueGrowth / 100,
+                ebitdaMargin: null,
+                hasBothQuarters: false
+              });
+            }
+          });
+        }
+        
+        currentRowIndex++;
+      }
+      
+      // Process EBITDA margin data
+      currentRowIndex = ebitdaStartIndex + 1;
+      
+      // Debug log for EBITDA section
+      console.log('=== EBITDA Section ===');
+      console.log('EBITDA start index:', ebitdaStartIndex);
+      console.log('Next 5 rows after EBITDA Margin row:');
+      for (let i = ebitdaStartIndex; i < ebitdaStartIndex + 6; i++) {
+        console.log(`Row ${i}:`, jsonData[i]);
+      }
+      
+      currentQuarter = jsonData[currentRowIndex]?.[0];
+      if (currentQuarter) {
+        currentQuarter = String(currentQuarter).trim().replace(/\s+/g, '');
+      }
+      
+      while (currentRowIndex < jsonData.length) {
+        const rowData = jsonData[currentRowIndex];
+        if (!rowData || !Array.isArray(rowData)) {
+          console.warn(`Invalid row data at index ${currentRowIndex}`);
+          currentRowIndex++;
+          currentQuarter = jsonData[currentRowIndex]?.[0];
+          if (currentQuarter) {
+            currentQuarter = String(currentQuarter).trim().replace(/\s+/g, '');
+          }
+          continue;
+        }
+        
+        currentQuarter = String(rowData[0] || '').trim().replace(/\s+/g, '');
+        if (isValidQuarter(currentQuarter)) {
+          console.log('Found valid EBITDA quarter:', currentQuarter);
+          
+          // Update EBITDA margin for existing data points
+          headers.forEach((company, j) => {
+            if (!company) return;
+            
+            const colIndex = j + 1;
+            const ebitdaMargin = parseFloat(rowData[colIndex]);
+            
+            if (!isNaN(ebitdaMargin)) {
+              const existingDataPoint = processedData.find(
+                d => d.quarter === currentQuarter && d.company === company
+              );
+              
+              if (existingDataPoint) {
+                existingDataPoint.ebitdaMargin = ebitdaMargin / 100;
+                existingDataPoint.hasBothQuarters = true;
+              }
+            }
+          });
+        }
+        
+        currentRowIndex++;
+      }
+      
+      // Filter out incomplete data points
+      mergedData.value = processedData.filter(d => d.hasBothQuarters);
+      
+      if (mergedData.value.length === 0) {
+        throw new Error('No valid data points found after processing');
       }
       
       // Sort quarters chronologically
-      const sortedQuarters = Array.from(quarters).sort((a, b) => {
-        // Parse YYYY'QN format
+      years.value = Array.from(quarters).sort((a, b) => {
         const [yearA, quarterA] = a.split("'");
         const [yearB, quarterB] = b.split("'");
-        
-        // Compare years first
-        const yearDiff = parseInt(yearA) - parseInt(yearB);
-        if (yearDiff !== 0) return yearDiff;
-        
-        // If years are same, compare quarters (Q1, Q2, Q3, Q4)
-        return parseInt(quarterA.substring(1)) - parseInt(quarterB.substring(1));
+        return parseInt(yearA) - parseInt(yearB) || 
+               parseInt(quarterA.slice(1)) - parseInt(quarterB.slice(1));
       });
       
-      // Update data
-      years.value = sortedQuarters;
-      mergedData.value = processedData;
+      if (years.value.length === 0) {
+        throw new Error('No valid quarters found after processing');
+      }
+      
       currentYearIndex.value = years.value.length - 1; // Start from the latest quarter
       
       // Emit quarters loaded event
@@ -932,6 +971,7 @@ const processExcelData = (file) => {
         currentIndex: currentYearIndex.value,
         dataPoints: mergedData.value.length
       });
+      
       initChart();
       update(currentYearIndex.value);  // Initial update
       

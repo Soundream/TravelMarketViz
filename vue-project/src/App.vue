@@ -27,21 +27,7 @@
         </div>
       </header>
 
-      <!-- File Format Description -->
-      <!-- <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 class="text-lg font-semibold text-blue-800 mb-2">Google Sheet Requirements:</h3>
-          <ul class="list-disc list-inside text-blue-700 space-y-1">
-            <li>Must contain a sheet named 'TTM (bounded)'</li>
-            <li>First row should contain company names as headers</li>
-            <li>First column should contain quarter information (e.g., '2024'Q4')</li>
-            <li>Data should include revenue growth and EBITDA margin values</li>
-            <li>Values should be in decimal format (e.g., 0.15 for 15%)</li>
-          </ul>
-        </div>
-      </div> -->
 
-      <!-- Chart Sections -->
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <!-- Current Company Details -->
         
@@ -397,9 +383,10 @@ const getCellStyle = (value, columnIndex) => {
 };
 
 const importFromGoogleSheet = async () => {
-  // Google Sheets ID
+  // Google Sheets ID and GID
   const sheetId = '2PACX-1vQYwQTSYwig7AZ0fjPniLVfUUJnLz3PP4f4fBtqkBNPYqrkKtQyZDaB99kHk2eCzuCh5i8oxTPCHeQ9';
-  const sheetUrl = `https://docs.google.com/spreadsheets/d/e/${sheetId}/pub?output=csv`;
+  const gid = '1144102204';
+  const sheetUrl = `https://docs.google.com/spreadsheets/d/e/${sheetId}/pub?gid=${gid}&output=csv`;
   
   try {
     console.log('Starting Google Sheet import...');
@@ -425,27 +412,106 @@ const importFromGoogleSheet = async () => {
     
     console.log('Processed data rows:', rows.length);
     console.log('First few processed rows:', rows.slice(0, 3));
-    
-    // Find EBITDA row
-    const ebitdaRowIndex = rows.findIndex(row => 
-      row[0] && String(row[0]).toLowerCase().includes('ebitda margin')
+
+    // Function to check if a string is a valid quarter - define it before using it
+    const isValidQuarter = (str) => {
+      if (!str) return false;
+      str = String(str).trim();
+      // Check if it's a year (4 digits)
+      return /^\d{4}$/.test(str);
+    };
+
+    // Find Revenue Growth row
+    const revenueGrowthRowIndex = rows.findIndex(row => 
+      row[0] && String(row[0]) === 'Rev Growth YoY'
     );
     
-    if (ebitdaRowIndex === -1) {
-      throw new Error('未找到 EBITDA 数据行');
+    // Add debug logging for the rows after Revenue Growth
+    console.log('=== Debug: Rows after Revenue Growth ===');
+    for (let i = revenueGrowthRowIndex + 1; i < revenueGrowthRowIndex + 10; i++) {
+      if (i < rows.length) {
+        console.log(`Row ${i}:`, rows[i]);
+        if (rows[i] && rows[i][0]) {
+          console.log(`First column of row ${i}:`, rows[i][0], 'isValidQuarter:', isValidQuarter(rows[i][0]));
+        }
+      }
     }
     
+    // Find EBITDA Margin row
+    const ebitdaRowIndex = rows.findIndex(row => 
+      row[0] && String(row[0]) === 'EBITDA Margin % Quarterly'
+    );
+    
+    if (revenueGrowthRowIndex === -1) {
+      throw new Error('未找到 Revenue Growth 数据行');
+    }
+    
+    if (ebitdaRowIndex === -1) {
+      throw new Error('未找到 EBITDA Margin 数据行');
+    }
+    
+    console.log('Revenue Growth row index:', revenueGrowthRowIndex);
     console.log('EBITDA row index:', ebitdaRowIndex);
     
-    // Get headers
+    // Get headers (company names)
     const headers = rows[0];
     console.log('Headers:', headers);
+    
+    // Extract quarters from the first column after the Rev Growth YoY row
+    let currentYear = null;
+    let quarterCount = 0;
+    const quarters = [];
+    
+    rows.slice(revenueGrowthRowIndex + 1, ebitdaRowIndex).forEach(row => {
+      const yearStr = row[0];
+      if (isValidQuarter(yearStr)) {
+        if (yearStr !== currentYear) {
+          currentYear = yearStr;
+          quarterCount = 0;
+        }
+        quarterCount++;
+        const quarterStr = `${currentYear}'Q${quarterCount}`;
+        quarters.push(quarterStr);
+        console.log(`Generated quarter: ${quarterStr} from year ${yearStr}`);
+      }
+    });
+    
+    console.log('Generated quarters:', quarters);
+    
+    // Prepare data for workbook
+    const processedRows = [headers]; // Start with headers
+    
+    // Add revenue growth data
+    processedRows.push(['Rev Growth YoY']);
+    let currentQuarterIndex = 0;
+    
+    rows.slice(revenueGrowthRowIndex + 1, ebitdaRowIndex).forEach(row => {
+      if (isValidQuarter(row[0])) {
+        const quarterData = [...row];
+        quarterData[0] = quarters[currentQuarterIndex]; // Replace year with quarter string
+        processedRows.push(quarterData);
+        currentQuarterIndex++;
+      }
+    });
+
+    // Add EBITDA margin data
+    processedRows.push(['EBITDA Margin % Quarterly']);
+    currentQuarterIndex = 0;
+    
+    rows.slice(ebitdaRowIndex + 1).forEach(row => {
+      if (isValidQuarter(row[0]) && currentQuarterIndex < quarters.length) {
+        const quarterData = [...row];
+        quarterData[0] = quarters[currentQuarterIndex]; // Replace year with quarter string
+        processedRows.push(quarterData);
+        currentQuarterIndex++;
+      }
+    });
     
     // Create workbook
     const workbook = {
       SheetNames: ['TTM (bounded)'],
       Sheets: {
-        'TTM (bounded)': XLSX.utils.aoa_to_sheet(rows)
+        'TTM (bounded)': XLSX.utils.aoa_to_sheet(processedRows)
       }
     };
     
