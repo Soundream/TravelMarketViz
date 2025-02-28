@@ -615,7 +615,7 @@ const emit = defineEmits(['data-update', 'company-select', 'quarters-loaded']);
 // Add these as component-level variables to maintain consistent scales
 let xScale, yScale;
 let globalXDomain = [-0.5, 0.8];  // EBITDA margin range: -50% to 80%
-let globalYDomain = [-0.3, 1.0]; // Revenue growth range: -30% to 100%
+let globalYDomain = [-0.3, 1.3]; // Revenue growth range: -30% to 100%
 
 // Add chart dimensions
 const margin = { top: 50, right: 100, bottom: 50, left: 60 };
