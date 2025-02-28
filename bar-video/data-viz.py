@@ -317,11 +317,22 @@ def create_frame(frame):
     ax_timeline = fig.add_subplot(gs[0])
     ax = fig.add_subplot(gs[1])
     
-    # Filter data for current frame
+    # Increase the time window to avoid missing data points
+    TIME_WINDOW = 0.01  # Increased from 0.001 to 0.01
+    
+    # Filter data for current frame with wider window
     yearly_data = interp_data[
-        (interp_data['Year'] >= frame - 0.001) & 
-        (interp_data['Year'] <= frame + 0.001)
+        (interp_data['Year'] >= frame - TIME_WINDOW) & 
+        (interp_data['Year'] <= frame + TIME_WINDOW)
     ].copy()
+    
+    # If no data found with current window, try an even wider window
+    if len(yearly_data) == 0:
+        TIME_WINDOW = 0.02
+        yearly_data = interp_data[
+            (interp_data['Year'] >= frame - TIME_WINDOW) & 
+            (interp_data['Year'] <= frame + TIME_WINDOW)
+        ].copy()
     
     # Filter selected companies and apply time restrictions
     filtered_companies = []
@@ -340,6 +351,12 @@ def create_frame(frame):
     if frame < 2018.08:
         yearly_data.loc[yearly_data['Company'] == 'BKNG', 'Company'] = 'PCLN'
 
+    # If we have multiple rows for the same company, use the closest one to the frame
+    if len(yearly_data) > len(yearly_data['Company'].unique()):
+        yearly_data['time_diff'] = abs(yearly_data['Year'] - frame)
+        yearly_data = yearly_data.sort_values('time_diff').groupby('Company').first().reset_index()
+        yearly_data = yearly_data.drop('time_diff', axis=1)
+
     # Sort by revenue in descending order (largest to smallest)
     sorted_data = yearly_data.sort_values('Revenue', ascending=False)
     
@@ -356,7 +373,16 @@ def create_frame(frame):
     
     # Get current maximum revenue for dynamic x-axis scaling
     current_max_revenue = top_companies['Revenue'].max()
-    current_x_limit = current_max_revenue * 1.4  # Add 40% margin
+    
+    # Set initial fixed x-limit and threshold for dynamic scaling
+    FIXED_X_LIMIT = 200
+    DYNAMIC_THRESHOLD = 160  # Start dynamic scaling when max revenue reaches 80% of fixed limit
+    
+    # Determine if we should use dynamic scaling
+    if current_max_revenue <= DYNAMIC_THRESHOLD:
+        current_x_limit = FIXED_X_LIMIT
+    else:
+        current_x_limit = current_max_revenue * 1.4  # Add 40% margin
     
     # Create bars only for available companies
     bars = ax.barh(y_positions, top_companies['Revenue'],
@@ -440,15 +466,19 @@ def create_frame(frame):
     ax.set_yticks(positions_with_revenue)
     ax.set_yticklabels(companies_with_revenue, fontsize=14, fontproperties=open_sans_font)
     
-    # Add grid lines
-    if current_x_limit > 10000:
-        interval = 2000
-    elif current_x_limit > 5000:
-        interval = 1000
-    elif current_x_limit > 2000:
-        interval = 500
+    # Add grid lines with fixed interval for small values
+    if current_x_limit == FIXED_X_LIMIT:
+        interval = 50  # Fixed interval when using fixed scale
     else:
-        interval = 200
+        # Dynamic interval based on current limit
+        if current_x_limit > 10000:
+            interval = 2000
+        elif current_x_limit > 5000:
+            interval = 1000
+        elif current_x_limit > 2000:
+            interval = 500
+        else:
+            interval = 200
     
     grid_positions = np.arange(0, current_x_limit, interval)
     ax.set_xticks(grid_positions)
