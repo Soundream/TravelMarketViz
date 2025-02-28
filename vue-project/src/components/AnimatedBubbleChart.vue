@@ -635,7 +635,7 @@ const xAxisRange = ref({
 
 const yAxisRange = ref({
   min: '-30',
-  max: '100',
+  max: '130',
   minError: '',
   maxError: ''
 });
