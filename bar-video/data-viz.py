@@ -211,7 +211,7 @@ print(f"\nSaved interpolated data to output/interpolated_data.xlsx")
 # Define the list of companies to display
 selected_companies = [
     'ABNB', 'BKNG', 'DESP', 'EaseMyTrip', 'EDR', 'EXPE', 'LMN',
-    'MMYT', 'Ixigo', 'OWW', 'SEERA', 'TCOM', 'TRIP', 'TRVG', 'Webjet', 'Yatra'
+    'MMYT', 'Ixigo', 'OWW', 'SEERA', 'TCOM', 'TRIP', 'TRVG', 'Webjet', 'Yatra',"Travelocity",'Orbitz'
 ]
 
 # Color dictionary for companies
@@ -221,11 +221,14 @@ color_dict = {
     'EXPE': '#fbcc33', 'LMN': '#fc03b1', 'OWW': '#8edbfa',
     'SEERA': '#750808', 'TCOM': '#2577e3', 'TRIP': '#00af87',
     'TRVG': '#c71585', 'Webjet': '#e74c3c', 'Yatra': '#e74c3c',
-    'MMYT': '#e74c3c', 'Ixigo': '#e74c3c'
+    'MMYT': '#e74c3c', 'Ixigo': '#e74c3c',"Travelocity":'#1d3e5c','Orbitz': '#8edbfa'
 }
 
 # Company-specific settings for logos
 logo_settings = {
+    'Orbitz':{'zoom': 0.06, 'offset': 430},
+    'Orbitz1':{'zoom': 0.02, 'offset': 480},
+    "Travelocity":{'zoom': 0.04, 'offset': 480},
     'ABNB': {'zoom': 0.06, 'offset': 430},
     'BKNG': {'zoom': 0.06, 'offset': 440},
     'PCLN_pre2014': {'zoom': 0.07, 'offset': 480},
@@ -234,6 +237,8 @@ logo_settings = {
     'EaseMyTrip': {'zoom': 0.07, 'offset': 490},
     'EDR': {'zoom': 0.07, 'offset': 380},
     'EXPE': {'zoom': 0.06, 'offset': 490},
+    'EXPE_pre2010': {'zoom': 0.025, 'offset': 470},
+    'EXPE_2010_2012': {'zoom': 0.06, 'offset': 490},
     'LMN': {'zoom': 0.22, 'offset': 480},
     'OWW': {'zoom': 0.11, 'offset': 400},
     'SEERA': {'zoom': 0.06, 'offset': 380},
@@ -243,6 +248,8 @@ logo_settings = {
     'TRIP': {'zoom': 0.07, 'offset': 480},
     'TRIP_pre2020': {'zoom': 0.07, 'offset': 480},
     'TRVG': {'zoom': 0.07, 'offset': 400},
+    'TRVG_pre2013': {'zoom': 0.09, 'offset': 400},
+    'TRVG_2013_2023': {'zoom': 0.09, 'offset': 400},
     'Webjet': {'zoom': 0.07, 'offset': 470},
     'Yatra': {'zoom': 0.06, 'offset': 400},
     'MMYT': {'zoom': 0.06, 'offset': 450},
@@ -264,6 +271,26 @@ for company in selected_companies:
             logos['PCLN_post2014'] = plt.imread(pcln_logo_path_2014)
         if os.path.exists(bkng_logo_path):
             logos['BKNG'] = plt.imread(bkng_logo_path)
+    elif company == 'TRVG':
+        trvg_logo_old = os.path.join(logos_dir, 'Trivago1.jpg')
+        trvg_logo_mid = os.path.join(logos_dir, 'Trivago2.jpg')
+        trvg_logo_new = os.path.join(logos_dir, 'TRVG_logo.png')
+        if os.path.exists(trvg_logo_old):
+            logos['TRVG_pre2013'] = plt.imread(trvg_logo_old)
+        if os.path.exists(trvg_logo_mid):
+            logos['TRVG_2013_2023'] = plt.imread(trvg_logo_mid)
+        if os.path.exists(trvg_logo_new):
+            logos['TRVG'] = plt.imread(trvg_logo_new)
+    elif company == 'EXPE':
+        expe_logo_old = os.path.join(logos_dir, '1_expedia.png')
+        expe_logo_mid = os.path.join(logos_dir, 'EXPE_logo.jpg')
+        expe_logo_new = os.path.join(logos_dir, 'EXPE_logo.png')
+        if os.path.exists(expe_logo_old):
+            logos['EXPE_pre2010'] = plt.imread(expe_logo_old)
+        if os.path.exists(expe_logo_mid):
+            logos['EXPE_2010_2012'] = plt.imread(expe_logo_mid)
+        if os.path.exists(expe_logo_new):
+            logos['EXPE'] = plt.imread(expe_logo_new)
     elif company == 'TCOM':
         tcom_logo_old = os.path.join(logos_dir, '1TCOM_logo.png')
         tcom_logo_new = os.path.join(logos_dir, 'TCOM_logo.png')
@@ -292,6 +319,13 @@ for company in selected_companies:
             logos['LMN_2014_2015'] = plt.imread(lmn_logo_old)
         if os.path.exists(lmn_logo_new):
             logos['LMN'] = plt.imread(lmn_logo_new)
+    elif company == 'Orbitz':
+        orbitz_logo_old = os.path.join(logos_dir, 'Orbitz1.png')
+        orbitz_logo_new = os.path.join(logos_dir, 'Orbitz_logo.png')
+        if os.path.exists(orbitz_logo_old):
+            logos['Orbitz1'] = plt.imread(orbitz_logo_old)
+        if os.path.exists(orbitz_logo_new):
+            logos['Orbitz'] = plt.imread(orbitz_logo_new)
     else:
         logo_path = os.path.join(logos_dir, f'{company}_logo.png')
         if os.path.exists(logo_path):
@@ -377,7 +411,7 @@ def create_frame(frame):
     available_companies = len(sorted_data)
     top_companies = sorted_data
     
-    num_bars = 16
+    num_bars = 18
     bar_height = 0.9
     spacing = 1.1
     all_positions = np.arange(num_bars) * spacing
@@ -390,7 +424,7 @@ def create_frame(frame):
     
     # Set initial fixed x-limit and threshold for dynamic scaling
     FIXED_X_LIMIT = 400
-    DYNAMIC_THRESHOLD = 380  # Start dynamic scaling when max revenue reaches 80% of fixed limit
+    DYNAMIC_THRESHOLD = 280  # Start dynamic scaling when max revenue reaches 80% of fixed limit
     
     # Determine if we should use dynamic scaling
     if current_max_revenue <= DYNAMIC_THRESHOLD:
@@ -422,10 +456,14 @@ def create_frame(frame):
         
         # Add revenue label
         revenue_offset = current_x_limit * 0.02
-        revenue_text = f'{width:,.2f}'
-        ax.text(width + revenue_offset, y_pos, revenue_text,
-                va='center', ha='left', fontsize=14,
-                fontproperties=open_sans_font)
+        if width > 0:  # Only show label if revenue is positive
+            if 0 < width < 1:  # Show 2 decimal places for numbers between 0 and 1
+                revenue_text = f'{width:.2f}'
+            else:  # Show integer for numbers >= 1
+                revenue_text = f'{int(width):,}'
+            ax.text(width + revenue_offset, y_pos, revenue_text,
+                    va='center', ha='left', fontsize=14,
+                    fontproperties=open_sans_font)
         
         # Add logo with adjusted offset calculation
         if company == 'PCLN' or company == 'BKNG':
@@ -435,6 +473,22 @@ def create_frame(frame):
                 logo_key = 'PCLN_post2014'
             else:
                 logo_key = 'BKNG'
+        elif company == 'TRVG':
+            if frame < 2013.0:
+                logo_key = 'TRVG_pre2013'
+            elif frame < 2023.0:
+                logo_key = 'TRVG_2013_2023'
+            else:
+                logo_key = 'TRVG'
+        elif company == 'Orbitz':
+            logo_key = 'Orbitz1' if frame < 2005.0 else 'Orbitz'
+        elif company == 'EXPE':
+            if frame < 2010.0:
+                logo_key = 'EXPE_pre2010'
+            elif frame < 2012.0:
+                logo_key = 'EXPE_2010_2012'
+            else:
+                logo_key = 'EXPE'
         elif company == 'TCOM':
             logo_key = 'TCOM_pre2019' if frame < 2019.75 else 'TCOM'
         elif company == 'TRIP':
