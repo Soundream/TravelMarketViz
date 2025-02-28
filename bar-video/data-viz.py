@@ -111,6 +111,28 @@ def interpolate_data(data, multiple=20):
     print(f"\nFound {len(companies)} companies to process:")
     print(companies)
     
+    # First, determine the overall time range and create a unified time grid
+    min_year = data['Year'].min()
+    max_year = data['Year'].max()
+    print(f"\nOverall year range: {min_year} to {max_year}")
+    
+    # Create unified time points for all companies
+    if min_year >= 2020:
+        unified_years = np.linspace(min_year, max_year, int((max_year - min_year) * 4 * multiple))
+    else:
+        quarters_before_2024 = np.arange(min_year, 2024.0, 0.25)
+        quarters_2024_2025 = np.array([2024.0, 2024.25, 2024.5, 2024.75, 2025.0])
+        quarters = np.concatenate([quarters_before_2024, quarters_2024_2025])
+        
+        unified_years = []
+        for i in range(len(quarters)-1):
+            segment = np.linspace(quarters[i], quarters[i+1], multiple, endpoint=False)
+            unified_years.extend(segment)
+        unified_years.append(quarters[-1])
+        unified_years = np.array(unified_years)
+    
+    print(f"Created {len(unified_years)} unified time points")
+    
     for company in companies:
         try:
             print(f"\nProcessing {company}...")
@@ -126,46 +148,26 @@ def interpolate_data(data, multiple=20):
                 print(f"Skipping {company} - insufficient data points")
                 continue
             
-            min_year = company_data['Year'].min()
-            max_year = company_data['Year'].max()
-            print(f"Year range for {company}: {min_year} to {max_year}")
+            company_min_year = company_data['Year'].min()
+            company_max_year = company_data['Year'].max()
+            print(f"Year range for {company}: {company_min_year} to {company_max_year}")
             
-            if min_year >= 2020:
-                years = np.linspace(min_year, max_year, int((max_year - min_year) * 4 * multiple))
-                company_interp = pd.DataFrame()
-                company_interp['Year'] = years
-                company_interp['Company'] = company
-                
-                from scipy.interpolate import interp1d
-                f = interp1d(company_data['Year'], company_data['Revenue'])
-                company_interp['Revenue'] = f(years)
-            else:
-                has_2025_data = 2025.0 in company_data['Year'].values
-                
-                if has_2025_data:
-                    quarters_before_2024 = np.arange(min_year, 2024.0, 0.25)
-                    quarters_2024_2025 = np.array([2024.0, 2024.25, 2024.5, 2024.75, 2025.0])
-                    quarters = np.concatenate([quarters_before_2024, quarters_2024_2025])
-                else:
-                    quarters = np.arange(min_year, 2024.25, 0.25)
-                
-                years = []
-                for i in range(len(quarters)-1):
-                    segment = np.linspace(quarters[i], quarters[i+1], multiple, endpoint=False)
-                    years.extend(segment)
-                years.append(quarters[-1])
-                years = np.array(years)
-                
-                company_interp = pd.DataFrame()
-                company_interp['Year'] = years
-                company_interp['Company'] = company
-                
-                from scipy.interpolate import CubicSpline
-                cs = CubicSpline(company_data['Year'], company_data['Revenue'])
-                company_interp['Revenue'] = cs(years)
+            # Create interpolation for this company's date range
+            mask = (unified_years >= company_min_year) & (unified_years <= company_max_year)
+            company_years = unified_years[mask]
             
+            company_interp = pd.DataFrame()
+            company_interp['Year'] = company_years
+            company_interp['Company'] = company
+            
+            # Use CubicSpline for all interpolations
+            from scipy.interpolate import CubicSpline
+            cs = CubicSpline(company_data['Year'], company_data['Revenue'])
+            company_interp['Revenue'] = cs(company_years)
+            
+            # Ensure exact values at known data points
             for _, row in company_data.iterrows():
-                mask = np.abs(years - row['Year']) < 1e-10
+                mask = np.abs(company_years - row['Year']) < 1e-10
                 if any(mask):
                     company_interp.loc[mask, 'Revenue'] = row['Revenue']
             
@@ -184,7 +186,19 @@ def interpolate_data(data, multiple=20):
     print("\nCompanies in final interpolated data:")
     print(sorted(result['Company'].unique()))
     
-    return result.sort_values('Year').reset_index(drop=True)
+    # Sort by Year to ensure consistent ordering
+    result = result.sort_values(['Year', 'Company']).reset_index(drop=True)
+    
+    # Print unique time points to verify consistency
+    print("\nVerifying time points consistency:")
+    for company in companies:
+        if company in result['Company'].unique():
+            company_years = sorted(result[result['Company'] == company]['Year'].unique())
+            print(f"{company}: {len(company_years)} time points")
+            if len(company_years) > 0:
+                print(f"First point: {company_years[0]:.3f}, Last point: {company_years[-1]:.3f}")
+    
+    return result
 
 # Generate interpolated data
 print("\nInterpolating data...")
@@ -365,7 +379,7 @@ def create_frame(frame):
     
     num_bars = 16
     bar_height = 0.9
-    spacing = 1.2
+    spacing = 1.1
     all_positions = np.arange(num_bars) * spacing
     
     # Calculate positions starting from the top
@@ -375,8 +389,8 @@ def create_frame(frame):
     current_max_revenue = top_companies['Revenue'].max()
     
     # Set initial fixed x-limit and threshold for dynamic scaling
-    FIXED_X_LIMIT = 200
-    DYNAMIC_THRESHOLD = 160  # Start dynamic scaling when max revenue reaches 80% of fixed limit
+    FIXED_X_LIMIT = 400
+    DYNAMIC_THRESHOLD = 380  # Start dynamic scaling when max revenue reaches 80% of fixed limit
     
     # Determine if we should use dynamic scaling
     if current_max_revenue <= DYNAMIC_THRESHOLD:
