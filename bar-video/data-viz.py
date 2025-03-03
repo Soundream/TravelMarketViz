@@ -17,13 +17,13 @@ args = parser.parse_args()
 
 # Set quality parameters based on mode
 if args.publish:
-    FRAMES_PER_YEAR = 24  # Higher frame rate for smoother animation
-    OUTPUT_DPI = 300      # Higher DPI for better quality
+    FRAMES_PER_YEAR = 48  # Double the frames for smoother animation
+    OUTPUT_DPI = 100      # Keep DPI constant for consistent logo positioning
     FIGURE_SIZE = (19.2, 10.8)  # Full HD aspect ratio
 else:
     FRAMES_PER_YEAR = 4   # Lower frame rate for faster preview
-    OUTPUT_DPI = 100      # Lower DPI for faster rendering
-    FIGURE_SIZE = (19.2, 10.8)  # Same size but lower quality
+    OUTPUT_DPI = 100      # Keep DPI constant
+    FIGURE_SIZE = (19.2, 10.8)  # Same size
 
 # Set up font configurations
 plt.rcParams['font.family'] = 'sans-serif'
@@ -398,12 +398,39 @@ def create_frame(frame):
     # Filter selected companies and apply time restrictions
     filtered_companies = []
     for company in selected_companies:
-        if company == 'TRVG' and frame < 2015.75:  # Before Q4 2015
+        if company == 'DESP' and frame < 2017.45: 
+            continue# Mar 1999
+        # IPO date restrictions
+        if company == 'BKNG' and frame < 1999.17:  # Mar 1999
             continue
+        if company == 'EXPE' and frame < 1999.83:  # Nov 1999
+            continue
+        if company == 'TCOM' and frame < 2003.92:  # Dec 2003
+            continue
+        if company == 'Orbitz' and frame < 2003.92:  # Dec 2003
+            continue
+        if company == 'SEERA' and frame < 2012.25:  # Apr 2012
+            continue
+        if company == 'EDR' and frame < 2014.25:  # Apr 2014
+            continue
+        if company == 'LMN' and frame < 2000.33:  # Apr 2014
+            continue
+        if company == 'TRVG' and frame < 2016.92:  
+            continue
+        if company == 'ABNB' and frame < 2020.92:  # Dec 2020
+            continue
+        if company == 'EaseMyTrip' and frame < 2021.17:  # Mar 2021
+            continue
+        if company == 'Ixigo' and frame < 2024.42:  # Jun 2024
+            continue
+        if company == 'TRIP' and frame < 2011.92:  
+            continue
+        # Existing time restrictions
         if company == 'MMYT' and frame < 2011.0:  # Before 2011
             continue
         if company == 'LMN' and frame >= 2003.75 and frame < 2014.0:  # LMN should not appear between Q3 2003 and 2014
             continue
+            
         filtered_companies.append(company)
     
     yearly_data = yearly_data[yearly_data['Company'].isin(filtered_companies)]
@@ -526,7 +553,11 @@ def create_frame(frame):
             fig_width_inches = fig.get_size_inches()[0]
             dpi = fig.dpi
             fig_width_pixels = fig_width_inches * dpi
-            data_offset = (pixel_offset / fig_width_pixels) * current_x_limit
+            
+            # Scale the offset based on the DPI ratio
+            dpi_scale = OUTPUT_DPI / 100.0  # Base DPI is 100
+            adjusted_offset = pixel_offset / dpi_scale
+            data_offset = (adjusted_offset / fig_width_pixels) * current_x_limit
             
             imagebox = OffsetImage(image, zoom=zoom)
             ab = AnnotationBbox(imagebox, (width + data_offset, y_pos),
@@ -609,10 +640,13 @@ def create_frame(frame):
 
     ax_timeline.set_xticklabels([])
     
-    # Save the frame with appropriate DPI
+    # Save the frame with appropriate quality settings
     frame_number = int((frame - 1997) * FRAMES_PER_YEAR)
     frame_path = os.path.join(frames_dir, f'frame_{frame_number:04d}.png')
-    plt.savefig(frame_path, dpi=OUTPUT_DPI)
+    if args.publish:
+        plt.savefig(frame_path, dpi=OUTPUT_DPI, bbox_inches=None, pad_inches=0.1)
+    else:
+        plt.savefig(frame_path, dpi=OUTPUT_DPI, bbox_inches=None)
     plt.close(fig)
     
     return frame_path
