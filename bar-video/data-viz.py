@@ -8,6 +8,22 @@ import os
 import time
 from matplotlib.ticker import MultipleLocator
 import glob
+import argparse
+
+# Add argument parser
+parser = argparse.ArgumentParser(description='Generate bar chart race visualization')
+parser.add_argument('--publish', action='store_true', help='Generate high quality version for publishing')
+args = parser.parse_args()
+
+# Set quality parameters based on mode
+if args.publish:
+    FRAMES_PER_YEAR = 24  # Higher frame rate for smoother animation
+    OUTPUT_DPI = 300      # Higher DPI for better quality
+    FIGURE_SIZE = (19.2, 10.8)  # Full HD aspect ratio
+else:
+    FRAMES_PER_YEAR = 4   # Lower frame rate for faster preview
+    OUTPUT_DPI = 100      # Lower DPI for faster rendering
+    FIGURE_SIZE = (19.2, 10.8)  # Same size but lower quality
 
 # Set up font configurations
 plt.rcParams['font.family'] = 'sans-serif'
@@ -38,9 +54,6 @@ for directory in [logos_dir, output_dir, frames_dir]:
 print("Loading data...")
 data = pd.read_csv('Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue.csv')
 print(f"Loaded {len(data)} rows of data")
-
-# Add frame control parameter at the top of the file after imports
-FRAMES_PER_YEAR = 4  # Controls how many frames to generate per year (like 24fps)
 
 # Process the data to get annual Q1 data and special handling for 2024
 def process_quarterly_data(data):
@@ -283,7 +296,7 @@ for company in selected_companies:
             logos['TRVG'] = plt.imread(trvg_logo_new)
     elif company == 'EXPE':
         expe_logo_old = os.path.join(logos_dir, '1_expedia.png')
-        expe_logo_mid = os.path.join(logos_dir, 'EXPE_logo.jpg')
+        expe_logo_mid = os.path.join(logos_dir, 'EXPE_logo.png')
         expe_logo_new = os.path.join(logos_dir, 'EXPE_logo.png')
         if os.path.exists(expe_logo_old):
             logos['EXPE_pre2010'] = plt.imread(expe_logo_old)
@@ -358,8 +371,8 @@ def create_frame(frame):
     创建单个帧的图表
     frame: 当前时间点
     """
-    # Create figure and axes with lower DPI for consistent logo positioning
-    fig = plt.figure(figsize=(19.2, 10.8), dpi=100)  # Keep DPI at 100 for consistent positioning
+    # Create figure and axes with mode-dependent DPI
+    fig = plt.figure(figsize=FIGURE_SIZE, dpi=OUTPUT_DPI)
     gs = fig.add_gridspec(2, 1, height_ratios=[0.3, 4], hspace=0.2,
                          top=0.98, bottom=0.12)
     ax_timeline = fig.add_subplot(gs[0])
@@ -596,10 +609,10 @@ def create_frame(frame):
 
     ax_timeline.set_xticklabels([])
     
-    # Save the frame with high DPI
-    frame_number = int((frame - 1997) * 100)
+    # Save the frame with appropriate DPI
+    frame_number = int((frame - 1997) * FRAMES_PER_YEAR)
     frame_path = os.path.join(frames_dir, f'frame_{frame_number:04d}.png')
-    plt.savefig(frame_path, dpi=300)  # Save with high DPI
+    plt.savefig(frame_path, dpi=OUTPUT_DPI)
     plt.close(fig)
     
     return frame_path
@@ -636,7 +649,7 @@ last_frame = get_last_frame_number(frames_dir)
 if last_frame >= 0:
     print(f"\nFound existing frames, continuing from frame {last_frame}")
     # Calculate the corresponding year index
-    year_index = last_frame // 100  # Since frame numbers are year*100
+    year_index = last_frame // FRAMES_PER_YEAR  # Since frame numbers are year*FRAMES_PER_YEAR
     if year_index < len(unique_years):
         unique_years = unique_years[year_index:]
         print(f"Continuing from year {unique_years[0]:.2f}")
@@ -645,7 +658,7 @@ if last_frame >= 0:
         unique_years = []
 
 for i, year in enumerate(unique_years):
-    frame_number = int((year - 1997) * 100)
+    frame_number = int((year - 1997) * FRAMES_PER_YEAR)
     frame_path = os.path.join(frames_dir, f'frame_{frame_number:04d}.png')
     
     # Skip if frame already exists
@@ -654,7 +667,7 @@ for i, year in enumerate(unique_years):
         continue
         
     try:
-        print(f"\rGenerating frame {frame_number:04d}/{(unique_years[-1]-1997)*100:.0f} (Year: {year:.2f})", end="", flush=True)
+        print(f"\rGenerating frame {frame_number:04d}/{(unique_years[-1]-1997)*FRAMES_PER_YEAR:.0f} (Year: {year:.2f})", end="", flush=True)
         create_frame(year)
     except Exception as e:
         print(f"\nError generating frame for year {year:.2f}: {e}")
