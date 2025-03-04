@@ -9,6 +9,9 @@ import time
 from matplotlib.ticker import MultipleLocator
 import glob
 import argparse
+from PIL import Image
+from PIL import ImageFilter
+from PIL import ImageEnhance
 
 # Add argument parser
 parser = argparse.ArgumentParser(description='Generate bar chart race visualization')
@@ -18,12 +21,87 @@ args = parser.parse_args()
 # Set quality parameters based on mode
 if args.publish:
     FRAMES_PER_YEAR = 48  # Double the frames for smoother animation
-    OUTPUT_DPI = 100      # Keep DPI constant for consistent logo positioning
-    FIGURE_SIZE = (19.2, 10.8)  # Full HD aspect ratio
+    OUTPUT_DPI = 300      # Increase DPI for higher quality
+    FIGURE_SIZE = (25.6, 14.4)  # Larger figure size (4K aspect ratio)
 else:
     FRAMES_PER_YEAR = 4   # Lower frame rate for faster preview
     OUTPUT_DPI = 100      # Keep DPI constant
     FIGURE_SIZE = (19.2, 10.8)  # Same size
+
+def preprocess_logo(image_array, target_size=None, upscale_factor=8):
+    """
+    预处理logo图像以提高质量
+    
+    Args:
+        image_array: 原始图像数组
+        target_size: 目标尺寸 (width, height)
+        upscale_factor: 上采样倍数
+    """
+    # Convert to PIL Image
+    if isinstance(image_array, np.ndarray):
+        if image_array.dtype == np.float32:
+            image_array = (image_array * 255).astype(np.uint8)
+        image = Image.fromarray(image_array)
+    else:
+        image = image_array
+        
+    # 保存原始模式和尺寸
+    original_mode = image.mode
+    original_size = image.size
+    
+    # 计算处理尺寸
+    if target_size:
+        w, h = target_size
+    else:
+        w, h = original_size
+    
+    # 首先将图像放大到更大尺寸进行处理
+    large_size = (w * upscale_factor, h * upscale_factor)
+    image = image.resize(large_size, Image.Resampling.LANCZOS)
+    
+    if original_mode == 'RGBA':
+        # 分离通道
+        r, g, b, a = image.split()
+        
+        # 对RGB通道进行高质量处理
+        rgb = Image.merge('RGB', (r, g, b))
+        
+        # 应用多次精细的UnsharpMask
+        rgb = rgb.filter(ImageFilter.UnsharpMask(radius=0.3, percent=250, threshold=2))
+        rgb = rgb.filter(ImageFilter.UnsharpMask(radius=0.5, percent=200, threshold=3))
+        rgb = rgb.filter(ImageFilter.UnsharpMask(radius=0.7, percent=150, threshold=4))
+        
+        # 应用细节增强
+        rgb = rgb.filter(ImageFilter.EDGE_ENHANCE_MORE)
+        
+        # 分离处理后的RGB通道
+        r, g, b = rgb.split()
+        
+        # 优化alpha通道
+        a = a.filter(ImageFilter.UnsharpMask(radius=0.3, percent=250, threshold=2))
+        
+        # 重新合并所有通道
+        image = Image.merge('RGBA', (r, g, b, a))
+    else:
+        # 对RGB图像进行高质量处理
+        image = image.filter(ImageFilter.UnsharpMask(radius=0.3, percent=250, threshold=2))
+        image = image.filter(ImageFilter.UnsharpMask(radius=0.5, percent=200, threshold=3))
+        image = image.filter(ImageFilter.UnsharpMask(radius=0.7, percent=150, threshold=4))
+        image = image.filter(ImageFilter.EDGE_ENHANCE_MORE)
+    
+    # 使用高质量的Lanczos算法缩放到目标尺寸
+    if target_size:
+        # 使用三步缩放以获得更好的质量
+        intermediate_size_1 = (w * 4, h * 4)
+        intermediate_size_2 = (w * 2, h * 2)
+        image = image.resize(intermediate_size_1, Image.Resampling.LANCZOS)
+        image = image.resize(intermediate_size_2, Image.Resampling.LANCZOS)
+        image = image.resize(target_size, Image.Resampling.LANCZOS)
+    else:
+        image = image.resize(original_size, Image.Resampling.LANCZOS)
+    
+    # 转换回numpy数组，确保保持高位深度
+    return np.array(image)
 
 # Set up font configurations
 plt.rcParams['font.family'] = 'sans-serif'
@@ -221,6 +299,14 @@ interp_data = interpolate_data(data, multiple=FRAMES_PER_YEAR)  # Pass the frame
 interp_data.to_excel('output/interpolated_data.xlsx', index=False)
 print(f"\nSaved interpolated data to output/interpolated_data.xlsx")
 
+# Define company name to ticker mapping
+company_to_ticker = {
+    'EaseMyTrip': 'EASEMYTRIP',
+    'Ixigo': 'IXIGO',
+    'Yatra': 'YTRA',
+    'Webjet': 'WBJ'
+}
+
 # Define the list of companies to display
 selected_companies = [
     'ABNB', 'BKNG', 'DESP', 'EaseMyTrip', 'EDR', 'EXPE', 'LMN',
@@ -230,44 +316,44 @@ selected_companies = [
 # Color dictionary for companies
 color_dict = {
     'ABNB': '#ff5895', 'BKNG': '#003480', 'PCLN': '#003480',
-    'DESP': '#755bd8', 'EaseMyTrip': '#00a0e2', 'EDR': '#2577e3',
+    'DESP': '#755bd8', 'EASEMYTRIP': '#00a0e2', 'EDR': '#2577e3',
     'EXPE': '#fbcc33', 'LMN': '#fc03b1', 'OWW': '#8edbfa',
     'SEERA': '#750808', 'TCOM': '#2577e3', 'TRIP': '#00af87',
-    'TRVG': '#c71585', 'Webjet': '#e74c3c', 'Yatra': '#e74c3c',
-    'MMYT': '#e74c3c', 'Ixigo': '#e74c3c',"Travelocity":'#1d3e5c','Orbitz': '#8edbfa'
+    'TRVG': '#c71585', 'WBJ': '#e74c3c', 'YTRA': '#e74c3c',
+    'MMYT': '#e74c3c', 'IXIGO': '#e74c3c',"Travelocity":'#1d3e5c','Orbitz': '#8edbfa'
 }
 
 # Company-specific settings for logos
 logo_settings = {
-    'Orbitz':{'zoom': 0.06, 'offset': 430},
-    'Orbitz1':{'zoom': 0.02, 'offset': 480},
-    "Travelocity":{'zoom': 0.04, 'offset': 480},
-    'ABNB': {'zoom': 0.06, 'offset': 430},
-    'BKNG': {'zoom': 0.06, 'offset': 440},
-    'PCLN_pre2014': {'zoom': 0.07, 'offset': 480},
-    'PCLN_post2014': {'zoom': 0.07, 'offset': 500},
-    'DESP': {'zoom': 0.08, 'offset': 440},
-    'EaseMyTrip': {'zoom': 0.07, 'offset': 490},
-    'EDR': {'zoom': 0.07, 'offset': 380},
-    'EXPE': {'zoom': 0.06, 'offset': 490},
-    'EXPE_pre2010': {'zoom': 0.025, 'offset': 470},
-    'EXPE_2010_2012': {'zoom': 0.06, 'offset': 490},
-    'LMN': {'zoom': 0.22, 'offset': 480},
-    'OWW': {'zoom': 0.11, 'offset': 400},
-    'SEERA': {'zoom': 0.06, 'offset': 380},
-    'SEERA_pre2019': {'zoom': 0.06, 'offset': 380},
-    'TCOM': {'zoom': 0.11, 'offset': 430},
-    'TCOM_pre2019': {'zoom': 0.05, 'offset': 380},
-    'TRIP': {'zoom': 0.07, 'offset': 480},
-    'TRIP_pre2020': {'zoom': 0.07, 'offset': 480},
-    'TRVG': {'zoom': 0.07, 'offset': 400},
-    'TRVG_pre2013': {'zoom': 0.09, 'offset': 400},
-    'TRVG_2013_2023': {'zoom': 0.09, 'offset': 400},
-    'Webjet': {'zoom': 0.07, 'offset': 470},
-    'Yatra': {'zoom': 0.06, 'offset': 400},
-    'MMYT': {'zoom': 0.06, 'offset': 450},
-    'Ixigo': {'zoom': 0.07, 'offset': 400},
-    'LMN_2014_2015': {'zoom': 0.06, 'offset': 400}
+    'Orbitz':{'zoom': 0.08, 'offset': 1290},
+    'Orbitz1':{'zoom': 0.027, 'offset': 1440},
+    "Travelocity":{'zoom': 0.053, 'offset': 1440},
+    'ABNB': {'zoom': 0.08, 'offset': 1290},
+    'BKNG': {'zoom': 0.08, 'offset': 1320},
+    'PCLN_pre2014': {'zoom': 0.093, 'offset': 1440},
+    'PCLN_post2014': {'zoom': 0.093, 'offset': 1500},
+    'DESP': {'zoom': 0.107, 'offset': 1320},
+    'EASEMYTRIP': {'zoom': 0.093, 'offset': 1470},
+    'EDR': {'zoom': 0.093, 'offset': 1140},
+    'EXPE': {'zoom': 0.08, 'offset': 1470},
+    'EXPE_pre2010': {'zoom': 0.033, 'offset': 1410},
+    'EXPE_2010_2012': {'zoom': 0.08, 'offset': 1470},
+    'LMN': {'zoom': 0.293, 'offset': 1440},
+    'OWW': {'zoom': 0.147, 'offset': 1200},
+    'SEERA': {'zoom': 0.08, 'offset': 1140},
+    'SEERA_pre2019': {'zoom': 0.08, 'offset': 1140},
+    'TCOM': {'zoom': 0.147, 'offset': 1290},
+    'TCOM_pre2019': {'zoom': 0.067, 'offset': 1140},
+    'TRIP': {'zoom': 0.093, 'offset': 1440},
+    'TRIP_pre2020': {'zoom': 0.093, 'offset': 1440},
+    'TRVG': {'zoom': 0.093, 'offset': 1200},
+    'TRVG_pre2013': {'zoom': 0.12, 'offset': 1200},
+    'TRVG_2013_2023': {'zoom': 0.12, 'offset': 1200},
+    'WBJ': {'zoom': 0.093, 'offset': 1410},
+    'YTRA': {'zoom': 0.08, 'offset': 1200},
+    'MMYT': {'zoom': 0.08, 'offset': 1350},
+    'IXIGO': {'zoom': 0.093, 'offset': 1200},
+    'LMN_2014_2015': {'zoom': 0.08, 'offset': 1200}
 }
 
 # Load company logos
@@ -279,71 +365,71 @@ for company in selected_companies:
         bkng_logo_path = os.path.join(logos_dir, 'BKNG_logo.png')
         
         if os.path.exists(pcln_logo_path):
-            logos['PCLN_pre2014'] = plt.imread(pcln_logo_path)
+            logos['PCLN_pre2014'] = preprocess_logo(plt.imread(pcln_logo_path))
         if os.path.exists(pcln_logo_path_2014):
-            logos['PCLN_post2014'] = plt.imread(pcln_logo_path_2014)
+            logos['PCLN_post2014'] = preprocess_logo(plt.imread(pcln_logo_path_2014))
         if os.path.exists(bkng_logo_path):
-            logos['BKNG'] = plt.imread(bkng_logo_path)
+            logos['BKNG'] = preprocess_logo(plt.imread(bkng_logo_path))
     elif company == 'TRVG':
         trvg_logo_old = os.path.join(logos_dir, 'Trivago1.jpg')
         trvg_logo_mid = os.path.join(logos_dir, 'Trivago2.jpg')
         trvg_logo_new = os.path.join(logos_dir, 'TRVG_logo.png')
         if os.path.exists(trvg_logo_old):
-            logos['TRVG_pre2013'] = plt.imread(trvg_logo_old)
+            logos['TRVG_pre2013'] = preprocess_logo(plt.imread(trvg_logo_old))
         if os.path.exists(trvg_logo_mid):
-            logos['TRVG_2013_2023'] = plt.imread(trvg_logo_mid)
+            logos['TRVG_2013_2023'] = preprocess_logo(plt.imread(trvg_logo_mid))
         if os.path.exists(trvg_logo_new):
-            logos['TRVG'] = plt.imread(trvg_logo_new)
+            logos['TRVG'] = preprocess_logo(plt.imread(trvg_logo_new))
     elif company == 'EXPE':
         expe_logo_old = os.path.join(logos_dir, '1_expedia.png')
         expe_logo_mid = os.path.join(logos_dir, 'EXPE_logo.png')
         expe_logo_new = os.path.join(logos_dir, 'EXPE_logo.png')
         if os.path.exists(expe_logo_old):
-            logos['EXPE_pre2010'] = plt.imread(expe_logo_old)
+            logos['EXPE_pre2010'] = preprocess_logo(plt.imread(expe_logo_old))
         if os.path.exists(expe_logo_mid):
-            logos['EXPE_2010_2012'] = plt.imread(expe_logo_mid)
+            logos['EXPE_2010_2012'] = preprocess_logo(plt.imread(expe_logo_mid))
         if os.path.exists(expe_logo_new):
-            logos['EXPE'] = plt.imread(expe_logo_new)
+            logos['EXPE'] = preprocess_logo(plt.imread(expe_logo_new))
     elif company == 'TCOM':
         tcom_logo_old = os.path.join(logos_dir, '1TCOM_logo.png')
         tcom_logo_new = os.path.join(logos_dir, 'TCOM_logo.png')
         if os.path.exists(tcom_logo_old):
-            logos['TCOM_pre2019'] = plt.imread(tcom_logo_old)
+            logos['TCOM_pre2019'] = preprocess_logo(plt.imread(tcom_logo_old))
         if os.path.exists(tcom_logo_new):
-            logos['TCOM'] = plt.imread(tcom_logo_new)
+            logos['TCOM'] = preprocess_logo(plt.imread(tcom_logo_new))
     elif company == 'TRIP':
         trip_logo_old = os.path.join(logos_dir, '1TRIP_logo.png')
         trip_logo_new = os.path.join(logos_dir, 'TRIP_logo.png')
         if os.path.exists(trip_logo_old):
-            logos['TRIP_pre2020'] = plt.imread(trip_logo_old)
+            logos['TRIP_pre2020'] = preprocess_logo(plt.imread(trip_logo_old))
         if os.path.exists(trip_logo_new):
-            logos['TRIP'] = plt.imread(trip_logo_new)
+            logos['TRIP'] = preprocess_logo(plt.imread(trip_logo_new))
     elif company == 'SEERA':
         seera_logo_old = os.path.join(logos_dir, '1SEERA_logo.png')
         seera_logo_new = os.path.join(logos_dir, 'SEERA_logo.png')
         if os.path.exists(seera_logo_old):
-            logos['SEERA_pre2019'] = plt.imread(seera_logo_old)
+            logos['SEERA_pre2019'] = preprocess_logo(plt.imread(seera_logo_old))
         if os.path.exists(seera_logo_new):
-            logos['SEERA'] = plt.imread(seera_logo_new)
+            logos['SEERA'] = preprocess_logo(plt.imread(seera_logo_new))
     elif company == 'LMN':
         lmn_logo_old = os.path.join(logos_dir, '1LMN_logo.png')
         lmn_logo_new = os.path.join(logos_dir, 'LMN_logo.png')
         if os.path.exists(lmn_logo_old):
-            logos['LMN_2014_2015'] = plt.imread(lmn_logo_old)
+            logos['LMN_2014_2015'] = preprocess_logo(plt.imread(lmn_logo_old))
         if os.path.exists(lmn_logo_new):
-            logos['LMN'] = plt.imread(lmn_logo_new)
+            logos['LMN'] = preprocess_logo(plt.imread(lmn_logo_new))
     elif company == 'Orbitz':
         orbitz_logo_old = os.path.join(logos_dir, 'Orbitz1.png')
         orbitz_logo_new = os.path.join(logos_dir, 'Orbitz_logo.png')
         if os.path.exists(orbitz_logo_old):
-            logos['Orbitz1'] = plt.imread(orbitz_logo_old)
+            logos['Orbitz1'] = preprocess_logo(plt.imread(orbitz_logo_old))
         if os.path.exists(orbitz_logo_new):
-            logos['Orbitz'] = plt.imread(orbitz_logo_new)
+            logos['Orbitz'] = preprocess_logo(plt.imread(orbitz_logo_new))
     else:
         logo_path = os.path.join(logos_dir, f'{company}_logo.png')
         if os.path.exists(logo_path):
             try:
-                logos[company] = plt.imread(logo_path)
+                logos[company] = preprocess_logo(plt.imread(logo_path))
             except Exception as e:
                 print(f"Error loading logo for {company}: {e}")
                 fig_temp = plt.figure(figsize=(1, 1))
@@ -353,7 +439,7 @@ for company in selected_companies:
                 temp_path = os.path.join(logos_dir, f'{company}_temp_logo.png')
                 fig_temp.savefig(temp_path, transparent=True, bbox_inches='tight')
                 plt.close(fig_temp)
-                logos[company] = plt.imread(temp_path)
+                logos[company] = preprocess_logo(plt.imread(temp_path))
 
 # Function to get quarter and year from numeric year
 def get_quarter_year(time_value):
@@ -398,6 +484,8 @@ def create_frame(frame):
     # Filter selected companies and apply time restrictions
     filtered_companies = []
     for company in selected_companies:
+        if company == 'Travelocity':
+            continue
         if company == 'DESP' and frame < 2017.45: 
             continue# Mar 1999
         # IPO date restrictions
@@ -419,9 +507,9 @@ def create_frame(frame):
             continue
         if company == 'ABNB' and frame < 2020.92:  # Dec 2020
             continue
-        if company == 'EaseMyTrip' and frame < 2021.17:  # Mar 2021
+        if company == 'EASEMYTRIP' and frame < 2021.17:  # Mar 2021
             continue
-        if company == 'Ixigo' and frame < 2024.42:  # Jun 2024
+        if company == 'IXIGO' and frame < 2024.42:  # Jun 2024
             continue
         if company == 'TRIP' and frame < 2011.92:  
             continue
@@ -549,22 +637,43 @@ def create_frame(frame):
             zoom = settings['zoom']
             pixel_offset = settings['offset']
             
+            # 计算目标尺寸
+            target_height = int(image.shape[0] * zoom)
+            target_width = int(image.shape[1] * zoom)
+            
+            # 预处理图像到目标尺寸
+            processed_image = preprocess_logo(image, target_size=(target_width, target_height))
+            
             # Use figure width in pixels for offset calculation
             fig_width_inches = fig.get_size_inches()[0]
             dpi = fig.dpi
             fig_width_pixels = fig_width_inches * dpi
             
             # Scale the offset based on the DPI ratio
-            dpi_scale = OUTPUT_DPI / 100.0  # Base DPI is 100
-            adjusted_offset = pixel_offset / dpi_scale
+            dpi_scale = OUTPUT_DPI / 100.0
+            adjusted_offset = pixel_offset * (300.0 / OUTPUT_DPI)  # 根据300 DPI标准化偏移量
             data_offset = (adjusted_offset / fig_width_pixels) * current_x_limit
             
-            imagebox = OffsetImage(image, zoom=zoom)
-            ab = AnnotationBbox(imagebox, (width + data_offset, y_pos),
-                              frameon=False, box_alignment=(0.5, 0.5))
+            # Create high quality OffsetImage with improved settings
+            imagebox = OffsetImage(processed_image, zoom=1.0)
+            
+            # 设置更高质量的渲染参数
+            imagebox.image.set_interpolation('lanczos')
+            imagebox.image.set_resample(True)
+            imagebox.image.set_filterrad(12.0)  # 增加滤波半径
+            
+            # 创建高质量的标注框
+            ab = AnnotationBbox(
+                imagebox,
+                (width + data_offset, y_pos),
+                frameon=False,
+                box_alignment=(0.5, 0.5),
+                pad=0,
+                bboxprops=dict(alpha=0)
+            )
             ax.add_artist(ab)
     
-    # Set y-ticks
+    # Set y-ticks with ticker mapping
     ax.set_yticks(all_positions)
     labels = [''] * num_bars
     
@@ -572,7 +681,9 @@ def create_frame(frame):
     positions_with_revenue = []
     for i, (company, revenue) in enumerate(zip(top_companies['Company'], top_companies['Revenue'])):
         if not ((company == 'LMN' and (revenue < 0 or abs(revenue) < 0.009)) or abs(revenue) < 0.01):
-            companies_with_revenue.append(company)
+            # Apply ticker mapping if available
+            display_name = company_to_ticker.get(company, company)
+            companies_with_revenue.append(display_name)
             positions_with_revenue.append(all_positions[i])
     
     ax.set_yticks(positions_with_revenue)
@@ -644,7 +755,19 @@ def create_frame(frame):
     frame_number = int((frame - 1997) * FRAMES_PER_YEAR)
     frame_path = os.path.join(frames_dir, f'frame_{frame_number:04d}.png')
     if args.publish:
-        plt.savefig(frame_path, dpi=OUTPUT_DPI, bbox_inches=None, pad_inches=0.1)
+        plt.savefig(
+            frame_path,
+            dpi=OUTPUT_DPI,
+            bbox_inches=None,
+            pad_inches=0.1,
+            metadata={'Software': 'matplotlib'},
+            pil_kwargs={
+                'quality': 100,
+                'optimize': True,
+                'progressive': True,
+                'subsampling': 0  # 禁用色度子采样
+            }
+        )
     else:
         plt.savefig(frame_path, dpi=OUTPUT_DPI, bbox_inches=None)
     plt.close(fig)
