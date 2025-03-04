@@ -299,13 +299,14 @@ interp_data = interpolate_data(data, multiple=FRAMES_PER_YEAR)  # Pass the frame
 interp_data.to_excel('output/interpolated_data.xlsx', index=False)
 print(f"\nSaved interpolated data to output/interpolated_data.xlsx")
 
-# Define company name to ticker mapping
+# Define company name to ticker mapping and its reverse mapping
 company_to_ticker = {
     'EaseMyTrip': 'EASEMYTRIP',
     'Ixigo': 'IXIGO',
     'Yatra': 'YTRA',
     'Webjet': 'WBJ'
 }
+ticker_to_company = {v: k for k, v in company_to_ticker.items()}
 
 # Define the list of companies to display
 selected_companies = [
@@ -333,7 +334,7 @@ logo_settings = {
     'PCLN_pre2014': {'zoom': 0.093, 'offset': 1440},
     'PCLN_post2014': {'zoom': 0.093, 'offset': 1500},
     'DESP': {'zoom': 0.107, 'offset': 1320},
-    'EASEMYTRIP': {'zoom': 0.093, 'offset': 1470},
+    'EASEMYTRIP': {'zoom': 0.12, 'offset': 1200},
     'EDR': {'zoom': 0.093, 'offset': 1140},
     'EXPE': {'zoom': 0.08, 'offset': 1470},
     'EXPE_pre2010': {'zoom': 0.033, 'offset': 1410},
@@ -349,11 +350,16 @@ logo_settings = {
     'TRVG': {'zoom': 0.093, 'offset': 1200},
     'TRVG_pre2013': {'zoom': 0.12, 'offset': 1200},
     'TRVG_2013_2023': {'zoom': 0.12, 'offset': 1200},
-    'WBJ': {'zoom': 0.093, 'offset': 1410},
-    'YTRA': {'zoom': 0.08, 'offset': 1200},
+    'WEB': {'zoom': 0.07, 'offset': 1400},
+    'Webjet': {'zoom': 0.07, 'offset': 1400},
+    'WBJ': {'zoom': 0.07, 'offset': 2000},
+    'Yatra': {'zoom': 0.13, 'offset': 1200},
+    'YTRA': {'zoom': 0.13, 'offset': 1200},
     'MMYT': {'zoom': 0.08, 'offset': 1350},
-    'IXIGO': {'zoom': 0.093, 'offset': 1200},
-    'LMN_2014_2015': {'zoom': 0.08, 'offset': 1200}
+    'IXIGO': {'zoom': 0.14, 'offset': 1200},
+    'LMN_2014_2015': {'zoom': 0.08, 'offset': 1200},
+    'EaseMyTrip': {'zoom': 0.12, 'offset': 1200},
+    'Ixigo': {'zoom': 0.14, 'offset': 1200}
 }
 
 # Load company logos
@@ -449,8 +455,10 @@ def get_quarter_year(time_value):
 
 # Function to get logo settings for specific company
 def get_logo_settings(company):
+    # Convert ticker to company name if needed
+    company_name = ticker_to_company.get(company, company)
     default_settings = {'zoom': 0.12, 'offset': 100}
-    return logo_settings.get(company, default_settings)
+    return logo_settings.get(company_name, logo_settings.get(company, default_settings))
 
 def create_frame(frame):
     """
@@ -582,6 +590,9 @@ def create_frame(frame):
         if (company == 'LMN' and (width < 0 or abs(width) < 0.009)) or abs(width) < 0.01:
             continue
         
+        # Convert company ticker to original name for logo lookup
+        company_name = ticker_to_company.get(company, company)
+        
         # Add revenue label
         revenue_offset = current_x_limit * 0.02
         if width > 0:  # Only show label if revenue is positive
@@ -594,46 +605,46 @@ def create_frame(frame):
                     fontproperties=open_sans_font)
         
         # Add logo with adjusted offset calculation
-        if company == 'PCLN' or company == 'BKNG':
+        if company_name == 'PCLN' or company_name == 'BKNG':
             if frame < 2014.25:
                 logo_key = 'PCLN_pre2014'
             elif frame < 2018.08:
                 logo_key = 'PCLN_post2014'
             else:
                 logo_key = 'BKNG'
-        elif company == 'TRVG':
+        elif company_name == 'TRVG':
             if frame < 2013.0:
                 logo_key = 'TRVG_pre2013'
             elif frame < 2023.0:
                 logo_key = 'TRVG_2013_2023'
             else:
                 logo_key = 'TRVG'
-        elif company == 'Orbitz':
+        elif company_name == 'Orbitz':
             logo_key = 'Orbitz1' if frame < 2005.0 else 'Orbitz'
-        elif company == 'EXPE':
+        elif company_name == 'EXPE':
             if frame < 2010.0:
                 logo_key = 'EXPE_pre2010'
             elif frame < 2012.0:
                 logo_key = 'EXPE_2010_2012'
             else:
                 logo_key = 'EXPE'
-        elif company == 'TCOM':
+        elif company_name == 'TCOM':
             logo_key = 'TCOM_pre2019' if frame < 2019.75 else 'TCOM'
-        elif company == 'TRIP':
+        elif company_name == 'TRIP':
             logo_key = 'TRIP_pre2020' if frame < 2020.0 else 'TRIP'
-        elif company == 'SEERA':
+        elif company_name == 'SEERA':
             logo_key = 'SEERA_pre2019' if frame < 2019.25 else 'SEERA'
-        elif company == 'LMN':
+        elif company_name == 'LMN':
             if frame >= 2014.0 and frame < 2015.42:
                 logo_key = 'LMN_2014_2015'
             else:
                 logo_key = 'LMN'
         else:
-            logo_key = company
+            logo_key = company_name
             
         if logo_key in logos:
             image = logos[logo_key]
-            settings = logo_settings.get(logo_key, logo_settings.get(company, {'zoom': 0.12, 'offset': 100}))
+            settings = logo_settings.get(logo_key, logo_settings.get(company_name, {'zoom': 0.12, 'offset': 100}))
             zoom = settings['zoom']
             pixel_offset = settings['offset']
             
