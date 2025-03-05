@@ -126,35 +126,6 @@ const companyNames = {
   'Webjet OTA': 'Webjet OTA'
 }
 
-// Add new imports for logos
-const logoImports = {
-  'ABNB': new URL('/logos/ABNB_temp_logo.png', import.meta.url).href,
-  'BKNG': new URL('/logos/BKNG_temp_logo.png', import.meta.url).href,
-  'EXPE': new URL('/logos/Expedia2.jpg', import.meta.url).href,
-  'TCOM': new URL('/logos/TCOM_temp_logo.png', import.meta.url).href,
-  'TRIP': new URL('/logos/TRIP_temp_logo.png', import.meta.url).href,
-  'TRVG': new URL('/logos/Trivago1.jpg', import.meta.url).href,
-  'EDR': new URL('/logos/EDR_temp_logo.png', import.meta.url).href,
-  'DESP': new URL('/logos/DESP_temp_logo.png', import.meta.url).href,
-  'MMYT': new URL('/logos/MMYT_temp_logo.png', import.meta.url).href,
-  'Ixigo': new URL('/logos/Ixigo_temp_logo.png', import.meta.url).href,
-  'SEERA': new URL('/logos/SEERA_temp_logo.png', import.meta.url).href,
-  'Webjet': new URL('/logos/Webjet_temp_logo.png', import.meta.url).href,
-  'LMN': new URL('/logos/LMN_temp_logo.png', import.meta.url).href,
-  'Yatra': new URL('/logos/Yatra_temp_logo.png', import.meta.url).href,
-  'Orbitz': new URL('/logos/Orbitz1.png', import.meta.url).href,
-  'Travelocity': new URL('/logos/Travelocity_logo.png', import.meta.url).href,
-  'EaseMyTrip': new URL('/logos/EaseMyTrip_temp_logo.png', import.meta.url).href,
-  'Wego': new URL('/logos/Wego_logo.png', import.meta.url).href,
-  'Skyscanner': new URL('/logos/Skyscanner_temp_logo.png', import.meta.url).href,
-  'Etraveli': new URL('/logos/Etraveli_temp_logo.png', import.meta.url).href,
-  'Kiwi': new URL('/logos/Kiwi_temp_logo.png', import.meta.url).href,
-  'Cleartrip': new URL('/logos/Cleartrip_temp_logo.png', import.meta.url).href,
-  'FLT': new URL('/logos/FLT_temp_logo.png', import.meta.url).href,
-  'Almosafer': new URL('/logos/Almosafer_temp_logo.png', import.meta.url).href,
-  'Webjet OTA': new URL('/logos/Webjet_OTA_temp_logo.png', import.meta.url).href
-}
-
 const importFromGoogleSheet = async () => {
   // Google Sheets ID and GID for bar chart data
   const sheetId = '2PACX-1vQYwQTSYwig7AZ0fjPniLVfUUJnLz3PP4f4fBtqkBNPYqrkKtQyZDaB99kHk2eCzuCh5i8oxTPCHeQ9'
@@ -390,10 +361,14 @@ const renderChart = () => {
     .attr('height', logoSize)
     .attr('preserveAspectRatio', 'xMidYMid meet')
     .attr('data-company', d => d.company)
-    .attr('href', d => logoImports[d.company] || '')
+    .attr('href', d => `/logos/${d.company}_logo.png`)
     .on('error', function() {
-      // If logo fails to load, just remove it
-      d3.select(this).remove()
+      const element = d3.select(this)
+      const company = element.datum().company
+      element.attr('href', `/logos/${company}_temp_logo.png`)
+        .on('error', function() {
+          element.remove()
+        })
     })
 }
 
@@ -448,21 +423,23 @@ const saveChart = async () => {
     logos.forEach((logo) => {
       const logoPromise = new Promise((resolve) => {
         const img = new Image()
-        img.crossOrigin = 'anonymous'
+        img.crossOrigin = 'anonymous' // 允许跨域加载图片
         img.onload = () => {
           const x = parseFloat(logo.getAttribute('x'))
           const y = parseFloat(logo.getAttribute('y'))
           const width = parseFloat(logo.getAttribute('width'))
           const height = parseFloat(logo.getAttribute('height'))
+          
+          // 在正确的位置绘制 logo
           ctx.drawImage(img, x * scale, y * scale, width * scale, height * scale)
           resolve()
         }
         img.onerror = () => {
-          // If logo fails to load, just resolve without drawing it
-          resolve()
+          // 如果主 logo 加载失败，尝试加载临时 logo
+          const company = logo.getAttribute('data-company')
+          img.src = `/logos/${company}_temp_logo.png`
         }
-        const company = logo.getAttribute('data-company')
-        img.src = logoImports[company] || ''
+        img.src = logo.getAttribute('href')
       })
       logoPromises.push(logoPromise)
     })

@@ -391,9 +391,9 @@ const getCellStyle = (value, columnIndex) => {
 
 const importFromGoogleSheet = async () => {
   // Google Sheets ID and GID
-  
-  
-  
+  const sheetId = '2PACX-1vQYwQTSYwig7AZ0fjPniLVfUUJnLz3PP4f4fBtqkBNPYqrkKtQyZDaB99kHk2eCzuCh5i8oxTPCHeQ9';
+  const gid = '1144102204';
+  const sheetUrl = `https://docs.google.com/spreadsheets/d/e/${sheetId}/pub?gid=${gid}&output=csv`;
   
   try {
     console.log('Starting Google Sheet import...');
