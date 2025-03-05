@@ -158,19 +158,19 @@
               No data available for the current quarter. Please interact with the chart above.
             </div>
           </div>
+          
+          <!-- Static 2024Q3 Chart -->
+          <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold text-wego-gray">2024 Yearly Market Performance</h2>
+            </div>
+            <StaticBubbleChart ref="staticBubbleChartRef" />
+          </div>
         </template>
 
         <template v-else-if="currentView === 'bar-chart'">
           <BarChart />
         </template>
-
-        <!-- Static 2024Q3 Chart -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-wego-gray">2024 Yearly Market Performance</h2>
-          </div>
-          <StaticBubbleChart ref="staticBubbleChartRef" />
-        </div>
 
         <!-- Excel Data Table -->
         <div v-if="excelData.length" class="bg-white rounded-lg shadow-lg p-6 mb-8">
