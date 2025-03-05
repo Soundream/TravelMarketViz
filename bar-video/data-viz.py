@@ -362,7 +362,7 @@ logo_settings = {
     'IXIGO': {'zoom': 0.14, 'offset': 1200},
     'LMN_2014_2015': {'zoom': 0.08, 'offset': 1400},
     'EaseMyTrip': {'zoom': 0.08, 'offset': 1400},
-    'Ixigo': {'zoom': 0.14, 'offset': 1200}
+    'Ixigo': {'zoom': 0.08, 'offset': 1200}
 }
 
 # Load company logos

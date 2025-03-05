@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-semibold text-wego-gray">Bar Chart Analysis</h2>
+      <h2 class="text-xl font-semibold text-wego-gray">Bar Chart Revenue Analysis(in Millions)</h2>
       <div class="flex items-center gap-4">
         <Popover class="relative">
           <PopoverButton class="inline-flex items-center gap-x-1 text-sm/6 font-semibold text-gray-900 px-4 py-2 bg-gray-50 rounded-lg hover:bg-gray-100">
