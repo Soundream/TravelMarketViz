@@ -158,19 +158,19 @@
               No data available for the current quarter. Please interact with the chart above.
             </div>
           </div>
-          
-          <!-- Static 2024Q3 Chart -->
-          <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl font-semibold text-wego-gray">2024 Yearly Market Performance</h2>
-            </div>
-            <StaticBubbleChart ref="staticBubbleChartRef" />
-          </div>
         </template>
 
         <template v-else-if="currentView === 'bar-chart'">
           <BarChart />
         </template>
+
+        <!-- Static 2024Q3 Chart -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-wego-gray">2024 Yearly Market Performance</h2>
+          </div>
+          <StaticBubbleChart ref="staticBubbleChartRef" />
+        </div>
 
         <!-- Excel Data Table -->
         <div v-if="excelData.length" class="bg-white rounded-lg shadow-lg p-6 mb-8">
@@ -391,9 +391,9 @@ const getCellStyle = (value, columnIndex) => {
 
 const importFromGoogleSheet = async () => {
   // Google Sheets ID and GID
-  
-  
-  
+  const sheetId = '2PACX-1vQYwQTSYwig7AZ0fjPniLVfUUJnLz3PP4f4fBtqkBNPYqrkKtQyZDaB99kHk2eCzuCh5i8oxTPCHeQ9';
+  const gid = '1144102204';
+  const sheetUrl = `https://docs.google.com/spreadsheets/d/e/${sheetId}/pub?gid=${gid}&output=csv`;
   
   try {
     console.log('Starting Google Sheet import...');

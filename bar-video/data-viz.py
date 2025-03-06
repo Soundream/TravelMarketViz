@@ -12,6 +12,15 @@ import argparse
 from PIL import Image
 from PIL import ImageFilter
 from PIL import ImageEnhance
+import sys
+
+'''
+this scirtp is used to generate bar chart race visualization
+'''
+#git add .
+#git commit -m "update"
+#git push
+# how to setup a profe
 
 # Add argument parser
 parser = argparse.ArgumentParser(description='Generate bar chart race visualization')
@@ -19,16 +28,18 @@ parser.add_argument('--publish', action='store_true', help='Generate high qualit
 args = parser.parse_args()
 
 # Set quality parameters based on mode
+
 if args.publish:
     FRAMES_PER_YEAR = 96  # Increase frames for smoother animation
-    OUTPUT_DPI = 300      # Increase DPI for higher quality
-    FIGURE_SIZE = (25.6, 14.4)  # Larger figure size (4K aspect ratio)
+    OUTPUT_DPI = 300      # Keep DPI at 300 for optimal quality
+    FIGURE_SIZE = (25.6, 14.4)  # 4K aspect ratio
 else:
-    FRAMES_PER_YEAR = 24   # Increase preview frames for smoother testing
-    OUTPUT_DPI = 200      # Moderate DPI for preview
+    FRAMES_PER_YEAR = 24   # Preview frames
+    OUTPUT_DPI = 200      # Preview DPI
     FIGURE_SIZE = (19.2, 10.8)  # Same size
 
 def preprocess_logo(image_array, target_size=None, upscale_factor=8):
+    # 
     """
     预处理logo图像以提高质量
     
@@ -49,47 +60,50 @@ def preprocess_logo(image_array, target_size=None, upscale_factor=8):
     
     if target_size:
         w, h = target_size
-        
+        #igotrejected alotand always keeo it in myto all thosconsior who are learning be resilient
+        # abt 4-5 hrs at the end of the day, since different responsities
         if args.publish:
-            # 发布模式使用两步处理
-            # 第一步：放大到目标尺寸的4倍
-            intermediate_size = (w * 4, h * 4)
-            image = image.resize(intermediate_size, Image.Resampling.LANCZOS)
+            # 发布模式使用三步处理以获得更好的质量
+            # 第一步：放大到目标尺寸的8倍
+            large_size = (w * 8, h * 8)
+            image = image.resize(large_size, Image.Resampling.LANCZOS)
             
             # 基本图像增强
             if original_mode == 'RGBA':
+                # reddit accoutn
                 r, g, b, a = image.split()
                 rgb = Image.merge('RGB', (r, g, b))
-                # 适度的锐化和增强
-                rgb = rgb.filter(ImageFilter.UnsharpMask(radius=0.5, percent=150, threshold=3))
-                rgb = rgb.filter(ImageFilter.EDGE_ENHANCE)
+                
+                # 使用更温和的锐化参数
+                enhancer = ImageEnhance.Sharpness(rgb)
+                rgb = enhancer.enhance(1.3)  # 降低锐化强度
+                
+                # 使用更精细的UnsharpMask
+                rgb = rgb.filter(ImageFilter.UnsharpMask(radius=0.3, percent=130, threshold=2))
+                
                 r, g, b = rgb.split()
-                # 轻微增强透明通道
-                a = a.filter(ImageFilter.UnsharpMask(radius=0.3, percent=130, threshold=3))
+                # 轻微增强透明通道，避免产生伪影
+                a = a.filter(ImageFilter.GaussianBlur(radius=0.3))  # 轻微模糊透明边缘
                 image = Image.merge('RGBA', (r, g, b, a))
             else:
-                image = image.filter(ImageFilter.UnsharpMask(radius=0.5, percent=150, threshold=3))
-                image = image.filter(ImageFilter.EDGE_ENHANCE)
+                enhancer = ImageEnhance.Sharpness(image)
+                image = enhancer.enhance(1.3)
+                image = image.filter(ImageFilter.UnsharpMask(radius=0.3, percent=130, threshold=2))
             
-            # 第二步：缩放到目标尺寸
-            image = image.resize(target_size, Image.Resampling.LANCZOS)
-        else:
-            # 预览模式使用单步处理
-            # 放大到目标尺寸的2倍
+            # 第二步：缩小到目标尺寸的2倍
             intermediate_size = (w * 2, h * 2)
             image = image.resize(intermediate_size, Image.Resampling.LANCZOS)
             
-            # 轻量级增强
-            if original_mode == 'RGBA':
-                r, g, b, a = image.split()
-                rgb = Image.merge('RGB', (r, g, b))
-                rgb = rgb.filter(ImageFilter.EDGE_ENHANCE)
-                r, g, b = rgb.split()
-                image = Image.merge('RGBA', (r, g, b, a))
-            else:
-                image = image.filter(ImageFilter.EDGE_ENHANCE)
+            # 第三步：最终缩放到目标尺寸
             
-            # 缩放到最终尺寸
+            image = image.resize(target_size, Image.Resampling.LANCZOS)
+            
+            # 最后进行轻微的高斯模糊以消除可能的条纹
+            image = image.filter(ImageFilter.GaussianBlur(radius=0.3))
+        else:
+            # 预览模式保持简单处理
+            intermediate_size = (w * 2, h * 2)
+            image = image.resize(intermediate_size, Image.Resampling.LANCZOS)
             image = image.resize(target_size, Image.Resampling.LANCZOS)
     
     return np.array(image)
@@ -667,7 +681,12 @@ def create_frame(frame):
             # 设置更高质量的渲染参数
             imagebox.image.set_interpolation('lanczos')
             imagebox.image.set_resample(True)
-            imagebox.image.set_filterrad(12.0)  # 增加滤波半径
+            imagebox.image.set_filterrad(4.0)  # 使用更合适的滤波半径
+            
+            # 使用抗锯齿设置
+            plt.rcParams['agg.path.chunksize'] = 20000
+            plt.rcParams['path.simplify'] = True
+            plt.rcParams['path.simplify_threshold'] = 1.0
             
             # 创建高质量的标注框
             ab = AnnotationBbox(
@@ -775,7 +794,8 @@ def create_frame(frame):
                 'quality': 100,
                 'optimize': True,
                 'progressive': True,
-                'subsampling': 0  # 禁用色度子采样
+                'subsampling': 0,  # 禁用色度子采样
+                'compress_level': 1  # 最小压缩以保持质量
             }
         )
     else:
@@ -786,16 +806,18 @@ def create_frame(frame):
 
 def get_last_frame_number(frames_dir):
     """
-    Get the number of the last generated frame from the frames directory
+    获取frames目录中最后一帧的编号，并打印详细信息
     """
     if not os.path.exists(frames_dir):
+        print("\n未找到frames目录，将从头开始渲染")
         return -1
         
     frames = glob.glob(os.path.join(frames_dir, 'frame_*.png'))
     if not frames:
+        print("\n frames目录为空，将从头开始渲染")
         return -1
         
-    # Extract frame numbers and find the maximum
+    # 提取帧号并找到最大值
     frame_numbers = []
     for frame in frames:
         try:
@@ -804,41 +826,54 @@ def get_last_frame_number(frames_dir):
         except:
             continue
             
-    return max(frame_numbers) if frame_numbers else -1
+    if frame_numbers:
+        last_frame = max(frame_numbers)
+        year = (last_frame / FRAMES_PER_YEAR) + 1997
+        print(f"\n找到现有帧文件，最后一帧为: {last_frame} (对应年份: {year:.2f})")
+        print(f"将从下一帧继续渲染")
+        return last_frame
+    return -1
 
 # Generate all frames
-print("\nGenerating frames...")
+print("\n开始生成帧...")
 unique_years = np.unique(interp_data['Year'])
 total_frames = len(unique_years)
 
-# Get the last frame number
+# 获取最后一帧编号
 last_frame = get_last_frame_number(frames_dir)
 if last_frame >= 0:
-    print(f"\nFound existing frames, continuing from frame {last_frame}")
-    # Calculate the corresponding year index
-    year_index = last_frame // FRAMES_PER_YEAR  # Since frame numbers are year*FRAMES_PER_YEAR
+    # 计算对应的年份索引
+    year_index = (last_frame // FRAMES_PER_YEAR)
+    start_year = 1997 + (last_frame / FRAMES_PER_YEAR)
+    
     if year_index < len(unique_years):
+        # 找到大于start_year的第一个年份的索引
+        year_index = np.searchsorted(unique_years, start_year)
         unique_years = unique_years[year_index:]
-        print(f"Continuing from year {unique_years[0]:.2f}")
+        print(f"将从 {unique_years[0]:.2f} 年继续渲染")
+        total_remaining = len(unique_years)
+        print(f"剩余需要渲染的帧数: {total_remaining * FRAMES_PER_YEAR}")
     else:
-        print("All frames have been generated!")
+        print("所有帧都已生成完毕！")
         unique_years = []
 
 for i, year in enumerate(unique_years):
     frame_number = int((year - 1997) * FRAMES_PER_YEAR)
     frame_path = os.path.join(frames_dir, f'frame_{frame_number:04d}.png')
     
-    # Skip if frame already exists
+    # 跳过已存在的帧
     if os.path.exists(frame_path):
-        print(f"\rSkipping existing frame {frame_number:04d} (Year: {year:.2f})", end="", flush=True)
+        print(f"\r跳过已存在的帧 {frame_number:04d} (年份: {year:.2f})", end="", flush=True)
         continue
         
     try:
-        print(f"\rGenerating frame {frame_number:04d}/{(unique_years[-1]-1997)*FRAMES_PER_YEAR:.0f} (Year: {year:.2f})", end="", flush=True)
+        total_frames = int((unique_years[-1]-1997)*FRAMES_PER_YEAR)
+        progress = (frame_number / total_frames) * 100
+        print(f"\r正在生成第 {frame_number:04d}/{total_frames} 帧 (年份: {year:.2f}) - 进度: {progress:.1f}%", end="", flush=True)
         create_frame(year)
     except Exception as e:
-        print(f"\nError generating frame for year {year:.2f}: {e}")
+        print(f"\n生成 {year:.2f} 年的帧时出错: {e}")
         continue
 
-print("\n\nAll frames generated successfully!")
-print(f"Frames are saved in: {frames_dir}")
+print("\n\n所有帧生成完成！")
+print(f"帧文件保存在: {frames_dir}")
