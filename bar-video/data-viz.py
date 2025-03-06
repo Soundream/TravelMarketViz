@@ -20,12 +20,12 @@ args = parser.parse_args()
 
 # Set quality parameters based on mode
 if args.publish:
-    FRAMES_PER_YEAR = 48  # Double the frames for smoother animation
+    FRAMES_PER_YEAR = 96  # Increase frames for smoother animation
     OUTPUT_DPI = 300      # Increase DPI for higher quality
     FIGURE_SIZE = (25.6, 14.4)  # Larger figure size (4K aspect ratio)
 else:
-    FRAMES_PER_YEAR = 4   # Lower frame rate for faster preview
-    OUTPUT_DPI = 100      # Keep DPI constant
+    FRAMES_PER_YEAR = 24   # Increase preview frames for smoother testing
+    OUTPUT_DPI = 200      # Moderate DPI for preview
     FIGURE_SIZE = (19.2, 10.8)  # Same size
 
 def preprocess_logo(image_array, target_size=None, upscale_factor=8):
@@ -37,7 +37,6 @@ def preprocess_logo(image_array, target_size=None, upscale_factor=8):
         target_size: 目标尺寸 (width, height)
         upscale_factor: 上采样倍数
     """
-    # Convert to PIL Image
     if isinstance(image_array, np.ndarray):
         if image_array.dtype == np.float32:
             image_array = (image_array * 255).astype(np.uint8)
@@ -45,62 +44,54 @@ def preprocess_logo(image_array, target_size=None, upscale_factor=8):
     else:
         image = image_array
         
-    # 保存原始模式和尺寸
+    # 保存原始模式
     original_mode = image.mode
-    original_size = image.size
     
-    # 计算处理尺寸
     if target_size:
         w, h = target_size
-    else:
-        w, h = original_size
+        
+        if args.publish:
+            # 发布模式使用两步处理
+            # 第一步：放大到目标尺寸的4倍
+            intermediate_size = (w * 4, h * 4)
+            image = image.resize(intermediate_size, Image.Resampling.LANCZOS)
+            
+            # 基本图像增强
+            if original_mode == 'RGBA':
+                r, g, b, a = image.split()
+                rgb = Image.merge('RGB', (r, g, b))
+                # 适度的锐化和增强
+                rgb = rgb.filter(ImageFilter.UnsharpMask(radius=0.5, percent=150, threshold=3))
+                rgb = rgb.filter(ImageFilter.EDGE_ENHANCE)
+                r, g, b = rgb.split()
+                # 轻微增强透明通道
+                a = a.filter(ImageFilter.UnsharpMask(radius=0.3, percent=130, threshold=3))
+                image = Image.merge('RGBA', (r, g, b, a))
+            else:
+                image = image.filter(ImageFilter.UnsharpMask(radius=0.5, percent=150, threshold=3))
+                image = image.filter(ImageFilter.EDGE_ENHANCE)
+            
+            # 第二步：缩放到目标尺寸
+            image = image.resize(target_size, Image.Resampling.LANCZOS)
+        else:
+            # 预览模式使用单步处理
+            # 放大到目标尺寸的2倍
+            intermediate_size = (w * 2, h * 2)
+            image = image.resize(intermediate_size, Image.Resampling.LANCZOS)
+            
+            # 轻量级增强
+            if original_mode == 'RGBA':
+                r, g, b, a = image.split()
+                rgb = Image.merge('RGB', (r, g, b))
+                rgb = rgb.filter(ImageFilter.EDGE_ENHANCE)
+                r, g, b = rgb.split()
+                image = Image.merge('RGBA', (r, g, b, a))
+            else:
+                image = image.filter(ImageFilter.EDGE_ENHANCE)
+            
+            # 缩放到最终尺寸
+            image = image.resize(target_size, Image.Resampling.LANCZOS)
     
-    # 首先将图像放大到更大尺寸进行处理
-    large_size = (w * upscale_factor, h * upscale_factor)
-    image = image.resize(large_size, Image.Resampling.LANCZOS)
-    
-    if original_mode == 'RGBA':
-        # 分离通道
-        r, g, b, a = image.split()
-        
-        # 对RGB通道进行高质量处理
-        rgb = Image.merge('RGB', (r, g, b))
-        
-        # 应用多次精细的UnsharpMask
-        rgb = rgb.filter(ImageFilter.UnsharpMask(radius=0.3, percent=250, threshold=2))
-        rgb = rgb.filter(ImageFilter.UnsharpMask(radius=0.5, percent=200, threshold=3))
-        rgb = rgb.filter(ImageFilter.UnsharpMask(radius=0.7, percent=150, threshold=4))
-        
-        # 应用细节增强
-        rgb = rgb.filter(ImageFilter.EDGE_ENHANCE_MORE)
-        
-        # 分离处理后的RGB通道
-        r, g, b = rgb.split()
-        
-        # 优化alpha通道
-        a = a.filter(ImageFilter.UnsharpMask(radius=0.3, percent=250, threshold=2))
-        
-        # 重新合并所有通道
-        image = Image.merge('RGBA', (r, g, b, a))
-    else:
-        # 对RGB图像进行高质量处理
-        image = image.filter(ImageFilter.UnsharpMask(radius=0.3, percent=250, threshold=2))
-        image = image.filter(ImageFilter.UnsharpMask(radius=0.5, percent=200, threshold=3))
-        image = image.filter(ImageFilter.UnsharpMask(radius=0.7, percent=150, threshold=4))
-        image = image.filter(ImageFilter.EDGE_ENHANCE_MORE)
-    
-    # 使用高质量的Lanczos算法缩放到目标尺寸
-    if target_size:
-        # 使用三步缩放以获得更好的质量
-        intermediate_size_1 = (w * 4, h * 4)
-        intermediate_size_2 = (w * 2, h * 2)
-        image = image.resize(intermediate_size_1, Image.Resampling.LANCZOS)
-        image = image.resize(intermediate_size_2, Image.Resampling.LANCZOS)
-        image = image.resize(target_size, Image.Resampling.LANCZOS)
-    else:
-        image = image.resize(original_size, Image.Resampling.LANCZOS)
-    
-    # 转换回numpy数组，确保保持高位深度
     return np.array(image)
 
 # Set up font configurations
@@ -207,17 +198,21 @@ def interpolate_data(data, multiple=20):
     max_year = data['Year'].max()
     print(f"\nOverall year range: {min_year} to {max_year}")
     
-    # Create unified time points for all companies
+    # Create unified time points for all companies with increased density
     if min_year >= 2020:
-        unified_years = np.linspace(min_year, max_year, int((max_year - min_year) * 4 * multiple))
+        # Increase the density of points for recent years
+        unified_years = np.linspace(min_year, max_year, int((max_year - min_year) * 12 * multiple))
     else:
+        # Create more granular quarters with sub-quarter points
+        sub_quarters_per_quarter = 12  # Increase this for more smoothness
         quarters_before_2024 = np.arange(min_year, 2024.0, 0.25)
         quarters_2024_2025 = np.array([2024.0, 2024.25, 2024.5, 2024.75, 2025.0])
         quarters = np.concatenate([quarters_before_2024, quarters_2024_2025])
         
         unified_years = []
         for i in range(len(quarters)-1):
-            segment = np.linspace(quarters[i], quarters[i+1], multiple, endpoint=False)
+            # Create more points between quarters
+            segment = np.linspace(quarters[i], quarters[i+1], sub_quarters_per_quarter * multiple, endpoint=False)
             unified_years.extend(segment)
         unified_years.append(quarters[-1])
         unified_years = np.array(unified_years)
@@ -251,16 +246,26 @@ def interpolate_data(data, multiple=20):
             company_interp['Year'] = company_years
             company_interp['Company'] = company
             
-            # Use CubicSpline for all interpolations
+            # Use CubicSpline with more natural boundary conditions
             from scipy.interpolate import CubicSpline
-            cs = CubicSpline(company_data['Year'], company_data['Revenue'])
+            cs = CubicSpline(company_data['Year'], company_data['Revenue'], bc_type='natural')
             company_interp['Revenue'] = cs(company_years)
             
-            # Ensure exact values at known data points
+            # Ensure exact values at known data points and smooth transitions
             for _, row in company_data.iterrows():
                 mask = np.abs(company_years - row['Year']) < 1e-10
                 if any(mask):
-                    company_interp.loc[mask, 'Revenue'] = row['Revenue']
+                    exact_value = row['Revenue']
+                    company_interp.loc[mask, 'Revenue'] = exact_value
+                    
+                    # Smooth out transitions near exact points
+                    window = (np.abs(company_years - row['Year']) < 0.1) & (~mask)
+                    if any(window):
+                        weights = 1 - (np.abs(company_years[window] - row['Year']) / 0.1)
+                        company_interp.loc[window, 'Revenue'] = (
+                            weights * exact_value + 
+                            (1 - weights) * company_interp.loc[window, 'Revenue']
+                        )
             
             print(f"Successfully interpolated {len(company_interp)} points for {company}")
             all_interpolated.append(company_interp)
@@ -274,20 +279,9 @@ def interpolate_data(data, multiple=20):
     print("\nCombining interpolated data...")
     result = pd.concat(all_interpolated, ignore_index=True)
     print(f"Final interpolated data shape: {result.shape}")
-    print("\nCompanies in final interpolated data:")
-    print(sorted(result['Company'].unique()))
     
-    # Sort by Year to ensure consistent ordering
-    result = result.sort_values(['Year', 'Company']).reset_index(drop=True)
-    
-    # Print unique time points to verify consistency
-    print("\nVerifying time points consistency:")
-    for company in companies:
-        if company in result['Company'].unique():
-            company_years = sorted(result[result['Company'] == company]['Year'].unique())
-            print(f"{company}: {len(company_years)} time points")
-            if len(company_years) > 0:
-                print(f"First point: {company_years[0]:.3f}, Last point: {company_years[-1]:.3f}")
+    # Additional smoothing for the entire dataset
+    result = result.sort_values(['Company', 'Year']).reset_index(drop=True)
     
     return result
 
@@ -295,9 +289,7 @@ def interpolate_data(data, multiple=20):
 print("\nInterpolating data...")
 interp_data = interpolate_data(data, multiple=FRAMES_PER_YEAR)  # Pass the frames per year parameter
 
-# Save interpolated data for verification
-interp_data.to_excel('output/interpolated_data.xlsx', index=False)
-print(f"\nSaved interpolated data to output/interpolated_data.xlsx")
+print(f"\nInterpolation complete. Generated {len(interp_data)} data points.")
 
 # Define company name to ticker mapping and its reverse mapping
 company_to_ticker = {
@@ -356,8 +348,8 @@ logo_settings = {
     'WEB': {'zoom': 0.07, 'offset': 1400},
     'Webjet': {'zoom': 0.07, 'offset': 1400},
     'WBJ': {'zoom': 0.07, 'offset': 2000},
-    'Yatra': {'zoom': 0.13, 'offset': 1200},
-    'YTRA': {'zoom': 0.13, 'offset': 1200},
+    'Yatra': {'zoom': 0.07, 'offset': 1300},
+    'YTRA': {'zoom': 0.07, 'offset': 1300},
     'MMYT': {'zoom': 0.08, 'offset': 1350},
     'IXIGO': {'zoom': 0.14, 'offset': 1200},
     'LMN_2014_2015': {'zoom': 0.08, 'offset': 1400},
@@ -549,6 +541,8 @@ def create_frame(frame):
     
     available_companies = len(sorted_data)
     top_companies = sorted_data
+    # 
+    # 
     
     num_bars = 18
     bar_height = 0.9
@@ -561,15 +555,15 @@ def create_frame(frame):
     # Get current maximum revenue for dynamic x-axis scaling
     current_max_revenue = top_companies['Revenue'].max()
     
-    # Set initial fixed x-limit and threshold for dynamic scaling
-    FIXED_X_LIMIT = 400
-    DYNAMIC_THRESHOLD = 280  # Start dynamic scaling when max revenue reaches 80% of fixed limit
+    # Get historical maximum revenue up to current frame
+    historical_data = interp_data[interp_data['Year'] <= frame]
+    historical_max_revenue = historical_data['Revenue'].max()
     
-    # Determine if we should use dynamic scaling
-    if current_max_revenue <= DYNAMIC_THRESHOLD:
-        current_x_limit = FIXED_X_LIMIT
-    else:
-        current_x_limit = current_max_revenue * 1.4  # Add 40% margin
+    # Use max of current first row and historical maximum
+    max_revenue = max(current_max_revenue, historical_max_revenue)
+    
+    # Set x-limit based on max revenue with some padding
+    current_x_limit = max_revenue * 1.2  # Add 20% margin
     
     # Create bars only for available companies
     bars = ax.barh(y_positions, top_companies['Revenue'],
@@ -596,14 +590,13 @@ def create_frame(frame):
         # Convert company ticker to original name for logo lookup
         company_name = ticker_to_company.get(company, company)
         
-        # Add revenue label
-        revenue_offset = current_x_limit * 0.02
+        # Add revenue label at the end of the bar
         if width > 0:  # Only show label if revenue is positive
             if 0 < width < 1:  # Show 2 decimal places for numbers between 0 and 1
                 revenue_text = f'{width:.2f}'
             else:  # Show integer for numbers >= 1
                 revenue_text = f'{int(width):,}'
-            ax.text(width + revenue_offset, y_pos, revenue_text,
+            ax.text(width + (current_x_limit * 0.01), y_pos, revenue_text,
                     va='center', ha='left', fontsize=14,
                     fontproperties=open_sans_font)
         
@@ -704,7 +697,7 @@ def create_frame(frame):
     ax.set_yticklabels(companies_with_revenue, fontsize=14, fontproperties=open_sans_font)
     
     # Add grid lines with fixed interval for small values
-    if current_x_limit == FIXED_X_LIMIT:
+    if current_x_limit == 400:
         interval = 50  # Fixed interval when using fixed scale
     else:
         # Dynamic interval based on current limit
@@ -747,7 +740,10 @@ def create_frame(frame):
     ax_timeline.xaxis.set_minor_locator(MultipleLocator(0.5))
     ax_timeline.set_xticks(np.arange(1997, 2025, 1))
     ax_timeline.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{int(x)}'))
-
+    # TODO: 对于这个data-viz和create-video，发现创建完视频过后，如果对视频降速，会出现比较chunky的情况，需要对这个情况进行修改，能够通过增多插值数量的方法和增大fps的方法或者一些你觉得可行的方法，一方面稍微让视频的时长增大一些，另一方面，需要让它在降速过后仍然保持流畅而非chunky的样子
+    # FIXME: 需要调整一些时间上的对应问题，
+    # 对于matplotlib为什么渲染时间这么慢，是由于创建frame的时候，在每一帧处理的时候并不是一个连续的情况，而是一帧一帧生成的，是不是会导致这样的情况，
+    
     # Moving marker on timeline
     marker_position = frame
     ax_timeline.plot([marker_position], [0.05], marker='v',
