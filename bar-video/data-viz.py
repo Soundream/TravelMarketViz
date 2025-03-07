@@ -15,6 +15,7 @@ from PIL import ImageEnhance
 import sys
 import multiprocessing as mp
 from functools import partial
+from tqdm import tqdm
 import matplotlib
 matplotlib.use('Agg')  # Use Agg backend for better performance
 
@@ -30,17 +31,23 @@ this scirtp is used to generate bar chart race visualization
 parser = argparse.ArgumentParser(description='Generate bar chart race visualization')
 parser.add_argument('--publish', action='store_true', help='Generate high quality version for publishing')
 parser.add_argument('--quarters-only', action='store_true', help='Only generate frames for each quarter (only works with --publish)')
+parser.add_argument('--frames-per-year', type=int, help='Number of frames to generate per year in publish mode (default: 192)')
 args = parser.parse_args()
 
 # Set quality parameters based on mode
 if args.publish:
-    FRAMES_PER_YEAR = 4 if args.quarters_only else 192  # 4 frames per year for quarters only mode
+    if args.quarters_only:
+        FRAMES_PER_YEAR = 4  # Fixed 4 frames for quarters only mode
+    else:
+        FRAMES_PER_YEAR = args.frames_per_year if args.frames_per_year else 192  # Use custom frames per year or default to 192
     OUTPUT_DPI = 108      # Further reduced from 144 to 108
     FIGURE_SIZE = (19.2, 10.8)  # 1080p size
     LOGO_DPI = 216       # Reduced from 300 to 216 for logos
 else:
     if args.quarters_only:
         print("\n警告: --quarters-only 参数只在 --publish 模式下生效")
+    if args.frames_per_year:
+        print("\n警告: --frames-per-year 参数只在 --publish 模式下生效")
     FRAMES_PER_YEAR = 48   # Preview frames
     OUTPUT_DPI = 72      # Keep preview DPI at 72
     FIGURE_SIZE = (16, 9)  # Smaller size for preview
@@ -141,12 +148,18 @@ def process_quarterly_data(data):
     print(data.head())
     
     # Convert the first column to proper format for processing
-    # Extract year and quarter from the string (e.g., "2024'Q1" -> 2024.0)
-    data['Year'] = data.iloc[:, 0].apply(lambda x: float(x.split("'")[0]))
-    data['Quarter'] = data.iloc[:, 0].apply(lambda x: int(x.split("Q")[1]))
+    def convert_to_decimal_year(year_quarter):
+        year = float(year_quarter.split("'")[0])
+        quarter = int(year_quarter.split("Q")[1])
+        # Convert quarter to decimal (Q1->0.0, Q2->0.25, Q3->0.5, Q4->0.75)
+        quarter_decimal = (quarter - 1) * 0.25
+        return year + quarter_decimal
+    
+    # Extract year and quarter information
+    data['Year'] = data.iloc[:, 0].apply(convert_to_decimal_year)
     
     # Convert all revenue columns to numeric, with better error handling
-    for col in data.columns[1:-2]:  # Skip the original year column and the new Year/Quarter columns
+    for col in data.columns[1:-1]:  # Skip the original year column and the new Year column
         # First replace empty strings and 'nan' with NaN
         data[col] = data[col].replace('', np.nan).replace('nan', np.nan)
         # Then convert to numeric
@@ -157,13 +170,12 @@ def process_quarterly_data(data):
     print("\nDebug: ABNB column after conversion:")
     print(data['ABNB'].head())
     
-    # For years before 2024, only keep Q1 data
-    pre_2024 = data[data['Year'] < 2024].copy()
-    pre_2024 = pre_2024[pre_2024['Quarter'] == 1]
+    # For years before 2024, keep all quarters
+    pre_2024 = data[data['Year'] < 2024.0].copy()
     
-    # For 2024, keep both Q1 and Q3
-    year_2024 = data[data['Year'] == 2024].copy()
-    year_2024 = year_2024[year_2024['Quarter'].isin([1, 3])]
+    # For 2024, keep Q1 and Q3
+    year_2024 = data[(data['Year'] >= 2024.0) & (data['Year'] < 2025.0)].copy()
+    year_2024 = year_2024[year_2024['Year'].isin([2024.0, 2024.5])]  # Keep only Q1 (0.0) and Q3 (0.5)
     
     print("\nDebug: 2024 data:")
     print(year_2024)
@@ -172,10 +184,10 @@ def process_quarterly_data(data):
     processed_data = pd.concat([pre_2024, year_2024])
     
     # For 2024 Q3, set the year to 2025 for interpolation
-    processed_data.loc[(processed_data['Year'] == 2024) & (processed_data['Quarter'] == 3), 'Year'] = 2025.0
+    processed_data.loc[processed_data['Year'] == 2024.5, 'Year'] = 2025.0
     
-    # Drop the original year column and Quarter column
-    processed_data = processed_data.drop(columns=[processed_data.columns[0], 'Quarter'])
+    # Drop the original year column
+    processed_data = processed_data.drop(columns=[processed_data.columns[0]])
     
     print("\nDebug: Final processed data:")
     print(processed_data.head())
@@ -191,22 +203,25 @@ print(f"After processing: {len(data)} rows")
 
 # Interpolate the data for smoother animation
 def interpolate_data(data, multiple=20):
+    """优化的数据插值函数"""
     all_interpolated = []
     companies = [col for col in data.columns if col != 'Year']
     print(f"\nFound {len(companies)} companies to process:")
     print(companies)
     
-    # First, determine the overall time range and create a unified time grid
+    # First, determine the overall time range
     min_year = data['Year'].min()
     max_year = data['Year'].max()
     print(f"\nOverall year range: {min_year} to {max_year}")
     
-    # Create unified time points for all companies with increased density
-    if min_year >= 2020:
-        # Increase the density of points for recent years
-        unified_years = np.linspace(min_year, max_year, int((max_year - min_year) * 12 * multiple))
+    # Create unified time points for all companies
+    if args.publish and args.quarters_only:
+        # For quarters-only mode, use exact quarter points
+        quarters_before_2024 = np.arange(min_year, 2024.0, 0.25)
+        quarters_2024_2025 = np.array([2024.0, 2024.25, 2024.5, 2024.75, 2025.0])
+        unified_years = np.concatenate([quarters_before_2024, quarters_2024_2025])
     else:
-        # Create more granular quarters with sub-quarter points
+        # For normal mode, create more granular points between quarters
         sub_quarters_per_quarter = 12  # Increase this for more smoothness
         quarters_before_2024 = np.arange(min_year, 2024.0, 0.25)
         quarters_2024_2025 = np.array([2024.0, 2024.25, 2024.5, 2024.75, 2025.0])
@@ -229,19 +244,36 @@ def interpolate_data(data, multiple=20):
             company_data.columns = ['Year', 'Revenue']
             company_data = company_data.dropna()
             
-            print(f"Valid data points for {company}: {len(company_data)}")
-            print(f"Data points for {company}:")
-            print(company_data)
-            
             if len(company_data) < 2:
                 print(f"Skipping {company} - insufficient data points")
                 continue
             
+            # 对数据按年份排序
+            company_data = company_data.sort_values('Year')
+            
+            # 为相同的值添加微小的变化以确保动画效果
+            processed_data = company_data.copy()
+            prev_value = None
+            same_value_count = 0
+            
+            for idx, row in processed_data.iterrows():
+                current_value = row['Revenue']
+                if prev_value is not None and abs(current_value - prev_value) < 0.01:
+                    same_value_count += 1
+                    # 添加微小的波动 (±0.1%)
+                    variation = current_value * 0.001 * np.sin(same_value_count * np.pi / 2)
+                    processed_data.loc[idx, 'Revenue'] = current_value + variation
+                else:
+                    same_value_count = 0
+                prev_value = current_value
+            
+            # 使用CubicSpline进行插值，设置边界条件使得插值更平滑
+            from scipy.interpolate import CubicSpline
+            cs = CubicSpline(processed_data['Year'], processed_data['Revenue'], bc_type='natural')
+            
+            # 创建插值结果DataFrame
             company_min_year = company_data['Year'].min()
             company_max_year = company_data['Year'].max()
-            print(f"Year range for {company}: {company_min_year} to {company_max_year}")
-            
-            # Create interpolation for this company's date range
             mask = (unified_years >= company_min_year) & (unified_years <= company_max_year)
             company_years = unified_years[mask]
             
@@ -249,29 +281,34 @@ def interpolate_data(data, multiple=20):
             company_interp['Year'] = company_years
             company_interp['Company'] = company
             
-            # Use CubicSpline with more natural boundary conditions
-            from scipy.interpolate import CubicSpline
-            cs = CubicSpline(company_data['Year'], company_data['Revenue'], bc_type='natural')
-            company_interp['Revenue'] = cs(company_years)
+            # 生成插值结果
+            interpolated_values = cs(company_years)
             
-            # Ensure exact values at known data points and smooth transitions
-            for _, row in company_data.iterrows():
-                mask = np.abs(company_years - row['Year']) < 1e-10
-                if any(mask):
-                    exact_value = row['Revenue']
-                    company_interp.loc[mask, 'Revenue'] = exact_value
-                    
-                    # Smooth out transitions near exact points
-                    window = (np.abs(company_years - row['Year']) < 0.1) & (~mask)
-                    if any(window):
-                        weights = 1 - (np.abs(company_years[window] - row['Year']) / 0.1)
-                        company_interp.loc[window, 'Revenue'] = (
-                            weights * exact_value + 
-                            (1 - weights) * company_interp.loc[window, 'Revenue']
-                        )
+            # 对插值结果添加小幅波动，确保没有完全静止的部分
+            for i in range(len(interpolated_values)):
+                year = company_years[i]
+                base_value = interpolated_values[i]
+                # 使用正弦函数生成周期性的小波动
+                wave = np.sin(year * 2 * np.pi) * base_value * 0.001
+                interpolated_values[i] = base_value + wave
+            
+            company_interp['Revenue'] = interpolated_values
+            
+            # 在季度点上使用接近原始数据的值，但保留一些微小变化
+            if args.publish and args.quarters_only:
+                for _, row in company_data.iterrows():
+                    year = row['Year']
+                    revenue = row['Revenue']
+                    # 在季度点上使用接近原始数据的值
+                    mask = np.abs(company_years - year) < 1e-10
+                    if any(mask):
+                        # 添加很小的随机变化 (±0.05%)
+                        variation = revenue * 0.0005 * np.sin(year * np.pi)
+                        company_interp.loc[mask, 'Revenue'] = revenue + variation
             
             print(f"Successfully interpolated {len(company_interp)} points for {company}")
             all_interpolated.append(company_interp)
+            
         except Exception as e:
             print(f"Error interpolating {company}: {e}")
             continue
@@ -790,7 +827,10 @@ def process_frame_range(frame_range):
     """按顺序处理一组帧"""
     existing_frames = get_existing_frames(frames_dir)
     
-    for year in sorted(frame_range):  # 确保按年份顺序处理
+    # 创建进度条
+    pbar = tqdm(sorted(frame_range), desc="渲染进度", unit="帧")
+    
+    for year in pbar:  # 使用tqdm进度条
         # 在quarters-only模式下，只处理季度时间点
         if args.publish and args.quarters_only:
             # 检查是否为季度时间点（年份的小数部分应该是0.0, 0.25, 0.5, 0.75）
@@ -806,12 +846,11 @@ def process_frame_range(frame_range):
             continue
             
         try:
-            print(f"\r正在渲染 {year:.2f} 年的帧...", end="")
+            pbar.set_postfix({"年份": f"{year:.2f}"})  # 显示当前处理的年份
             create_frame(year)
         except Exception as e:
             print(f"\n生成 {year:.2f} 年的帧时出错: {e}")
             continue
-    print()  # 换行
 
 def main():
     """主函数，使用多进程处理帧生成"""
@@ -856,14 +895,19 @@ def main():
     print(f"\n将使用 {len(chunks)} 个进程并行渲染")
     print(f"总计需要渲染 {len(years_to_process)} 个帧")
     
-    # 创建进程池并行处理
-    with mp.Pool(pool_size) as pool:
-        pool.map(process_frame_range, chunks)
+    # 创建总进度条
+    with tqdm(total=len(years_to_process), desc="总体进度", unit="帧") as pbar:
+        # 创建进程池并行处理
+        with mp.Pool(pool_size) as pool:
+            # 使用imap来获取实时进度
+            for _ in pool.imap_unordered(process_frame_range, chunks):
+                pbar.update(chunk_size)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate bar chart race visualization')
     parser.add_argument('--publish', action='store_true', help='Generate high quality version for publishing')
     parser.add_argument('--quarters-only', action='store_true', help='Only generate frames for each quarter (only works with --publish)')
+    parser.add_argument('--frames-per-year', type=int, help='Number of frames to generate per year in publish mode (default: 192)')
     args = parser.parse_args()
     
     # ... rest of your initialization code ...
