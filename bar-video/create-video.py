@@ -4,7 +4,7 @@ import glob
 from tqdm import tqdm
 import argparse
 
-def create_video_from_frames(frames_dir='output/frames', output_path='output/evolution_of_online_travel.mp4', fps=8, publish=False):
+def create_video_from_frames(frames_dir='output/frames', output_path='output/evolution_of_online_travel.mp4', fps=16, publish=False):
     """
     Create a video from PNG frames
     
@@ -47,11 +47,11 @@ def create_video_from_frames(frames_dir='output/frames', output_path='output/evo
     
     # Set video quality parameters based on mode
     if publish:
-        fps = 48  # Double FPS for smoother playback
-        bitrate = 8000000  # 8 Mbps for higher quality
+        fps = 96  # Increased from 48 to 96 for even smoother playback
+        bitrate = 12000000  # Increased to 12 Mbps for higher quality
     else:
-        fps = 8   # Lower FPS for preview
-        bitrate = 2000000  # 2 Mbps for preview
+        fps = 16   # Increased from 8 to 16 for smoother preview
+        bitrate = 4000000  # Increased to 4 Mbps for better preview quality
     
     # Try different codecs in order of preference
     codecs = [

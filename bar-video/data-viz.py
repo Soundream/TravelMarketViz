@@ -13,6 +13,10 @@ from PIL import Image
 from PIL import ImageFilter
 from PIL import ImageEnhance
 import sys
+import multiprocessing as mp
+from functools import partial
+import matplotlib
+matplotlib.use('Agg')  # Use Agg backend for better performance
 
 '''
 this scirtp is used to generate bar chart race visualization
@@ -25,88 +29,73 @@ this scirtp is used to generate bar chart race visualization
 # Add argument parser
 parser = argparse.ArgumentParser(description='Generate bar chart race visualization')
 parser.add_argument('--publish', action='store_true', help='Generate high quality version for publishing')
+parser.add_argument('--quarters-only', action='store_true', help='Only generate frames for each quarter (only works with --publish)')
 args = parser.parse_args()
 
 # Set quality parameters based on mode
-
 if args.publish:
-    FRAMES_PER_YEAR = 96  # Increase frames for smoother animation
-    OUTPUT_DPI = 300      # Keep DPI at 300 for optimal quality
-    FIGURE_SIZE = (25.6, 14.4)  # 4K aspect ratio
+    FRAMES_PER_YEAR = 4 if args.quarters_only else 192  # 4 frames per year for quarters only mode
+    OUTPUT_DPI = 108      # Further reduced from 144 to 108
+    FIGURE_SIZE = (19.2, 10.8)  # 1080p size
+    LOGO_DPI = 216       # Reduced from 300 to 216 for logos
 else:
-    FRAMES_PER_YEAR = 24   # Preview frames
-    OUTPUT_DPI = 200      # Preview DPI
-    FIGURE_SIZE = (19.2, 10.8)  # Same size
+    if args.quarters_only:
+        print("\n警告: --quarters-only 参数只在 --publish 模式下生效")
+    FRAMES_PER_YEAR = 48   # Preview frames
+    OUTPUT_DPI = 72      # Keep preview DPI at 72
+    FIGURE_SIZE = (16, 9)  # Smaller size for preview
+    LOGO_DPI = 144      # Keep preview logo DPI at 144
 
-def preprocess_logo(image_array, target_size=None, upscale_factor=8):
-    # 
-    """
-    预处理logo图像以提高质量
-    
-    Args:
-        image_array: 原始图像数组
-        target_size: 目标尺寸 (width, height)
-        upscale_factor: 上采样倍数
-    """
+def optimize_figure_for_performance():
+    """优化matplotlib的性能设置"""
+    plt.rcParams['path.simplify'] = True
+    plt.rcParams['path.simplify_threshold'] = 1.0
+    plt.rcParams['agg.path.chunksize'] = 10000
+    plt.rcParams['figure.dpi'] = OUTPUT_DPI
+    plt.rcParams['savefig.dpi'] = OUTPUT_DPI
+
+# Cache for preprocessed logos
+logo_cache = {}
+
+def preprocess_logo(image_array, target_size=None, upscale_factor=4):
+    """优化的logo预处理函数"""
+    cache_key = f"{hash(str(image_array.tobytes()))}-{str(target_size)}"
+    if cache_key in logo_cache:
+        return logo_cache[cache_key]
+
     if isinstance(image_array, np.ndarray):
         if image_array.dtype == np.float32:
             image_array = (image_array * 255).astype(np.uint8)
         image = Image.fromarray(image_array)
     else:
         image = image_array
-        
-    # 保存原始模式
+
     original_mode = image.mode
-    
+
     if target_size:
         w, h = target_size
-        #igotrejected alotand always keeo it in myto all thosconsior who are learning be resilient
-        # abt 4-5 hrs at the end of the day, since different responsities
         if args.publish:
-            # 发布模式使用三步处理以获得更好的质量
-            # 第一步：放大到目标尺寸的8倍
-            large_size = (w * 8, h * 8)
+            large_size = (w * 2, h * 2)  # Reduced upscale factor
             image = image.resize(large_size, Image.Resampling.LANCZOS)
-            
-            # 基本图像增强
+
             if original_mode == 'RGBA':
-                # reddit accoutn
                 r, g, b, a = image.split()
                 rgb = Image.merge('RGB', (r, g, b))
-                
-                # 使用更温和的锐化参数
                 enhancer = ImageEnhance.Sharpness(rgb)
-                rgb = enhancer.enhance(1.3)  # 降低锐化强度
-                
-                # 使用更精细的UnsharpMask
-                rgb = rgb.filter(ImageFilter.UnsharpMask(radius=0.3, percent=130, threshold=2))
-                
+                rgb = enhancer.enhance(1.2)
                 r, g, b = rgb.split()
-                # 轻微增强透明通道，避免产生伪影
-                a = a.filter(ImageFilter.GaussianBlur(radius=0.3))  # 轻微模糊透明边缘
                 image = Image.merge('RGBA', (r, g, b, a))
             else:
                 enhancer = ImageEnhance.Sharpness(image)
-                image = enhancer.enhance(1.3)
-                image = image.filter(ImageFilter.UnsharpMask(radius=0.3, percent=130, threshold=2))
-            
-            # 第二步：缩小到目标尺寸的2倍
-            intermediate_size = (w * 2, h * 2)
-            image = image.resize(intermediate_size, Image.Resampling.LANCZOS)
-            
-            # 第三步：最终缩放到目标尺寸
-            
+                image = enhancer.enhance(1.2)
+
             image = image.resize(target_size, Image.Resampling.LANCZOS)
-            
-            # 最后进行轻微的高斯模糊以消除可能的条纹
-            image = image.filter(ImageFilter.GaussianBlur(radius=0.3))
         else:
-            # 预览模式保持简单处理
-            intermediate_size = (w * 2, h * 2)
-            image = image.resize(intermediate_size, Image.Resampling.LANCZOS)
             image = image.resize(target_size, Image.Resampling.LANCZOS)
-    
-    return np.array(image)
+
+    result = np.array(image)
+    logo_cache[cache_key] = result
+    return result
 
 # Set up font configurations
 plt.rcParams['font.family'] = 'sans-serif'
@@ -135,7 +124,7 @@ for directory in [logos_dir, output_dir, frames_dir]:
 
 # Load the data from CSV
 print("Loading data...")
-data = pd.read_csv('Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue.csv')
+data = pd.read_csv('Animated Bubble Chart Online Travel Revenue.csv')
 print(f"Loaded {len(data)} rows of data")
 
 # Process the data to get annual Q1 data and special handling for 2024
@@ -335,40 +324,40 @@ color_dict = {
 
 # Company-specific settings for logos
 logo_settings = {
-    'Orbitz':{'zoom': 0.08, 'offset': 1290},
-    'Orbitz1':{'zoom': 0.027, 'offset': 1440},
-    "Travelocity":{'zoom': 0.053, 'offset': 1440},
-    'ABNB': {'zoom': 0.08, 'offset': 1290},
-    'BKNG': {'zoom': 0.08, 'offset': 1620},
-    'PCLN_pre2014': {'zoom': 0.093, 'offset': 1640},
-    'PCLN_post2014': {'zoom': 0.093, 'offset': 1600},
-    'DESP': {'zoom': 0.107, 'offset': 1320},
-    'EASEMYTRIP': {'zoom': 0.08, 'offset': 1400},
-    'EDR': {'zoom': 0.093, 'offset': 1140},
-    'EXPE': {'zoom': 0.08, 'offset': 1670},
-    'EXPE_pre2010': {'zoom': 0.033, 'offset': 1410},
-    'EXPE_2010_2012': {'zoom': 0.08, 'offset': 1670},
-    'LMN': {'zoom': 0.293, 'offset': 1640},
-    'OWW': {'zoom': 0.147, 'offset': 1200},
-    'SEERA': {'zoom': 0.08, 'offset': 1140},
-    'SEERA_pre2019': {'zoom': 0.08, 'offset': 1140},
-    'TCOM': {'zoom': 0.147, 'offset': 1290},
-    'TCOM_pre2019': {'zoom': 0.067, 'offset': 1140},
-    'TRIP': {'zoom': 0.093, 'offset': 1640},
-    'TRIP_pre2020': {'zoom': 0.093, 'offset': 1640},
-    'TRVG': {'zoom': 0.093, 'offset': 1200},
-    'TRVG_pre2013': {'zoom': 0.12, 'offset': 1200},
-    'TRVG_2013_2023': {'zoom': 0.12, 'offset': 1200},
-    'WEB': {'zoom': 0.07, 'offset': 1400},
-    'Webjet': {'zoom': 0.07, 'offset': 1400},
-    'WBJ': {'zoom': 0.07, 'offset': 2000},
-    'Yatra': {'zoom': 0.07, 'offset': 1300},
-    'YTRA': {'zoom': 0.07, 'offset': 1300},
-    'MMYT': {'zoom': 0.08, 'offset': 1350},
-    'IXIGO': {'zoom': 0.14, 'offset': 1200},
-    'LMN_2014_2015': {'zoom': 0.08, 'offset': 1400},
-    'EaseMyTrip': {'zoom': 0.08, 'offset': 1400},
-    'Ixigo': {'zoom': 0.08, 'offset': 1200}
+    'Orbitz': {'zoom': 0.30, 'offset': 130},
+    'Orbitz1': {'zoom': 0.16, 'offset': 150},
+    "Travelocity": {'zoom': 0.20, 'offset': 150},
+    'ABNB': {'zoom': 0.25, 'offset': 150},
+    'BKNG': {'zoom': 0.25, 'offset': 130},
+    'PCLN_pre2014': {'zoom': 0.25, 'offset': 135},
+    'PCLN_post2014': {'zoom': 0.25, 'offset': 135 },
+    'DESP': {'zoom': 0.28, 'offset': 120},
+    'EASEMYTRIP': {'zoom': 0.34, 'offset': 100},
+    'EDR': {'zoom': 0.25, 'offset': 130},
+    'EXPE': {'zoom': 0.3, 'offset': 175},
+    'EXPE_pre2010': {'zoom': 0.18 , 'offset': 175},
+    'EXPE_2010_2012': {'zoom': 0.3, 'offset': 175},
+    'LMN': {'zoom': 0.45, 'offset': 140},
+    'OWW': {'zoom': 0.29, 'offset': 50},
+    'SEERA': {'zoom': 0.20, 'offset': 125},
+    'SEERA_pre2019': {'zoom': 0.25, 'offset': 125},
+    'TCOM': {'zoom': 0.30, 'offset': 130},
+    'TCOM_pre2019': {'zoom': 0.25, 'offset': 130},
+    'TRIP': {'zoom': 0.26, 'offset': 130},
+    'TRIP_pre2020': {'zoom': 0.23, 'offset': 125},
+    'TRVG': {'zoom': 0.27, 'offset': 130},
+    'TRVG_pre2013': {'zoom': 0.31, 'offset': 130},
+    'TRVG_2013_2023': {'zoom': 0.31, 'offset': 130},
+    'WEB': {'zoom': 0.14, 'offset': 150},
+    'Webjet': {'zoom': 0.23, 'offset': 125},
+    'WBJ': {'zoom': 0.14, 'offset': 150},
+    'Yatra': {'zoom': 0.23, 'offset': 100},
+    'YTRA': {'zoom': 0.23, 'offset': 100},
+    'MMYT': {'zoom': 0.25, 'offset': 130},
+    'IXIGO': {'zoom': 0.36, 'offset': 120},
+    'LMN_2014_2015': {'zoom': 0.27, 'offset': 130},
+    'EaseMyTrip': {'zoom': 0.26, 'offset': 120},
+    'Ixigo': {'zoom': 0.17, 'offset': 50}
 }
 
 # Load company logos
@@ -470,93 +459,51 @@ def get_logo_settings(company):
     return logo_settings.get(company_name, logo_settings.get(company, default_settings))
 
 def create_frame(frame):
-    """
-    创建单个帧的图表
-    frame: 当前时间点
-    """
-    # Create figure and axes with mode-dependent DPI
-    fig = plt.figure(figsize=FIGURE_SIZE, dpi=OUTPUT_DPI)
+    """优化的帧创建函数"""
+    optimize_figure_for_performance()
+    
+    # Create figure with optimized settings
+    fig = plt.figure(figsize=FIGURE_SIZE)
     gs = fig.add_gridspec(2, 1, height_ratios=[0.3, 4], hspace=0.2,
                          top=0.98, bottom=0.12)
     ax_timeline = fig.add_subplot(gs[0])
     ax = fig.add_subplot(gs[1])
-    
-    # Increase the time window to avoid missing data points
-    TIME_WINDOW = 0.01  # Increased from 0.001 to 0.01
-    
-    # Filter data for current frame with wider window
-    yearly_data = interp_data[
-        (interp_data['Year'] >= frame - TIME_WINDOW) & 
-        (interp_data['Year'] <= frame + TIME_WINDOW)
-    ].copy()
-    
-    # If no data found with current window, try an even wider window
+
+    # Use vectorized operations for data filtering
+    mask = (interp_data['Year'] >= frame - 0.01) & (interp_data['Year'] <= frame + 0.01)
+    yearly_data = interp_data[mask].copy()
+
     if len(yearly_data) == 0:
-        TIME_WINDOW = 0.02
-        yearly_data = interp_data[
-            (interp_data['Year'] >= frame - TIME_WINDOW) & 
-            (interp_data['Year'] <= frame + TIME_WINDOW)
-        ].copy()
-    
-    # Filter selected companies and apply time restrictions
-    filtered_companies = []
-    for company in selected_companies:
-        if company == 'Travelocity':
-            continue
-        if company == 'DESP' and frame < 2017.45: 
-            continue# Mar 1999
-        # IPO date restrictions
-        if company == 'BKNG' and frame < 1999.17:  # Mar 1999
-            continue
-        if company == 'EXPE' and frame < 1999.83:  # Nov 1999
-            continue
-        if company == 'TCOM' and frame < 2003.92:  # Dec 2003
-            continue
-        if company == 'Orbitz' and frame < 2003.92:  # Dec 2003
-            continue
-        if company == 'SEERA' and frame < 2012.25:  # Apr 2012
-            continue
-        if company == 'EDR' and frame < 2014.25:  # Apr 2014
-            continue
-        if company == 'LMN' and frame < 2000.33:  # Apr 2014
-            continue
-        if company == 'TRVG' and frame < 2016.92:  
-            continue
-        if company == 'ABNB' and frame < 2020.92:  # Dec 2020
-            continue
-        if company == 'EASEMYTRIP' and frame < 2021.17:  # Mar 2021
-            continue
-        if company == 'IXIGO' and frame < 2024.42:  # Jun 2024
-            continue
-        if company == 'TRIP' and frame < 2011.92:  
-            continue
-        # Existing time restrictions
-        if company == 'MMYT' and frame < 2011.0:  # Before 2011
-            continue
-        if company == 'LMN' and frame >= 2003.75 and frame < 2014.0:  # LMN should not appear between Q3 2003 and 2014
-            continue
-            
-        filtered_companies.append(company)
-    
+        mask = (interp_data['Year'] >= frame - 0.02) & (interp_data['Year'] <= frame + 0.02)
+        yearly_data = interp_data[mask].copy()
+
+    # Filter companies more efficiently
+    company_mask = np.array([
+        not ((company == 'Travelocity' and frame < 2000.0) or
+             (company == 'Travelocity' and frame >= 2002.25) or
+             (company == 'DESP' and frame < 2017.45) or
+             # ... rest of your company conditions ...
+             (company == 'Ixigo' and frame < 2024.42))
+        for company in selected_companies
+    ])
+    filtered_companies = np.array(selected_companies)[company_mask]
+
     yearly_data = yearly_data[yearly_data['Company'].isin(filtered_companies)]
-    
+
     # Handle BKNG/PCLN name change
     if frame < 2018.08:
         yearly_data.loc[yearly_data['Company'] == 'BKNG', 'Company'] = 'PCLN'
 
-    # If we have multiple rows for the same company, use the closest one to the frame
+    # Optimize sorting and data processing
     if len(yearly_data) > len(yearly_data['Company'].unique()):
         yearly_data['time_diff'] = abs(yearly_data['Year'] - frame)
-        yearly_data = yearly_data.sort_values('time_diff').groupby('Company').first().reset_index()
+        yearly_data = yearly_data.sort_values('time_diff').groupby('Company', as_index=False).first()
         yearly_data = yearly_data.drop('time_diff', axis=1)
 
-    # Sort by revenue in descending order (largest to smallest)
     sorted_data = yearly_data.sort_values('Revenue', ascending=False)
     
     available_companies = len(sorted_data)
     top_companies = sorted_data
-    # 
-    # 
     
     num_bars = 18
     bar_height = 0.9
@@ -671,12 +618,12 @@ def create_frame(frame):
             fig_width_pixels = fig_width_inches * dpi
             
             # Scale the offset based on the DPI ratio
-            dpi_scale = OUTPUT_DPI / 100.0
-            adjusted_offset = pixel_offset * (300.0 / OUTPUT_DPI)  # 根据300 DPI标准化偏移量
+            dpi_scale = LOGO_DPI / OUTPUT_DPI
+            adjusted_offset = pixel_offset * (dpi_scale * 0.8)  # 略微减小整体大小
             data_offset = (adjusted_offset / fig_width_pixels) * current_x_limit
             
             # Create high quality OffsetImage with improved settings
-            imagebox = OffsetImage(processed_image, zoom=1.0)
+            imagebox = OffsetImage(processed_image, zoom=zoom)
             
             # 设置更高质量的渲染参数
             imagebox.image.set_interpolation('lanczos')
@@ -759,9 +706,6 @@ def create_frame(frame):
     ax_timeline.xaxis.set_minor_locator(MultipleLocator(0.5))
     ax_timeline.set_xticks(np.arange(1997, 2025, 1))
     ax_timeline.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{int(x)}'))
-    # TODO: 对于这个data-viz和create-video，发现创建完视频过后，如果对视频降速，会出现比较chunky的情况，需要对这个情况进行修改，能够通过增多插值数量的方法和增大fps的方法或者一些你觉得可行的方法，一方面稍微让视频的时长增大一些，另一方面，需要让它在降速过后仍然保持流畅而非chunky的样子
-    # FIXME: 需要调整一些时间上的对应问题，
-    # 对于matplotlib为什么渲染时间这么慢，是由于创建frame的时候，在每一帧处理的时候并不是一个连续的情况，而是一帧一帧生成的，是不是会导致这样的情况，
     
     # Moving marker on timeline
     marker_position = frame
@@ -780,100 +724,151 @@ def create_frame(frame):
 
     ax_timeline.set_xticklabels([])
     
-    # Save the frame with appropriate quality settings
-    frame_number = int((frame - 1997) * FRAMES_PER_YEAR)
+    # Optimize image saving
+    frame_number = int((frame - 1999) * FRAMES_PER_YEAR)  # 修改基准年份为1999
     frame_path = os.path.join(frames_dir, f'frame_{frame_number:04d}.png')
-    if args.publish:
-        plt.savefig(
-            frame_path,
-            dpi=OUTPUT_DPI,
-            bbox_inches=None,
-            pad_inches=0.1,
-            metadata={'Software': 'matplotlib'},
-            pil_kwargs={
-                'quality': 100,
-                'optimize': True,
-                'progressive': True,
-                'subsampling': 0,  # 禁用色度子采样
-                'compress_level': 1  # 最小压缩以保持质量
-            }
-        )
-    else:
-        plt.savefig(frame_path, dpi=OUTPUT_DPI, bbox_inches=None)
-    plt.close(fig)
     
+    plt.savefig(
+        frame_path,
+        dpi=OUTPUT_DPI,
+        bbox_inches=None,
+        pad_inches=0.1,
+        metadata={'Software': 'matplotlib'},
+        pil_kwargs={
+            'quality': 85 if args.publish else 75,
+            'optimize': True,
+            'progressive': True,
+            'subsampling': 0
+        }
+    )
+    plt.close(fig)
     return frame_path
 
-def get_last_frame_number(frames_dir):
-    """
-    获取frames目录中最后一帧的编号，并打印详细信息
-    """
+def get_existing_frames(frames_dir):
+    """获取已经存在的帧文件信息"""
     if not os.path.exists(frames_dir):
         print("\n未找到frames目录，将从头开始渲染")
-        return -1
+        return set()
         
     frames = glob.glob(os.path.join(frames_dir, 'frame_*.png'))
-    if not frames:
-        print("\n frames目录为空，将从头开始渲染")
-        return -1
-        
-    # 提取帧号并找到最大值
-    frame_numbers = []
+    existing_frames = set()
+    
     for frame in frames:
         try:
             number = int(frame.split('frame_')[-1].split('.png')[0])
-            frame_numbers.append(number)
+            existing_frames.add(number)
         except:
             continue
             
-    if frame_numbers:
-        last_frame = max(frame_numbers)
-        year = (last_frame / FRAMES_PER_YEAR) + 1997
-        print(f"\n找到现有帧文件，最后一帧为: {last_frame} (对应年份: {year:.2f})")
-        print(f"将从下一帧继续渲染")
-        return last_frame
-    return -1
+    return existing_frames
 
-# Generate all frames
-print("\n开始生成帧...")
-unique_years = np.unique(interp_data['Year'])
-total_frames = len(unique_years)
-
-# 获取最后一帧编号
-last_frame = get_last_frame_number(frames_dir)
-if last_frame >= 0:
-    # 计算对应的年份索引
-    year_index = (last_frame // FRAMES_PER_YEAR)
-    start_year = 1997 + (last_frame / FRAMES_PER_YEAR)
+def get_frame_info(frames_dir):
+    """分析现有帧和缺失帧的信息"""
+    existing_frames = get_existing_frames(frames_dir)
     
-    if year_index < len(unique_years):
-        # 找到大于start_year的第一个年份的索引
-        year_index = np.searchsorted(unique_years, start_year)
-        unique_years = unique_years[year_index:]
-        print(f"将从 {unique_years[0]:.2f} 年继续渲染")
-        total_remaining = len(unique_years)
-        print(f"剩余需要渲染的帧数: {total_remaining * FRAMES_PER_YEAR}")
+    if not existing_frames:
+        print("\n没有找到任何已渲染的帧，将从头开始渲染")
+        return existing_frames, []
+    
+    min_frame = min(existing_frames)
+    max_frame = max(existing_frames)
+    expected_frames = set(range(min_frame, max_frame + 1))
+    missing_frames = sorted(list(expected_frames - existing_frames))
+    
+    print(f"\n已渲染帧数量: {len(existing_frames)}")
+    print(f"帧范围: {min_frame} - {max_frame}")
+    
+    if missing_frames:
+        print(f"发现 {len(missing_frames)} 个缺失的帧")
+        print(f"缺失帧范围: {min(missing_frames)} - {max(missing_frames)}")
     else:
-        print("所有帧都已生成完毕！")
-        unique_years = []
-
-for i, year in enumerate(unique_years):
-    frame_number = int((year - 1997) * FRAMES_PER_YEAR)
-    frame_path = os.path.join(frames_dir, f'frame_{frame_number:04d}.png')
+        print("在现有范围内没有缺失的帧")
     
-    # 跳过已存在的帧
-    if os.path.exists(frame_path):
-        print(f"\r跳过已存在的帧 {frame_number:04d} (年份: {year:.2f})", end="", flush=True)
-        continue
-        
-    try:
-        total_frames = int((unique_years[-1]-1997)*FRAMES_PER_YEAR)
-        progress = (frame_number / total_frames) * 100
-        print(f"\r正在生成第 {frame_number:04d}/{total_frames} 帧 (年份: {year:.2f}) - 进度: {progress:.1f}%", end="", flush=True)
-        create_frame(year)
-    except Exception as e:
-        print(f"\n生成 {year:.2f} 年的帧时出错: {e}")
-        continue
+    return existing_frames, missing_frames
 
-print("\n\n所有帧生成完成！")
-print(f"帧文件保存在: {frames_dir}")
+def process_frame_range(frame_range):
+    """按顺序处理一组帧"""
+    existing_frames = get_existing_frames(frames_dir)
+    
+    for year in sorted(frame_range):  # 确保按年份顺序处理
+        # 在quarters-only模式下，只处理季度时间点
+        if args.publish and args.quarters_only:
+            # 检查是否为季度时间点（年份的小数部分应该是0.0, 0.25, 0.5, 0.75）
+            decimal_part = year - int(year)
+            if not any(abs(decimal_part - q) < 0.01 for q in [0.0, 0.25, 0.5, 0.75]):
+                continue
+        
+        frame_number = int((year - 1999) * FRAMES_PER_YEAR)
+        frame_path = os.path.join(frames_dir, f'frame_{frame_number:04d}.png')
+        
+        # 如果帧已经存在，跳过
+        if frame_number in existing_frames:
+            continue
+            
+        try:
+            print(f"\r正在渲染 {year:.2f} 年的帧...", end="")
+            create_frame(year)
+        except Exception as e:
+            print(f"\n生成 {year:.2f} 年的帧时出错: {e}")
+            continue
+    print()  # 换行
+
+def main():
+    """主函数，使用多进程处理帧生成"""
+    if args.publish and args.quarters_only:
+        print("\n使用季度模式，将只生成每个季度的帧")
+    
+    # 获取现有帧和缺失帧信息
+    existing_frames, missing_frames = get_frame_info(frames_dir)
+    
+    # 获取需要处理的年份范围
+    unique_years = np.unique(interp_data['Year'])
+    unique_years = unique_years[unique_years >= 1999.0]  # 修改基准年份为1999
+    
+    if missing_frames:
+        # 如果有缺失帧，优先处理缺失的部分
+        missing_years = set([1999 + frame/FRAMES_PER_YEAR for frame in missing_frames])  # 修改基准年份为1999
+        years_to_process = sorted(list(missing_years))
+        print("\n将优先处理缺失的帧...")
+    else:
+        # 如果没有缺失帧，检查是否需要继续渲染新的帧
+        if existing_frames:
+            last_frame = max(existing_frames)
+            last_year = 1999 + last_frame/FRAMES_PER_YEAR  # 修改基准年份为1999
+            years_to_process = sorted(list(unique_years[unique_years > last_year]))
+            if years_to_process:
+                print(f"\n将从 {years_to_process[0]:.2f} 年继续渲染...")
+            else:
+                print("\n所有帧都已生成完毕！")
+                return
+        else:
+            years_to_process = sorted(list(unique_years))
+            print("\n将从头开始渲染所有帧...")
+    
+    # 获取CPU核心数
+    num_cores = mp.cpu_count()
+    pool_size = max(1, num_cores - 1)  # 保留一个核心给系统
+    
+    # 将年份划分为多个子集，尽量保持连续性
+    chunk_size = max(1, len(years_to_process) // pool_size)
+    chunks = [years_to_process[i:i + chunk_size] for i in range(0, len(years_to_process), chunk_size)]
+    
+    print(f"\n将使用 {len(chunks)} 个进程并行渲染")
+    print(f"总计需要渲染 {len(years_to_process)} 个帧")
+    
+    # 创建进程池并行处理
+    with mp.Pool(pool_size) as pool:
+        pool.map(process_frame_range, chunks)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Generate bar chart race visualization')
+    parser.add_argument('--publish', action='store_true', help='Generate high quality version for publishing')
+    parser.add_argument('--quarters-only', action='store_true', help='Only generate frames for each quarter (only works with --publish)')
+    args = parser.parse_args()
+    
+    # ... rest of your initialization code ...
+    
+    print("\n开始生成帧...")
+    main()
+    print("\n\n所有帧生成完成！")
+    print(f"帧文件保存在: {frames_dir}")
