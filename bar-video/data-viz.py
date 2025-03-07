@@ -391,10 +391,11 @@ logo_settings = {
     'Yatra': {'zoom': 0.23, 'offset': 100},
     'YTRA': {'zoom': 0.23, 'offset': 100},
     'MMYT': {'zoom': 0.25, 'offset': 130},
-    'IXIGO': {'zoom': 0.36, 'offset': 120},
+    'IXIGO': {'zoom': 0.26, 'offset': 120},
+    'Ixigo': {'zoom': 0.26, 'offset': 120 },
     'LMN_2014_2015': {'zoom': 0.27, 'offset': 130},
     'EaseMyTrip': {'zoom': 0.26, 'offset': 120},
-    'Ixigo': {'zoom': 0.17, 'offset': 50}
+    
 }
 
 # Load company logos
@@ -514,16 +515,53 @@ def create_frame(frame):
         mask = (interp_data['Year'] >= frame - 0.02) & (interp_data['Year'] <= frame + 0.02)
         yearly_data = interp_data[mask].copy()
 
-    # Filter companies more efficiently
-    company_mask = np.array([
-        not ((company == 'Travelocity' and frame < 2000.0) or
-             (company == 'Travelocity' and frame >= 2002.25) or
-             (company == 'DESP' and frame < 2017.45) or
-             # ... rest of your company conditions ...
-             (company == 'Ixigo' and frame < 2024.42))
-        for company in selected_companies
-    ])
-    filtered_companies = np.array(selected_companies)[company_mask]
+    # Filter companies based on time restrictions
+    filtered_companies = []
+    for company in selected_companies:
+        if company == 'Travelocity' and frame > 2002.25:
+            continue
+        if company == 'Travelocity' and frame < 2000.25:
+            continue
+        if company == 'DESP' and frame < 2017.45:
+            continue
+        # IPO date restrictions
+        if company == 'BKNG' and frame < 1999.17:  # Mar 1999
+            continue
+        if company == 'EXPE' and frame < 1999.83:  # Nov 1999
+            continue
+        if company == 'TCOM' and frame < 2003.92:  # Dec 2003
+            continue
+        if company == 'Orbitz' and frame < 2003.92:  # Dec 2003
+            continue
+        if company == 'Orbitz' and frame > 2004.92 and frame < 2007.55:
+            continue
+        if company == 'SEERA' and frame < 2012.25:  # Apr 2012
+            continue
+        if company == 'EDR' and frame < 2014.25:  # Apr 2014
+            continue
+        if company == 'LMN' and frame < 2000.33:  # Apr 2014
+            continue
+        if company == 'TRVG' and frame < 2016.92:
+            continue
+        if company == 'ABNB' and frame < 2020.92:  # Dec 2020
+            continue
+        if company == 'EASEMYTRIP' and frame < 2021.17:  # Mar 2021
+            continue
+        if company == 'EaseMyTrip' and frame < 2021.17: 
+            continue# Mar 2021
+        if company == 'IXIGO' and frame < 2024.42:  # Jun 2024
+            continue
+        if company == 'Ixigo' and frame < 2024.42:
+            continue
+        if company == 'TRIP' and frame < 2011.92:
+            continue
+        # Existing time restrictions
+        if company == 'MMYT' and frame < 2011.0:  # Before 2011
+            continue
+        if company == 'LMN' and frame >= 2003.75 and frame < 2014.0:  # LMN should not appear between Q3 2003 and 2014
+            continue
+            
+        filtered_companies.append(company)
 
     yearly_data = yearly_data[yearly_data['Company'].isin(filtered_companies)]
 
