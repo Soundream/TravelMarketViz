@@ -12,7 +12,7 @@ function createRaceChart(data, year) {
         y: [],
         orientation: 'h',
         marker: {
-            color: [],
+            color: '#DE2910',  // 设置所有bar为中国红
         },
         text: [],
         textposition: 'outside',
@@ -44,7 +44,6 @@ function createRaceChart(data, year) {
     // 填充图表数据
     barData.y = sortedData.map(d => d.market);
     barData.x = sortedData.map(d => d.value);
-    barData.marker.color = sortedData.map(d => d.color);
     barData.text = sortedData.map(d => d.value);
 
     // 创建布局
@@ -87,7 +86,10 @@ function createRaceChart(data, year) {
                 size: 13
             },
             fixedrange: true,
-            ticklabelposition: 'outside left'
+            ticklabelposition: 'outside left',
+            ticktext: sortedData.map(d => ''),  // 清空y轴标签文本
+            tickmode: 'array',
+            tickvals: Array.from({length: sortedData.length}, (_, i) => i)
         },
         margin: {
             l: 120,
@@ -108,7 +110,21 @@ function createRaceChart(data, year) {
             type: 'buttons',
             showactive: false,
             visible: false
-        }]
+        }],
+        images: sortedData.map((d, i) => {
+            const flagName = d.market === 'AU/NZ' ? 'Australia' : d.market;
+            return {
+                source: `flags/${flagName} Icon.png`,
+                x: -0.15,  // 调整图标位置
+                y: i,
+                xref: 'paper',
+                yref: 'y',
+                sizex: 0.1,
+                sizey: 0.8,
+                xanchor: 'right',
+                yanchor: 'middle'
+            };
+        })
     };
 
     // 创建配置

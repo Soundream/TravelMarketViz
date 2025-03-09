@@ -1,19 +1,19 @@
 // Company logos mapping
 const companyLogos = {
-    "Singapore": "logos/Singapore Flag Icon.png",
-    "China": "logos/China Flag Icon.png",
-    "India": "logos/India Icon.png",
-    "Indonesia": "logos/Indonesia Flag.png",
-    "Malaysia": "logos/Malaysia Icon.png",
-    "Thailand": "logos/Thailand Icon.png",
-    "Vietnam": "logos/China Flag Icon.png",
-    "Philippines": "logos/Singapore Flag Icon.png",
-    "Japan": "logos/Japan Icon.png",
-    "South Korea": "logos/Korea Icon.png",
-    "Hong Kong": "logos/Hong Kong Icon.png",
-    "Taiwan": "logos/Taiwan Icon.png",
-    "Macau": "logos/Macau Icon.png",
-    "Australia & New Zealand": "logos/Australia Icon.png"
+    "Singapore": "flags/Singapore Icon.png",
+    "China": "flags/China Icon.png",
+    "India": "flags/India Icon.png",
+    "Indonesia": "flags/Indonesia Icon.png",
+    "Malaysia": "flags/Malaysia Icon.png",
+    "Thailand": "flags/Thailand Icon.png",
+    "Vietnam": "flags/China Icon.png",
+    "Philippines": "flags/Singapore Icon.png",
+    "Japan": "flags/Japan Icon.png",
+    "South Korea": "flags/Korea Icon.png",
+    "Hong Kong": "flags/Hong Kong Icon.png",
+    "Taiwan": "flags/Taiwan Icon.png",
+    "Macau": "flags/Macau Icon.png",
+    "Australia & New Zealand": "flags/Australia Icon.png"
 };
 
 // Color dictionary for companies
@@ -99,20 +99,20 @@ const appConfig = {
 
     // Company logos for bubbles
     companyLogos: {
-        "Singapore": "logos/Singapore Flag Icon.png",
-        "China": "logos/China Flag Icon.png",
-        "India": "logos/India Icon.png",
-        "Indonesia": "logos/Indonesia Flag.png",
-        "Malaysia": "logos/Malaysia Icon.png",
-        "Thailand": "logos/Thailand Icon.png",
-        "Vietnam": "logos/China Flag Icon.png",
-        "Philippines": "logos/Singapore Flag Icon.png",
-        "Japan": "logos/Japan Icon.png",
-        "South Korea": "logos/Korea Icon.png",
-        "Hong Kong": "logos/Hong Kong Icon.png",
-        "Taiwan": "logos/Taiwan Icon.png",
-        "Macau": "logos/Macau Icon.png",
-        "Australia & New Zealand": "logos/Australia Icon.png"
+        "Singapore": "flags/Singapore Icon.png",
+        "China": "flags/China Icon.png",
+        "India": "flags/India Icon.png",
+        "Indonesia": "flags/Indonesia Icon.png",
+        "Malaysia": "flags/Malaysia Icon.png",
+        "Thailand": "flags/Thailand Icon.png",
+        "Vietnam": "flags/China Icon.png",
+        "Philippines": "flags/Singapore Icon.png",
+        "Japan": "flags/Japan Icon.png",
+        "South Korea": "flags/Korea Icon.png",
+        "Hong Kong": "flags/Hong Kong Icon.png",
+        "Taiwan": "flags/Taiwan Icon.png",
+        "Macau": "flags/Macau Icon.png",
+        "Australia & New Zealand": "flags/Australia Icon.png"
     },
 
     // Color dictionary for companies
