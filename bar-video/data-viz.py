@@ -348,12 +348,12 @@ selected_companies = [
 
 # Color dictionary for companies
 color_dict = {
-    'ABNB': '#ff5895', 'BKNG': '#003480', 'PCLN': '#003480',
-    'DESP': '#755bd8', 'EASEMYTRIP': '#00a0e2', 'EDR': '#2577e3',
-    'EXPE': '#fbcc33', 'LMN': '#fc03b1', 'OWW': '#8edbfa',
-    'SEERA': '#750808', 'TCOM': '#2577e3', 'TRIP': '#00af87',
-    'TRVG': '#c71585', 'WBJ': '#e74c3c', 'YTRA': '#e74c3c',
-    'MMYT': '#e74c3c', 'IXIGO': '#e74c3c',"Travelocity":'#1d3e5c','Orbitz': '#8edbfa','Webjet': '#e74c3c',
+    'ABNB': '#778899', 'BKNG': '#778899', 'PCLN': '#778899',
+    'DESP': '#778899', 'EASEMYTRIP': '#00a0e2', 'EDR': '#778899',
+    'EXPE': '#778899', 'LMN': '#778899', 'OWW': '#778899',
+    'SEERA': '#778899', 'TCOM': '#2577e3', 'TRIP': '#778899',
+    'TRVG': '#778899', 'WBJ': '#e74c3c', 'YTRA': '#e74c3c',
+    'MMYT': '#e74c3c', 'IXIGO': '#e74c3c',"Travelocity":'#778899','Orbitz': '#778899','Webjet': '#e74c3c',
     'Yatra': '#e74c3c',
     'Ixigo': '#e74c3c',
     'EaseMyTrip': '#00a0e2',

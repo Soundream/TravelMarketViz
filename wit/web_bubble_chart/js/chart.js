@@ -1,13 +1,10 @@
 // Global variables
 let isPlaying = true;
-let playInterval;
 let currentYearIndex = 0;
 let years;
 let processedData;
 let timeline;
 let selectedCompanies = appConfig.defaultSelectedCompanies;
-let backgroundTrace;
-let currentTraces;
 let layout;
 let config;
 
@@ -487,171 +484,50 @@ function exportChart() {
 // Initialize the visualization
 async function init() {
     try {
-        processedData = await fetchData();
+        // 加载数据
+        data = await d3.csv('data/travel_market_summary.csv');
         
-        if (!processedData || processedData.length === 0) {
-            throw new Error('No data loaded');
-        }
-        
-        years = [...new Set(processedData.map(d => d.Year))].sort();
-        currentYearIndex = years.indexOf(appConfig.chart.defaultYear);
-        
-        // Create timeline
+        // 数据预处理
+        data.forEach(d => {
+            d.Year = +d.Year;
+            d.GrossBookings = +d.GrossBookings;
+            d.OnlineBookings = +d.OnlineBookings;
+            d.OnlinePenetration = +d.OnlinePenetration;
+        });
+
+        // 获取所有年份并排序
+        years = [...new Set(data.map(d => d.Year))].sort();
+        currentYearIndex = 0;
+
+        // 创建初始图表
+        createBubbleChart(data, years[currentYearIndex]);
+        createRaceChart(data, years[currentYearIndex]);
+
+        // 创建时间轴
         createTimeline();
 
-        // Create initial data
-        const initialYear = years[currentYearIndex];
-        const yearData = processedData.filter(d => d.Year === initialYear && selectedCompanies.includes(d.Market));
-        
-        // Create initial traces
-        const trace = {
-            x: yearData.map(d => d.OnlinePenetration),
-            y: yearData.map(d => {
-                const rawValue = d.OnlineBookings / 1e9;
-                const safeValue = Math.max(rawValue, 0.1);
-                return Math.log10(safeValue);
-            }),
-            mode: 'none',
-            showlegend: false,
-            hoverinfo: 'none',
-            visible: true,
-            customdata: yearData.map(d => [
-                d.GrossBookings / 1e9,
-                d.OnlineBookings / 1e9
-            ]),
-            hovertemplate: '<b>%{text}</b><br>' +
-                          'Online Penetration: %{x:.1%}<br>' +
-                          'Online Bookings: $%{customdata[1]:.1f}B<br>' +
-                          'Gross Bookings: %{customdata[0]:$,.1f}B<br>' +
-                          '<extra></extra>'
-        };
-        
-        // 存储所有帧的数据
-        let frames = [];
-        
-        // Create initial chart and wait for it to be fully rendered
-        await new Promise((resolve) => {
-            const chartDiv = document.getElementById('bubble-chart');
-            Plotly.newPlot('bubble-chart', [trace], {
-                ...layout,
-                datarevision: Date.now()
-            }, {
-                ...config,
-                doubleClick: false,
-                displayModeBar: false,
-                staticPlot: false
-            }).then(() => {
-                // Create race chart
-                createRaceChart(processedData, initialYear);
-                // Wait a bit longer for everything to be fully rendered
-                setTimeout(resolve, 2000);
-            });
-        });
-        
-        // 开始动画并收集帧
-        isPlaying = true;
-        let lastTime = 0;
-        const animationDuration = 30000; // 30秒完成一个循环
-        const frameInterval = 50; 
-        const minFrameTime = 1000 / 240; 
-        let lastFrameTime = 0;
-        let cycleStartTime = Date.now();
-        let lastCaptureTime = 0;
-        
-        function animate(currentTime) {
-            if (!isPlaying) {
-                return;
-            }
+        // 开始循环播放
+        playAnimation();
 
-            // 控制帧率
-            if (currentTime - lastFrameTime < minFrameTime) {
-                requestAnimationFrame(animate);
-                return;
-            }
-            lastFrameTime = currentTime;
-
-            if (!lastTime) lastTime = currentTime;
-            const elapsed = currentTime - lastTime;
-            
-            // 计算当前进度 (0 到 1)
-            const totalProgress = (elapsed % animationDuration) / animationDuration;
-            const indexFloat = totalProgress * (years.length - 1);
-            const currentIndex = Math.floor(indexFloat);
-            const nextIndex = (currentIndex + 1) % years.length;
-            const progress = indexFloat - currentIndex;
-
-            // 更新时间轴标记
-            if (timeline && timeline.triangle) {
-                const currentX = timeline.scale(years[currentIndex]);
-                const nextX = timeline.scale(years[nextIndex]);
-                const interpolatedX = currentX + (nextX - currentX) * progress;
-                timeline.triangle.attr('transform', `translate(${interpolatedX}, -10) rotate(180)`);
-            }
-
-            // 获取当前和下一年的数据
-            const currentYearData = processedData.filter(d => d.Year === years[currentIndex]);
-            const nextYearData = processedData.filter(d => d.Year === years[nextIndex]);
-
-            // 创建插值数据
-            const interpolatedData = currentYearData.map(d => {
-                const nextData = nextYearData.find(nd => nd.Market === d.Market) || d;
-                return {
-                    Market: d.Market,
-                    Year: years[currentIndex],
-                    OnlinePenetration: d.OnlinePenetration + (nextData.OnlinePenetration - d.OnlinePenetration) * progress,
-                    OnlineBookings: d.OnlineBookings + (nextData.OnlineBookings - d.OnlineBookings) * progress,
-                    GrossBookings: d.GrossBookings + (nextData.GrossBookings - d.GrossBookings) * progress
-                };
-            });
-
-            // 更新图表
-            createBubbleChart(interpolatedData, years[currentIndex]);
-            
-            // 捕获帧
-            const now = Date.now();
-            if (now - lastCaptureTime >= frameInterval) {
-                exportChart().then((frame) => {
-                    frames.push(frame);
-                });
-                lastCaptureTime = now;
-            }
-            
-            // Check if we've completed one full cycle
-            if (Date.now() - cycleStartTime >= animationDuration) {
-                isPlaying = false;
-                // 导出所有帧
-                const zip = new JSZip();
-                frames.forEach((frame, index) => {
-                    zip.file(`frame_${index}_chart.png`, frame.chartImage.split(',')[1], {base64: true});
-                    // 每一帧都保存时间轴，因为它是动态的
-                    zip.file(`frame_${index}_timeline.png`, frame.timelineImage.split(',')[1], {base64: true});
-                });
-                zip.generateAsync({type:"blob"}).then(function(content) {
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(content);
-                    link.download = "animation_frames.zip";
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                });
-                return;
-            }
-            
-            requestAnimationFrame(animate);
-        }
-
-        requestAnimationFrame(animate);
-        
     } catch (error) {
-        console.error('Error initializing visualization:', error);
-        document.getElementById('bubble-chart').innerHTML = `
-            <div style="color: red; padding: 20px;">
-                Error loading visualization: ${error.message}<br>
-                Please check the browser console for more details.
-            </div>
-        `;
+        console.error('Error loading the data:', error);
     }
 }
 
-// Start the visualization when the page loads
+function playAnimation() {
+    if (!data || years.length === 0) return;
+
+    // 更新图表
+    createBubbleChart(data, years[currentYearIndex]);
+    updateRaceChart(data, years[currentYearIndex]);
+    updateTimeline(years[currentYearIndex]);
+    
+    // 更新年份索引
+    currentYearIndex = (currentYearIndex + 1) % years.length;
+
+    // 设置下一帧动画
+    setTimeout(playAnimation, 1000);
+}
+
+// 启动可视化
 document.addEventListener('DOMContentLoaded', init); 

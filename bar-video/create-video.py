@@ -7,7 +7,7 @@ import argparse
 def create_video_from_frames(frames_dir='output/frames', output_path='output/evolution_of_online_travel.mp4', fps=16, publish=False):
     """
     Create a video from PNG frames
-    
+    #
     Args:
         frames_dir (str): Directory containing the PNG frames
         output_path (str): Path where the output video will be saved
@@ -24,6 +24,7 @@ def create_video_from_frames(frames_dir='output/frames', output_path='output/evo
         return
     
     # Print frame number range for debugging
+    # print frame
     frame_numbers = [int(f.split('frame_')[-1].split('.png')[0]) for f in frames]
     print(f"\nFrame number range: {min(frame_numbers)} to {max(frame_numbers)}")
     print(f"Total frames found: {len(frames)}")
