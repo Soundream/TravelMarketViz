@@ -83,14 +83,6 @@ def create_mena_map_for_year(world, year_data, mena_mapping, color_scale, min_va
     # Create a color mapping for each country
     country_colors = {}
     
-    # Custom y-offset for Qatar
-    y_offsets = {
-        'Qatar': 2,  # 向上移动
-        'Egypt': 0,
-        'Saudi Arabia': 0,
-        'U.A.E.': 0
-    }
-    
     # 获取该年份所有值用于颜色映射（只包括主要市场，不包括Rest of Middle East）
     year_values = []
     main_markets = ['Egypt', 'Qatar', 'Saudi Arabia', 'U.A.E.']
@@ -109,22 +101,14 @@ def create_mena_map_for_year(world, year_data, mena_mapping, color_scale, min_va
         year_max = max_val
     
     # Process main markets and store centroids for bubbles
-    centroids = {}
-    penetration_values = {}
     for market, countries in mena_mapping.items():
-        if market in main_markets:  
+        if market in main_markets:  # 只处理主要市场
             market_data = year_data[year_data['Market'] == market]
             if not market_data.empty:
                 value = market_data['Gross Bookings(US$)'].iloc[0]
-                penetration = market_data['Online Penetration %'].iloc[0]
-                penetration_values[market] = penetration
                 color = get_color_for_value(value, year_min, year_max, color_scale)
                 for country in countries:
                     country_colors[country] = color
-                    # Calculate centroid for the country
-                    country_geom = world[world['NAME'] == country].geometry.iloc[0]
-                    centroid = country_geom.centroid
-                    centroids[market] = (centroid.x, centroid.y + y_offsets.get(market, 0))
     
     # Set Rest of Middle East countries to grey
     rest_countries = mena_mapping['Rest of Middle East']
@@ -141,47 +125,6 @@ def create_mena_map_for_year(world, year_data, mena_mapping, color_scale, min_va
                 edgecolor='#ffffff',
                 linewidth=0.5
             )
-    
-    # Calculate bubble sizes based on penetration rates
-    min_penetration = min(penetration_values.values())
-    max_penetration = max(penetration_values.values())
-    min_size = 0.6
-    max_size = 1.2
-    
-    # Add bubbles for online penetration
-    for market in main_markets:
-        market_data = year_data[year_data['Market'] == market]
-        if not market_data.empty and market in centroids:
-            penetration = market_data['Online Penetration %'].iloc[0]
-            x, y = centroids[market]
-            
-            # Calculate bubble size based on penetration rate
-            size = min_size + (penetration - min_penetration) * (max_size - min_size) / (max_penetration - min_penetration)
-            
-            # Draw yellow circle with black edge
-            circle = plt.Circle((x, y), size, color='#FFE5B4', alpha=0.9, edgecolor='black')
-            ax.add_patch(circle)
-            ''''''
-            #Wego is a leading travel platform in the MENA region, which stands for Middle East and North Africa. It’s been the #1 meta-search and OTA app in the region for the past three months. Here are the three main services we provide to our customer: Basically, Wego helps users find the best travel deals by comparing flights, hotels, and vacation. B2B solution for corporate clients and travel agencies, and ShopCash, a cashback platform where users can earn rewards for their online purchases. 
-            # The company has a strong foothold in MENA, which is a rapidly growing market with huge travel demand, and its unique positioning gives it a competitive edge., and also 
-            # wego is a leading travelcom around the world , we have 
-            # also in our todays    
-            # "At Wego, I work as a Business Analyst, mainly focusing on data analysis, visualization, and reporting. My work revolves around two main areas—regular reporting tasks and project-based work. and project based work work mainly include two periodic report and some project-based works.
-            #as a c As a CS student, stepping into this role, and I’ve been actively exploring ways to apply my technical skills in a business and data-driven environment. This led me to focus on more technical projects, where I could leverage my expertise in data visualization and automation. while in another        
-            # For reporting, I work on monthly and quarterly reports, analyzing Wego’s market share, key travel brands, and ShopCash performance. These reports are used in leadership meetings to make strategic decisions.
-            ''''''
-            # Add penetration rate to the bubble, plt.txt
-            # i know better how to use data to i am excited to continue to building on these skills in the future
-            # throughout my experience in wego and the exterprise project at nus, i 
-            
-            # that wraps up my presentation, to summurizae i had a fantastic learning experience at wego working on data visualization
-            # That wrii had a exper inter at wego workig on both data viproject 
-            # things liek a/b testing and web analys relly help us to ind what if the page looks great but does not covert, then it si still not effective, lastly, i gained experience in continuous iterationg
-            plt.text(x, y, f'{penetration}%', 
-                    horizontalalignment='center',
-                    verticalalignment='center',
-                    fontsize=10,
-                    fontweight='bold')
     
     # Set map extent to focus on MENA region
     ax.set_xlim([-20, 65])
@@ -219,8 +162,6 @@ def main():
     print("\nSearching for Bahrain in map data:")
     bahrain_matches = [name for name in world['NAME'].values if 'bahrain' in name.lower()]
     print(f"Found matches for Bahrain: {bahrain_matches}")
-    # print a bs in i realized that it is never abt gret datra lesson
-    # wego is leading global travel platforms, 
     # Create a mapping for MENA countries with corrected names
     mena_mapping = {
         'Egypt': ['Egypt'],
