@@ -20,10 +20,6 @@ def create_mena_map():
         world = gpd.read_file(shapefile_path)
         print("Successfully loaded world map data")
         
-        # Print available columns for debugging
-        print("\nAvailable columns in the data:")
-        print(world.columns.tolist())
-        
     except Exception as e:
         print(f"Error reading map data: {e}")
         return
@@ -43,29 +39,15 @@ def create_mena_map():
     
     for column in country_columns:
         if column in world.columns:
-            print(f"\nTrying column: {column}")
-            print(f"Available countries in {column}:")
-            print(sorted(world[column].unique()))
             temp_mena = world[world[column].isin(mena_countries)]
             if not temp_mena.empty:
                 mena = temp_mena
                 used_column = column
-                print(f"Found matches using column: {column}")
                 break
     
     if mena is None or mena.empty:
         print("\nError: Could not find MENA countries in the data")
         return
-    
-    # Print found countries for debugging
-    found_countries = sorted(mena[used_column].unique())
-    print("\nFound MENA countries:")
-    print(found_countries)
-    
-    missing_countries = set(mena_countries) - set(found_countries)
-    if missing_countries:
-        print("\nMissing countries:")
-        print(sorted(missing_countries))
     
     # Create the figure and axis with a specific size
     fig, ax = plt.subplots(1, 1, figsize=(15, 10))
@@ -80,15 +62,6 @@ def create_mena_map():
     
     # Plot MENA countries
     mena.plot(ax=ax, color=mena_color, edgecolor=border_color, linewidth=0.5)
-    
-    # Create legend
-    mena_patch = mpatches.Patch(color=mena_color, label='MENA Region')
-    world_patch = mpatches.Patch(color=world_color, label='Other Countries')
-    ax.legend(handles=[mena_patch, world_patch], loc='lower left', 
-             bbox_to_anchor=(0.1, 0.1), frameon=True)
-    
-    # Customize the map
-    ax.set_title('MENA Region', fontsize=16, pad=20)
     
     # Set map extent to focus on MENA region
     ax.set_xlim([-20, 65])
