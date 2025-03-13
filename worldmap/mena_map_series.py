@@ -176,6 +176,7 @@ def create_mena_map_for_year(world, year_data, mena_mapping, color_scale, min_va
             
             # that wraps up my presentation, to summurizae i had a fantastic learning experience at wego working on data visualization
             # That wrii had a exper inter at wego workig on both data viproject 
+            # things liek a/b testing and web analys relly help us to ind what if the page looks great but does not covert, then it si still not effective, lastly, i gained experience in continuous iterationg
             plt.text(x, y, f'{penetration}%', 
                     horizontalalignment='center',
                     verticalalignment='center',
@@ -209,14 +210,17 @@ def create_mena_map_for_year(world, year_data, mena_mapping, color_scale, min_va
             print(f"- {market}: Gross Bookings: ${value:,.2f}, Online Penetration: {penetration}%")
 
 def main():
-    # Load world map data
+    # Load world map datalastly, i gaine experience in continuours
+    # first treinforced some importance lesson to me, things like ab testging and web anlytics helps us refine i lean ab thingsli ke ab test and we rethigaine xpoerience in continuous development, second i realized a 
+    # # second, i realized that a good ui ux design is not just but this project reinforce my skills, second, i just realized th
+    #lastly, i gained experience in continuous in iteration based on real-time user behavior data, making sure we were constantly improving based on insights rather than assumption.add()
     world = gpd.read_file("./data/ne_110m_admin_0_countries.shp")
     
-    # Print all country names containing "bahrain" (case insensitive)
     print("\nSearching for Bahrain in map data:")
     bahrain_matches = [name for name in world['NAME'].values if 'bahrain' in name.lower()]
     print(f"Found matches for Bahrain: {bahrain_matches}")
-    
+    # print a bs in i realized that it is never abt gret datra lesson
+    # wego is leading global travel platforms, 
     # Create a mapping for MENA countries with corrected names
     mena_mapping = {
         'Egypt': ['Egypt'],
@@ -249,6 +253,7 @@ def main():
     for year in sorted(df['Year'].unique()):
         year_data = df[df['Year'] == year]
         create_mena_map_for_year(world, year_data, mena_mapping, color_scale, min_val, max_val, year)
+        print(year,': this year has been created')
 
 if __name__ == "__main__":
     main() 
