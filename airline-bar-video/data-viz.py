@@ -360,10 +360,10 @@ def create_frame(frame):
                 # Calculate logo position (right of the value label)
                 value = quarter_data[i]
                 value_width = len(format_revenue(value, None)) * 10  # Approximate width of value text
-                x = value + (max(quarter_data) * 0.02) + (value_width / 100)  # Place logo after value label
+                x = value + (max(quarter_data) * 0.07) + (value_width / 100)  # Increase offset for right movement
                 
                 # Create OffsetImage and AnnotationBbox
-                imagebox = OffsetImage(img, zoom=0.5)  # Adjust zoom to match calculated size
+                imagebox = OffsetImage(img, zoom=0.8)  # Increase zoom to enlarge logos
                 imagebox.image.axes = ax
                 
                 # Add the logo
@@ -419,32 +419,27 @@ def create_frame(frame):
     
     # Set timeline limits with padding
     ax_timeline.set_xlim(-1, len(quarters))
-    ax_timeline.set_ylim(-1, 1)
+    ax_timeline.set_ylim(-0.2, 0.2)
     
     # Draw timeline base line
-    ax_timeline.axhline(y=0, color='black', linewidth=1, alpha=0.3)
+    ax_timeline.axhline(y=0, color='#808080', linewidth=1.5, alpha=0.3)
     
     # Add quarter markers
     for i, quarter in enumerate(quarters):
         year, q = parse_quarter(quarter)
         if q == 1:  # Major tick for Q1
-            ax_timeline.plot([i, i], [-0.2, 0.2], color='black', linewidth=1, alpha=0.5)
-            ax_timeline.text(i, -0.5, str(year), ha='center', va='top', fontsize=8)
+            ax_timeline.plot([i, i], [-0.05, 0], color='#808080', linewidth=1.5, alpha=0.5)  # Adjust line position
+            ax_timeline.text(i, -0.07, str(year), ha='center', va='top', fontsize=12, color='#808080')
         else:  # Minor tick for other quarters
-            ax_timeline.plot([i, i], [-0.1, 0.1], color='black', linewidth=1, alpha=0.3)
+            ax_timeline.plot([i, i], [-0.025, 0], color='#808080', linewidth=0.5, alpha=0.3)  # Adjust line position
     
-    # Add current position marker (green arrow)
-    marker_height = 0.4
-    arrow_width = 0.3
-    ax_timeline.plot([frame, frame], [0, marker_height], color='#2ecc71', linewidth=2)
-    ax_timeline.plot([frame - arrow_width, frame, frame + arrow_width], 
-                    [marker_height - arrow_width, marker_height, marker_height - arrow_width],
-                    color='#2ecc71', linewidth=2)
+    # Add current position marker (inverted triangle)
+    ax_timeline.plot(frame, -0.05, marker='v', color='#4e843d', markersize=10, zorder=5)
     
     # Add current quarter text
-    ax_timeline.text(frame, marker_height + 0.1, quarter_display, 
-                    ha='center', va='bottom', fontsize=9,
-                    color='#2ecc71', fontweight='bold')
+    ax_timeline.text(frame, -0.1, quarter_display, 
+                    ha='center', va='top', fontsize=9,
+                    color='#4e843d', fontweight='bold')
     
     # Remove timeline axis lines
     ax_timeline.set_xticks([])
