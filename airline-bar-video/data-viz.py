@@ -90,11 +90,10 @@ quarters = revenue_data.index.tolist()
 
 # Define constants for visualization
 MAX_BARS = 15  # Maximum number of bars to show
-BAR_HEIGHT = 0.7  # Fixed bar height
-BAR_SPACING = 1.0  # Space between bars
-TICK_FONT_SIZE = 12
+BAR_HEIGHT = 0.8  # Fixed bar height
+BAR_SPACING = 1.2  # Space between bars
+TICK_FONT_SIZE = 10
 LABEL_FONT_SIZE = 10
-TITLE_FONT_SIZE = 18
 VALUE_FONT_SIZE = 10
 
 def optimize_figure_for_performance():
@@ -166,9 +165,90 @@ def format_revenue(value, pos):
 def parse_quarter(quarter_str):
     """Parse quarter string into (year, quarter)"""
     year, quarter = quarter_str.split("'")
-    year = int("20" + year)  # Convert 2-digit year to 4-digit
+    year = int(year)  # Year is already in 4-digit format
     quarter = int(quarter[1])  # Extract quarter number
     return year, quarter
+
+# Create a mapping for company logos
+logo_mapping = {
+    "American Airlines": [
+        {"start_year": 1967, "end_year": 2013, "file": "logos/american-airlines-1967-2013.jpg"},
+        {"start_year": 2013, "end_year": 9999, "file": "logos/american-airlines-2013-now.jpg"}
+    ],
+    "Delta Air Lines": [
+        {"start_year": 2000, "end_year": 2007, "file": "logos/delta-air-lines-2000-2007.png"},
+        {"start_year": 2007, "end_year": 9999, "file": "logos/delta-air-lines-2007-now.jpg"}
+    ],
+    "Southwest Airlines": [
+        {"start_year": 2014, "end_year": 9999, "file": "logos/southwest-airlines-2014-now.png"}
+    ],
+    "United Airlines": [
+        {"start_year": 1998, "end_year": 2010, "file": "logos/united-airlines-1998-2010.jpg"},
+        {"start_year": 2010, "end_year": 9999, "file": "logos/united-airlines-2010-now.jpg"}
+    ],
+    "Air France-KLM": [{"start_year": 1999, "end_year": 9999, "file": "logos/klm-1999-now.png"}],
+    "Deutsche Lufthansa": [
+        {"start_year": 1999, "end_year": 2018, "file": "logos/Deutsche Lufthansa-1999-2018.png"},
+        {"start_year": 2018, "end_year": 9999, "file": "logos/Deutsche Lufthansa-2018-now.jpg"}
+    ],
+    "Singapore Airlines": [{"start_year": 1999, "end_year": 9999, "file": "logos/Singapore Airlines-1999-now.jpg"}],
+    "Qantas Airways": [{"start_year": 1999, "end_year": 9999, "file": "logos/Qantas Airways-1999-now.jpg"}],
+    "Cathay Pacific": [{"start_year": 1999, "end_year": 9999, "file": "logos/Cathay Pacific-1999-now.png"}],
+    "LATAM Airlines": [
+        {"start_year": 1999, "end_year": 2016, "file": "logos/LATAM Airlines-1999-2016.png"},
+        {"start_year": 2016, "end_year": 9999, "file": "logos/LATAM Airlines-2016-now.jpg"}
+    ],
+    "Air China": [{"start_year": 1999, "end_year": 9999, "file": "logos/Air China-1999-now.png"}],
+    "China Eastern": [{"start_year": 1999, "end_year": 9999, "file": "logos/China Eastern-1999-now.jpg"}],
+    "China Southern": [{"start_year": 1999, "end_year": 9999, "file": "logos/China Southern-1999-now.jpg"}],
+    "Hainan Airlines": [
+        {"start_year": 1999, "end_year": 2004, "file": "logos/Hainan Airlines-1999-2004.png"},
+        {"start_year": 2004, "end_year": 9999, "file": "logos/Hainan Airlines-2004-now.jpg"}
+    ],
+    "Qatar Airways": [{"start_year": 1999, "end_year": 9999, "file": "logos/Qatar Airways-1999-now.jpg"}],
+    "Turkish Airlines": [
+        {"start_year": 1999, "end_year": 2018, "file": "logos/Turkish Airlines-1999-2018.png"},
+        {"start_year": 2018, "end_year": 9999, "file": "logos/Turkish Airlines-2018-now.png"}
+    ],
+    "JetBlue": [{"start_year": 1999, "end_year": 9999, "file": "logos/jetBlue-1999-now.jpg"}],
+    "SkyWest": [
+        {"start_year": 1972, "end_year": 2001, "file": "logos/skywest-1972-2001.png"},
+        {"start_year": 2001, "end_year": 2008, "file": "logos/skywest-2001-2008.png"},
+        {"start_year": 2018, "end_year": 9999, "file": "logos/skywest-2018-now.jpg"}
+    ],
+    "Northwest Airlines": [
+        {"start_year": 1989, "end_year": 2003, "file": "logos/northwest-airlines-1989-2003.png"},
+        {"start_year": 2003, "end_year": 9999, "file": "logos/northwest-airlines-2003-now.jpg"}
+    ],
+    "TWA": [{"start_year": 1999, "end_year": 9999, "file": "logos/TWA-1999-now.png"}],
+    "Air Canada": [
+        {"start_year": 1995, "end_year": 2005, "file": "logos/air-canada-1995-2005.jpg"},
+        {"start_year": 2005, "end_year": 9999, "file": "logos/air-canada-2005-now.png"}
+    ],
+    "IAG": [{"start_year": 1999, "end_year": 9999, "file": "logos/IAG-1999-now.png"}]
+}
+
+def get_logo_path(airline, year, iata_code):
+    """Get the appropriate logo path based on airline name and year"""
+    if airline not in logo_mapping:
+        print(f"No logo mapping found for {airline}")
+        return None
+        
+    logo_versions = logo_mapping[airline]
+    
+    # Find the appropriate logo version for the given year
+    for version in logo_versions:
+        if version["start_year"] <= year <= version["end_year"]:
+            logo_path = version["file"]
+            if os.path.exists(logo_path):
+                print(f"Found logo for {airline} ({year}): {logo_path}")
+                return logo_path
+            else:
+                print(f"Logo file not found: {logo_path}")
+                return None
+    
+    print(f"No logo version found for {airline} in year {year}")
+    return None
 
 def create_frame(frame):
     """优化的帧创建函数，样式更接近原始data-viz"""
@@ -177,24 +257,21 @@ def create_frame(frame):
     # Create figure with optimized settings
     fig = plt.figure(figsize=FIGURE_SIZE, facecolor='white')
     
-    # Create a gridspec with space at the top for logos and title
-    gs = fig.add_gridspec(3, 1, height_ratios=[0.6, 0.3, 4], hspace=0.2,
-                         top=0.95, bottom=0.07)
-    
-    # Create axis for title/logos area (can be used later for logos)
-    ax_title = fig.add_subplot(gs[0])
-    ax_title.axis('off')  # Hide axis
+    # Create a gridspec with space for timeline and bars
+    gs = fig.add_gridspec(2, 1, height_ratios=[0.15, 1], hspace=0.1,
+                         top=0.95, bottom=0.05)
     
     # Create axis for timeline
-    ax_timeline = fig.add_subplot(gs[1])
+    ax_timeline = fig.add_subplot(gs[0])
     
     # Create main axis for bar chart
-    ax = fig.add_subplot(gs[2])
+    ax = fig.add_subplot(gs[1])
 
     # Get data for the current quarter
     quarter_data = []
     colors = []
     labels = []
+    logos = []
     
     # Get the current quarter's data
     current_quarter = quarters[frame]
@@ -202,7 +279,9 @@ def create_frame(frame):
     
     # Parse quarter info
     year, quarter = parse_quarter(current_quarter)
-    quarter_display = f"Q{quarter} {year}"
+    quarter_display = f"{year} Q{quarter}"
+    
+    print(f"\nProcessing frame for {quarter_display}")
     
     # Iterate through airlines
     for airline in current_data.index:
@@ -211,13 +290,18 @@ def create_frame(frame):
             quarter_data.append(value)
             region = metadata.loc['Region', airline]
             colors.append(region_colors.get(region, '#808080'))  # Default to gray if region not found
-            labels.append(airline)
+            # Use IATA code instead of full name
+            iata_code = metadata.loc['IATA', airline]
+            labels.append(iata_code if pd.notna(iata_code) else airline[:3])
+            
+            # Get logo path using IATA code
+            logo_path = get_logo_path(airline, year, iata_code)
+            logos.append(logo_path)
     
     # Check if we have any valid data
     if not quarter_data:
         print(f"\nWarning: No valid data for quarter {current_quarter}")
         frame_path = os.path.join(frames_dir, f'frame_{frame:04d}.png')
-        # Create an empty frame with a message
         ax.text(0.5, 0.5, f'No data available for {current_quarter}',
                 ha='center', va='center', transform=ax.transAxes)
         plt.savefig(frame_path, dpi=OUTPUT_DPI, bbox_inches='tight')
@@ -229,40 +313,59 @@ def create_frame(frame):
     quarter_data = [quarter_data[i] for i in sorted_indices]
     colors = [colors[i] for i in sorted_indices]
     labels = [labels[i] for i in sorted_indices]
+    logos = [logos[i] for i in sorted_indices]
     
     # Limit to top N airlines
     if len(quarter_data) > MAX_BARS:
         quarter_data = quarter_data[:MAX_BARS]
         colors = colors[:MAX_BARS]
         labels = labels[:MAX_BARS]
+        logos = logos[:MAX_BARS]
     
-    # Create bars - from top to bottom (like original dataviz)
+    # Create bars - from top to bottom
     y_pos = np.arange(len(labels))[::-1] * BAR_SPACING  # Reverse order for top-to-bottom
     bars = ax.barh(y_pos, quarter_data, color=colors, height=BAR_HEIGHT, edgecolor='none')
     
+    # Add logos
+    logo_size = (24, 24)  # Size for logos
+    for i, (logo_path, y) in enumerate(zip(logos, y_pos)):
+        if logo_path and os.path.exists(logo_path):
+            try:
+                img = plt.imread(logo_path)
+                img = preprocess_logo(img, target_size=logo_size)
+                
+                # Calculate logo position (left of the bar)
+                x = -max(quarter_data) * 0.05  # Place logo slightly to the left of the bar
+                
+                # Create OffsetImage and AnnotationBbox
+                imagebox = OffsetImage(img, zoom=1.0)  # Increased zoom for better visibility
+                imagebox.image.axes = ax
+                
+                # Add the logo
+                ab = AnnotationBbox(imagebox, (x, y),
+                                  box_alignment=(1, 0.5),  # Align right center
+                                  frameon=False)
+                ax.add_artist(ab)
+            except Exception as e:
+                print(f"Error loading logo {logo_path}: {e}")
+    
     # Customize the plot
     ax.set_yticks(y_pos)
-    ax.set_yticklabels(labels[::-1], fontsize=TICK_FONT_SIZE)  # Reverse labels to match bars
+    ax.set_yticklabels(labels, fontsize=TICK_FONT_SIZE)
     
-    # Create title in the title axis
-    title_text = f'Global Airline Revenue Rankings - {quarter_display}'
-    ax_title.text(0.5, 0.5, title_text, fontsize=TITLE_FONT_SIZE, fontweight='bold',
-                ha='center', va='center', transform=ax_title.transAxes)
-    
-    # Add value labels inside or end of the bars
+    # Add value labels at the end of the bars
     for i, bar in enumerate(bars):
         value = quarter_data[i]
         value_text = format_revenue(value, None)
-        # Position the text at the end of the bar with small padding
         ax.text(value + (max(quarter_data) * 0.01), y_pos[i], value_text,
                 va='center', ha='left', fontsize=VALUE_FONT_SIZE)
     
     # Format x-axis with custom formatter
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_revenue))
     
-    # Set axis limits with padding
+    # Set axis limits with padding for logos
     max_value = max(quarter_data) if quarter_data else 0
-    ax.set_xlim(0, max_value * 1.15)
+    ax.set_xlim(-max_value * 0.1, max_value * 1.15)  # Add extra space on the left for logos
     
     # Set y-axis limits with padding
     if y_pos.size > 0:
@@ -286,47 +389,41 @@ def create_frame(frame):
     min_year, min_q = parse_quarter(min_quarter)
     max_year, max_q = parse_quarter(max_quarter)
     
-    # Create timeline tick positions (one for each year)
-    timeline_years = list(range(min_year, max_year + 1))
-    timeline_ticks = [f"{year}'Q{q}" for year in timeline_years for q in range(1, 5)]
-    timeline_ticks = [q for q in timeline_ticks if q in quarters]
+    # Create timeline tick positions
+    timeline_ticks = np.linspace(0, len(quarters) - 1, num=len(quarters))
     
-    # Set timeline limits
-    ax_timeline.set_xlim(0, len(quarters) - 1)
-    ax_timeline.set_ylim(-0.5, 0.5)
+    # Set timeline limits with padding
+    ax_timeline.set_xlim(-1, len(quarters))
+    ax_timeline.set_ylim(-1, 1)
     
-    # Create tick positions
-    tick_positions = [quarters.index(q) for q in timeline_ticks if q in quarters]
-    tick_labels = [q.split("'")[0] + " " + q.split("'")[1] for q in timeline_ticks]
-    
-    # Only show year labels, not quarters
-    simplified_tick_labels = []
-    prev_year = None
-    for q in tick_labels:
-        year = q.split(" ")[0]
-        if year != prev_year and int(q.split("Q")[1]) == 1:  # Only show Q1 of each year
-            simplified_tick_labels.append(year)
-            prev_year = year
-        else:
-            simplified_tick_labels.append("")
-    
-    # Set timeline ticks
-    ax_timeline.set_xticks(tick_positions)
-    ax_timeline.set_xticklabels(simplified_tick_labels, fontsize=8)
-    ax_timeline.tick_params(axis='y', which='both', left=False, labelleft=False)
-    
-    # Add timeline marker - a vertical line for current quarter
-    ax_timeline.axvline(x=frame, color='red', linewidth=2, alpha=0.7)
-    
-    # Add current quarter text above the line
-    ax_timeline.text(frame, 0.3, quarter_display, 
-                     ha='center', va='bottom', fontsize=9, 
-                     bbox=dict(facecolor='white', edgecolor='none', alpha=0.7, pad=1))
-    
-    # Draw a horizontal line for the timeline
+    # Draw timeline base line
     ax_timeline.axhline(y=0, color='black', linewidth=1, alpha=0.3)
     
-    # Remove timeline spines
+    # Add quarter markers
+    for i, quarter in enumerate(quarters):
+        year, q = parse_quarter(quarter)
+        if q == 1:  # Major tick for Q1
+            ax_timeline.plot([i, i], [-0.2, 0.2], color='black', linewidth=1, alpha=0.5)
+            ax_timeline.text(i, -0.5, str(year), ha='center', va='top', fontsize=8)
+        else:  # Minor tick for other quarters
+            ax_timeline.plot([i, i], [-0.1, 0.1], color='black', linewidth=1, alpha=0.3)
+    
+    # Add current position marker (green arrow)
+    marker_height = 0.4
+    arrow_width = 0.3
+    ax_timeline.plot([frame, frame], [0, marker_height], color='#2ecc71', linewidth=2)
+    ax_timeline.plot([frame - arrow_width, frame, frame + arrow_width], 
+                    [marker_height - arrow_width, marker_height, marker_height - arrow_width],
+                    color='#2ecc71', linewidth=2)
+    
+    # Add current quarter text
+    ax_timeline.text(frame, marker_height + 0.1, quarter_display, 
+                    ha='center', va='bottom', fontsize=9,
+                    color='#2ecc71', fontweight='bold')
+    
+    # Remove timeline axis lines
+    ax_timeline.set_xticks([])
+    ax_timeline.set_yticks([])
     for spine in ax_timeline.spines.values():
         spine.set_visible(False)
     
@@ -337,7 +434,14 @@ def create_frame(frame):
     return frame_path
 
 def main():
-    """主函数，使用多进程处理帧生成"""
+    # Print logo files at start
+    print("\nLogo files in logos directory:")
+    logo_files = os.listdir(logos_dir)
+    print("\n".join(sorted(logo_files)))
+    print(f"\nTotal logo files found: {len(logo_files)}\n")
+
+    print("\n开始生成帧...")
+    
     # Get the total number of frames
     total_frames = len(quarters)
     
@@ -355,8 +459,8 @@ def main():
                 create_frame(frame)
                 pbar.update(1)
 
-if __name__ == '__main__':
-    print("\n开始生成帧...")
-    main()
     print("\n\n所有帧生成完成！")
-    print(f"帧文件保存在: {frames_dir}") 
+    print(f"帧文件保存在: {frames_dir}")
+
+if __name__ == '__main__':
+    main() 
