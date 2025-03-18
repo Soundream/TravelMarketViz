@@ -59,6 +59,10 @@ for directory in [logos_dir, output_dir, frames_dir]:
 print("Loading data...")
 df = pd.read_csv('airlines_original.csv')
 
+# Print all airline data from the CSV
+print("\nAll airline data from CSV:")
+print(df.iloc[7:])
+
 # Process metadata
 metadata = df.iloc[:7].copy()  # First 7 rows contain metadata
 revenue_data = df.iloc[7:].copy()  # Revenue data starts from row 8
@@ -66,9 +70,13 @@ revenue_data = df.iloc[7:].copy()  # Revenue data starts from row 8
 # Set proper index for metadata
 metadata.set_index(metadata.columns[0], inplace=True)
 
-# Convert revenue columns by removing ' M' suffix and converting to float
+# Print raw revenue data before conversion
+print("\nRaw revenue data before conversion:")
+print(revenue_data.head())
+
+# Convert revenue columns by removing ' M' suffix, commas, and converting to float
 for col in revenue_data.columns[1:]:  # Skip the first column which contains row labels
-    revenue_data[col] = pd.to_numeric(revenue_data[col].str.replace(' M', ''), errors='coerce')
+    revenue_data[col] = pd.to_numeric(revenue_data[col].str.replace(',', '').str.replace(' M', ''), errors='coerce')
 
 # Create a color mapping for regions
 region_colors = {
@@ -90,8 +98,9 @@ quarters = revenue_data.index.tolist()
 
 # Define constants for visualization
 MAX_BARS = 15  # Maximum number of bars to show
-BAR_HEIGHT = 0.8  # Fixed bar height
-BAR_SPACING = 1.2  # Space between bars
+BAR_HEIGHT = 0.8  # Height of each bar
+BAR_PADDING = 0.2  # Padding between bars
+TOTAL_BAR_HEIGHT = BAR_HEIGHT + BAR_PADDING  # Total height including padding
 TICK_FONT_SIZE = 10
 LABEL_FONT_SIZE = 10
 VALUE_FONT_SIZE = 10
@@ -282,10 +291,12 @@ def create_frame(frame):
     quarter_display = f"{year} Q{quarter}"
     
     print(f"\nProcessing frame for {quarter_display}")
+    print(f"Current data for {quarter_display}: {current_data}")  # Debugging line
     
     # Iterate through airlines
     for airline in current_data.index:
         value = current_data[airline]
+        print(f"{airline}: {value}")  # Debugging line
         if pd.notna(value) and value > 0:  # Only include positive non-null values
             quarter_data.append(value)
             region = metadata.loc['Region', airline]
@@ -322,54 +333,68 @@ def create_frame(frame):
         labels = labels[:MAX_BARS]
         logos = logos[:MAX_BARS]
     
-    # Create bars - from top to bottom
-    y_pos = np.arange(len(labels))[::-1] * BAR_SPACING  # Reverse order for top-to-bottom
-    bars = ax.barh(y_pos, quarter_data, color=colors, height=BAR_HEIGHT, edgecolor='none')
+    # Calculate fixed positions for bars
+    num_bars = len(quarter_data)
+    y_positions = np.arange(num_bars) * TOTAL_BAR_HEIGHT
+    
+    # Create bars
+    bars = ax.barh(y_positions, quarter_data, 
+                   height=BAR_HEIGHT, 
+                   color=colors,
+                   edgecolor='none')
     
     # Add logos
-    logo_size = (24, 24)  # Size for logos
-    for i, (logo_path, y) in enumerate(zip(logos, y_pos)):
+    for i, (logo_path, y) in enumerate(zip(logos, y_positions)):
         if logo_path and os.path.exists(logo_path):
             try:
                 img = plt.imread(logo_path)
-                img = preprocess_logo(img, target_size=logo_size)
                 
-                # Calculate logo position (left of the bar)
-                x = -max(quarter_data) * 0.05  # Place logo slightly to the left of the bar
+                # Calculate logo size maintaining aspect ratio
+                img_height = BAR_HEIGHT * 0.8
+                aspect_ratio = img.shape[1] / img.shape[0]
+                img_width = img_height * aspect_ratio
+                
+                # Preprocess logo with calculated size
+                img = preprocess_logo(img, target_size=(int(img_width * 72), int(img_height * 72)))
+                
+                # Calculate logo position (right of the value label)
+                value = quarter_data[i]
+                value_width = len(format_revenue(value, None)) * 10  # Approximate width of value text
+                x = value + (max(quarter_data) * 0.02) + (value_width / 100)  # Place logo after value label
                 
                 # Create OffsetImage and AnnotationBbox
-                imagebox = OffsetImage(img, zoom=1.0)  # Increased zoom for better visibility
+                imagebox = OffsetImage(img, zoom=0.5)  # Adjust zoom to match calculated size
                 imagebox.image.axes = ax
                 
                 # Add the logo
                 ab = AnnotationBbox(imagebox, (x, y),
-                                  box_alignment=(1, 0.5),  # Align right center
+                                  box_alignment=(0, 0.5),  # Align left center
                                   frameon=False)
                 ax.add_artist(ab)
             except Exception as e:
                 print(f"Error loading logo {logo_path}: {e}")
     
     # Customize the plot
-    ax.set_yticks(y_pos)
+    ax.set_yticks(y_positions)
     ax.set_yticklabels(labels, fontsize=TICK_FONT_SIZE)
     
     # Add value labels at the end of the bars
     for i, bar in enumerate(bars):
         value = quarter_data[i]
         value_text = format_revenue(value, None)
-        ax.text(value + (max(quarter_data) * 0.01), y_pos[i], value_text,
+        ax.text(value + (max(quarter_data) * 0.01), y_positions[i], value_text,
                 va='center', ha='left', fontsize=VALUE_FONT_SIZE)
     
     # Format x-axis with custom formatter
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_revenue))
     
-    # Set axis limits with padding for logos
+    # Set axis limits with padding for logos and labels
     max_value = max(quarter_data) if quarter_data else 0
-    ax.set_xlim(-max_value * 0.1, max_value * 1.15)  # Add extra space on the left for logos
+    ax.set_xlim(0, max_value * 1.3)  # Add extra space on the right for logos and labels
     
-    # Set y-axis limits with padding
-    if y_pos.size > 0:
-        ax.set_ylim(min(y_pos) - BAR_SPACING, max(y_pos) + BAR_SPACING)
+    # Set fixed y-axis limits
+    total_height = MAX_BARS * TOTAL_BAR_HEIGHT
+    ax.set_ylim(total_height, -BAR_PADDING)
     
     # Add grid lines
     ax.grid(True, axis='x', alpha=0.3, which='major', linestyle='--')
