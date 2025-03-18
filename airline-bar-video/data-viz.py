@@ -189,11 +189,21 @@ logo_mapping = {
         {"start_year": 2007, "end_year": 9999, "file": "logos/delta-air-lines-2007-now.jpg"}
     ],
     "Southwest Airlines": [
+        {"start_year": 1989, "end_year": 2014, "file": "logos/southwest-airlines-1989-2014.png"},
         {"start_year": 2014, "end_year": 9999, "file": "logos/southwest-airlines-2014-now.png"}
     ],
     "United Airlines": [
         {"start_year": 1998, "end_year": 2010, "file": "logos/united-airlines-1998-2010.jpg"},
         {"start_year": 2010, "end_year": 9999, "file": "logos/united-airlines-2010-now.jpg"}
+    ],
+    "Alaska Air": [
+        {"start_year": 1972, "end_year": 2014, "file": "logos/alaska-air-1972-2014.png"},
+        {"start_year": 2014, "end_year": 2016, "file": "logos/alaska-air-2014-2016.png"},
+        {"start_year": 2016, "end_year": 9999, "file": "logos/alaska-air-2016-now.jpg"}
+    ],
+    "Finnair": [
+        {"start_year": 1999, "end_year": 2010, "file": "logos/Finnair-1999-2010.jpg"},
+        {"start_year": 2010, "end_year": 9999, "file": "logos/Finnair-2010-now.jpg"}
     ],
     "Air France-KLM": [{"start_year": 1999, "end_year": 9999, "file": "logos/klm-1999-now.png"}],
     "Deutsche Lufthansa": [
@@ -434,12 +444,12 @@ def create_frame(frame):
             ax_timeline.plot([i, i], [-0.025, 0], color='#808080', linewidth=0.5, alpha=0.3)  # Adjust line position
     
     # Add current position marker (inverted triangle)
-    ax_timeline.plot(frame, -0.05, marker='v', color='#4e843d', markersize=10, zorder=5)
+    ax_timeline.plot(frame, 0.03, marker='v', color='#4e843d', markersize=10, zorder=5)
     
-    # Add current quarter text
-    ax_timeline.text(frame, -0.1, quarter_display, 
-                    ha='center', va='top', fontsize=9,
-                    color='#4e843d', fontweight='bold')
+    # Remove current quarter text
+    # ax_timeline.text(frame, -0.1, quarter_display, 
+    #                 ha='center', va='top', fontsize=9,
+    #                 color='#4e843d', fontweight='bold')
     
     # Remove timeline axis lines
     ax_timeline.set_xticks([])
