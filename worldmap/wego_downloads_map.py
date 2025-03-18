@@ -3,6 +3,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+from matplotlib.animation import FuncAnimation
+import matplotlib.font_manager as fm
+from datetime import datetime
+from tqdm import tqdm
+from shapely import geometry
 
 def load_and_process_data(csv_path):
     print(f"\nAttempting to load data from: {csv_path}")
@@ -98,96 +103,131 @@ def get_color_for_value(value, min_val, max_val, color_scale):
     color_idx = int(scaled * (len(color_scale) - 1))
     return color_scale[color_idx]
 
-def create_downloads_map_for_month(world, month_data, color_scale, min_val, max_val, month_date):
-    print(f"\n=== Month {month_date.strftime('%Y-%m')} Data ===")
-    print("Downloads by country:")
-    print(month_data[['country', 'downloads']].to_string())
-    
+def create_downloads_map_for_animation(world, all_data, color_scale, min_val, max_val):
     # Create figure
     fig, ax = plt.subplots(1, 1, figsize=(15, 10))
     
-    # Define target countries
+    # Define target and surrounding countries (keep existing lists)
     target_countries = [
         'Algeria', 'Bahrain', 'Egypt', 'Israel', 'Jordan', 
         'Kuwait', 'Lebanon', 'Oman', 'Qatar', 'Saudi Arabia', 
         'United Arab Emirates'
     ]
     
-    # Define surrounding countries to show in grey
     surrounding_countries = [
         'Iran', 'Iraq', 'Syria', 'Yemen', 'Turkey', 'Cyprus',
         'Sudan', 'South Sudan', 'Ethiopia', 'Eritrea', 'Djibouti',
         'Somalia', 'Libya', 'Tunisia', 'Morocco', 'Greece'
     ]
     
-    # Create mapping for country names that might be different in the shapefile
+    # Keep existing country_name_mapping
     country_name_mapping = {
         'United Arab Emirates': ['United Arab Emirates', 'UAE', 'U.A.E.'],
         'Saudi Arabia': ['Saudi Arabia', 'Kingdom of Saudi Arabia', 'KSA']
     }
     
-    # Plot all countries in white first
-    world.plot(ax=ax, color='#ffffff', edgecolor='#ffffff', linewidth=0.5)
+    # Create collection objects for each country
+    country_patches = {}
     
-    # Create a color mapping for each country
-    country_colors = {}
-    
-    # Process each country
-    for _, row in month_data.iterrows():
-        country_name = row['country']
-        downloads = row['downloads']
-        color = get_color_for_value(downloads, min_val, max_val, color_scale)
-        country_colors[country_name] = color
-        # Add alternative names if they exist
-        if country_name in country_name_mapping:
-            for alt_name in country_name_mapping[country_name]:
-                country_colors[alt_name] = color
-    
-    # Plot each country
+    # Plot each country and store its polygon collection
     for idx, row in world.iterrows():
         country_name = row['NAME']
         if country_name in target_countries or any(country_name in alt_names for country, alt_names in country_name_mapping.items()):
-            # Target countries get their download-based color or light grey if no data
-            color = country_colors.get(country_name, '#f0f0f0')
+            color = '#f0f0f0'  # Default light grey
         elif country_name in surrounding_countries:
-            # Surrounding countries get a medium grey
-            color = '#d0d0d0'
+            color = '#d0d0d0'  # Medium grey
         else:
-            # Other countries remain white
-            color = '#ffffff'
+            color = '#ffffff'  # White
+            
+        # Create polygon collection for the country
+        country_poly = world[world['NAME'] == country_name].geometry.iloc[0]
+        patches = []
         
-        world[world['NAME'] == country_name].plot(
-            ax=ax,
-            color=color,
-            edgecolor='#ffffff',
-            linewidth=0.5
-        )
+        if isinstance(country_poly, geometry.Polygon):
+            # Single polygon case
+            patch = ax.add_patch(plt.Polygon(country_poly.exterior.coords, 
+                                           facecolor=color,
+                                           edgecolor='#ffffff',
+                                           linewidth=0.5))
+            patches.append(patch)
+            
+        elif isinstance(country_poly, geometry.MultiPolygon):
+            # Multiple polygon case
+            for poly in country_poly.geoms:
+                patch = ax.add_patch(plt.Polygon(poly.exterior.coords,
+                                               facecolor=color,
+                                               edgecolor='#ffffff',
+                                               linewidth=0.5))
+                patches.append(patch)
+        
+        if patches:
+            country_patches[country_name] = patches
     
-    # Add title with month and year
-    plt.title(f"Wego iOS Downloads - {month_date.strftime('%B %Y')}", 
-              pad=20, fontsize=14, fontweight='bold')
-    
-    # Set map extent to focus on target region
-    ax.set_xlim([25, 60])  # Adjusted to focus more on the Arabian Peninsula
+    # Set map extent
+    ax.set_xlim([25, 60])
     ax.set_ylim([15, 40])
-    
-    # Remove axes
     ax.axis('off')
     
-    # Save the map
+    # Add month text in Monda font
+    month_text = ax.text(
+        26, 38,  # Position in left upper corner
+        '',  # Will be updated in animation
+        fontsize=14,
+        fontfamily='Monda',
+        color='#333333',
+        bbox=dict(facecolor='white', edgecolor='none', alpha=0.7)
+    )
+    
+    def update(frame):
+        month_date = all_data['month'].unique()[frame]
+        month_data = all_data[all_data['month'] == month_date]
+        
+        # Update month text
+        month_text.set_text(month_date.strftime('%B %Y'))
+        # bye taking the advantages of the data is to 
+        # Update colors for target countries
+        for _, row in month_data.iterrows():
+            country_name = row['country']
+            downloads = row['downloads']
+            color = get_color_for_value(downloads, min_val, max_val, color_scale)
+            
+            # Update color for main name and alternatives
+            names_to_update = [country_name]
+            if country_name in country_name_mapping:
+                names_to_update.extend(country_name_mapping[country_name])
+                
+            for name in names_to_update:
+                if name in country_patches:
+                    for patch in country_patches[name]:
+                        patch.set_facecolor(color)
+        
+        # Flatten the list of all patches
+        all_patches = [patch for patches in country_patches.values() for patch in patches]
+        return all_patches + [month_text]
+    
+    # Create animation with smoother transitions
+    months = sorted(all_data['month'].unique())
+    anim = FuncAnimation(
+        fig, 
+        update,
+        frames=len(months),
+        interval=40000,  # 40 seconds per frame
+        blit=True
+    )
+    
+    # Save as MP4
     output_dir = 'output/wego_downloads'
     os.makedirs(output_dir, exist_ok=True)
-    plt.savefig(f'{output_dir}/wego_ios_downloads_{month_date.strftime("%Y_%m")}.png', 
-                dpi=300, 
-                bbox_inches='tight',
-                facecolor='white', 
-                edgecolor='none')
-    plt.close()
     
-    print(f"\nGenerated map for {month_date.strftime('%B %Y')}")
-    print("\nDownloads by country:")
-    for _, row in month_data.iterrows():
-        print(f"- {row['country']}: {row['downloads']:,.0f} downloads")
+    # Use a very low fps for extremely slow transitions
+    anim.save(
+        f'{output_dir}/wego_ios_downloads_animation.mp4',
+        writer='ffmpeg',
+        fps=5,  # Very low fps for much slower transitions
+        dpi=300,
+        extra_args=['-vcodec', 'libx264', '-pix_fmt', 'yuv420p']
+    )
+    plt.close()
 
 def main():
     try:
@@ -214,17 +254,11 @@ def main():
         # Create color scale
         color_scale = create_color_scale(min_val, max_val)
         
-        # Generate a map for each month
-        months = sorted(df_grouped['month'].unique())
-        print(f"\nGenerating maps for {len(months)} months")
+        # Create animation
+        print("\nGenerating animation...")
+        create_downloads_map_for_animation(world, df_grouped, color_scale, min_val, max_val)
         
-        for month in months:
-            month_data = df_grouped[df_grouped['month'] == month]
-            print(f"\nProcessing {month.strftime('%B %Y')}, data shape: {month_data.shape}")
-            create_downloads_map_for_month(world, month_data, color_scale, min_val, max_val, month)
-            print(f"{month.strftime('%B %Y')}: Map has been created")
-        
-        print("\nScript completed successfully!")
+        print("\nAnimation has been created successfully!")
         
     except Exception as e:
         print(f"\nError occurred: {str(e)}")

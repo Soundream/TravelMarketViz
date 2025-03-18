@@ -80,14 +80,14 @@ for col in revenue_data.columns[1:]:  # Skip the first column which contains row
 
 # Create a color mapping for regions
 region_colors = {
-    'North America': '#2ecc71',  # Green
-    'Europe': '#3498db',         # Blue
-    'Asia Pacific': '#e74c3c',   # Red
-    'Latin America': '#f1c40f',  # Yellow
-    'China': '#9b59b6',          # Purple
-    'Middle East': '#e67e22',    # Orange
-    'Russia': '#95a5a6',         # Gray
-    'Turkey': '#34495e'          # Dark Blue
+    'North America': '#40E0D0',  # 鲜艳的绿松石色
+    'Europe': '#4169E1',         # 鲜艳的蓝色
+    'Asia Pacific': '#FF4B4B',   # 鲜艳的红色
+    'Latin America': '#32CD32',  # 鲜艳的绿色
+    'China': '#FF4B4B',          # Purple
+    'Middle East': '#DEB887',    # 鲜艳的棕色
+    'Russia': '#FF4B4B',         # Gray
+    'Turkey': '#DEB887'          # Dark Blue
 }
 
 # Set index for revenue data
