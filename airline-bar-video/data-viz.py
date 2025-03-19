@@ -244,6 +244,7 @@ def parse_quarter(quarter_str):
 
 # Create a mapping for company logos
 logo_mapping = {
+    "easyJet": [{"start_year": 1999, "end_year": 9999, "file": "logos/easyJet-1999-now.jpg"}],
     "American Airlines": [
         {"start_year": 1967, "end_year": 2013, "file": "logos/american-airlines-1967-2013.jpg"},
         {"start_year": 2013, "end_year": 9999, "file": "logos/american-airlines-2013-now.jpg"}
@@ -374,9 +375,12 @@ def create_frame(frame):
     print(f"\nCreating frame {frame} with figure size {FIGURE_SIZE}, DPI {OUTPUT_DPI}")
     fig = plt.figure(figsize=FIGURE_SIZE, facecolor='white', dpi=OUTPUT_DPI)
     
-    # Create a gridspec with space for timeline and bars
-    gs = fig.add_gridspec(2, 1, height_ratios=[0.15, 1], hspace=0.1,
-                         top=0.95, bottom=0.05)
+    # Set consistent color for all text elements and grid lines
+    text_color = '#808080'
+    
+    # Create a gridspec with space for timeline and bars - adjusted ratios for layout
+    gs = fig.add_gridspec(2, 1, height_ratios=[0.15, 1], hspace=0.05,
+                         top=0.95, bottom=0.1)  # Reduced hspace to move bars closer to timeline
     
     # Create axis for timeline
     ax_timeline = fig.add_subplot(gs[0])
@@ -389,7 +393,7 @@ def create_frame(frame):
     colors = []
     labels = []
     logos = []
-    # TODO: 
+    logos_data = []
     
     # Get the current quarter's data
     current_quarter = quarters[frame]
@@ -504,18 +508,14 @@ def create_frame(frame):
                 if img_array.dtype != np.float32 and img_array.max() > 1.0:
                     img_array = img_array.astype(np.float32) / 255.0
                 
-                # 计算logo位置（条形的右侧）
-                value = quarter_data[i]
-                value_width = len(format_revenue(value, None)) * 10  # 文本宽度的近似值
-                x = value + (max(quarter_data) * 0.07) + (value_width / 100)  # 增加偏移量以便向右移动logo
+                # 保存处理好的logo数据，稍后在计算好display_max后添加
+                logos_data.append({
+                    'img_array': img_array,
+                    'index': i,
+                    'y': y
+                })
                 
-                # 创建OffsetImage并添加到图表
-                imagebox = OffsetImage(img_array, zoom=0.8)  # 保持缩小的zoom因子
-                ab = AnnotationBbox(imagebox, (x, y),
-                                  box_alignment=(0, 0.5),  # 左中对齐
-                                  frameon=False)
-                ax.add_artist(ab)
-                print(f"Added logo successfully at position ({x}, {y})")
+                print(f"Processed logo successfully")
             except Exception as e:
                 print(f"Error loading logo {logo_path}: {e}")
                 # 打印完整的异常堆栈跟踪以便调试
@@ -526,7 +526,7 @@ def create_frame(frame):
     
     # Customize the plot
     ax.set_yticks(y_positions)
-    ax.set_yticklabels(labels, fontsize=TICK_FONT_SIZE, fontproperties=monda_font)
+    ax.set_yticklabels(labels, fontsize=TICK_FONT_SIZE, fontproperties=monda_font, color=text_color)
     
     # Add value labels at the end of the bars
     for i, bar in enumerate(bars):
@@ -535,19 +535,64 @@ def create_frame(frame):
         ax.text(value + (max(quarter_data) * 0.01), y_positions[i], value_text,
                 va='center', ha='left', fontsize=VALUE_FONT_SIZE, fontproperties=monda_font)
     
-    # Format x-axis with custom formatter
+    # Format x-axis with custom formatter and set consistent colors
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_revenue))
-    ax.xaxis.set_tick_params(labelsize=TICK_FONT_SIZE)
+    ax.xaxis.set_tick_params(labelsize=TICK_FONT_SIZE, colors=text_color)
     for label in ax.get_xticklabels():
         label.set_fontproperties(monda_font)
+        label.set_color(text_color)
     
     # Set axis limits with padding for logos and labels
     max_value = max(quarter_data) if quarter_data else 0
-    ax.set_xlim(0, max_value * 1.3)  # Add extra space on the right for logos and labels
     
-    # Set fixed y-axis limits
+    # Get historical maximum value across all quarters up to current frame
+    historical_max = 0
+    for i in range(frame + 1):
+        quarter_historical = quarters[i]
+        historical_data = revenue_data.loc[quarter_historical]
+        quarter_max = historical_data.max()
+        if pd.notna(quarter_max) and quarter_max > historical_max:
+            historical_max = quarter_max
+    
+    # Use max of current frame and historical max
+    display_max = max(max_value, historical_max)
+    ax.set_xlim(0, display_max * 1.3)  # Add extra space on the right for logos and labels
+    
+    # Now add all processed logos with adjusted positions based on display_max
+    for logo_data in logos_data:
+        i = logo_data['index']
+        y = logo_data['y']
+        img_array = logo_data['img_array']
+        
+        # 计算logo位置（条形的右侧）
+        value = quarter_data[i]
+        value_width = len(format_revenue(value, None)) * 10  # 文本宽度的近似值
+        
+        # 降低常规情况下的基础偏移量
+        base_offset_percentage = 0.04  # 从0.07降低到0.04
+        text_padding = value_width / 100
+        
+        # 确保logo与数字之间有最小距离，防止重叠
+        min_offset = display_max * 0.08  # 从0.12降低到0.08
+        x_offset = max(min_offset, display_max * base_offset_percentage + text_padding)
+        
+        # 对于非常短的条形，进一步增加偏移量
+        if value < display_max * 0.1:  # 如果值小于display_max的10%
+            x_offset *= 1.5  # 增加50%的偏移量
+        
+        x = value + x_offset  # 计算最终位置
+        
+        # 创建OffsetImage并添加到图表
+        imagebox = OffsetImage(img_array, zoom=0.8)  # 保持缩小的zoom因子
+        ab = AnnotationBbox(imagebox, (x, y),
+                          box_alignment=(0, 0.5),  # 左中对齐
+                          frameon=False)
+        ax.add_artist(ab)
+        print(f"Added logo successfully at position ({x}, {y})")
+    
+    # Set fixed y-axis limits - reduced padding to move bars up
     total_height = MAX_BARS * TOTAL_BAR_HEIGHT
-    ax.set_ylim(total_height, -BAR_PADDING)
+    ax.set_ylim(total_height, -BAR_PADDING * 2)  # Reduced negative padding to move bars up closer to timeline
     
     # Add grid lines
     ax.grid(True, axis='x', alpha=0.3, which='major', linestyle='--')
@@ -558,6 +603,9 @@ def create_frame(frame):
     ax.spines['left'].set_visible(False)
     ax.spines['bottom'].set_visible(False)  # Hide bottom spine
     ax.tick_params(axis='y', which='both', left=False)
+    
+    # Add simplified Revenue label at the bottom with consistent color
+    ax.set_xlabel('Revenue', fontsize=12, labelpad=10, fontproperties=monda_font, color=text_color)
     
     # Set up timeline - New style matching data-viz.py
     ax_timeline.set_facecolor('none')  # Transparent background
@@ -578,22 +626,22 @@ def create_frame(frame):
     ax_timeline.spines['left'].set_visible(False)
     ax_timeline.spines['bottom'].set_visible(True)
     ax_timeline.spines['bottom'].set_linewidth(1.5)
-    ax_timeline.spines['bottom'].set_color('#808080')
+    ax_timeline.spines['bottom'].set_color(text_color)
     ax_timeline.spines['bottom'].set_position(('data', 0))
     
     # Add quarter markers with vertical lines
     for i, quarter in enumerate(quarters):
         year, q = parse_quarter(quarter)
         if q == 1:  # Major tick for Q1
-            ax_timeline.vlines(i, -0.03, 0, colors='#808080', linewidth=1.5)
-            if year % 2 == 0:  # Only label even years to avoid crowding
-                ax_timeline.text(i, -0.07, str(year), ha='center', va='top', 
-                               fontsize=12, color='#808080', fontproperties=monda_font)
+            ax_timeline.vlines(i, -0.03, 0, colors=text_color, linewidth=1.5)
+            # Show label for every year instead of just even years
+            ax_timeline.text(i, -0.07, str(year), ha='center', va='top', 
+                           fontsize=12, color=text_color, fontproperties=monda_font)
         else:  # Minor tick for other quarters
-            ax_timeline.vlines(i, -0.02, 0, colors='#808080', linewidth=0.5, alpha=0.7)
+            ax_timeline.vlines(i, -0.02, 0, colors=text_color, linewidth=0.5, alpha=0.7)
     
     # Add current position marker (inverted triangle)
-    ax_timeline.plot(frame, 0.05, marker='v', color='#4e843d', markersize=10, zorder=5)
+    ax_timeline.plot(frame, 0.03, marker='v', color='#4e843d', markersize=10, zorder=5)
     
     # Remove timeline ticks
     ax_timeline.set_xticks([])
