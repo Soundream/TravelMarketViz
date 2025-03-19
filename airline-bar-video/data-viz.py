@@ -57,6 +57,9 @@ for directory in [logos_dir, output_dir, frames_dir]:
         os.makedirs(directory)
         print(f"Created directory: {directory}")
 
+# Global variable for frame indices
+frame_indices = []
+
 # Load the data from CSV
 print("Loading data...")
 df = pd.read_csv('airlines_original.csv')
@@ -367,12 +370,49 @@ else:
     monda_font = fm.FontProperties(family='sans-serif')
     print("Monda font not found, using default sans-serif")
 
-def create_frame(frame):
+def create_frame(frame_idx):
     """优化的帧创建函数，样式更接近原始data-viz"""
     optimize_figure_for_performance()
     
+    # Get the frame number for file naming
+    global frame_indices
+    if frame_indices and frame_idx in frame_indices:
+        frame_position = frame_indices.index(frame_idx)
+    else:
+        # Fallback if frame_indices is not set
+        frame_position = int(frame_idx * 100)
+    
+    # Handle fractional frame indices for interpolation
+    frame_int = int(frame_idx)
+    frame_fraction = frame_idx - frame_int
+    
+    # If this is an exact quarter frame (or we're in quarters-only mode)
+    if frame_fraction == 0 or (args.publish and args.quarters_only):
+        current_quarter = quarters[frame_int]
+        quarter_data_main = revenue_data.loc[current_quarter]
+        
+        # For exact quarters, we just use the quarter data directly
+        print(f"\nProcessing exact quarter frame for {current_quarter}")
+        interpolated_data = quarter_data_main
+    else:
+        # For in-between frames, interpolate between adjacent quarters
+        if frame_int < len(quarters) - 1:
+            q1 = quarters[frame_int]
+            q2 = quarters[frame_int + 1]
+            q1_data = revenue_data.loc[q1]
+            q2_data = revenue_data.loc[q2]
+            
+            print(f"\nProcessing interpolated frame between {q1} and {q2} (fraction: {frame_fraction:.3f})")
+            
+            # Create interpolated data frame
+            interpolated_data = q1_data * (1 - frame_fraction) + q2_data * frame_fraction
+        else:
+            # Fallback for last frame
+            current_quarter = quarters[frame_int]
+            interpolated_data = revenue_data.loc[current_quarter]
+    
     # Create figure with optimized settings
-    print(f"\nCreating frame {frame} with figure size {FIGURE_SIZE}, DPI {OUTPUT_DPI}")
+    print(f"\nCreating frame {frame_idx} with figure size {FIGURE_SIZE}, DPI {OUTPUT_DPI}")
     fig = plt.figure(figsize=FIGURE_SIZE, facecolor='white', dpi=OUTPUT_DPI)
     
     # Set consistent color for all text elements and grid lines
@@ -395,20 +435,30 @@ def create_frame(frame):
     logos = []
     logos_data = []
     
-    # Get the current quarter's data
-    current_quarter = quarters[frame]
-    current_data = revenue_data.loc[current_quarter]
+    # Get the current quarter from integer part of frame_idx
+    if frame_int < len(quarters):
+        current_quarter = quarters[frame_int]
+    else:
+        current_quarter = quarters[-1]
     
     # Parse quarter info
     year, quarter = parse_quarter(current_quarter)
-    quarter_display = f"{year} Q{quarter}"
+    
+    # If we're at an interpolated frame, adjust the quarter display
+    if frame_fraction > 0:
+        # Calculate the exact decimal year
+        year_fraction = year + (quarter - 1) * 0.25 + frame_fraction * 0.25
+        year_integer = int(year_fraction)
+        month = int((year_fraction - year_integer) * 12) + 1
+        quarter_display = f"{year_integer} {month:02d}"
+    else:
+        quarter_display = f"{year} Q{quarter}"
     
     print(f"\nProcessing frame for {quarter_display}")
-    print(f"Current data for {quarter_display}: {current_data}")  # Debugging line
+    
     # Iterate through airlines
-    for airline in current_data.index:
-        value = current_data[airline]
-        print(f"{airline}: {value}")  # Debugging line
+    for airline in interpolated_data.index:
+        value = interpolated_data[airline]
         if pd.notna(value) and value > 0:  # Only include positive non-null values
             quarter_data.append(value)
             region = metadata.loc['Region', airline]
@@ -424,7 +474,7 @@ def create_frame(frame):
     # Check if we have any valid data
     if not quarter_data:
         print(f"\nWarning: No valid data for quarter {current_quarter}")
-        frame_path = os.path.join(frames_dir, f'frame_{frame:04d}.png')
+        frame_path = os.path.join(frames_dir, f'frame_{frame_position:04d}.png')
         ax.text(0.5, 0.5, f'No data available for {current_quarter}',
                 ha='center', va='center', transform=ax.transAxes)
         plt.savefig(frame_path, dpi=OUTPUT_DPI, bbox_inches='tight')
@@ -547,7 +597,7 @@ def create_frame(frame):
     
     # Get historical maximum value across all quarters up to current frame
     historical_max = 0
-    for i in range(frame + 1):
+    for i in range(frame_int + 1):
         quarter_historical = quarters[i]
         historical_data = revenue_data.loc[quarter_historical]
         quarter_max = historical_data.max()
@@ -641,14 +691,15 @@ def create_frame(frame):
             ax_timeline.vlines(i, -0.02, 0, colors=text_color, linewidth=0.5, alpha=0.7)
     
     # Add current position marker (inverted triangle)
-    ax_timeline.plot(frame, 0.03, marker='v', color='#4e843d', markersize=10, zorder=5)
+    timeline_position = frame_int + frame_fraction
+    ax_timeline.plot(timeline_position, 0.03, marker='v', color='#4e843d', markersize=10, zorder=5)
     
     # Remove timeline ticks
     ax_timeline.set_xticks([])
     ax_timeline.set_yticks([])
     
-    # Save the frame
-    frame_path = os.path.join(frames_dir, f'frame_{frame:04d}.png')
+    # Save the frame with sequential numbering
+    frame_path = os.path.join(frames_dir, f'frame_{frame_position:04d}.png')
     print(f"Saving frame to: {frame_path}")
     
     # Suppress specific matplotlib warnings
@@ -677,8 +728,46 @@ def main():
 
     print("\n开始生成帧...")
     
-    # Get the total number of frames
-    total_frames = len(quarters)
+    # Get the total number of frames to generate based on the number of quarters
+    total_quarters = len(quarters)
+    
+    # Use the global frame_indices
+    global frame_indices
+    
+    if args.publish and args.quarters_only:
+        # In quarters-only mode, generate exactly one frame per quarter
+        frame_indices = list(range(total_quarters))
+        total_frames = total_quarters
+        print(f"Quarters-only mode: Generating {total_frames} frames (one per quarter)")
+    else:
+        # In normal mode, generate multiple frames between quarters based on FRAMES_PER_YEAR
+        frames_per_quarter = FRAMES_PER_YEAR // 4
+        print(f"Normal mode: Generating approximately {frames_per_quarter} frames per quarter")
+        
+        # Create frame indices with appropriate interpolation between quarters
+        frame_indices = []
+        
+        # Generate frames based on FRAMES_PER_YEAR
+        for i in range(total_quarters - 1):
+            # Add the main quarter frame
+            frame_indices.append(i)
+            
+            # Add interpolated frames between quarters if not in quarters-only mode
+            if not (args.publish and args.quarters_only):
+                for j in range(1, frames_per_quarter):
+                    # Calculate fractional index for interpolation
+                    fraction = j / frames_per_quarter
+                    frame_indices.append(i + fraction)
+        
+        # Add the last quarter
+        frame_indices.append(total_quarters - 1)
+        total_frames = len(frame_indices)
+        
+        # Sort frames to ensure sequential generation
+        frame_indices.sort()
+        
+        print(f"Total frames to generate: {total_frames}")
+        print(f"First few frame indices: {frame_indices[:10]}")
     
     # Create progress bar
     with tqdm(total=total_frames, desc="Generating frames") as pbar:
@@ -686,12 +775,12 @@ def main():
         if args.publish:
             # Use multiple processes for publishing mode
             with mp.Pool() as pool:
-                for _ in pool.imap_unordered(create_frame, range(total_frames)):
+                for _ in pool.imap_unordered(create_frame, frame_indices):
                     pbar.update(1)
         else:
             # Use single process for preview mode
-            for frame in range(total_frames):
-                create_frame(frame)
+            for frame_idx in frame_indices:
+                create_frame(frame_idx)
                 pbar.update(1)
 
     print("\n\n所有帧生成完成！")
