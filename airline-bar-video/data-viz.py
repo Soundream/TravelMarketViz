@@ -18,6 +18,8 @@ import multiprocessing as mp
 from functools import partial
 from tqdm import tqdm
 import matplotlib
+import warnings
+import matplotlib.font_manager as fm
 matplotlib.use('Agg')  # Use Agg backend for better performance
 
 # Add argument parser
@@ -35,7 +37,7 @@ if args.publish:
         FRAMES_PER_YEAR = args.frames_per_year if args.frames_per_year else 192  # Use custom frames per year or default to 192
     OUTPUT_DPI = 108      # Further reduced from 144 to 108
     FIGURE_SIZE = (19.2, 10.8)  # 1080p size
-    LOGO_DPI = 216       # Reduced from 300 to 216 for logos
+    LOGO_DPI = 300       # Increased from 216 to 300 for sharper logos
 else:
     if args.quarters_only:
         print("\n警告: --quarters-only 参数只在 --publish 模式下生效")
@@ -44,7 +46,7 @@ else:
     FRAMES_PER_YEAR = 48   # Preview frames
     OUTPUT_DPI = 72      # Keep preview DPI at 72
     FIGURE_SIZE = (16, 9)  # Smaller size for preview
-    LOGO_DPI = 144      # Keep preview logo DPI at 144
+    LOGO_DPI = 200      # Increased from 144 to 200 for sharper preview logos
 
 # Create required directories
 logos_dir = 'logos'
@@ -112,6 +114,12 @@ def optimize_figure_for_performance():
     plt.rcParams['agg.path.chunksize'] = 10000
     plt.rcParams['figure.dpi'] = OUTPUT_DPI
     plt.rcParams['savefig.dpi'] = OUTPUT_DPI
+    plt.rcParams['savefig.bbox'] = 'tight'
+    plt.rcParams['figure.autolayout'] = False  # Turn off autolayout to avoid conflict
+    plt.rcParams['figure.constrained_layout.use'] = False  # Turn off constrained_layout to avoid conflict
+    plt.rcParams['savefig.format'] = 'png'
+    plt.rcParams['savefig.pad_inches'] = 0.2
+    plt.rcParams['figure.figsize'] = FIGURE_SIZE
     plt.rcParams['font.family'] = 'sans-serif'
     plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Helvetica', 'sans-serif']
     plt.rcParams['axes.facecolor'] = 'white'
@@ -129,41 +137,97 @@ def preprocess_logo(image_array, target_size=None, upscale_factor=4):
     """优化的logo预处理函数"""
     cache_key = f"{hash(str(image_array.tobytes()))}-{str(target_size)}"
     if cache_key in logo_cache:
+        print(f"Using cached logo for size {target_size}")
         return logo_cache[cache_key]
 
-    if isinstance(image_array, np.ndarray):
-        if image_array.dtype == np.float32:
-            image_array = (image_array * 255).astype(np.uint8)
-        image = Image.fromarray(image_array)
-    else:
-        image = image_array
-
-    original_mode = image.mode
-
-    if target_size:
-        w, h = target_size
-        if args.publish:
-            large_size = (w * 2, h * 2)  # Reduced upscale factor
-            image = image.resize(large_size, Image.Resampling.LANCZOS)
-
-            if original_mode == 'RGBA':
-                r, g, b, a = image.split()
-                rgb = Image.merge('RGB', (r, g, b))
-                enhancer = ImageEnhance.Sharpness(rgb)
-                rgb = enhancer.enhance(1.2)
-                r, g, b = rgb.split()
-                image = Image.merge('RGBA', (r, g, b, a))
-            else:
-                enhancer = ImageEnhance.Sharpness(image)
-                image = enhancer.enhance(1.2)
-
-            image = image.resize(target_size, Image.Resampling.LANCZOS)
+    try:
+        if isinstance(image_array, np.ndarray):
+            if image_array.dtype == np.float32:
+                image_array = (image_array * 255).astype(np.uint8)
+            image = Image.fromarray(image_array)
         else:
-            image = image.resize(target_size, Image.Resampling.LANCZOS)
+            image = image_array
 
-    result = np.array(image)
-    logo_cache[cache_key] = result
-    return result
+        original_mode = image.mode
+        original_size = image.size
+        print(f"Original logo size: {original_size}, mode: {original_mode}")
+
+        if target_size:
+            w, h = target_size
+            if args.publish:
+                # Use a larger upscale for better quality
+                large_size = (w * 3, h * 3)  # Increased upscale factor from 2 to 3
+                print(f"Resizing to intermediate size: {large_size} using LANCZOS")
+                image = image.resize(large_size, Image.Resampling.LANCZOS)
+
+                # Apply stronger sharpening and contrast enhancement
+                if original_mode == 'RGBA':
+                    r, g, b, a = image.split()
+                    rgb = Image.merge('RGB', (r, g, b))
+                    
+                    # Apply stronger sharpening
+                    enhancer = ImageEnhance.Sharpness(rgb)
+                    rgb = enhancer.enhance(1.8)  # Increased from 1.5 to 1.8
+                    
+                    # Add contrast enhancement
+                    contrast = ImageEnhance.Contrast(rgb)
+                    rgb = contrast.enhance(1.3)  # Increased from 1.2 to 1.3
+                    
+                    # Restore alpha channel
+                    r, g, b = rgb.split()
+                    image = Image.merge('RGBA', (r, g, b, a))
+                else:
+                    # Apply stronger sharpening
+                    enhancer = ImageEnhance.Sharpness(image)
+                    image = enhancer.enhance(1.8)  # Increased from 1.5 to 1.8
+                    
+                    # Add contrast enhancement
+                    contrast = ImageEnhance.Contrast(image)
+                    image = contrast.enhance(1.3)  # Increased from 1.2 to 1.3
+
+                # Apply unsharp mask filter for additional sharpness
+                print("Applying UnsharpMask filter")
+                image = image.filter(ImageFilter.UnsharpMask(radius=1.2, percent=180, threshold=3))
+                
+                # Resize to target size with high-quality resampling
+                print(f"Final resize to target size: {target_size} using LANCZOS")
+                image = image.resize(target_size, Image.Resampling.LANCZOS)
+            else:
+                # Improved processing for preview mode too
+                large_size = (w * 2, h * 2)
+                print(f"Preview mode: Resizing to intermediate size: {large_size}")
+                image = image.resize(large_size, Image.Resampling.LANCZOS)
+                
+                # Apply moderate sharpening and contrast
+                if original_mode == 'RGBA':
+                    r, g, b, a = image.split()
+                    rgb = Image.merge('RGB', (r, g, b))
+                    enhancer = ImageEnhance.Sharpness(rgb)
+                    rgb = enhancer.enhance(1.5)  # Increased from 1.3 to 1.5
+                    contrast = ImageEnhance.Contrast(rgb)
+                    rgb = contrast.enhance(1.2)  # Increased from 1.1 to 1.2
+                    r, g, b = rgb.split()
+                    image = Image.merge('RGBA', (r, g, b, a))
+                else:
+                    enhancer = ImageEnhance.Sharpness(image)
+                    image = enhancer.enhance(1.5)  # Increased from 1.3 to 1.5
+                    contrast = ImageEnhance.Contrast(image)
+                    image = contrast.enhance(1.2)  # Increased from 1.1 to 1.2
+                    
+                image = image.filter(ImageFilter.UnsharpMask(radius=1.0, percent=150, threshold=3))
+                image = image.resize(target_size, Image.Resampling.LANCZOS)
+
+        result = np.array(image)
+        print(f"Processed logo array shape: {result.shape}")
+        logo_cache[cache_key] = result
+        return result
+        
+    except Exception as e:
+        print(f"Error in preprocess_logo: {e}")
+        import traceback
+        traceback.print_exc()
+        # If preprocessing fails, return the original image
+        return image_array
 
 def format_revenue(value, pos):
     """Format revenue values with B for billions and M for millions"""
@@ -244,37 +308,71 @@ logo_mapping = {
         {"start_year": 1995, "end_year": 2005, "file": "logos/air-canada-1995-2005.jpg"},
         {"start_year": 2005, "end_year": 9999, "file": "logos/air-canada-2005-now.png"}
     ],
-    "IAG": [{"start_year": 1999, "end_year": 9999, "file": "logos/IAG-1999-now.png"}]
+    "IAG": [{"start_year": 1999, "end_year": 9999, "file": "logos/IAG-1999-now.png"}],
+    "Ryanair": [
+        {"start_year": 1999, "end_year": 2001, "file": "logos/Ryanair-1999-2001.png"},
+        {"start_year": 2001, "end_year": 2013, "file": "logos/Ryanair-2001-2013.jpg"},
+        {"start_year": 2013, "end_year": 9999, "file": "logos/Ryanair-2013-now.jpg"}
+    ],
+    "Aeroflot": [
+        {"start_year": 1999, "end_year": 2003, "file": "logos/Aeroflot-1999-2003.jpg"},
+        {"start_year": 2003, "end_year": 9999, "file": "logos/Aeroflot-2003-now.jpg"}
+    ]
 }
 
 def get_logo_path(airline, year, iata_code):
     """Get the appropriate logo path based on airline name and year"""
     if airline not in logo_mapping:
-        print(f"No logo mapping found for {airline}")
+        print(f"No logo mapping found for {airline} (IATA: {iata_code})")
         return None
         
     logo_versions = logo_mapping[airline]
+    print(f"Found {len(logo_versions)} logo versions for {airline}")
     
     # Find the appropriate logo version for the given year
     for version in logo_versions:
         if version["start_year"] <= year <= version["end_year"]:
             logo_path = version["file"]
+            print(f"Selected logo for {airline} ({year}): {logo_path}")
+            
             if os.path.exists(logo_path):
-                print(f"Found logo for {airline} ({year}): {logo_path}")
+                print(f"Verified logo file exists: {logo_path}")
                 return logo_path
             else:
-                print(f"Logo file not found: {logo_path}")
+                print(f"ERROR: Logo file not found: {logo_path}")
+                # 显示当前工作目录和目标文件的绝对路径，以便进行调试
+                print(f"Current working directory: {os.getcwd()}")
+                print(f"Absolute path would be: {os.path.abspath(logo_path)}")
                 return None
     
     print(f"No logo version found for {airline} in year {year}")
     return None
+
+# Set up font configurations
+plt.rcParams['font.family'] = 'sans-serif'
+
+# Check for Monda font, otherwise use a system sans-serif font
+font_path = None
+system_fonts = fm.findSystemFonts()
+for font in system_fonts:
+    if 'monda' in font.lower():
+        font_path = font
+        break
+
+if font_path:
+    monda_font = fm.FontProperties(fname=font_path)
+    print(f"Found Monda font at: {font_path}")
+else:
+    monda_font = fm.FontProperties(family='sans-serif')
+    print("Monda font not found, using default sans-serif")
 
 def create_frame(frame):
     """优化的帧创建函数，样式更接近原始data-viz"""
     optimize_figure_for_performance()
     
     # Create figure with optimized settings
-    fig = plt.figure(figsize=FIGURE_SIZE, facecolor='white')
+    print(f"\nCreating frame {frame} with figure size {FIGURE_SIZE}, DPI {OUTPUT_DPI}")
+    fig = plt.figure(figsize=FIGURE_SIZE, facecolor='white', dpi=OUTPUT_DPI)
     
     # Create a gridspec with space for timeline and bars
     gs = fig.add_gridspec(2, 1, height_ratios=[0.15, 1], hspace=0.1,
@@ -291,6 +389,7 @@ def create_frame(frame):
     colors = []
     labels = []
     logos = []
+    # TODO: 
     
     # Get the current quarter's data
     current_quarter = quarters[frame]
@@ -302,7 +401,6 @@ def create_frame(frame):
     
     print(f"\nProcessing frame for {quarter_display}")
     print(f"Current data for {quarter_display}: {current_data}")  # Debugging line
-    
     # Iterate through airlines
     for airline in current_data.index:
         value = current_data[airline]
@@ -357,46 +455,91 @@ def create_frame(frame):
     for i, (logo_path, y) in enumerate(zip(logos, y_positions)):
         if logo_path and os.path.exists(logo_path):
             try:
+                print(f"Loading logo from: {logo_path}")
                 img = plt.imread(logo_path)
                 
-                # Calculate logo size maintaining aspect ratio
-                img_height = BAR_HEIGHT * 0.8
+                # 计算logo尺寸，保持纵横比
+                img_height = BAR_HEIGHT * 0.8  # 设置为条形高度的80%
                 aspect_ratio = img.shape[1] / img.shape[0]
                 img_width = img_height * aspect_ratio
                 
-                # Preprocess logo with calculated size
-                img = preprocess_logo(img, target_size=(int(img_width * 72), int(img_height * 72)))
+                # 计算以像素为单位的目标尺寸
+                target_height_pixels = int(40)  # 固定高度为40像素 (reduced from 60)
+                target_width_pixels = int(target_height_pixels * aspect_ratio)
                 
-                # Calculate logo position (right of the value label)
+                print(f"Processing logo with size: {target_width_pixels}x{target_height_pixels} pixels")
+                
+                # 处理logo图像
+                # 转换到PIL图像进行处理
+                if isinstance(img, np.ndarray):
+                    if img.dtype == np.float32:
+                        img = (img * 255).astype(np.uint8)
+                    pil_img = Image.fromarray(img)
+                else:
+                    pil_img = img
+                
+                # 使用高质量调整大小
+                pil_img = pil_img.resize((target_width_pixels, target_height_pixels), Image.Resampling.LANCZOS)
+                
+                # 应用锐化增强
+                if pil_img.mode == 'RGBA':
+                    r, g, b, a = pil_img.split()
+                    rgb = Image.merge('RGB', (r, g, b))
+                    enhancer = ImageEnhance.Sharpness(rgb)
+                    rgb = enhancer.enhance(1.8)
+                    contrast = ImageEnhance.Contrast(rgb)
+                    rgb = contrast.enhance(1.3)
+                    r, g, b = rgb.split()
+                    pil_img = Image.merge('RGBA', (r, g, b, a))
+                else:
+                    enhancer = ImageEnhance.Sharpness(pil_img)
+                    pil_img = enhancer.enhance(1.8)
+                    contrast = ImageEnhance.Contrast(pil_img)
+                    pil_img = contrast.enhance(1.3)
+                
+                # 转回numpy数组
+                img_array = np.array(pil_img)
+                
+                # 转换回matplotlib可以使用的格式
+                if img_array.dtype != np.float32 and img_array.max() > 1.0:
+                    img_array = img_array.astype(np.float32) / 255.0
+                
+                # 计算logo位置（条形的右侧）
                 value = quarter_data[i]
-                value_width = len(format_revenue(value, None)) * 10  # Approximate width of value text
-                x = value + (max(quarter_data) * 0.07) + (value_width / 100)  # Increase offset for right movement
+                value_width = len(format_revenue(value, None)) * 10  # 文本宽度的近似值
+                x = value + (max(quarter_data) * 0.07) + (value_width / 100)  # 增加偏移量以便向右移动logo
                 
-                # Create OffsetImage and AnnotationBbox
-                imagebox = OffsetImage(img, zoom=0.8)  # Increase zoom to enlarge logos
-                imagebox.image.axes = ax
-                
-                # Add the logo
+                # 创建OffsetImage并添加到图表
+                imagebox = OffsetImage(img_array, zoom=0.8)  # 保持缩小的zoom因子
                 ab = AnnotationBbox(imagebox, (x, y),
-                                  box_alignment=(0, 0.5),  # Align left center
+                                  box_alignment=(0, 0.5),  # 左中对齐
                                   frameon=False)
                 ax.add_artist(ab)
+                print(f"Added logo successfully at position ({x}, {y})")
             except Exception as e:
                 print(f"Error loading logo {logo_path}: {e}")
+                # 打印完整的异常堆栈跟踪以便调试
+                import traceback
+                traceback.print_exc()
+                # Don't let logo issues stop processing
+                continue
     
     # Customize the plot
     ax.set_yticks(y_positions)
-    ax.set_yticklabels(labels, fontsize=TICK_FONT_SIZE)
+    ax.set_yticklabels(labels, fontsize=TICK_FONT_SIZE, fontproperties=monda_font)
     
     # Add value labels at the end of the bars
     for i, bar in enumerate(bars):
         value = quarter_data[i]
         value_text = format_revenue(value, None)
         ax.text(value + (max(quarter_data) * 0.01), y_positions[i], value_text,
-                va='center', ha='left', fontsize=VALUE_FONT_SIZE)
+                va='center', ha='left', fontsize=VALUE_FONT_SIZE, fontproperties=monda_font)
     
     # Format x-axis with custom formatter
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_revenue))
+    ax.xaxis.set_tick_params(labelsize=TICK_FONT_SIZE)
+    for label in ax.get_xticklabels():
+        label.set_fontproperties(monda_font)
     
     # Set axis limits with padding for logos and labels
     max_value = max(quarter_data) if quarter_data else 0
@@ -413,9 +556,10 @@ def create_frame(frame):
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)  # Hide bottom spine
     ax.tick_params(axis='y', which='both', left=False)
     
-    # Set up timeline
+    # Set up timeline - New style matching data-viz.py
     ax_timeline.set_facecolor('none')  # Transparent background
     
     # Get min and max quarters for timeline
@@ -424,42 +568,55 @@ def create_frame(frame):
     min_year, min_q = parse_quarter(min_quarter)
     max_year, max_q = parse_quarter(max_quarter)
     
-    # Create timeline tick positions
-    timeline_ticks = np.linspace(0, len(quarters) - 1, num=len(quarters))
-    
     # Set timeline limits with padding
     ax_timeline.set_xlim(-1, len(quarters))
     ax_timeline.set_ylim(-0.2, 0.2)
     
-    # Draw timeline base line
-    ax_timeline.axhline(y=0, color='#808080', linewidth=1.5, alpha=0.3)
+    # Set up timeline styling similar to data-viz.py
+    ax_timeline.spines['top'].set_visible(False)
+    ax_timeline.spines['right'].set_visible(False)
+    ax_timeline.spines['left'].set_visible(False)
+    ax_timeline.spines['bottom'].set_visible(True)
+    ax_timeline.spines['bottom'].set_linewidth(1.5)
+    ax_timeline.spines['bottom'].set_color('#808080')
+    ax_timeline.spines['bottom'].set_position(('data', 0))
     
-    # Add quarter markers
+    # Add quarter markers with vertical lines
     for i, quarter in enumerate(quarters):
         year, q = parse_quarter(quarter)
         if q == 1:  # Major tick for Q1
-            ax_timeline.plot([i, i], [-0.05, 0], color='#808080', linewidth=1.5, alpha=0.5)  # Adjust line position
-            ax_timeline.text(i, -0.07, str(year), ha='center', va='top', fontsize=12, color='#808080')
+            ax_timeline.vlines(i, -0.03, 0, colors='#808080', linewidth=1.5)
+            if year % 2 == 0:  # Only label even years to avoid crowding
+                ax_timeline.text(i, -0.07, str(year), ha='center', va='top', 
+                               fontsize=12, color='#808080', fontproperties=monda_font)
         else:  # Minor tick for other quarters
-            ax_timeline.plot([i, i], [-0.025, 0], color='#808080', linewidth=0.5, alpha=0.3)  # Adjust line position
+            ax_timeline.vlines(i, -0.02, 0, colors='#808080', linewidth=0.5, alpha=0.7)
     
     # Add current position marker (inverted triangle)
-    ax_timeline.plot(frame, 0.03, marker='v', color='#4e843d', markersize=10, zorder=5)
+    ax_timeline.plot(frame, 0.05, marker='v', color='#4e843d', markersize=10, zorder=5)
     
-    # Remove current quarter text
-    # ax_timeline.text(frame, -0.1, quarter_display, 
-    #                 ha='center', va='top', fontsize=9,
-    #                 color='#4e843d', fontweight='bold')
-    
-    # Remove timeline axis lines
+    # Remove timeline ticks
     ax_timeline.set_xticks([])
     ax_timeline.set_yticks([])
-    for spine in ax_timeline.spines.values():
-        spine.set_visible(False)
     
     # Save the frame
     frame_path = os.path.join(frames_dir, f'frame_{frame:04d}.png')
-    plt.savefig(frame_path, dpi=OUTPUT_DPI, bbox_inches='tight')
+    print(f"Saving frame to: {frame_path}")
+    
+    # Suppress specific matplotlib warnings
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=UserWarning, message="This figure includes Axes that are not compatible with tight_layout")
+        plt.savefig(frame_path, dpi=OUTPUT_DPI, bbox_inches='tight', 
+                    pad_inches=0.2, format='png', transparent=False, 
+                    facecolor='white', edgecolor='none')
+    
+    # 验证图像是否成功保存并输出文件信息
+    if os.path.exists(frame_path):
+        file_size = os.path.getsize(frame_path) / 1024.0  # KB
+        print(f"Frame saved successfully. File size: {file_size:.2f} KB")
+    else:
+        print(f"WARNING: Frame file was not created: {frame_path}")
+    
     plt.close(fig)
     return frame_path
 
@@ -493,4 +650,35 @@ def main():
     print(f"帧文件保存在: {frames_dir}")
 
 if __name__ == '__main__':
-    main() 
+    try:
+        # 设置显示更多调试信息
+        print("Running in DEBUG mode with extra logging...")
+        
+        # 检查logos目录中的文件
+        print("\nChecking logo files in logos directory...")
+        logo_files = os.listdir(logos_dir)
+        print(f"Found {len(logo_files)} logo files:")
+        for file in sorted(logo_files):
+            print(f"  - {file}")
+        
+        # 检查一些常见的logo文件是否存在
+        important_logos = [
+            "logos/american-airlines-2013-now.jpg",
+            "logos/delta-air-lines-2007-now.jpg",
+            "logos/southwest-airlines-2014-now.png"
+        ]
+        
+        print("\nVerifying key logo files:")
+        for logo in important_logos:
+            if os.path.exists(logo):
+                print(f"  ✓ {logo} exists")
+            else:
+                print(f"  ✗ {logo} MISSING")
+        
+        # 运行主程序
+        main()
+    except Exception as e:
+        print(f"ERROR in main program execution: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1) 
