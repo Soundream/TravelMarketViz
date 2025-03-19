@@ -374,6 +374,20 @@ def create_frame(frame_idx):
     """优化的帧创建函数，样式更接近原始data-viz"""
     optimize_figure_for_performance()
     
+    # 处理分数帧索引用于插值
+    frame_int = int(frame_idx)
+    frame_fraction = frame_idx - frame_int
+    
+    # 设置统一的图像尺寸
+    uniform_figure_size = FIGURE_SIZE
+    print(f"\nCreating frame {frame_idx} with fixed figure size {uniform_figure_size}, DPI {OUTPUT_DPI}")
+    
+    # 创建图形并设置确定的尺寸
+    fig = plt.figure(figsize=uniform_figure_size, facecolor='white', dpi=OUTPUT_DPI)
+    
+    # 确保图形尺寸是严格统一的
+    fig.set_size_inches(uniform_figure_size[0], uniform_figure_size[1], forward=True)
+    
     # Get the frame number for file naming
     global frame_indices
     if frame_indices and frame_idx in frame_indices:
@@ -413,7 +427,6 @@ def create_frame(frame_idx):
     
     # Create figure with optimized settings
     print(f"\nCreating frame {frame_idx} with figure size {FIGURE_SIZE}, DPI {OUTPUT_DPI}")
-    fig = plt.figure(figsize=FIGURE_SIZE, facecolor='white', dpi=OUTPUT_DPI)
     
     # Set consistent color for all text elements and grid lines
     text_color = '#808080'
@@ -702,21 +715,32 @@ def create_frame(frame_idx):
     frame_path = os.path.join(frames_dir, f'frame_{frame_position:04d}.png')
     print(f"Saving frame to: {frame_path}")
     
-    # Suppress specific matplotlib warnings
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", category=UserWarning, message="This figure includes Axes that are not compatible with tight_layout")
-        plt.savefig(frame_path, dpi=OUTPUT_DPI, bbox_inches='tight', 
-                    pad_inches=0.2, format='png', transparent=False, 
-                    facecolor='white', edgecolor='none')
-    
-    # 验证图像是否成功保存并输出文件信息
-    if os.path.exists(frame_path):
-        file_size = os.path.getsize(frame_path) / 1024.0  # KB
-        print(f"Frame saved successfully. File size: {file_size:.2f} KB")
-    else:
-        print(f"WARNING: Frame file was not created: {frame_path}")
+    # 使用高品质、一致尺寸的保存设置
+    plt.savefig(
+        frame_path,
+        dpi=OUTPUT_DPI,
+        bbox_inches='tight',
+        pad_inches=0.1,
+        facecolor=fig.get_facecolor(),
+        edgecolor='none',
+        transparent=False,
+        metadata={'Software': 'matplotlib'},
+        pil_kwargs={
+            'quality': 95 if args.publish else 85,
+            'optimize': True,
+        }
+    )
     
     plt.close(fig)
+    
+    # 验证生成的帧尺寸是否符合预期
+    try:
+        img = Image.open(frame_path)
+        print(f"Frame saved with dimensions: {img.size[0]}x{img.size[1]} pixels")
+        img.close()
+    except:
+        pass
+        
     return frame_path
 
 def main():
@@ -728,6 +752,23 @@ def main():
 
     print("\n开始生成帧...")
     
+    # 在开始前先确认所有需要用到的目录
+    for directory in [logos_dir, output_dir, frames_dir]:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            print(f"Created directory: {directory}")
+            
+    # 清空输出目录中的现有帧文件，确保重新开始
+    if os.path.exists(frames_dir):
+        existing_frames = glob.glob(os.path.join(frames_dir, 'frame_*.png'))
+        if existing_frames and input(f"Found {len(existing_frames)} existing frames. Clear them? (y/n): ").lower() == 'y':
+            for f in existing_frames:
+                try:
+                    os.remove(f)
+                except:
+                    pass
+            print(f"Cleared {len(existing_frames)} existing frames.")
+
     # Get the total number of frames to generate based on the number of quarters
     total_quarters = len(quarters)
     
