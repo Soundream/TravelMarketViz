@@ -117,11 +117,11 @@ def optimize_figure_for_performance():
     plt.rcParams['agg.path.chunksize'] = 10000
     plt.rcParams['figure.dpi'] = OUTPUT_DPI
     plt.rcParams['savefig.dpi'] = OUTPUT_DPI
-    plt.rcParams['savefig.bbox'] = 'tight'
-    plt.rcParams['figure.autolayout'] = False  # Turn off autolayout to avoid conflict
-    plt.rcParams['figure.constrained_layout.use'] = False  # Turn off constrained_layout to avoid conflict
+    plt.rcParams['savefig.bbox'] = 'standard'  # 改为standard，不使用tight
+    plt.rcParams['figure.autolayout'] = False  # 关闭autolayout
+    plt.rcParams['figure.constrained_layout.use'] = False  # 关闭constrained_layout
     plt.rcParams['savefig.format'] = 'png'
-    plt.rcParams['savefig.pad_inches'] = 0.2
+    plt.rcParams['savefig.pad_inches'] = 0.1  # 固定的padding
     plt.rcParams['figure.figsize'] = FIGURE_SIZE
     plt.rcParams['font.family'] = 'sans-serif'
     plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Helvetica', 'sans-serif']
@@ -378,15 +378,15 @@ def create_frame(frame_idx):
     frame_int = int(frame_idx)
     frame_fraction = frame_idx - frame_int
     
-    # 设置统一的图像尺寸
-    uniform_figure_size = FIGURE_SIZE
-    print(f"\nCreating frame {frame_idx} with fixed figure size {uniform_figure_size}, DPI {OUTPUT_DPI}")
+    # 设置严格统一的图像尺寸
+    fig_width = FIGURE_SIZE[0]
+    fig_height = FIGURE_SIZE[1]
     
-    # 创建图形并设置确定的尺寸
-    fig = plt.figure(figsize=uniform_figure_size, facecolor='white', dpi=OUTPUT_DPI)
+    # 创建图形并严格设置尺寸
+    fig = plt.figure(figsize=(fig_width, fig_height), facecolor='white', dpi=OUTPUT_DPI)
     
     # 确保图形尺寸是严格统一的
-    fig.set_size_inches(uniform_figure_size[0], uniform_figure_size[1], forward=True)
+    fig.set_size_inches(fig_width, fig_height, forward=True)
     
     # Get the frame number for file naming
     global frame_indices
@@ -432,8 +432,10 @@ def create_frame(frame_idx):
     text_color = '#808080'
     
     # Create a gridspec with space for timeline and bars - adjusted ratios for layout
-    gs = fig.add_gridspec(2, 1, height_ratios=[0.15, 1], hspace=0.05,
-                         top=0.95, bottom=0.1)  # Reduced hspace to move bars closer to timeline
+    gs = fig.add_gridspec(2, 1, height_ratios=[0.15, 1], 
+                          left=0.1, right=0.9,  # 固定左右边距
+                          bottom=0.1, top=0.95,  # 固定上下边距
+                          hspace=0.05)
     
     # Create axis for timeline
     ax_timeline = fig.add_subplot(gs[0])
@@ -490,7 +492,7 @@ def create_frame(frame_idx):
         frame_path = os.path.join(frames_dir, f'frame_{frame_position:04d}.png')
         ax.text(0.5, 0.5, f'No data available for {current_quarter}',
                 ha='center', va='center', transform=ax.transAxes)
-        plt.savefig(frame_path, dpi=OUTPUT_DPI, bbox_inches='tight')
+        plt.savefig(frame_path, dpi=OUTPUT_DPI, bbox_inches=None, pad_inches=0.1, facecolor=fig.get_facecolor(), edgecolor='none', transparent=False, metadata={'Software': 'matplotlib'}, pil_kwargs={'quality': 95 if args.publish else 85, 'optimize': True})
         plt.close(fig)
         return frame_path
     
@@ -711,15 +713,15 @@ def create_frame(frame_idx):
     ax_timeline.set_xticks([])
     ax_timeline.set_yticks([])
     
-    # Save the frame with sequential numbering
+    # Save the frame with sequential numbering and fixed size
     frame_path = os.path.join(frames_dir, f'frame_{frame_position:04d}.png')
     print(f"Saving frame to: {frame_path}")
     
-    # 使用高品质、一致尺寸的保存设置
+    # 使用固定尺寸设置保存图像，不使用bbox_inches='tight'
     plt.savefig(
         frame_path,
         dpi=OUTPUT_DPI,
-        bbox_inches='tight',
+        bbox_inches=None,  # 不使用bbox_inches，使用固定的尺寸
         pad_inches=0.1,
         facecolor=fig.get_facecolor(),
         edgecolor='none',
@@ -733,13 +735,13 @@ def create_frame(frame_idx):
     
     plt.close(fig)
     
-    # 验证生成的帧尺寸是否符合预期
+    # 验证生成的帧尺寸
     try:
         img = Image.open(frame_path)
         print(f"Frame saved with dimensions: {img.size[0]}x{img.size[1]} pixels")
         img.close()
-    except:
-        pass
+    except Exception as e:
+        print(f"Error checking frame dimensions: {e}")
         
     return frame_path
 
