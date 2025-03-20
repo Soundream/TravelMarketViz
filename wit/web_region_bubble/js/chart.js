@@ -11,41 +11,6 @@ let currentTraces;
 let layout;
 let config;
 
-// Function to load image and convert to base64
-async function loadBackgroundImage() {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = "Anonymous";
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            const base64String = canvas.toDataURL();
-            layout.images = [{
-                source: base64String,
-                xref: "paper",
-                yref: "paper",
-                x: 0,
-                y: 1,
-                sizex: 1,
-                sizey: 1,
-                sizing: "stretch",
-                opacity: 0.15,
-                layer: "below"
-            }];
-            console.log("Background image loaded successfully!");
-            resolve();
-        };
-        img.onerror = function(error) {
-            console.error('Error loading image:', error);
-            reject(error); // Changed to reject on error
-        };
-        img.src = '../../assets/mascot.png'; // Fixed path to point to correct location
-    });
-}
-
 // Add getEraText function at the top level
 function getEraText(year) {
     const yearNum = parseInt(year);
@@ -57,7 +22,7 @@ function getEraText(year) {
         return "Growth of Mobile";
     } else if (yearNum >= 2019 && yearNum <= 2020) {
         return "Global Pandemic";
-    } else if (yearNum >= 2021 && yearNum <= 2023) {
+    } else if (yearNum >= 2021) {
         return "Post-Pandemic Recovery";
     }
     return "";
@@ -96,7 +61,13 @@ function createTimeline() {
         .selectAll('text')
         .style('text-anchor', 'middle')
         .style('font-family', 'Monda')
-        .style('font-size', '12px');
+        .style('font-size', '18px');
+
+    // Make timeline ticks more visible
+    g.selectAll('.tick line')
+        .style('stroke', '#ccc')
+        .style('stroke-width', '1px')
+        .attr('y2', '8');
 
     // Add triangle marker
     const triangle = g.append('path')
@@ -257,8 +228,9 @@ function createBubbleChart(data, year) {
                 text: 'Share of Online Bookings (%)',
                 font: {
                     family: 'Monda',
-                    size: 14
-                }
+                    size: 22
+                },
+                standoff: 15
             },
             range: [-5, 105],  // 进一步扩大横轴范围
             showgrid: true,
@@ -271,14 +243,16 @@ function createBubbleChart(data, year) {
             linewidth: 1,
             tickfont: {
                 family: 'Monda',
-                size: 12
+                size: 20
             },
             tickmode: 'array',
             ticktext: ['0%', '20%', '40%', '60%', '80%', '100%'],
             tickvals: [0, 20, 40, 60, 80, 100],
             dtick: 20,
             showticklabels: true,
-            ticklen: 5,
+            ticks: 'outside',
+            ticklen: 8,
+            tickwidth: 1,
             tickcolor: '#ccc'
         },
         yaxis: {
@@ -286,8 +260,9 @@ function createBubbleChart(data, year) {
                 text: 'Online Bookings (USD bn)',
                 font: {
                     family: 'Monda',
-                    size: 14
-                }
+                    size: 22
+                },
+                standoff: 20
             },
             type: 'log',
             showgrid: true,
@@ -300,76 +275,35 @@ function createBubbleChart(data, year) {
             linewidth: 1,
             tickfont: {
                 family: 'Monda',
-                size: 12
+                size: 20
             },
             tickmode: 'array',
-            ticktext: ['0', '10', '40', '90', '160', '250', '400', '600', '800', '1000'],
-            tickvals: [0, 10, 40, 90, 160, 250, 400, 600, 800, 1000],
-            range: [0, Math.log10(1000)],
+            ticktext: ['0', '10', '40', '90', '160', '250', '400', '600', '800'],
+            tickvals: [0, 10, 40, 90, 160, 250, 400, 600, 800],
+            range: [0, Math.log10(900)],
             autorange: false,
             showticklabels: true,
-            ticklen: 5,
+            ticks: 'outside',
+            ticklen: 8,
+            tickwidth: 1,
             tickcolor: '#ccc'
         },
         showlegend: false,
         margin: {
-            l: 60,    // 进一步减小左边距
-            r: 0,    // 进一步减小右边距
+            l: 80,
+            r: 0,
             t: 100,
             b: 150
         },
         width: null,
         height: 650,  // 增加图表高度
-        annotations: [
-            {
-                text: 'Source: Phocal Point',
-                x: 0,
-                y: -0.25,
-                xref: 'paper',
-                yref: 'paper',
-                showarrow: false,
-                font: {
-                    family: 'Monda',
-                    size: 12,
-                    color: 'rgba(0, 0, 0, 0.6)'
-                },
-                xanchor: 'left'
-            },
-            {
-                text: 'Note: Online bookings comprise of online direct and via OTA.',
-                x: 0,
-                y: -0.29,
-                xref: 'paper',
-                yref: 'paper',
-                showarrow: false,
-                font: {
-                    family: 'Monda',
-                    size: 12,
-                    color: 'rgba(0, 0, 0, 0.6)'
-                },
-                xanchor: 'left'
-            },
-            {
-                text: '2005-2008 figures extrapolated based on GDP trends for the period. 2024-2027 figures are estimates.',
-                x: 0,
-                y: -0.33,
-                xref: 'paper',
-                yref: 'paper',
-                showarrow: false,
-                font: {
-                    family: 'Monda',
-                    size: 12,
-                    color: 'rgba(0, 0, 0, 0.6)'
-                },
-                xanchor: 'left'
-            }
-        ],
+        
         hovermode: 'closest',
         hoverlabel: {
             bgcolor: 'white',
             font: { 
                 family: 'Monda',
-                size: 12
+                size: 16
             },
             bordercolor: '#666'
         },
@@ -597,13 +531,10 @@ async function init() {
         years = [...new Set(processedData.map(d => d.Year))].sort();
         currentYearIndex = years.indexOf(appConfig.chart.defaultYear);
         
-        // Load background image
-        await loadBackgroundImage();
-        
-        // Create timeline
+        // 创建时间轴
         createTimeline();
         
-        // Create initial chart
+        // 先创建初始图表数据
         createBubbleChart(processedData, years[currentYearIndex]);
 
         // 清空并重新创建地图图例

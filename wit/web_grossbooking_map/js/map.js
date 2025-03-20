@@ -6,13 +6,6 @@ let timeline;
 let years;
 let animationFrameId = null;
 let processedData = null;
-let originalData = null;
-
-// 添加全局变量用于时间控制
-let currentExactYear = null;
-let timelineAnimationId = null;
-let globalStartTime = null;
-const ANIMATION_DURATION = 30000; // 30秒循环
 
 // Initialize the visualization
 async function init() {
@@ -38,38 +31,16 @@ async function init() {
         }
         console.log('Loaded data:', jsonData);
         
-        // 保存原始数据
-        originalData = jsonData;
-        
         processedData = processData(jsonData);
         if (!processedData || processedData.length === 0) {
             throw new Error("Failed to process data");
         }
         
-        createMap(processedData, years[0]);
+        createMap(processedData, appConfig.map.defaultYear);
         createTimeline();
-        createRaceChart(originalData, years[0]);
         
         // 自动开始动画
         startAnimation();
-
-        // 添加source和note
-        const container = document.createElement('div');
-        container.style.position = 'absolute';
-        container.style.left = '0';
-        container.style.bottom = '20px';  // 距离底部的距离
-        container.style.width = '80%';
-        container.style.fontFamily = 'Monda';
-        container.style.fontSize = '11px';
-        container.style.color = '#666666';
-        container.style.padding = '0 20px';  // 左右padding
-
-        container.innerHTML = `
-            <div>Source: Phocuswright</div>
-            <div style="margin-top: 5px">Note: Rest of Europe uses EU flag, Scandinavia uses Sweden flag</div>
-        `;
-
-        document.body.appendChild(container);
     } catch (error) {
         console.error('Error loading data:', error);
         document.getElementById('map-container').innerHTML = `
@@ -192,12 +163,10 @@ function processData(rawData) {
                         size: scaleMarkerSize(grossBookings),
                         color: appConfig.regionColors[mappedRegion] || '#999999',
                         line: {
-                            color: 'rgba(255, 255, 255, 0.1)',
-                            width: 0.2
+                            color: 'white',
+                            width: 1
                         },
-                        sizemode: 'area',
-                        sizeref: 0.15,
-                        opacity: 0.9
+                        sizemode: 'area'
                     },
                     name: mappedRegion,
                     legendgroup: mappedRegion,
@@ -229,28 +198,26 @@ function scaleMarkerSize(value) {
     const size = Math.max(appConfig.map.minBubbleSize, 
            Math.min(appConfig.map.maxBubbleSize, 
            Math.sqrt(value) * 2));  // 调整系数使气泡大小更合适
+    console.log('Scaling value', value, 'to size', size);
     return size;
 }
 
 // Function to create timeline
 function createTimeline() {
-    const timelineWidth = 1200;  // 增加时间轴宽度
-    const margin = { left: 100, right: 100, top: 40, bottom: 20 };
+    const timelineWidth = document.getElementById('timeline').offsetWidth;
+    const margin = { left: 80, right: 80 }; // 增加左右边距
     const width = timelineWidth - margin.left - margin.right;
-    const height = 60;
 
     // Create SVG
     const svg = d3.select('#timeline')
         .append('svg')
         .attr('width', timelineWidth)
-        .attr('height', height + margin.top + margin.bottom)
-        .style('margin', '20px auto 0')
-        .style('display', 'block');
+        .attr('height', 60);
 
     const g = svg.append('g')
-        .attr('transform', `translate(${margin.left}, ${margin.top})`);
+        .attr('transform', `translate(${margin.left}, 30)`);
 
-    // Create scale (现在只用于绘制轴，不用于动画)
+    // Create scale
     const xScale = d3.scaleLinear()
         .domain([d3.min(years), d3.max(years)])
         .range([0, width]);
@@ -270,11 +237,11 @@ function createTimeline() {
         .style('font-family', 'Monda')
         .style('font-size', '12px');
 
-    // 创建指针，初始位置在最左边
+    // Add triangle marker
     const triangle = g.append('path')
         .attr('d', d3.symbol().type(d3.symbolTriangle).size(100))
         .attr('fill', '#4CAF50')
-        .attr('transform', `translate(0, -10) rotate(180)`);
+        .attr('transform', `translate(${xScale(years[currentFrame])}, -10) rotate(180)`);
 
     timeline = {
         scale: xScale,
@@ -298,21 +265,20 @@ function updateTimeline(year) {
     if (timeline && timeline.triangle) {
         timeline.triangle
             .transition()
-            .duration(300)
-            .ease(d3.easeCubicInOut)
+            .duration(appConfig.animation.duration)
             .attr('transform', `translate(${timeline.scale(year)}, -10) rotate(180)`);
     }
 }
 
 // Create the map visualization
 const layout = {
-    width: 1000,
+    autosize: true,
     height: 600,
     margin: {
         l: 0,
         r: 0,
-        t: 40,
-        b: 80  // 增加底部边距以容纳图例
+        t: 0,
+        b: 0
     },
     paper_bgcolor: 'rgba(0,0,0,0)',
     plot_bgcolor: 'rgba(0,0,0,0)',
@@ -320,18 +286,13 @@ const layout = {
     geo: {
         scope: 'world',
         projection: {
-            type: 'equirectangular',
-            rotation: {
-                lon: 0,
-                lat: 0,
-                roll: 0
-            }
+            type: 'equirectangular'
         },
         showland: true,
-        landcolor: 'rgba(255, 255, 255, 0)',
+        landcolor: 'rgb(243, 243, 243)',
         countrycolor: 'rgb(204, 204, 204)',
         showocean: true,
-        oceancolor: 'rgba(255, 255, 255, 0)',
+        oceancolor: 'rgb(250, 250, 250)',
         showframe: false,
         showcountries: true,
         resolution: 50,
@@ -344,16 +305,13 @@ const layout = {
         lataxis: {
             showgrid: true,
             gridwidth: 0.5,
-            range: [-60, 85],  // 限制南极区域显示
+            range: [-90, 90],
             dtick: 30
         }
     },
     legend: {
-        x: 0.5,
-        y: -0.2,  // 放在地图下方
-        xanchor: 'center',
-        yanchor: 'top',
-        orientation: 'h',  // 水平排列
+        x: 0.1,
+        y: 0.4,
         bgcolor: 'rgba(255, 255, 255, 0.9)',
         bordercolor: 'rgba(0, 0, 0, 0.1)',
         borderwidth: 1,
@@ -407,205 +365,52 @@ function createMap(data, year) {
     }
 }
 
-// 修改startAnimation函数
+// Start the animation
 function startAnimation() {
     isPlaying = true;
-    globalStartTime = null;
-    let lastRoundedYear = null;
-    
-    // 预计算所有年份的数据结构
-    const baseData = processedData[0];
-    const preCalculatedData = {};
-    const preCalculatedRaceData = {};
-    
-    // 获取所有市场和区域
-    const allMarkets = new Set();
-    const allRegions = new Set();
-    processedData.forEach(d => {
-        allMarkets.add(d.text[0]);
-        allRegions.add(d.name);
-    });
-
-    // 预计算race chart数据
-    years.forEach(year => {
-        const yearData = originalData.filter(d => d.Year === year);
-        preCalculatedRaceData[year] = yearData
-            .map(d => ({
-                market: d.Market,
-                value: parseFloat(d['Gross Bookings']),
-                color: appConfig.colorDict[d.Market] || '#999999',
-                region: d.Region
-            }))
-            .sort((a, b) => b.value - a.value)
-            .slice(0, 15);
-    });
-
-    // 创建基础数据结构
-    const baseTraces = Array.from(allMarkets).map(market => {
-        const basePoint = processedData.find(d => d.text[0] === market);
-        if (!basePoint) return null;
-
-        return {
-            type: 'scattergeo',
-            lon: [basePoint.lon[0]],
-            lat: [basePoint.lat[0]],
-            text: [market],
-            mode: 'markers',
-            marker: {
-                color: basePoint.marker.color,
-                line: basePoint.marker.line,
-                sizemode: 'area',
-                sizeref: 0.15,
-                opacity: 0.9
-            },
-            name: basePoint.name,
-            legendgroup: basePoint.legendgroup,
-            showlegend: !allRegions.has(basePoint.name),
-            hovertemplate: basePoint.hovertemplate
-        };
-    }).filter(Boolean);
-
-    // 确保每个区域只显示一次图例
-    allRegions.clear();
-    baseTraces.forEach(d => {
-        if (!allRegions.has(d.name)) {
-            d.showlegend = true;
-            allRegions.add(d.name);
-        }
-    });
-
-    // 预计算每个年份的地图数据
-    years.forEach(year => {
-        const yearData = processedData.filter(d => d.frame === year.toString());
-        preCalculatedData[year] = baseTraces.map(baseTrace => {
-            const yearPoint = yearData.find(d => d.text[0] === baseTrace.text[0]);
-            const trace = { ...baseTrace };
-            
-            if (yearPoint) {
-                const value = parseFloat(yearPoint.customdata[0][0]);
-                trace.marker.size = scaleMarkerSize(value);
-                trace.customdata = [[value.toFixed(1), year]];
-            } else {
-                trace.marker.size = 0;
-                trace.customdata = [[0, year]];
-            }
-            
-            return trace;
-        });
-    });
+    let startTime = null;
+    const animationDuration = 15000; // 减少总循环时间到15秒
+    const frameInterval = 50; // 添加帧间隔控制
+    let lastFrameTime = 0;
     
     function animate(currentTime) {
-        if (!globalStartTime) globalStartTime = currentTime;
+        if (!startTime) startTime = currentTime;
         
-        const elapsed = currentTime - globalStartTime;
-        const totalProgress = (elapsed % ANIMATION_DURATION) / ANIMATION_DURATION;
-        
-        // 计算当前年份（包括小数部分）
-        const startYear = years[0];
-        const endYear = years[years.length - 1];
-        currentExactYear = startYear + (endYear - startYear) * totalProgress;
-        
-        // 获取当前年份的整数部分和小数部分
-        const currentYearInt = Math.floor(currentExactYear);
-        const currentYearFraction = currentExactYear - currentYearInt;
-        
-        // 找到当前年份在years数组中的位置
-        const currentYearIndex = years.findIndex(y => y >= currentYearInt);
-        if (currentYearIndex === -1) return;
-        
-        // 获取当前和下一个年份
-        const currentYear = years[currentYearIndex];
-        const nextYear = years[Math.min(currentYearIndex + 1, years.length - 1)];
-        
-        // 更新时间轴位置
-        if (timeline && timeline.triangle) {
-            const currentX = timeline.scale(currentExactYear);
-            timeline.triangle.attr('transform', `translate(${currentX}, -10) rotate(180)`);
+        // 控制帧率
+        if (currentTime - lastFrameTime < frameInterval) {
+            animationFrameId = requestAnimationFrame(animate);
+            return;
         }
-
-        // 使用预计算的数据进行插值
-        const currentData = preCalculatedData[currentYear];
-        const nextData = preCalculatedData[nextYear];
         
-        // 创建地图插值数据
-        const interpolatedMapData = currentData.map((current, index) => {
-            const next = nextData[index];
-            const trace = { ...current };
+        const elapsed = currentTime - startTime;
+        const totalProgress = (elapsed % animationDuration) / animationDuration;
+        const indexFloat = totalProgress * (years.length - 1);
+        const currentIndex = Math.floor(indexFloat);
+        
+        // 只在年份变化时更新
+        if (currentIndex !== currentFrame) {
+            currentFrame = currentIndex;
+            const yearData = processedData.filter(d => d.frame === years[currentIndex].toString());
             
-            const currentValue = parseFloat(current.customdata[0][0]);
-            const nextValue = parseFloat(next.customdata[0][0]);
-            const interpolatedValue = currentValue + (nextValue - currentValue) * currentYearFraction;
+            // 使用 Plotly.react 来更新所有数据
+            Plotly.react('map-container', yearData, layout, {
+                displayModeBar: false,
+                responsive: true,
+                scrollZoom: false,
+                transition: {
+                    duration: 300,
+                    easing: 'cubic-in-out'
+                }
+            });
             
-            trace.marker.size = scaleMarkerSize(interpolatedValue);
-            trace.customdata = [[interpolatedValue.toFixed(1), Math.round(currentExactYear)]];
-            
-            return trace;
-        });
-
-        // 更新地图
-        Plotly.animate('map-container', {
-            data: interpolatedMapData
-        }, {
-            transition: {
-                duration: 0
-            },
-            frame: {
-                duration: 0,
-                redraw: false
-            }
-        });
-        
-        // 使用预计算的race chart数据进行插值
-        const currentRaceData = preCalculatedRaceData[currentYear];
-        const nextRaceData = preCalculatedRaceData[nextYear];
-        
-        // 创建一个包含所有市场的集合
-        const allRaceMarkets = new Set([
-            ...currentRaceData.map(d => d.market),
-            ...nextRaceData.map(d => d.market)
-        ]);
-
-        // 创建race chart的插值数据
-        const interpolatedRaceData = Array.from(allRaceMarkets).map(market => {
-            const current = currentRaceData.find(d => d.market === market) || 
-                          { market, value: 0, color: appConfig.colorDict[market] || '#999999' };
-            const next = nextRaceData.find(d => d.market === market) || 
-                        { market, value: 0, color: appConfig.colorDict[market] || '#999999' };
-            
-            return {
-                Market: market,
-                'Gross Bookings': current.value + (next.value - current.value) * currentYearFraction,
-                Year: Math.round(currentExactYear),
-                Region: current.region || next.region
-            };
-        });
-        
-        // 更新race chart
-        updateRaceChart(interpolatedRaceData, Math.round(currentExactYear));
-        
-        // 继续动画
-        if (isPlaying) {
-            requestAnimationFrame(animate);
+            updateTimeline(years[currentIndex]);
         }
+        
+        lastFrameTime = currentTime;
+        animationFrameId = requestAnimationFrame(animate);
     }
     
-    // 初始化地图，使用预计算的第一年数据
-    Plotly.newPlot('map-container', preCalculatedData[years[0]], layout, {
-        displayModeBar: false,
-        responsive: true,
-        scrollZoom: false
-    }).then(() => {
-        requestAnimationFrame(animate);
-    });
-}
-
-// 修改停止动画的逻辑
-function stopAnimation() {
-    isPlaying = false;
-    if (timelineAnimationId) {
-        cancelAnimationFrame(timelineAnimationId);
-        timelineAnimationId = null;
-    }
+    animationFrameId = requestAnimationFrame(animate);
 }
 
 // Update the map for a specific year
@@ -614,59 +419,18 @@ function updateMap(year) {
     const yearData = processedData.filter(d => d.frame === year.toString());
     console.log(`Found ${yearData.length} data points for year ${year}`);
 
-    // 更新每个气泡的大小
-    const updatedData = yearData.map(d => {
-        const value = parseFloat(d.customdata[0][0]);
-        return {
-            type: 'scattergeo',
-            lon: d.lon,
-            lat: d.lat,
-            text: d.text,
-            customdata: [[value.toFixed(1), year]],
-            mode: 'markers',
-            marker: {
-                size: scaleMarkerSize(value),
-                color: d.marker.color,
-                line: {
-                    color: 'rgba(255, 255, 255, 0.1)',
-                    width: 0.2
-                },
-                sizemode: 'area',
-                sizeref: 0.15,
-                opacity: 0.9
-            },
-            name: d.name,
-            legendgroup: d.legendgroup,
-            showlegend: d.showlegend,
-            hovertemplate: d.hovertemplate
-        };
-    });
-
-    Plotly.animate('map-container', {
-        data: updatedData,
-        traces: Array.from({ length: updatedData.length }, (_, i) => i)
-    }, {
+    // 使用 Plotly.react 来更新所有数据
+    Plotly.react('map-container', yearData, layout, {
+        displayModeBar: false,
+        responsive: true,
+        scrollZoom: false,
         transition: {
             duration: 300,
             easing: 'cubic-in-out'
-        },
-        frame: {
-            duration: 300,
-            redraw: true
         }
     });
     
-    // 更新race chart
-    updateRaceChart(originalData, year);
-    
-    // 平滑更新时间轴
-    if (timeline && timeline.triangle) {
-        timeline.triangle
-            .transition()
-            .duration(300)
-            .ease(d3.easeCubicInOut)
-            .attr('transform', `translate(${timeline.scale(year)}, -10) rotate(180)`);
-    }
+    updateTimeline(year);
 }
 
 // Update both map and timeline

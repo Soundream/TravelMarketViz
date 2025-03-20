@@ -12,7 +12,7 @@ function createRaceChart(data, year) {
         y: [],
         orientation: 'h',
         marker: {
-            color: 'rgb(255, 75, 75)',  // 设置所有bar的颜色
+            color: [],
         },
         text: [],
         textposition: 'outside',
@@ -20,29 +20,24 @@ function createRaceChart(data, year) {
         texttemplate: '%{text:$.1f}B',
         textfont: {
             family: 'Monda',
-            size: 14  // 统一文本大小
+            size: 12
         },
-        cliponaxis: false,  // 防止文本被裁剪
-        textangle: 0,
-        outsidetextfont: {
-            family: 'Monda',
-            size: 14  // 统一文本大小
-        },
-        textoffset: 15  // 统一文本偏移量
+        cliponaxis: false  // 防止文本被裁剪
     };
 
     // 处理数据
     const sortedData = yearData
         .map(d => ({
-            market: d.Market,
-            code: appConfig.countryCodes[d.Market] || d.Market,
-            value: d.GrossBookings * appConfig.dataProcessing.bookingsScaleFactor
+            market: appConfig.countryCodes[d.Market] || d.Market,
+            value: d.GrossBookings * appConfig.dataProcessing.bookingsScaleFactor,
+            color: appConfig.colorDict[d.Market]
         }))
         .sort((a, b) => a.value - b.value);
 
     // 填充图表数据
-    barData.y = sortedData.map(d => d.code);
+    barData.y = sortedData.map(d => d.market);
     barData.x = sortedData.map(d => d.value);
+    barData.marker.color = sortedData.map(d => d.color);
     barData.text = sortedData.map(d => d.value);
 
     // 创建布局
@@ -60,9 +55,9 @@ function createRaceChart(data, year) {
                 text: 'Gross Bookings (USD bn)',
                 font: {
                     family: 'Monda',
-                    size: 14
+                    size: 12
                 },
-                standoff: 30  // 增加标题与轴的距离
+                standoff: 10
             },
             showgrid: true,
             gridcolor: '#eee',
@@ -71,37 +66,32 @@ function createRaceChart(data, year) {
             zerolinecolor: '#eee',
             tickfont: {
                 family: 'Monda',
-                size: 13
+                size: 10
             },
-            range: [0, maxValue * 1.3],  // 增加范围给标签留出更多空间
-            fixedrange: true,
-            ticklen: 10,  // 增加刻度线长度
-            ticksuffix: '   '  // 在刻度标签后添加空格
+            range: [0, maxValue * 1.2],
+            fixedrange: true
         },
         yaxis: {
             showgrid: false,
             tickfont: {
                 family: 'Monda',
-                size: 13
+                size: 10
             },
             fixedrange: true,
-            ticklabelposition: 'outside left',
-            ticktext: sortedData.map(d => d.code),  // 使用国家代码
-            tickmode: 'array',
-            tickvals: Array.from({length: sortedData.length}, (_, i) => i)
+            ticklabelposition: 'outside left'
         },
         margin: {
             l: 120,
-            r: 100,  // 进一步增加右边距
-            t: 20,   // 增加顶部边距
-            b: 60    // 增加底部边距给x轴标题和标签留出空间
+            r: 0,
+            t: -20,
+            b: 30
         },
-        height: 400,
+        height: 300,
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         showlegend: false,
         barmode: 'group',
-        bargap: 0.25,
+        bargap: 0.15,
         font: {
             family: 'Monda'
         },
@@ -109,18 +99,7 @@ function createRaceChart(data, year) {
             type: 'buttons',
             showactive: false,
             visible: false
-        }],
-        images: sortedData.map((d, i) => ({
-            source: `flags/${d.code} Icon.png`,  // 使用国家代码
-            x: -0.15,  // 调整图标位置
-            y: i,
-            xref: 'paper',
-            yref: 'y',
-            sizex: 0.1,
-            sizey: 0.8,
-            xanchor: 'right',
-            yanchor: 'middle'
-        }))
+        }]
     };
 
     // 创建配置
@@ -138,35 +117,36 @@ function createRaceChart(data, year) {
 function updateRaceChart(data, year) {
     // 处理数据
     const sortedData = data
-        .filter(d => d.Year === year)
         .map(d => ({
-            market: d.Market,
-            code: appConfig.countryCodes[d.Market] || d.Market,
-            value: d.GrossBookings * appConfig.dataProcessing.bookingsScaleFactor
+            market: appConfig.countryCodes[d.Market] || d.Market,
+            value: d.GrossBookings * appConfig.dataProcessing.bookingsScaleFactor,
+            color: appConfig.colorDict[d.Market]
         }))
         .sort((a, b) => a.value - b.value);
 
-    // 使用 Plotly.restyle 而不是 animate 来更新数据
-    Plotly.restyle('race-chart', {
-        'y': [sortedData.map(d => d.code)],
-        'x': [sortedData.map(d => d.value)],
-        'text': [sortedData.map(d => d.value)],
-        'marker.color': 'rgb(255, 75, 75)'  // 确保更新时也设置统一的颜色
-    });
+    // 创建新的数据帧
+    const newFrame = {
+        data: [{
+            y: sortedData.map(d => d.market),
+            x: sortedData.map(d => d.value),
+            marker: {
+                color: sortedData.map(d => d.color)
+            },
+            text: sortedData.map(d => d.value),
+            texttemplate: '%{text:$.1f}B',
+            textposition: 'outside'
+        }]
+    };
 
-    // 更新y轴标签和图片
-    Plotly.relayout('race-chart', {
-        'yaxis.ticktext': sortedData.map(d => d.code),
-        'images': sortedData.map((d, i) => ({
-            source: `flags/${d.code} Icon.png`,
-            x: -0.15,
-            y: i,
-            xref: 'paper',
-            yref: 'y',
-            sizex: 0.1,
-            sizey: 0.8,
-            xanchor: 'right',
-            yanchor: 'middle'
-        }))
+    // 使用 Plotly.animate 来实现平滑过渡
+    Plotly.animate('race-chart', newFrame, {
+        transition: {
+            duration: 0,  // 设置为0以实现实时更新
+            easing: 'linear'
+        },
+        frame: {
+            duration: 0,
+            redraw: true
+        }
     });
 } 

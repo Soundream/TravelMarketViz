@@ -47,8 +47,14 @@ h1 {
 
 #timeline .timeline-axis text {
     fill: #666;
-    font-size: 12px;
+    font-size: 18px;
     font-family: 'Monda', sans-serif;
+}
+
+/* Add styles for the tick marks in the timeline */
+#timeline .timeline-axis .tick line {
+    stroke: #ccc;
+    stroke-width: 1px;
 }
 
 .control-button {
@@ -117,13 +123,15 @@ h1 {
 #race-chart {
     position: absolute;
     top: 230px;
-    right: -10px;
-    width: 450px;
+    right: auto;
+    left: 80px;
+    width: 350px;
     height: 300px;
     background-color: white;
     padding: 0;
     margin: 0;
     box-sizing: border-box;
+    overflow: visible !important;
 }
 
 .map-region {
@@ -174,14 +182,14 @@ h1 {
     .visualization-container {
         grid-template-columns: 1fr 440px;
     }
-    #map-legend, #race-chart {
-        width: 430px;
-    }
     #map-legend {
+        width: 350px;
         height: 240px;
     }
     #race-chart {
         top: 220px;
+        left: 80px;
+        width: 350px;
     }
 }
 
@@ -189,8 +197,8 @@ h1 {
     .visualization-container {
         grid-template-columns: 1fr 420px;
     }
-    #map-legend, #race-chart {
-        width: 410px;
+    #map-legend {
+        width: 340px;
         right: -5px;
     }
     #map-legend {
@@ -198,6 +206,8 @@ h1 {
     }
     #race-chart {
         top: 210px;
+        left: 80px;
+        width: 350px;
     }
 }
 
@@ -206,15 +216,15 @@ h1 {
         grid-template-columns: 1fr 400px;
     }
     #map-legend {
-        width: 390px;
+        width: 380px;
         height: 220px;
         right: 0;
     }
     #race-chart {
-        width: 390px;
+        width: 330px;
         height: 280px;
         top: 200px;
-        right: 0;
+        left: 80px;
     }
 }
 
@@ -227,9 +237,10 @@ h1 {
         height: 210px;
     }
     #race-chart {
-        width: 370px;
+        width: 320px;
         height: 260px;
         top: 190px;
+        left: 80px;
     }
 }
 

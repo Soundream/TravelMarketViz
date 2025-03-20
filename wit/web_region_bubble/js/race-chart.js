@@ -1,6 +1,8 @@
 function createRaceChart(data, year) {
     // 计算所有年份的最大值，用于固定坐标轴范围
     const maxValue = Math.max(...data.map(d => d['Gross Bookings'] * appConfig.dataProcessing.bookingsScaleFactor));
+    // 确保最大值至少是200，防止小值情况下空间太小
+    const axisMaxValue = Math.max(maxValue, 200);
 
     // 按区域分组并计算总预订量
     const yearData = data.filter(d => d.Year === year);
@@ -13,6 +15,7 @@ function createRaceChart(data, year) {
         orientation: 'h',
         marker: {
             color: [],
+            width: 0.6 // 减小柱子的宽度
         },
         text: [],
         textposition: 'outside',
@@ -20,16 +23,9 @@ function createRaceChart(data, year) {
         texttemplate: '%{text:$.1f}B',
         textfont: {
             family: 'Monda',
-            size: 14
+            size: 16
         },
-        cliponaxis: false,  // 防止文本被裁剪
-        textangle: 0,
-        outsidetextfont: {
-            family: 'Monda',
-            size: 14
-        },
-        offsetgroup: 1,
-        textoffset: 15
+        cliponaxis: false // 防止数据点被裁切
     };
 
     // 处理数据
@@ -42,7 +38,7 @@ function createRaceChart(data, year) {
         .sort((a, b) => a.value - b.value);
 
     // 填充图表数据
-    barData.y = sortedData.map(d => d.region);
+    barData.y = sortedData.map((d, i) => i.toString()); // Using indices instead of region names
     barData.x = sortedData.map(d => d.value);
     barData.marker.color = sortedData.map(d => d.color);
     barData.text = sortedData.map(d => d.value);
@@ -62,9 +58,9 @@ function createRaceChart(data, year) {
                 text: 'Gross Bookings (USD bn)',
                 font: {
                     family: 'Monda',
-                    size: 14
+                    size: 20
                 },
-                standoff: 30  // 增加标题与轴的距离
+                standoff: 15
             },
             showgrid: true,
             gridcolor: '#eee',
@@ -73,37 +69,40 @@ function createRaceChart(data, year) {
             zerolinecolor: '#eee',
             tickfont: {
                 family: 'Monda',
-                size: 13
+                size: 16
             },
-            range: [0, maxValue * 1.3],  // 增加范围给标签留出更多空间
-            fixedrange: true,
-            ticklen: 10,  // 增加刻度线长度
-            ticksuffix: '   '  // 在刻度标签后添加空格
+            range: [0, axisMaxValue * 1.2],  // 增加范围系数，确保能显示所有数值
+            fixedrange: true,  // 固定范围，防止自动调整
+            ticks: 'outside',
+            ticklen: 8,
+            tickwidth: 1,
+            tickcolor: '#ccc',
+            tickprefix: '  ',  // 为刻度值添加前缀空格，避免刻度值被裁切
+            automargin: true   // 允许自动调整边距以适应轴标签
         },
         yaxis: {
             showgrid: false,
-            tickfont: {
-                family: 'Monda',
-                size: 13
-            },
-            fixedrange: true,
-            ticklabelposition: 'outside left'
+            showticklabels: false, // Hide y-axis tick labels completely
+            fixedrange: true,  // 固定范围，防止自动调整
         },
         margin: {
-            l: 120,
-            r: 100,  // 增加右边距
-            t: 20,   // 增加顶部边距
-            b: 60    // 增加底部边距
+            l: 5, // 增加左边距，防止零刻度被裁切
+            r: 60, // 进一步增加右边距，确保'B'后缀完全显示
+            t: -20,  // 使用负值来减少与上方地图的距离
+            b: 60 // 保持底部边距以适应更大的字体
         },
-        height: 300,  // 恢复原有高度
+        width: 350, // 保持图表宽度
+        height: 300,
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         showlegend: false,
         barmode: 'group',
-        bargap: 0.25,
+        bargap: 0.1, // 减小柱子之间的间距
+        bargroupgap: 0.05, // 减小组之间的间距
         font: {
             family: 'Monda'
-        }
+        },
+        annotations: [] // 删除所有注释
     };
 
     // 创建配置
@@ -121,6 +120,11 @@ function createRaceChart(data, year) {
 function updateRaceChart(data, year) {
     const yearData = data.filter(d => d.Year === year);
     
+    // 获取当前最大值
+    const maxValue = Math.max(...yearData.map(d => d['Gross Bookings'] * appConfig.dataProcessing.bookingsScaleFactor));
+    // 确保最大值至少是200，防止小值情况下空间太小
+    const axisMaxValue = Math.max(maxValue, 200);
+    
     // 处理数据
     const sortedData = yearData
         .map(d => ({
@@ -132,26 +136,20 @@ function updateRaceChart(data, year) {
 
     // 准备更新数据
     const updateData = {
-        y: [sortedData.map(d => d.region)],
+        y: [sortedData.map((d, i) => i.toString())], // Using indices instead of region names
         x: [sortedData.map(d => d.value)],
         'marker.color': [sortedData.map(d => d.color)],
         text: [sortedData.map(d => d.value)],
-        texttemplate: ['%{text:$.1f}B'],
-        textposition: ['outside'],
-        textfont: [{
-            family: 'Monda',
-            size: 14
-        }],
-        cliponaxis: [false],
-        textangle: [0],
-        outsidetextfont: [{
-            family: 'Monda',
-            size: 14
-        }],
-        offsetgroup: [1],
-        textoffset: [15]
+        cliponaxis: false // 防止数据点被裁切
+    };
+    
+    // 更新坐标轴范围和边距
+    const updateLayout = {
+        'xaxis.range': [0, axisMaxValue * 1.2],
+        'margin.r': 60 // 确保右侧边距足够显示完整的文本
     };
 
-    // 使用Plotly.restyle来更新数据
+    // 更新数据和布局
     Plotly.restyle('race-chart', updateData);
+    Plotly.relayout('race-chart', updateLayout);
 } 
