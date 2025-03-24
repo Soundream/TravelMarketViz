@@ -1,0 +1,1 @@
+'''python3 create_video.py --output output/airline_revenue_final.mp4 --simple --fps 30'''
