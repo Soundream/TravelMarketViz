@@ -245,9 +245,21 @@ def parse_quarter(quarter_str):
     quarter = int(quarter[1])  # Extract quarter number
     return year, quarter
 
+def is_before_may_2004(year, quarter):
+    """Helper function to check if date is before May 2004"""
+    if year < 2004:
+        return True
+    elif year == 2004:
+        return quarter <= 1  # Q1 and earlier are before May
+    return False
+
 # Create a mapping for company logos
 logo_mapping = {
     "easyJet": [{"start_year": 1999, "end_year": 9999, "file": "logos/easyJet-1999-now.jpg"}],
+    "Air France-KLM": [
+        {"start_year": 1999, "end_year": 2004, "file": "logos/klm-1999-now.png"},
+        {"start_year": 2004, "end_year": 9999, "file": "logos/Air-France-KLM-Holding-Logo.png"}
+    ],
     "American Airlines": [
         {"start_year": 1967, "end_year": 2013, "file": "logos/american-airlines-1967-2013.jpg"},
         {"start_year": 2013, "end_year": 9999, "file": "logos/american-airlines-2013-now.jpg"}
@@ -273,7 +285,6 @@ logo_mapping = {
         {"start_year": 1999, "end_year": 2010, "file": "logos/Finnair-1999-2010.jpg"},
         {"start_year": 2010, "end_year": 9999, "file": "logos/Finnair-2010-now.jpg"}
     ],
-    "Air France-KLM": [{"start_year": 1999, "end_year": 9999, "file": "logos/klm-1999-now.png"}],
     "Deutsche Lufthansa": [
         {"start_year": 1999, "end_year": 2018, "file": "logos/Deutsche Lufthansa-1999-2018.png"},
         {"start_year": 2018, "end_year": 9999, "file": "logos/Deutsche Lufthansa-2018-now.jpg"}
@@ -478,9 +489,19 @@ def create_frame(frame_idx):
             quarter_data.append(value)
             region = metadata.loc['Region', airline]
             colors.append(region_colors.get(region, '#808080'))  # Default to gray if region not found
-            # Use IATA code instead of full name
-            iata_code = metadata.loc['IATA', airline]
-            labels.append(iata_code if pd.notna(iata_code) else airline[:3])
+            
+            # Special handling for Air France-KLM label
+            if airline == "Air France-KLM":
+                if is_before_may_2004(year, quarter):
+                    labels.append("KL")
+                else:
+                    # Use IATA code instead of full name
+                    iata_code = metadata.loc['IATA', airline]
+                    labels.append(iata_code if pd.notna(iata_code) else airline[:3])
+            else:
+                # Use IATA code instead of full name
+                iata_code = metadata.loc['IATA', airline]
+                labels.append(iata_code if pd.notna(iata_code) else airline[:3])
             
             # Get logo path using IATA code
             logo_path = get_logo_path(airline, year, iata_code)
