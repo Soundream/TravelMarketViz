@@ -502,7 +502,6 @@ def create_frame(frame_idx):
                 # Use IATA code instead of full name
                 iata_code = metadata.loc['IATA', airline]
                 labels.append(iata_code if pd.notna(iata_code) else airline[:3])
-            
             # Get logo path using IATA code
             logo_path = get_logo_path(airline, year, iata_code)
             logos.append(logo_path)
