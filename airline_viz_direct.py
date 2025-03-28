@@ -26,11 +26,11 @@ matplotlib.use('Agg')  # Use Agg backend for better performance
 
 # Add argument parser
 parser = argparse.ArgumentParser(description='Generate airline revenue bar chart race visualization directly as video')
-parser.add_argument('--fps', type=int, default=30, help='Frames per second (default: 30)')
+parser.add_argument('--fps', type=int, default=60, help='Frames per second (default: 60)')
 parser.add_argument('--output', type=str, default='output/airline_revenue.mp4', help='Output video file path')
 parser.add_argument('--quality', type=str, choices=['high', 'medium', 'low'], default='high', 
                     help='Video quality: high, medium, or low (default: high)')
-parser.add_argument('--frames-per-year', type=int, default=192, help='Number of frames to generate per year (default: 192)')
+parser.add_argument('--frames-per-year', type=int, default=240, help='Number of frames to generate per year (default: 240)')
 parser.add_argument('--preserve-colors', action='store_true', default=True, 
                     help='Preserve original colors in video (default: True)')
 parser.add_argument('--quarters-only', action='store_true', help='Only generate frames for each quarter')
@@ -194,6 +194,7 @@ VALUE_FONT_SIZE = 14  # Increased from 10
 # Create a mapping for company logos
 logo_mapping = {
     "easyJet": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/easyJet-1999-now.jpg"}],
+    "Emirates": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/Emirates-logo.jpg"}],
     "Air France-KLM": [
         {"start_year": 1999, "end_year": 2004, "file": "airline-bar-video/logos/klm-1999-now.png"},
         {"start_year": 2004, "end_year": 9999, "file": "airline-bar-video/logos/Air-France-KLM-Holding-Logo.png"}
@@ -273,8 +274,8 @@ logo_mapping = {
     ]
 }
 
-def get_logo_path(airline, year, iata_code):
-    """Get the appropriate logo path based on airline name and year"""
+def get_logo_path(airline, year, iata_code, month=6):
+    """Get the appropriate logo path based on airline name, year and month"""
     if airline not in logo_mapping:
         print(f"No logo mapping found for {airline} (IATA: {iata_code})")
         return None
@@ -282,6 +283,24 @@ def get_logo_path(airline, year, iata_code):
     logo_versions = logo_mapping[airline]
     print(f"Found {len(logo_versions)} logo versions for {airline}")
     
+    # 特殊处理Air France-KLM
+    if airline == "Air France-KLM":
+        # 2004年5月之前使用KLM logo
+        if year < 2004 or (year == 2004 and month < 5):
+            for version in logo_versions:
+                if version["file"] == "airline-bar-video/logos/klm-1999-now.png":
+                    logo_path = version["file"]
+                    print(f"Selected KLM logo for {airline} ({year}-{month}): {logo_path}")
+                    return logo_path if os.path.exists(logo_path) else None
+        else:
+            # 2004年5月及之后使用Air France-KLM logo
+            for version in logo_versions:
+                if version["file"] == "airline-bar-video/logos/Air-France-KLM-Holding-Logo.png":
+                    logo_path = version["file"]
+                    print(f"Selected Air France-KLM logo for {airline} ({year}-{month}): {logo_path}")
+                    return logo_path if os.path.exists(logo_path) else None
+    
+    # 其他航空公司正常处理
     # Find the appropriate logo version for the given year
     for version in logo_versions:
         if version["start_year"] <= year <= version["end_year"]:
@@ -316,7 +335,7 @@ def create_frame(frame_idx):
     # Ensure figure size is strictly uniform
     fig.set_size_inches(fig_width, fig_height, forward=True)
     
-    # If we're at an exact quarter frame (or in quarters-only mode)
+    # 使用更平滑的插值方法
     if frame_fraction == 0 or args.quarters_only:
         current_quarter = quarters[frame_int]
         quarter_data_main = revenue_data.loc[current_quarter]
@@ -325,7 +344,7 @@ def create_frame(frame_idx):
         print(f"\nProcessing exact quarter frame for {current_quarter}")
         interpolated_data = quarter_data_main
     else:
-        # For in-between frames, interpolate between adjacent quarters
+        # 使用cubic插值方法代替线性插值
         if frame_int < len(quarters) - 1:
             q1 = quarters[frame_int]
             q2 = quarters[frame_int + 1]
@@ -334,8 +353,12 @@ def create_frame(frame_idx):
             
             print(f"\nProcessing interpolated frame between {q1} and {q2} (fraction: {frame_fraction:.3f})")
             
-            # Create interpolated data frame
-            interpolated_data = q1_data * (1 - frame_fraction) + q2_data * frame_fraction
+            # 使用平滑的缓动函数代替线性插值
+            # 平滑缓动：t * t * (3 - 2 * t) 代替简单的 t
+            smooth_t = frame_fraction * frame_fraction * (3 - 2 * frame_fraction)
+            
+            # 使用平滑系数进行插值
+            interpolated_data = q1_data * (1 - smooth_t) + q2_data * smooth_t
         else:
             # Fallback for last frame
             current_quarter = quarters[frame_int]
@@ -382,8 +405,17 @@ def create_frame(frame_idx):
         year_integer = int(year_fraction)
         month = int((year_fraction - year_integer) * 12) + 1
         quarter_display = f"{year_integer} {month:02d}"
+        
+        # 精确计算当前的年和月，用于KLM/Air France-KLM的判断
+        current_month = month
+        current_year = year_integer
     else:
         quarter_display = f"{year} Q{quarter}"
+        
+        # 对于季度帧，估算月份（Q1=2月, Q2=5月, Q3=8月, Q4=11月）
+        month_mapping = {1: 2, 2: 5, 3: 8, 4: 11}
+        current_month = month_mapping[quarter]
+        current_year = year
     
     print(f"\nProcessing frame for {quarter_display}")
     
@@ -397,18 +429,19 @@ def create_frame(frame_idx):
             
             # Special handling for Air France-KLM label
             if airline == "Air France-KLM":
-                if is_before_may_2004(year, quarter):
+                # 精确判断是否在2004年5月之前
+                if current_year < 2004 or (current_year == 2004 and current_month < 5):
                     labels.append("KL")
                 else:
                     # Use IATA code instead of full name
-                    iata_code = metadata.loc['IATA', airline]
+                    iata_code = metadata.loc['IATA Code', airline]
                     labels.append(iata_code if pd.notna(iata_code) else airline[:3])
             else:
                 # Use IATA code instead of full name
-                iata_code = metadata.loc['IATA', airline]
+                iata_code = metadata.loc['IATA Code', airline]
                 labels.append(iata_code if pd.notna(iata_code) else airline[:3])
-            # Get logo path using IATA code
-            logo_path = get_logo_path(airline, year, iata_code)
+            # Get logo path using IATA code and current_year/current_month
+            logo_path = get_logo_path(airline, current_year, iata_code, current_month)
             logos.append(logo_path)
     
     # Check if we have any valid data
@@ -556,25 +589,30 @@ def create_frame(frame_idx):
         value = quarter_data[i]
         value_width = len(format_revenue(value, None)) * 10  # Approximate text width
         
-        # Reduce base offset for normal cases
-        base_offset_percentage = 0.04
+        # 使用更平滑的偏移量计算方法
+        # 基础偏移系数，根据值的大小来平滑调整
+        base_offset_percentage = 0.04 + 0.02 * (1 - min(value / display_max, 1))
         text_padding = value_width / 100
         
-        # Ensure minimum distance between logo and value
+        # 确保logo和数值标签之间有足够的间距
         min_offset = display_max * 0.08
-        x_offset = max(min_offset, display_max * base_offset_percentage + text_padding)
+        # 对偏移量应用平方根平滑化，使得短条和长条的logo位置变化更加均匀
+        x_offset = max(min_offset, display_max * base_offset_percentage * (0.5 + 0.5 * np.sqrt(value / display_max)) + text_padding)
         
-        # For very short bars, increase offset further
-        if value < display_max * 0.1:  # If value is less than 10% of display_max
-            x_offset *= 1.5  # Increase offset by 50%
+        # 对非常短的条做特殊处理，让位置变化更平滑
+        if value < display_max * 0.1:  # 如果值小于最大值的10%
+            # 使用平滑插值而不是简单乘法
+            factor = 1.5 - 0.5 * (value / (display_max * 0.1))
+            x_offset *= factor
         
-        x = value + x_offset  # Calculate final position
+        x = value + x_offset  # 计算最终位置
         
         # Create OffsetImage and add to chart
         zoom_factor = 0.8
         
         # Special handling for Air France-KLM logo to make it smaller
-        if any(logo_path == "airline-bar-video/logos/Air-France-KLM-Holding-Logo.png" for logo_path in logos) and i == logos.index("airline-bar-video/logos/Air-France-KLM-Holding-Logo.png"):
+        current_logo_path = logos[i] if i < len(logos) else None
+        if current_logo_path == "airline-bar-video/logos/Air-France-KLM-Holding-Logo.png":
             zoom_factor = 0.5  # Reduce zoom factor for this specific logo
             print(f"Applying smaller zoom factor ({zoom_factor}) for Air France-KLM logo")
         
@@ -611,8 +649,8 @@ def create_frame(frame_idx):
     min_year, min_q = parse_quarter(min_quarter)
     max_year, max_q = parse_quarter(max_quarter)
     
-    # Set timeline limits with padding
-    ax_timeline.set_xlim(-1, len(quarters))
+    # Set timeline limits with padding - 增加右侧空间以显示2025年
+    ax_timeline.set_xlim(-1, len(quarters) + 0.5)  # 增加右侧空间
     ax_timeline.set_ylim(-0.2, 0.2)
     
     # Set up timeline styling
@@ -634,6 +672,16 @@ def create_frame(frame_idx):
                            fontsize=16, color=text_color)  # Increased from 12 to 16
         else:  # Minor tick for other quarters
             ax_timeline.vlines(i, -0.02, 0, colors=text_color, linewidth=0.5, alpha=0.7)
+    
+    # 确保2025年的标记显示在时间轴上
+    # 检查最后一个季度是否为2024年第4季度
+    last_year, last_q = parse_quarter(quarters[-1])
+    if last_year == 2024 and last_q == 4:
+        # 在时间轴上添加2025年的标记
+        next_year_pos = len(quarters)
+        ax_timeline.vlines(next_year_pos, -0.03, 0, colors=text_color, linewidth=1.5)
+        ax_timeline.text(next_year_pos, -0.07, "2025", ha='center', va='top', 
+                       fontsize=16, color=text_color)
     
     # Add current position marker (inverted triangle)
     timeline_position = frame_int + frame_fraction
@@ -662,17 +710,17 @@ def create_frame(frame_idx):
 def configure_video_settings():
     """Configure video encoding settings based on quality parameter"""
     if args.quality == 'high':
-        crf = '17'  # Lower CRF value means higher quality
+        crf = '15'  # 降低CRF以提高质量（从17降低到15）
         preset = 'slow'  # Slow preset for better compression
-        bitrate = '12M'  # High bitrate to maintain quality
+        bitrate = '15M'  # 增加比特率从12M到15M
     elif args.quality == 'medium':
-        crf = '22'
+        crf = '20'  # 从22降低到20
         preset = 'medium'
-        bitrate = '8M'
+        bitrate = '10M'  # 从8M增加到10M
     else:  # low
-        crf = '27'
+        crf = '25'  # 从27降低到25
         preset = 'fast'
-        bitrate = '4M'
+        bitrate = '6M'  # 从4M增加到6M
     
     # Choose pixel format based on preserve-colors setting
     if args.preserve_colors:
@@ -824,7 +872,7 @@ def main():
     global metadata, revenue_data, quarters
     
     # Use global scope for these variables
-    df = pd.read_csv('airline-bar-video/airlines_original.csv')
+    df = pd.read_csv('airline-bar-video/airlines_final.csv')  # 使用新的airlines_final.csv
     
     # Print all airline data from the CSV
     print("\nAll airline data from CSV:")
@@ -857,6 +905,12 @@ def main():
     print("\n".join(sorted(logo_files)))
     print(f"\nTotal logo files found: {len(logo_files)}\n")
     
+    # 检查Emirates logo文件是否存在
+    if os.path.exists("airline-bar-video/logos/Emirates-logo.jpg"):
+        print("✓ Emirates logo found")
+    else:
+        print("✗ Emirates logo NOT found! Please ensure the file exists.")
+    
     # Check font configurations
     # Check for Monda font, otherwise use a system sans-serif font
     font_path = None
@@ -877,7 +931,8 @@ def main():
     important_logos = [
         "logos/american-airlines-2013-now.jpg",
         "logos/delta-air-lines-2007-now.jpg",
-        "logos/southwest-airlines-2014-now.png"
+        "logos/southwest-airlines-2014-now.png",
+        "logos/Emirates-logo.jpg"  # 添加Emirates logo到验证列表
     ]
     
     print("\nVerifying key logo files:")
