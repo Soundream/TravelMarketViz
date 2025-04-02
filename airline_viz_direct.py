@@ -324,8 +324,9 @@ def get_logo_path(airline, year, iata_code, month=6):
     
     return None
 
-def create_frame(frame_idx):
+def create_frame(args):
     """Optimized frame creation function for direct video rendering"""
+    frame_idx, quarters_data, revenue_data_arg, metadata_arg, quarters_only = args
     optimize_figure_for_performance()
     
     frame_int = int(frame_idx)
@@ -336,22 +337,22 @@ def create_frame(frame_idx):
     fig = plt.figure(figsize=(fig_width, fig_height), facecolor='white', dpi=OUTPUT_DPI)
     fig.set_size_inches(fig_width, fig_height, forward=True)
     
-    if frame_fraction == 0 or args.quarters_only:
-        current_quarter = quarters[frame_int]
-        quarter_data_main = revenue_data.loc[current_quarter]
+    if frame_fraction == 0 or quarters_only:
+        current_quarter = quarters_data[frame_int]
+        quarter_data_main = revenue_data_arg.loc[current_quarter]
         interpolated_data = quarter_data_main
     else:
-        if frame_int < len(quarters) - 1:
-            q1 = quarters[frame_int]
-            q2 = quarters[frame_int + 1]
-            q1_data = revenue_data.loc[q1]
-            q2_data = revenue_data.loc[q2]
+        if frame_int < len(quarters_data) - 1:
+            q1 = quarters_data[frame_int]
+            q2 = quarters_data[frame_int + 1]
+            q1_data = revenue_data_arg.loc[q1]
+            q2_data = revenue_data_arg.loc[q2]
             
             smooth_t = frame_fraction
             interpolated_data = q1_data * (1 - smooth_t) + q2_data * smooth_t
         else:
-            current_quarter = quarters[frame_int]
-            interpolated_data = revenue_data.loc[current_quarter]
+            current_quarter = quarters_data[frame_int]
+            interpolated_data = revenue_data_arg.loc[current_quarter]
     
     text_color = '#808080'
     
@@ -369,10 +370,10 @@ def create_frame(frame_idx):
     logos = []
     logos_data = []
     
-    if frame_int < len(quarters):
-        current_quarter = quarters[frame_int]
+    if frame_int < len(quarters_data):
+        current_quarter = quarters_data[frame_int]
     else:
-        current_quarter = quarters[-1]
+        current_quarter = quarters_data[-1]
     
     year, quarter = parse_quarter(current_quarter)
     
@@ -396,7 +397,7 @@ def create_frame(frame_idx):
         value = interpolated_data[airline]
         if pd.notna(value) and value > 0:  # Only include positive non-null values
             quarter_data.append(value)
-            region = metadata.loc['Region', airline]
+            region = metadata_arg.loc['Region', airline]
             colors.append(region_colors.get(region, '#808080'))  # Default to gray if region not found
             
             # Special handling for Air France-KLM label
@@ -406,11 +407,11 @@ def create_frame(frame_idx):
                     labels.append("KL")
                 else:
                     # Use IATA code instead of full name
-                    iata_code = metadata.loc['IATA Code', airline]
+                    iata_code = metadata_arg.loc['IATA Code', airline]
                     labels.append(iata_code if pd.notna(iata_code) else airline[:3])
             else:
                 # Use IATA code instead of full name
-                iata_code = metadata.loc['IATA Code', airline]
+                iata_code = metadata_arg.loc['IATA Code', airline]
                 labels.append(iata_code if pd.notna(iata_code) else airline[:3])
             # Get logo path using IATA code and current_year/current_month
             logo_path = get_logo_path(airline, current_year, iata_code, current_month)
@@ -524,8 +525,8 @@ def create_frame(frame_idx):
     # Get historical maximum value across all quarters up to current frame
     historical_max = 0
     for i in range(frame_int + 1):
-        quarter_historical = quarters[i]
-        historical_data = revenue_data.loc[quarter_historical]
+        quarter_historical = quarters_data[i]
+        historical_data = revenue_data_arg.loc[quarter_historical]
         quarter_max = historical_data.max()
         if pd.notna(quarter_max) and quarter_max > historical_max:
             historical_max = quarter_max
@@ -599,13 +600,13 @@ def create_frame(frame_idx):
     ax_timeline.set_facecolor('none')  # Transparent background
     
     # Get min and max quarters for timeline
-    min_quarter = quarters[0]
-    max_quarter = quarters[-1]
+    min_quarter = quarters_data[0]
+    max_quarter = quarters_data[-1]
     min_year, min_q = parse_quarter(min_quarter)
     max_year, max_q = parse_quarter(max_quarter)
     
     # Set timeline limits with padding - 增加右侧空间以显示2025年
-    ax_timeline.set_xlim(-1, len(quarters) + 0.5)  # 增加右侧空间
+    ax_timeline.set_xlim(-1, len(quarters_data) + 0.5)  # 增加右侧空间
     ax_timeline.set_ylim(-0.2, 0.2)
     
     # Set up timeline styling
@@ -618,7 +619,7 @@ def create_frame(frame_idx):
     ax_timeline.spines['bottom'].set_position(('data', 0))
     
     # Add quarter markers with vertical lines
-    for i, quarter in enumerate(quarters):
+    for i, quarter in enumerate(quarters_data):
         year, q = parse_quarter(quarter)
         if q == 1:  # Major tick for Q1
             ax_timeline.vlines(i, -0.03, 0, colors=text_color, linewidth=1.5)
@@ -631,10 +632,10 @@ def create_frame(frame_idx):
     
     # 确保2025年的标记显示在时间轴上
     # 检查最后一个季度是否为2024年第4季度
-    last_year, last_q = parse_quarter(quarters[-1])
+    last_year, last_q = parse_quarter(quarters_data[-1])
     if last_year == 2024 and last_q == 4:
         # 在时间轴上添加2025年的标记
-        next_year_pos = len(quarters)
+        next_year_pos = len(quarters_data)
         ax_timeline.vlines(next_year_pos, -0.03, 0, colors=text_color, linewidth=1.5)
         ax_timeline.text(next_year_pos, -0.07, "2025", ha='center', va='top', 
                        fontsize=16, color=text_color)
@@ -649,7 +650,7 @@ def create_frame(frame_idx):
     
     # Remove the current quarter display
     # The following line is commented out to remove the quarter display above the timeline
-    # ax_timeline.text(len(quarters)/2, 0.15, quarter_display, 
+    # ax_timeline.text(len(quarters_data)/2, 0.15, quarter_display, 
     #                ha='center', va='center', fontsize=14, color='black', 
     #                bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', boxstyle='round,pad=0.5'))
     
@@ -696,7 +697,7 @@ def create_video_directly(frame_indices, output_path, fps):
     """Create video directly from matplotlib frames without saving intermediate PNGs"""
     # Get the first frame to determine dimensions
     print("Creating test frame to determine dimensions...")
-    test_frame = create_frame(frame_indices[0])
+    test_frame = create_frame((frame_indices[0], quarters, revenue_data, metadata, args.quarters_only))
     height, width, channels = test_frame.shape
     print(f"Frame dimensions: {width}x{height}, {channels} channels")
     
@@ -751,6 +752,9 @@ def create_video_directly(frame_indices, output_path, fps):
         chunk_size = max(1, total_frames // (cpu_count * 4))  # Divide work into smaller chunks
         print(f"Using {cpu_count} CPU cores with chunk size of {chunk_size}")
 
+        # Prepare arguments for multiprocessing
+        frame_args = [(idx, quarters, revenue_data, metadata, args.quarters_only) for idx in frame_indices]
+
         # Create a pool of workers
         with mp.Pool(processes=cpu_count) as pool:
             # Create frames in parallel using imap
@@ -758,7 +762,7 @@ def create_video_directly(frame_indices, output_path, fps):
                      bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
                 
                 # Process frames in chunks
-                for frame in pool.imap(create_frame, frame_indices, chunksize=chunk_size):
+                for frame in pool.imap(create_frame, frame_args, chunksize=chunk_size):
                     # Convert frame if needed
                     if frame.dtype != np.uint8:
                         frame = (frame * 255).astype(np.uint8)
@@ -788,7 +792,7 @@ def create_video_directly(frame_indices, output_path, fps):
                               end='\r')
                         
                         last_update_time = current_time
-        
+
         # Close the pipe and wait for FFmpeg to finish
         ffmpeg_process.stdin.close()
         print("\nWaiting for FFmpeg to finish encoding...")
@@ -840,7 +844,7 @@ def create_video_directly(frame_indices, output_path, fps):
                         bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
                     
                     # Process frames in chunks
-                    for frame in pool.imap(create_frame, frame_indices, chunksize=chunk_size):
+                    for frame in pool.imap(create_frame, frame_args, chunksize=chunk_size):
                         # Convert frame to BGR format (required by OpenCV)
                         if frame.dtype != np.uint8:
                             frame = (frame * 255).astype(np.uint8)
