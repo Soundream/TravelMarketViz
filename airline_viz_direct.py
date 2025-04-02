@@ -684,9 +684,14 @@ def configure_video_settings():
 
 def create_video_directly(frame_indices, output_path, fps):
     """Create video directly from matplotlib frames without saving intermediate PNGs"""
+    print("\nInitializing video creation...")
+    print(f"Total frames to generate: {len(frame_indices)}")
+    
     # Get the first frame to determine dimensions
+    print("Creating test frame to determine dimensions...")
     test_frame = create_frame((frame_indices[0], quarters, revenue_data, metadata, args.quarters_only))
     height, width, channels = test_frame.shape
+    print(f"Frame size: {width}x{height}")
     
     # Check if FFmpeg is installed
     try:
@@ -714,128 +719,138 @@ def create_video_directly(frame_indices, output_path, fps):
             '-colorspace', 'bt709',     # Use standard color space
             '-color_primaries', 'bt709',
             '-color_trc', 'bt709',
+            '-loglevel', 'error',  # Only show errors
             output_path
         ]
         
-        ffmpeg_process = subprocess.Popen(command, stdin=subprocess.PIPE)
+        print("\nStarting frame generation...")
+        ffmpeg_process = subprocess.Popen(command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
         
         # Create a progress bar
         total_frames = len(frame_indices)
-        start_time = time.time()
-        last_update_time = start_time
-        frames_processed = 0
 
         # Calculate optimal chunk size for multiprocessing
         cpu_count = mp.cpu_count()
-        chunk_size = max(1, total_frames // (cpu_count * 4))  # Divide work into smaller chunks
+        chunk_size = max(1, min(total_frames // (cpu_count * 4), 50))  # Limit chunk size
 
         # Prepare arguments for multiprocessing
         frame_args = [(idx, quarters, revenue_data, metadata, args.quarters_only) for idx in frame_indices]
-
+        
+        # Create frame buffer to store frames in order
+        frame_buffer = {}
+        next_frame_idx = 0
+        
         # Create a pool of workers
         with mp.Pool(processes=cpu_count) as pool:
-            # Create frames in parallel using imap
-            with tqdm(total=total_frames, desc="Creating frames", unit="frames",
-                     bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
-                
-                # Process frames in chunks
-                for frame in pool.imap(create_frame, frame_args, chunksize=chunk_size):
-                    # Convert frame if needed
-                    if frame.dtype != np.uint8:
-                        frame = (frame * 255).astype(np.uint8)
-                    
-                    # Ensure frame is in correct RGB format
-                    if frame.shape[2] == 4:  # RGBA format
-                        frame = frame[:, :, :3]  # Remove alpha channel
-                    
-                    # Write the frame to FFmpeg process
-                    ffmpeg_process.stdin.write(frame.tobytes())
-                    frames_processed += 1
-                    pbar.update(1)
-                    
-                    # Update with ETA and speed info every second
-                    current_time = time.time()
-                    if current_time - last_update_time >= 1:
-                        elapsed = current_time - start_time
-                        frames_per_second = frames_processed / elapsed
-                        eta = (total_frames - frames_processed) / frames_per_second if frames_per_second > 0 else 0
-                        last_update_time = current_time
+            # Create frames in parallel using imap_unordered for better performance
+            with tqdm(total=total_frames, desc="Generating frames", unit="frame",
+                     bar_format="{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
+                try:
+                    # Process frames using imap_unordered for better performance
+                    for frame in pool.imap(create_frame, frame_args, chunksize=chunk_size):
+                        # Convert frame if needed
+                        if frame.dtype != np.uint8:
+                            frame = (frame * 255).astype(np.uint8)
+                        
+                        # Ensure frame is in correct RGB format
+                        if frame.shape[2] == 4:  # RGBA format
+                            frame = frame[:, :, :3]  # Remove alpha channel
+                        
+                        # Write the frame to FFmpeg process
+                        try:
+                            ffmpeg_process.stdin.write(frame.tobytes())
+                            pbar.update(1)
+                        except IOError as e:
+                            print("\nError writing frame to FFmpeg:", e)
+                            break
+                except Exception as e:
+                    print("\nError during frame generation:", e)
+                    pool.terminate()
+                    raise e
 
         # Close the pipe and wait for FFmpeg to finish
+        print("\nFinishing video encoding...")
         ffmpeg_process.stdin.close()
         ffmpeg_process.wait()
         
         if ffmpeg_process.returncode != 0:
+            stderr = ffmpeg_process.stderr.read().decode()
+            print(f"\nFFmpeg error: {stderr}")
             return False
         
         # Check if output file was created successfully
         if os.path.exists(output_path) and os.path.getsize(output_path) > 100000:
+            print("\nVideo created successfully!")
             return True
         else:
+            print("\nError: Output file is invalid")
             return False
             
     except (FileNotFoundError, subprocess.SubprocessError) as e:
-        # Try using OpenCV as a fallback
+        print("\nFalling back to OpenCV...")
         try:
             # Initialize video writer
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Try MP4V codec
             out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
             
             if not out.isOpened():
+                print("Error: Could not initialize video writer")
                 return False
             
             # Create frames and write to video using multiprocessing
             total_frames = len(frame_indices)
-            start_time = time.time()
-            frames_processed = 0
             
             # Calculate optimal chunk size for multiprocessing
             cpu_count = mp.cpu_count()
-            chunk_size = max(1, total_frames // (cpu_count * 4))
+            chunk_size = max(1, min(total_frames // (cpu_count * 4), 50))
 
             # Create a pool of workers
             with mp.Pool(processes=cpu_count) as pool:
-                with tqdm(total=total_frames, desc="Creating video with OpenCV", unit="frames",
-                        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
-                    
-                    # Process frames in chunks
-                    for frame in pool.imap(create_frame, frame_args, chunksize=chunk_size):
-                        # Convert frame to BGR format (required by OpenCV)
-                        if frame.dtype != np.uint8:
-                            frame = (frame * 255).astype(np.uint8)
-                        
-                        # Convert RGB to BGR
-                        if frame.shape[2] >= 3:
-                            frame = cv2.cvtColor(frame[:, :, :3], cv2.COLOR_RGB2BGR)
-                        
-                        # Write the frame
-                        out.write(frame)
-                        frames_processed += 1
-                        pbar.update(1)
+                with tqdm(total=total_frames, desc="Generating frames (OpenCV)", unit="frame",
+                         bar_format="{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
+                    try:
+                        # Process frames using imap_unordered for better performance
+                        for frame in pool.imap(create_frame, frame_args, chunksize=chunk_size):
+                            # Convert frame to BGR format (required by OpenCV)
+                            if frame.dtype != np.uint8:
+                                frame = (frame * 255).astype(np.uint8)
+                            
+                            # Convert RGB to BGR
+                            if frame.shape[2] >= 3:
+                                frame = cv2.cvtColor(frame[:, :, :3], cv2.COLOR_RGB2BGR)
+                            
+                            # Write the frame
+                            out.write(frame)
+                            pbar.update(1)
+                    except Exception as e:
+                        print("\nError during frame generation:", e)
+                        pool.terminate()
+                        raise e
             
             # Release the video writer
             out.release()
             
             # Check if output file was created successfully
             if os.path.exists(output_path) and os.path.getsize(output_path) > 100000:
+                print("\nVideo created successfully!")
                 return True
             else:
+                print("\nError: Output file is invalid")
                 return False
                 
         except Exception as e:
+            print("\nError:", e)
             return False
 
 def main():
+    # Initialize matplotlib in main process
+    plt.switch_backend('Agg')
+    
     # Load the data from CSV
-    print("Loading data...")
     global metadata, revenue_data, quarters, monda_font_path
     
     # Use global scope for these variables
-    df = pd.read_csv('airline-bar-video/airlines_final.csv')  # 使用新的airlines_final.csv
-    
-    # Print all airline data from the CSV
-    print("\nAll airline data from CSV:")
-    print(df.iloc[7:])
+    df = pd.read_csv('airline-bar-video/airlines_final.csv')
     
     # Process metadata
     metadata = df.iloc[:7].copy()  # First 7 rows contain metadata
@@ -843,10 +858,6 @@ def main():
     
     # Set proper index for metadata
     metadata.set_index(metadata.columns[0], inplace=True)
-    
-    # Print raw revenue data before conversion
-    print("\nRaw revenue data before conversion:")
-    print(revenue_data.head())
     
     # Convert revenue columns by removing ' M' suffix, commas, and converting to float
     for col in revenue_data.columns[1:]:  # Skip the first column which contains row labels
@@ -858,20 +869,7 @@ def main():
     # Get the quarters from the revenue data index
     quarters = revenue_data.index.tolist()
     
-    # Print logo files at start
-    print("\nLogo files in logos directory:")
-    logo_files = os.listdir(logos_dir)
-    print("\n".join(sorted(logo_files)))
-    print(f"\nTotal logo files found: {len(logo_files)}\n")
-    
-    # 检查Emirates logo文件是否存在
-    if os.path.exists("airline-bar-video/logos/Emirates-logo.jpg"):
-        print("✓ Emirates logo found")
-    else:
-        print("✗ Emirates logo NOT found! Please ensure the file exists.")
-    
     # Check font configurations
-    # Check for Monda font, otherwise use a system sans-serif font
     monda_font_path = args.monda_font
     if not monda_font_path:
         # Try to find Monda font in system
@@ -879,32 +877,11 @@ def main():
         for font in system_fonts:
             if 'monda' in font.lower():
                 monda_font_path = font
-                print(f"Found Monda font at: {monda_font_path}")
                 break
     
     if monda_font_path and os.path.exists(monda_font_path):
-        print(f"Using Monda font from: {monda_font_path}")
         # Register the font with matplotlib
         fm.fontManager.addfont(monda_font_path)
-    else:
-        print("Monda font not found or specified. Using default sans-serif fonts.")
-        monda_font_path = None
-    
-    # Verify key logo files
-    important_logos = [
-        "logos/american-airlines-2013-now.jpg",
-        "logos/delta-air-lines-2007-now.jpg",
-        "logos/southwest-airlines-2014-now.png",
-        "logos/Emirates-logo.jpg",  # 添加Emirates logo到验证列表
-        "logos/norwegian-logo.jpg"  # 添加Norwegian logo到验证列表
-    ]
-    
-    print("\nVerifying key logo files:")
-    for logo in important_logos:
-        if os.path.exists(logo):
-            print(f"  ✓ {logo} exists")
-        else:
-            print(f"  ✗ {logo} MISSING")
     
     # Create output directory if it doesn't exist
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
@@ -919,11 +896,9 @@ def main():
         # In quarters-only mode, generate exactly one frame per quarter
         frame_indices = list(range(total_quarters))
         total_frames = total_quarters
-        print(f"Quarters-only mode: Generating {total_frames} frames (one per quarter)")
     else:
         # In normal mode, generate multiple frames between quarters based on FRAMES_PER_YEAR
         frames_per_quarter = FRAMES_PER_YEAR // 4
-        print(f"Normal mode: Generating approximately {frames_per_quarter} frames per quarter")
         
         # Create frame indices with appropriate interpolation between quarters
         frame_indices = []
@@ -946,63 +921,33 @@ def main():
         # Sort frames to ensure sequential generation
         frame_indices.sort()
     
-    print(f"Total frames to generate: {total_frames}")
-    print(f"First few frame indices: {frame_indices[:10]}")
-    
     # Calculate appropriate FPS based on desired duration
     target_fps = args.fps
     
     # If a specific duration is requested, calculate the ideal FPS
     if args.duration:
         calculated_fps = total_frames / args.duration
-        print(f"For {args.duration} second duration, calculated FPS would be {calculated_fps:.2f}")
-        
-        # Keep fps between 30 and 60 for smooth playback, if possible
-        if calculated_fps < 30:
-            print(f"Warning: Calculated FPS ({calculated_fps:.2f}) is below 30. Consider increasing frames-per-year for smoother playback.")
-            fps = max(calculated_fps, 24)  # Use at least 24 FPS for minimal acceptable smoothness
-        elif calculated_fps > 60:
-            print(f"Warning: Calculated FPS ({calculated_fps:.2f}) is above 60. Consider decreasing frames-per-year for better playback compatibility.")
-            fps = min(calculated_fps, 90)  # Cap at 90 FPS for most displays
-        else:
-            fps = calculated_fps  # Use calculated FPS if it's in reasonable range
+        fps = max(min(calculated_fps, 90), 24)  # Keep fps between 24 and 90
     else:
         fps = target_fps  # Use specified FPS if no duration target
     
     # Round fps to nearest integer for simplicity
     fps = round(fps)
     
-    # Calculate final duration
-    estimated_duration = total_frames / fps
-    print(f"Using {fps} fps")
-    print(f"Final estimated video duration: {estimated_duration:.2f} seconds ({estimated_duration/60:.2f} minutes)")
-    
-    print("\n" + "=" * 50)
-    print(f"Starting video generation process")
-    print("=" * 50)
-    
     # Create video directly
     success = create_video_directly(frame_indices, args.output, fps)
     
-    if success:
-        print("\nVideo creation completed successfully!")
-        print(f"Output video: {args.output}")
-        print(f"Duration: {estimated_duration:.2f} seconds ({estimated_duration/60:.2f} minutes)")
-    else:
-        print("\nThere were issues creating the video. Please check the logs.")
+    if not success:
+        sys.exit(1)
 
 if __name__ == "__main__":
     try:
-        # Set up to display more debug info
-        print("Running with extra logging enabled...")
-        
-        # Initialize matplotlib in each process to avoid conflicts
-        mp.set_start_method('spawn')  # Use 'spawn' method for better compatibility
+        # Initialize multiprocessing with spawn method
+        mp.set_start_method('spawn')
         
         # Run main program
         main()
     except Exception as e:
-        print(f"ERROR in main program execution: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1) 
