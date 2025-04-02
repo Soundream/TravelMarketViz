@@ -745,42 +745,49 @@ def create_video_directly(frame_indices, output_path, fps):
         start_time = time.time()
         last_update_time = start_time
         frames_processed = 0
-        
-        with tqdm(total=total_frames, desc="Creating video", unit="frames", 
-                 bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
-            for frame_idx in frame_indices:
-                # Create the frame
-                frame = create_frame(frame_idx)
+
+        # Calculate optimal chunk size for multiprocessing
+        cpu_count = mp.cpu_count()
+        chunk_size = max(1, total_frames // (cpu_count * 4))  # Divide work into smaller chunks
+        print(f"Using {cpu_count} CPU cores with chunk size of {chunk_size}")
+
+        # Create a pool of workers
+        with mp.Pool(processes=cpu_count) as pool:
+            # Create frames in parallel using imap
+            with tqdm(total=total_frames, desc="Creating frames", unit="frames",
+                     bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
                 
-                # Convert frame if needed
-                if frame.dtype != np.uint8:
-                    frame = (frame * 255).astype(np.uint8)
-                
-                # Ensure frame is in correct RGB format
-                if frame.shape[2] == 4:  # RGBA format
-                    frame = frame[:, :, :3]  # Remove alpha channel
-                
-                # Write the frame to FFmpeg process
-                ffmpeg_process.stdin.write(frame.tobytes())
-                frames_processed += 1
-                pbar.update(1)
-                
-                # Update with ETA and speed info every second
-                current_time = time.time()
-                if current_time - last_update_time >= 1:
-                    elapsed = current_time - start_time
-                    frames_per_second = frames_processed / elapsed
-                    eta = (total_frames - frames_processed) / frames_per_second if frames_per_second > 0 else 0
+                # Process frames in chunks
+                for frame in pool.imap(create_frame, frame_indices, chunksize=chunk_size):
+                    # Convert frame if needed
+                    if frame.dtype != np.uint8:
+                        frame = (frame * 255).astype(np.uint8)
                     
-                    # Display detailed progress information
-                    print(f"Progress: {frames_processed}/{total_frames} frames "
-                          f"({frames_processed/total_frames*100:.1f}%) | "
-                          f"Speed: {frames_per_second:.2f} fps | "
-                          f"Elapsed: {elapsed:.2f}s | "
-                          f"ETA: {eta:.2f}s ({eta/60:.2f}m)",
-                          end='\r')
+                    # Ensure frame is in correct RGB format
+                    if frame.shape[2] == 4:  # RGBA format
+                        frame = frame[:, :, :3]  # Remove alpha channel
                     
-                    last_update_time = current_time
+                    # Write the frame to FFmpeg process
+                    ffmpeg_process.stdin.write(frame.tobytes())
+                    frames_processed += 1
+                    pbar.update(1)
+                    
+                    # Update with ETA and speed info every second
+                    current_time = time.time()
+                    if current_time - last_update_time >= 1:
+                        elapsed = current_time - start_time
+                        frames_per_second = frames_processed / elapsed
+                        eta = (total_frames - frames_processed) / frames_per_second if frames_per_second > 0 else 0
+                        
+                        # Display detailed progress information
+                        print(f"Progress: {frames_processed}/{total_frames} frames "
+                              f"({frames_processed/total_frames*100:.1f}%) | "
+                              f"Speed: {frames_per_second:.2f} fps | "
+                              f"Elapsed: {elapsed:.2f}s | "
+                              f"ETA: {eta:.2f}s ({eta/60:.2f}m)",
+                              end='\r')
+                        
+                        last_update_time = current_time
         
         # Close the pipe and wait for FFmpeg to finish
         ffmpeg_process.stdin.close()
@@ -817,43 +824,50 @@ def create_video_directly(frame_indices, output_path, fps):
                 print("Error: Could not open OpenCV VideoWriter")
                 return False
             
-            # Create frames and write to video
+            # Create frames and write to video using multiprocessing
             total_frames = len(frame_indices)
             start_time = time.time()
             frames_processed = 0
             
-            with tqdm(total=total_frames, desc="Creating video with OpenCV", unit="frames",
-                    bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
-                for frame_idx in frame_indices:
-                    frame = create_frame(frame_idx)
+            # Calculate optimal chunk size for multiprocessing
+            cpu_count = mp.cpu_count()
+            chunk_size = max(1, total_frames // (cpu_count * 4))
+            print(f"Using {cpu_count} CPU cores with chunk size of {chunk_size}")
+
+            # Create a pool of workers
+            with mp.Pool(processes=cpu_count) as pool:
+                with tqdm(total=total_frames, desc="Creating video with OpenCV", unit="frames",
+                        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
                     
-                    # Convert frame to BGR format (required by OpenCV)
-                    if frame.dtype != np.uint8:
-                        frame = (frame * 255).astype(np.uint8)
-                    
-                    # Convert RGB to BGR
-                    if frame.shape[2] >= 3:
-                        frame = cv2.cvtColor(frame[:, :, :3], cv2.COLOR_RGB2BGR)
-                    
-                    # Write the frame
-                    out.write(frame)
-                    frames_processed += 1
-                    pbar.update(1)
-                    
-                    # Calculate and display progress information
-                    elapsed = time.time() - start_time
-                    if elapsed > 0:
-                        frames_per_second = frames_processed / elapsed
-                        eta = (total_frames - frames_processed) / frames_per_second if frames_per_second > 0 else 0
+                    # Process frames in chunks
+                    for frame in pool.imap(create_frame, frame_indices, chunksize=chunk_size):
+                        # Convert frame to BGR format (required by OpenCV)
+                        if frame.dtype != np.uint8:
+                            frame = (frame * 255).astype(np.uint8)
                         
-                        # Only update every 10 frames to avoid flooding the console
-                        if frames_processed % 10 == 0:
-                            print(f"Progress: {frames_processed}/{total_frames} frames "
-                                f"({frames_processed/total_frames*100:.1f}%) | "
-                                f"Speed: {frames_per_second:.2f} fps | "
-                                f"Elapsed: {elapsed:.2f}s | "
-                                f"ETA: {eta:.2f}s ({eta/60:.2f}m)",
-                                end='\r')
+                        # Convert RGB to BGR
+                        if frame.shape[2] >= 3:
+                            frame = cv2.cvtColor(frame[:, :, :3], cv2.COLOR_RGB2BGR)
+                        
+                        # Write the frame
+                        out.write(frame)
+                        frames_processed += 1
+                        pbar.update(1)
+                        
+                        # Calculate and display progress information
+                        elapsed = time.time() - start_time
+                        if elapsed > 0:
+                            frames_per_second = frames_processed / elapsed
+                            eta = (total_frames - frames_processed) / frames_per_second if frames_per_second > 0 else 0
+                            
+                            # Only update every 10 frames to avoid flooding the console
+                            if frames_processed % 10 == 0:
+                                print(f"Progress: {frames_processed}/{total_frames} frames "
+                                    f"({frames_processed/total_frames*100:.1f}%) | "
+                                    f"Speed: {frames_per_second:.2f} fps | "
+                                    f"Elapsed: {elapsed:.2f}s | "
+                                    f"ETA: {eta:.2f}s ({eta/60:.2f}m)",
+                                    end='\r')
             
             # Release the video writer
             out.release()
@@ -1046,6 +1060,9 @@ if __name__ == "__main__":
     try:
         # Set up to display more debug info
         print("Running with extra logging enabled...")
+        
+        # Initialize matplotlib in each process to avoid conflicts
+        mp.set_start_method('spawn')  # Use 'spawn' method for better compatibility
         
         # Run main program
         main()
