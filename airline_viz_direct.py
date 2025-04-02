@@ -30,11 +30,12 @@ parser.add_argument('--fps', type=int, default=60, help='Frames per second (defa
 parser.add_argument('--output', type=str, default='output/airline_revenue.mp4', help='Output video file path')
 parser.add_argument('--quality', type=str, choices=['high', 'medium', 'low'], default='high', 
                     help='Video quality: high, medium, or low (default: high)')
-parser.add_argument('--frames-per-year', type=int, default=240, help='Number of frames to generate per year (default: 240)')
+parser.add_argument('--frames-per-year', type=int, default=600, help='Number of frames to generate per year (default: 600)')
 parser.add_argument('--preserve-colors', action='store_true', default=True, 
                     help='Preserve original colors in video (default: True)')
 parser.add_argument('--quarters-only', action='store_true', help='Only generate frames for each quarter')
-parser.add_argument('--duration', type=int, default=120, help='Target video duration in seconds (default: 120)')
+parser.add_argument('--duration', type=int, default=300, help='Target video duration in seconds (default: 300)')
+parser.add_argument('--monda-font', type=str, default=None, help='Path to Monda font file (optional)')
 args = parser.parse_args()
 
 # Set quality parameters
@@ -42,6 +43,9 @@ FRAMES_PER_YEAR = args.frames_per_year if not args.quarters_only else 4
 OUTPUT_DPI = 108  # Reduced from 144 to 108 for good balance of quality and performance
 FIGURE_SIZE = (19.2, 10.8)  # 1080p size
 LOGO_DPI = 300  # High DPI for sharp logos
+
+# Global variable for Monda font path
+monda_font_path = None
 
 # Create required directories
 logos_dir = 'airline-bar-video/logos'
@@ -68,8 +72,29 @@ def optimize_figure_for_performance():
     plt.rcParams['savefig.format'] = 'png'
     plt.rcParams['savefig.pad_inches'] = 0.1
     plt.rcParams['figure.figsize'] = FIGURE_SIZE
-    plt.rcParams['font.family'] = 'sans-serif'
-    plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Helvetica', 'sans-serif']
+    
+    # Set Monda font for all text elements if available
+    if monda_font_path and os.path.exists(monda_font_path):
+        # Register the font with fontmanager
+        try:
+            print(f"Applying Monda font from {monda_font_path}")
+            prop = fm.FontProperties(fname=monda_font_path)
+            font_name = prop.get_name()
+            plt.rcParams['font.family'] = 'sans-serif'
+            plt.rcParams['font.sans-serif'] = [font_name, 'Arial', 'DejaVu Sans', 'Helvetica', 'sans-serif']
+            # Set it for all text elements
+            plt.rcParams['text.color'] = '#808080'
+            plt.rcParams['axes.labelcolor'] = '#808080'
+            plt.rcParams['xtick.color'] = '#808080'
+            plt.rcParams['ytick.color'] = '#808080'
+        except Exception as e:
+            print(f"Error applying Monda font: {e}")
+            plt.rcParams['font.family'] = 'sans-serif'
+            plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Helvetica', 'sans-serif']
+    else:
+        plt.rcParams['font.family'] = 'sans-serif'
+        plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Helvetica', 'sans-serif']
+    
     plt.rcParams['axes.facecolor'] = 'white'
     plt.rcParams['axes.grid'] = False
     plt.rcParams['axes.edgecolor'] = '#dddddd'
@@ -82,7 +107,6 @@ def preprocess_logo(image_array, target_size=None, upscale_factor=4):
     """Optimized logo preprocessing function"""
     cache_key = f"{hash(str(image_array.tobytes()))}-{str(target_size)}"
     if cache_key in logo_cache:
-        print(f"Using cached logo for size {target_size}")
         return logo_cache[cache_key]
 
     try:
@@ -95,13 +119,10 @@ def preprocess_logo(image_array, target_size=None, upscale_factor=4):
 
         original_mode = image.mode
         original_size = image.size
-        print(f"Original logo size: {original_size}, mode: {original_mode}")
 
         if target_size:
             w, h = target_size
-            # Use a larger upscale for better quality
-            large_size = (w * 3, h * 3)  # Increased upscale factor from 2 to 3
-            print(f"Resizing to intermediate size: {large_size} using LANCZOS")
+            large_size = (w * 5, h * 5)
             image = image.resize(large_size, Image.Resampling.LANCZOS)
 
             # Apply stronger sharpening and contrast enhancement
@@ -109,36 +130,32 @@ def preprocess_logo(image_array, target_size=None, upscale_factor=4):
                 r, g, b, a = image.split()
                 rgb = Image.merge('RGB', (r, g, b))
                 
-                # Apply stronger sharpening
                 enhancer = ImageEnhance.Sharpness(rgb)
-                rgb = enhancer.enhance(1.8)  # Increased from 1.5 to 1.8
+                rgb = enhancer.enhance(2.2)
                 
-                # Add contrast enhancement
                 contrast = ImageEnhance.Contrast(rgb)
-                rgb = contrast.enhance(1.3)  # Increased from 1.2 to 1.3
+                rgb = contrast.enhance(1.6)
                 
-                # Restore alpha channel
+                brightness = ImageEnhance.Brightness(rgb)
+                rgb = brightness.enhance(1.15)
+                
                 r, g, b = rgb.split()
                 image = Image.merge('RGBA', (r, g, b, a))
             else:
-                # Apply stronger sharpening
                 enhancer = ImageEnhance.Sharpness(image)
-                image = enhancer.enhance(1.8)  # Increased from 1.5 to 1.8
+                image = enhancer.enhance(2.2)
                 
-                # Add contrast enhancement
                 contrast = ImageEnhance.Contrast(image)
-                image = contrast.enhance(1.3)  # Increased from 1.2 to 1.3
+                image = contrast.enhance(1.6)
+                
+                brightness = ImageEnhance.Brightness(image)
+                image = brightness.enhance(1.15)
 
-            # Apply unsharp mask filter for additional sharpness
-            print("Applying UnsharpMask filter")
-            image = image.filter(ImageFilter.UnsharpMask(radius=1.2, percent=180, threshold=3))
-            
-            # Resize to target size with high-quality resampling
-            print(f"Final resize to target size: {target_size} using LANCZOS")
+            image = image.filter(ImageFilter.UnsharpMask(radius=1.5, percent=220, threshold=2))
+            image = image.filter(ImageFilter.GaussianBlur(radius=0.3))
             image = image.resize(target_size, Image.Resampling.LANCZOS)
 
         result = np.array(image)
-        print(f"Processed logo array shape: {result.shape}")
         logo_cache[cache_key] = result
         return result
         
@@ -146,7 +163,6 @@ def preprocess_logo(image_array, target_size=None, upscale_factor=4):
         print(f"Error in preprocess_logo: {e}")
         import traceback
         traceback.print_exc()
-        # If preprocessing fails, return the original image
         return image_array
 
 def format_revenue(value, pos):
@@ -271,52 +287,41 @@ logo_mapping = {
     "Aeroflot": [
         {"start_year": 1999, "end_year": 2003, "file": "airline-bar-video/logos/Aeroflot-1999-2003.jpg"},
         {"start_year": 2003, "end_year": 9999, "file": "airline-bar-video/logos/Aeroflot-2003-now.jpg"}
-    ]
+    ],
+    "Norwegian Air": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/norwegian-logo.jpg"}]
 }
 
 def get_logo_path(airline, year, iata_code, month=6):
     """Get the appropriate logo path based on airline name, year and month"""
+    if iata_code == "DY":
+        norwegian_logo = "airline-bar-video/logos/norwegian-logo.jpg"
+        return norwegian_logo if os.path.exists(norwegian_logo) else None
+        
     if airline not in logo_mapping:
-        print(f"No logo mapping found for {airline} (IATA: {iata_code})")
         return None
         
     logo_versions = logo_mapping[airline]
-    print(f"Found {len(logo_versions)} logo versions for {airline}")
     
-    # 特殊处理Air France-KLM
     if airline == "Air France-KLM":
-        # 2004年5月之前使用KLM logo
         if year < 2004 or (year == 2004 and month < 5):
             for version in logo_versions:
                 if version["file"] == "airline-bar-video/logos/klm-1999-now.png":
                     logo_path = version["file"]
-                    print(f"Selected KLM logo for {airline} ({year}-{month}): {logo_path}")
                     return logo_path if os.path.exists(logo_path) else None
         else:
-            # 2004年5月及之后使用Air France-KLM logo
             for version in logo_versions:
                 if version["file"] == "airline-bar-video/logos/Air-France-KLM-Holding-Logo.png":
                     logo_path = version["file"]
-                    print(f"Selected Air France-KLM logo for {airline} ({year}-{month}): {logo_path}")
                     return logo_path if os.path.exists(logo_path) else None
     
-    # 其他航空公司正常处理
-    # Find the appropriate logo version for the given year
     for version in logo_versions:
         if version["start_year"] <= year <= version["end_year"]:
             logo_path = version["file"]
-            print(f"Selected logo for {airline} ({year}): {logo_path}")
-            
             if os.path.exists(logo_path):
-                print(f"Verified logo file exists: {logo_path}")
                 return logo_path
             else:
-                print(f"ERROR: Logo file not found: {logo_path}")
-                print(f"Current working directory: {os.getcwd()}")
-                print(f"Absolute path would be: {os.path.abspath(logo_path)}")
                 return None
     
-    print(f"No logo version found for {airline} in year {year}")
     return None
 
 def create_frame(frame_idx):
@@ -325,98 +330,65 @@ def create_frame(frame_idx):
     
     frame_int = int(frame_idx)
     frame_fraction = frame_idx - frame_int
-    # Set strict uniform image size
     fig_width = FIGURE_SIZE[0]
     fig_height = FIGURE_SIZE[1]
     
-    # Create figure with strict size
     fig = plt.figure(figsize=(fig_width, fig_height), facecolor='white', dpi=OUTPUT_DPI)
-    
-    # Ensure figure size is strictly uniform
     fig.set_size_inches(fig_width, fig_height, forward=True)
     
-    # 使用更平滑的插值方法
     if frame_fraction == 0 or args.quarters_only:
         current_quarter = quarters[frame_int]
         quarter_data_main = revenue_data.loc[current_quarter]
-        
-        # For exact quarters, use the quarter data directly
-        print(f"\nProcessing exact quarter frame for {current_quarter}")
         interpolated_data = quarter_data_main
     else:
-        # 使用cubic插值方法代替线性插值
         if frame_int < len(quarters) - 1:
             q1 = quarters[frame_int]
             q2 = quarters[frame_int + 1]
             q1_data = revenue_data.loc[q1]
             q2_data = revenue_data.loc[q2]
             
-            print(f"\nProcessing interpolated frame between {q1} and {q2} (fraction: {frame_fraction:.3f})")
-            
-            # 使用平滑的缓动函数代替线性插值
-            # 平滑缓动：t * t * (3 - 2 * t) 代替简单的 t
-            smooth_t = frame_fraction * frame_fraction * (3 - 2 * frame_fraction)
-            
-            # 使用平滑系数进行插值
+            smooth_t = frame_fraction
             interpolated_data = q1_data * (1 - smooth_t) + q2_data * smooth_t
         else:
-            # Fallback for last frame
             current_quarter = quarters[frame_int]
             interpolated_data = revenue_data.loc[current_quarter]
     
-    # Create figure with optimized settings
-    print(f"\nCreating frame {frame_idx} with figure size {FIGURE_SIZE}, DPI {OUTPUT_DPI}")
-    
-    # Set consistent color for all text elements and grid lines
     text_color = '#808080'
     
-    # Create a gridspec with space for timeline and bars - adjusted ratios for layout
     gs = fig.add_gridspec(2, 1, height_ratios=[0.15, 1], 
-                          left=0.1, right=0.9,  # Fixed left/right margins
-                          bottom=0.1, top=0.95,  # Fixed top/bottom margins
+                          left=0.1, right=0.9,
+                          bottom=0.1, top=0.95,
                           hspace=0.05)
     
-    # Create axis for timeline
     ax_timeline = fig.add_subplot(gs[0])
-    
-    # Create main axis for bar chart
     ax = fig.add_subplot(gs[1])
 
-    # Get data for the current quarter
     quarter_data = []
     colors = []
     labels = []
     logos = []
     logos_data = []
     
-    # Get the current quarter from integer part of frame_idx
     if frame_int < len(quarters):
         current_quarter = quarters[frame_int]
     else:
         current_quarter = quarters[-1]
     
-    # Parse quarter info
     year, quarter = parse_quarter(current_quarter)
     
-    # If we're at an interpolated frame, adjust the quarter display
     if frame_fraction > 0:
-        # Calculate the exact decimal year
         year_fraction = year + (quarter - 1) * 0.25 + frame_fraction * 0.25
         year_integer = int(year_fraction)
         month = int((year_fraction - year_integer) * 12) + 1
         quarter_display = f"{year_integer} {month:02d}"
-        
-        # 精确计算当前的年和月，用于KLM/Air France-KLM的判断
         current_month = month
         current_year = year_integer
     else:
         quarter_display = f"{year} Q{quarter}"
-        
-        # 对于季度帧，估算月份（Q1=2月, Q2=5月, Q3=8月, Q4=11月）
         month_mapping = {1: 2, 2: 5, 3: 8, 4: 11}
         current_month = month_mapping[quarter]
         current_year = year
-    
+
     print(f"\nProcessing frame for {quarter_display}")
     
     # Iterate through airlines
@@ -482,21 +454,15 @@ def create_frame(frame_idx):
     for i, (logo_path, y) in enumerate(zip(logos, y_positions)):
         if logo_path and os.path.exists(logo_path):
             try:
-                print(f"Loading logo from: {logo_path}")
                 img = plt.imread(logo_path)
                 
-                # Calculate logo dimensions, maintaining aspect ratio
-                img_height = BAR_HEIGHT * 0.8  # Set to 80% of bar height
+                img_height = BAR_HEIGHT * 0.8
                 aspect_ratio = img.shape[1] / img.shape[0]
                 img_width = img_height * aspect_ratio
                 
-                # Calculate target size in pixels
-                target_height_pixels = int(40)  # Fixed height of 40 pixels
+                target_height_pixels = int(40)
                 target_width_pixels = int(target_height_pixels * aspect_ratio)
                 
-                print(f"Processing logo with size: {target_width_pixels}x{target_height_pixels} pixels")
-                
-                # Process logo image - convert to PIL image for processing
                 if isinstance(img, np.ndarray):
                     if img.dtype == np.float32:
                         img = (img * 255).astype(np.uint8)
@@ -504,10 +470,8 @@ def create_frame(frame_idx):
                 else:
                     pil_img = img
                 
-                # Resize with high quality
                 pil_img = pil_img.resize((target_width_pixels, target_height_pixels), Image.Resampling.LANCZOS)
                 
-                # Apply sharpening enhancement
                 if pil_img.mode == 'RGBA':
                     r, g, b, a = pil_img.split()
                     rgb = Image.merge('RGB', (r, g, b))
@@ -523,27 +487,18 @@ def create_frame(frame_idx):
                     contrast = ImageEnhance.Contrast(pil_img)
                     pil_img = contrast.enhance(1.3)
                 
-                # Convert back to numpy array
                 img_array = np.array(pil_img)
                 
-                # Convert back to format matplotlib can use
                 if img_array.dtype != np.float32 and img_array.max() > 1.0:
                     img_array = img_array.astype(np.float32) / 255.0
                 
-                # Save processed logo data, to add later after calculating display_max
                 logos_data.append({
                     'img_array': img_array,
                     'index': i,
                     'y': y
                 })
                 
-                print(f"Processed logo successfully")
             except Exception as e:
-                print(f"Error loading logo {logo_path}: {e}")
-                # Print full exception stack trace for debugging
-                import traceback
-                traceback.print_exc()
-                # Don't let logo issues stop processing
                 continue
     
     # Customize the plot
@@ -667,9 +622,10 @@ def create_frame(frame_idx):
         year, q = parse_quarter(quarter)
         if q == 1:  # Major tick for Q1
             ax_timeline.vlines(i, -0.03, 0, colors=text_color, linewidth=1.5)
-            # Show label for every year with increased font size
-            ax_timeline.text(i, -0.07, str(year), ha='center', va='top', 
-                           fontsize=16, color=text_color)  # Increased from 12 to 16
+            # Show label for every other year, starting from 2025 and going backwards
+            if year % 2 == 1 or year == 2025:  # Show years that are odd (2023, 2021, etc.) plus 2025
+                ax_timeline.text(i, -0.07, str(year), ha='center', va='top', 
+                               fontsize=16, color=text_color)
         else:  # Minor tick for other quarters
             ax_timeline.vlines(i, -0.02, 0, colors=text_color, linewidth=0.5, alpha=0.7)
     
@@ -710,17 +666,17 @@ def create_frame(frame_idx):
 def configure_video_settings():
     """Configure video encoding settings based on quality parameter"""
     if args.quality == 'high':
-        crf = '15'  # 降低CRF以提高质量（从17降低到15）
+        crf = '12'  # 降低CRF以提高质量（从15降低到12）
         preset = 'slow'  # Slow preset for better compression
-        bitrate = '15M'  # 增加比特率从12M到15M
+        bitrate = '20M'  # 增加比特率从15M到20M
     elif args.quality == 'medium':
-        crf = '20'  # 从22降低到20
+        crf = '18'  # 从20降低到18
         preset = 'medium'
-        bitrate = '10M'  # 从8M增加到10M
+        bitrate = '12M'  # 从10M增加到12M
     else:  # low
-        crf = '25'  # 从27降低到25
+        crf = '23'  # 从25降低到23
         preset = 'fast'
-        bitrate = '6M'  # 从4M增加到6M
+        bitrate = '8M'  # 从6M增加到8M
     
     # Choose pixel format based on preserve-colors setting
     if args.preserve_colors:
@@ -752,6 +708,13 @@ def create_video_directly(frame_indices, output_path, fps):
         # Get video encoding settings
         video_settings = configure_video_settings()
         
+        # Print encoding settings
+        print("\nVideo encoding settings:")
+        print(f"CRF: {video_settings['crf']} (lower is better quality)")
+        print(f"Preset: {video_settings['preset']}")
+        print(f"Bitrate: {video_settings['bitrate']}")
+        print(f"Pixel format: {video_settings['pix_fmt']}\n")
+        
         # Create a pipe to FFmpeg
         command = [
             'ffmpeg', '-y',  # Overwrite output file if it exists
@@ -779,7 +742,12 @@ def create_video_directly(frame_indices, output_path, fps):
         
         # Create a progress bar
         total_frames = len(frame_indices)
-        with tqdm(total=total_frames, desc="Creating video") as pbar:
+        start_time = time.time()
+        last_update_time = start_time
+        frames_processed = 0
+        
+        with tqdm(total=total_frames, desc="Creating video", unit="frames", 
+                 bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
             for frame_idx in frame_indices:
                 # Create the frame
                 frame = create_frame(frame_idx)
@@ -794,10 +762,29 @@ def create_video_directly(frame_indices, output_path, fps):
                 
                 # Write the frame to FFmpeg process
                 ffmpeg_process.stdin.write(frame.tobytes())
+                frames_processed += 1
                 pbar.update(1)
+                
+                # Update with ETA and speed info every second
+                current_time = time.time()
+                if current_time - last_update_time >= 1:
+                    elapsed = current_time - start_time
+                    frames_per_second = frames_processed / elapsed
+                    eta = (total_frames - frames_processed) / frames_per_second if frames_per_second > 0 else 0
+                    
+                    # Display detailed progress information
+                    print(f"Progress: {frames_processed}/{total_frames} frames "
+                          f"({frames_processed/total_frames*100:.1f}%) | "
+                          f"Speed: {frames_per_second:.2f} fps | "
+                          f"Elapsed: {elapsed:.2f}s | "
+                          f"ETA: {eta:.2f}s ({eta/60:.2f}m)",
+                          end='\r')
+                    
+                    last_update_time = current_time
         
         # Close the pipe and wait for FFmpeg to finish
         ffmpeg_process.stdin.close()
+        print("\nWaiting for FFmpeg to finish encoding...")
         ffmpeg_process.wait()
         
         if ffmpeg_process.returncode != 0:
@@ -831,19 +818,42 @@ def create_video_directly(frame_indices, output_path, fps):
                 return False
             
             # Create frames and write to video
-            for frame_idx in tqdm(frame_indices, desc="Creating video with OpenCV"):
-                frame = create_frame(frame_idx)
-                
-                # Convert frame to BGR format (required by OpenCV)
-                if frame.dtype != np.uint8:
-                    frame = (frame * 255).astype(np.uint8)
-                
-                # Convert RGB to BGR
-                if frame.shape[2] >= 3:
-                    frame = cv2.cvtColor(frame[:, :, :3], cv2.COLOR_RGB2BGR)
-                
-                # Write the frame
-                out.write(frame)
+            total_frames = len(frame_indices)
+            start_time = time.time()
+            frames_processed = 0
+            
+            with tqdm(total=total_frames, desc="Creating video with OpenCV", unit="frames",
+                    bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
+                for frame_idx in frame_indices:
+                    frame = create_frame(frame_idx)
+                    
+                    # Convert frame to BGR format (required by OpenCV)
+                    if frame.dtype != np.uint8:
+                        frame = (frame * 255).astype(np.uint8)
+                    
+                    # Convert RGB to BGR
+                    if frame.shape[2] >= 3:
+                        frame = cv2.cvtColor(frame[:, :, :3], cv2.COLOR_RGB2BGR)
+                    
+                    # Write the frame
+                    out.write(frame)
+                    frames_processed += 1
+                    pbar.update(1)
+                    
+                    # Calculate and display progress information
+                    elapsed = time.time() - start_time
+                    if elapsed > 0:
+                        frames_per_second = frames_processed / elapsed
+                        eta = (total_frames - frames_processed) / frames_per_second if frames_per_second > 0 else 0
+                        
+                        # Only update every 10 frames to avoid flooding the console
+                        if frames_processed % 10 == 0:
+                            print(f"Progress: {frames_processed}/{total_frames} frames "
+                                f"({frames_processed/total_frames*100:.1f}%) | "
+                                f"Speed: {frames_per_second:.2f} fps | "
+                                f"Elapsed: {elapsed:.2f}s | "
+                                f"ETA: {eta:.2f}s ({eta/60:.2f}m)",
+                                end='\r')
             
             # Release the video writer
             out.release()
@@ -869,7 +879,7 @@ def create_video_directly(frame_indices, output_path, fps):
 def main():
     # Load the data from CSV
     print("Loading data...")
-    global metadata, revenue_data, quarters
+    global metadata, revenue_data, quarters, monda_font_path
     
     # Use global scope for these variables
     df = pd.read_csv('airline-bar-video/airlines_final.csv')  # 使用新的airlines_final.csv
@@ -913,26 +923,31 @@ def main():
     
     # Check font configurations
     # Check for Monda font, otherwise use a system sans-serif font
-    font_path = None
-    system_fonts = fm.findSystemFonts()
-    for font in system_fonts:
-        if 'monda' in font.lower():
-            font_path = font
-            break
+    monda_font_path = args.monda_font
+    if not monda_font_path:
+        # Try to find Monda font in system
+        system_fonts = fm.findSystemFonts()
+        for font in system_fonts:
+            if 'monda' in font.lower():
+                monda_font_path = font
+                print(f"Found Monda font at: {monda_font_path}")
+                break
     
-    if font_path:
-        monda_font = fm.FontProperties(fname=font_path)
-        print(f"Found Monda font at: {font_path}")
+    if monda_font_path and os.path.exists(monda_font_path):
+        print(f"Using Monda font from: {monda_font_path}")
+        # Register the font with matplotlib
+        fm.fontManager.addfont(monda_font_path)
     else:
-        monda_font = fm.FontProperties(family='sans-serif')
-        print("Monda font not found, using default sans-serif")
+        print("Monda font not found or specified. Using default sans-serif fonts.")
+        monda_font_path = None
     
     # Verify key logo files
     important_logos = [
         "logos/american-airlines-2013-now.jpg",
         "logos/delta-air-lines-2007-now.jpg",
         "logos/southwest-airlines-2014-now.png",
-        "logos/Emirates-logo.jpg"  # 添加Emirates logo到验证列表
+        "logos/Emirates-logo.jpg",  # 添加Emirates logo到验证列表
+        "logos/norwegian-logo.jpg"  # 添加Norwegian logo到验证列表
     ]
     
     print("\nVerifying key logo files:")
@@ -969,7 +984,7 @@ def main():
             # Add the main quarter frame
             frame_indices.append(i)
             
-            # Add interpolated frames between quarters
+            # Add interpolated frames between quarters with increased density
             for j in range(1, frames_per_quarter):
                 # Calculate fractional index for interpolation
                 fraction = j / frames_per_quarter
@@ -986,22 +1001,44 @@ def main():
     print(f"First few frame indices: {frame_indices[:10]}")
     
     # Calculate appropriate FPS based on desired duration
-    fps = args.fps
+    target_fps = args.fps
+    
+    # If a specific duration is requested, calculate the ideal FPS
     if args.duration:
         calculated_fps = total_frames / args.duration
-        if calculated_fps < fps:
-            fps = calculated_fps  # Use calculated FPS if it's lower than requested FPS
-            print(f"Adjusted FPS to {fps:.2f} to match {args.duration} second duration")
+        print(f"For {args.duration} second duration, calculated FPS would be {calculated_fps:.2f}")
+        
+        # Keep fps between 30 and 60 for smooth playback, if possible
+        if calculated_fps < 30:
+            print(f"Warning: Calculated FPS ({calculated_fps:.2f}) is below 30. Consider increasing frames-per-year for smoother playback.")
+            fps = max(calculated_fps, 24)  # Use at least 24 FPS for minimal acceptable smoothness
+        elif calculated_fps > 60:
+            print(f"Warning: Calculated FPS ({calculated_fps:.2f}) is above 60. Consider decreasing frames-per-year for better playback compatibility.")
+            fps = min(calculated_fps, 90)  # Cap at 90 FPS for most displays
+        else:
+            fps = calculated_fps  # Use calculated FPS if it's in reasonable range
+    else:
+        fps = target_fps  # Use specified FPS if no duration target
     
+    # Round fps to nearest integer for simplicity
+    fps = round(fps)
+    
+    # Calculate final duration
     estimated_duration = total_frames / fps
-    print(f"Using {fps:.2f} fps")
-    print(f"Estimated video duration: {estimated_duration:.2f} seconds ({estimated_duration/60:.2f} minutes)")
+    print(f"Using {fps} fps")
+    print(f"Final estimated video duration: {estimated_duration:.2f} seconds ({estimated_duration/60:.2f} minutes)")
+    
+    print("\n" + "=" * 50)
+    print(f"Starting video generation process")
+    print("=" * 50)
     
     # Create video directly
     success = create_video_directly(frame_indices, args.output, fps)
     
     if success:
         print("\nVideo creation completed successfully!")
+        print(f"Output video: {args.output}")
+        print(f"Duration: {estimated_duration:.2f} seconds ({estimated_duration/60:.2f} minutes)")
     else:
         print("\nThere were issues creating the video. Please check the logs.")
 
