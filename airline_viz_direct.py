@@ -389,8 +389,6 @@ def create_frame(args):
         month_mapping = {1: 2, 2: 5, 3: 8, 4: 11}
         current_month = month_mapping[quarter]
         current_year = year
-
-    print(f"\nProcessing frame for {quarter_display}")
     
     # Iterate through airlines
     for airline in interpolated_data.index:
@@ -419,7 +417,6 @@ def create_frame(args):
     
     # Check if we have any valid data
     if not quarter_data:
-        print(f"\nWarning: No valid data for quarter {current_quarter}")
         fig.suptitle(f'No data available for {current_quarter}', fontsize=14)
         buf = BytesIO()
         plt.savefig(buf, format='rgba', dpi=OUTPUT_DPI)
@@ -570,14 +567,12 @@ def create_frame(args):
         current_logo_path = logos[i] if i < len(logos) else None
         if current_logo_path == "airline-bar-video/logos/Air-France-KLM-Holding-Logo.png":
             zoom_factor = 0.5  # Reduce zoom factor for this specific logo
-            print(f"Applying smaller zoom factor ({zoom_factor}) for Air France-KLM logo")
         
         imagebox = OffsetImage(img_array, zoom=zoom_factor)
         ab = AnnotationBbox(imagebox, (x, y),
                           box_alignment=(0, 0.5),  # Left-center alignment
                           frameon=False)
         ax.add_artist(ab)
-        print(f"Added logo successfully at position ({x}, {y})")
     
     # Set fixed y-axis limits - reduced padding to move bars up
     total_height = MAX_BARS * TOTAL_BAR_HEIGHT
@@ -648,12 +643,6 @@ def create_frame(args):
     ax_timeline.set_xticks([])
     ax_timeline.set_yticks([])
     
-    # Remove the current quarter display
-    # The following line is commented out to remove the quarter display above the timeline
-    # ax_timeline.text(len(quarters_data)/2, 0.15, quarter_display, 
-    #                ha='center', va='center', fontsize=14, color='black', 
-    #                bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', boxstyle='round,pad=0.5'))
-    
     # Render the figure to a numpy array
     buf = BytesIO()
     plt.savefig(buf, format='rgba', dpi=OUTPUT_DPI)
@@ -696,25 +685,15 @@ def configure_video_settings():
 def create_video_directly(frame_indices, output_path, fps):
     """Create video directly from matplotlib frames without saving intermediate PNGs"""
     # Get the first frame to determine dimensions
-    print("Creating test frame to determine dimensions...")
     test_frame = create_frame((frame_indices[0], quarters, revenue_data, metadata, args.quarters_only))
     height, width, channels = test_frame.shape
-    print(f"Frame dimensions: {width}x{height}, {channels} channels")
     
     # Check if FFmpeg is installed
     try:
         subprocess.check_output(['ffmpeg', '-version'], stderr=subprocess.STDOUT)
-        print("FFmpeg detected - using FFmpeg for video encoding")
         
         # Get video encoding settings
         video_settings = configure_video_settings()
-        
-        # Print encoding settings
-        print("\nVideo encoding settings:")
-        print(f"CRF: {video_settings['crf']} (lower is better quality)")
-        print(f"Preset: {video_settings['preset']}")
-        print(f"Bitrate: {video_settings['bitrate']}")
-        print(f"Pixel format: {video_settings['pix_fmt']}\n")
         
         # Create a pipe to FFmpeg
         command = [
@@ -738,7 +717,6 @@ def create_video_directly(frame_indices, output_path, fps):
             output_path
         ]
         
-        print(f"FFmpeg command: {' '.join(command)}")
         ffmpeg_process = subprocess.Popen(command, stdin=subprocess.PIPE)
         
         # Create a progress bar
@@ -750,7 +728,6 @@ def create_video_directly(frame_indices, output_path, fps):
         # Calculate optimal chunk size for multiprocessing
         cpu_count = mp.cpu_count()
         chunk_size = max(1, total_frames // (cpu_count * 4))  # Divide work into smaller chunks
-        print(f"Using {cpu_count} CPU cores with chunk size of {chunk_size}")
 
         # Prepare arguments for multiprocessing
         frame_args = [(idx, quarters, revenue_data, metadata, args.quarters_only) for idx in frame_indices]
@@ -782,42 +759,22 @@ def create_video_directly(frame_indices, output_path, fps):
                         elapsed = current_time - start_time
                         frames_per_second = frames_processed / elapsed
                         eta = (total_frames - frames_processed) / frames_per_second if frames_per_second > 0 else 0
-                        
-                        # Display detailed progress information
-                        print(f"Progress: {frames_processed}/{total_frames} frames "
-                              f"({frames_processed/total_frames*100:.1f}%) | "
-                              f"Speed: {frames_per_second:.2f} fps | "
-                              f"Elapsed: {elapsed:.2f}s | "
-                              f"ETA: {eta:.2f}s ({eta/60:.2f}m)",
-                              end='\r')
-                        
                         last_update_time = current_time
 
         # Close the pipe and wait for FFmpeg to finish
         ffmpeg_process.stdin.close()
-        print("\nWaiting for FFmpeg to finish encoding...")
         ffmpeg_process.wait()
         
         if ffmpeg_process.returncode != 0:
-            print(f"FFmpeg error: returned code {ffmpeg_process.returncode}")
             return False
         
         # Check if output file was created successfully
         if os.path.exists(output_path) and os.path.getsize(output_path) > 100000:
-            output_size_mb = os.path.getsize(output_path) / (1024 * 1024)
-            print(f"\nVideo created successfully: {output_path}")
-            print(f"Video size: {output_size_mb:.2f} MB")
-            print(f"Duration: {total_frames / fps:.2f} seconds ({total_frames / fps / 60:.2f} minutes)")
-            print(f"Resolution: {width}x{height}")
             return True
         else:
-            print("Error: Output file too small or not created")
             return False
             
     except (FileNotFoundError, subprocess.SubprocessError) as e:
-        print(f"FFmpeg not found or error during execution: {e}")
-        print("Falling back to OpenCV video creation")
-        
         # Try using OpenCV as a fallback
         try:
             # Initialize video writer
@@ -825,7 +782,6 @@ def create_video_directly(frame_indices, output_path, fps):
             out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
             
             if not out.isOpened():
-                print("Error: Could not open OpenCV VideoWriter")
                 return False
             
             # Create frames and write to video using multiprocessing
@@ -836,7 +792,6 @@ def create_video_directly(frame_indices, output_path, fps):
             # Calculate optimal chunk size for multiprocessing
             cpu_count = mp.cpu_count()
             chunk_size = max(1, total_frames // (cpu_count * 4))
-            print(f"Using {cpu_count} CPU cores with chunk size of {chunk_size}")
 
             # Create a pool of workers
             with mp.Pool(processes=cpu_count) as pool:
@@ -857,41 +812,17 @@ def create_video_directly(frame_indices, output_path, fps):
                         out.write(frame)
                         frames_processed += 1
                         pbar.update(1)
-                        
-                        # Calculate and display progress information
-                        elapsed = time.time() - start_time
-                        if elapsed > 0:
-                            frames_per_second = frames_processed / elapsed
-                            eta = (total_frames - frames_processed) / frames_per_second if frames_per_second > 0 else 0
-                            
-                            # Only update every 10 frames to avoid flooding the console
-                            if frames_processed % 10 == 0:
-                                print(f"Progress: {frames_processed}/{total_frames} frames "
-                                    f"({frames_processed/total_frames*100:.1f}%) | "
-                                    f"Speed: {frames_per_second:.2f} fps | "
-                                    f"Elapsed: {elapsed:.2f}s | "
-                                    f"ETA: {eta:.2f}s ({eta/60:.2f}m)",
-                                    end='\r')
             
             # Release the video writer
             out.release()
             
             # Check if output file was created successfully
             if os.path.exists(output_path) and os.path.getsize(output_path) > 100000:
-                output_size_mb = os.path.getsize(output_path) / (1024 * 1024)
-                print(f"\nVideo created successfully with OpenCV: {output_path}")
-                print(f"Video size: {output_size_mb:.2f} MB")
-                print(f"Duration: {len(frame_indices) / fps:.2f} seconds ({len(frame_indices) / fps / 60:.2f} minutes)")
-                print(f"Resolution: {width}x{height}")
                 return True
             else:
-                print("Error: Output file too small or not created with OpenCV")
                 return False
                 
         except Exception as e:
-            print(f"Error creating video with OpenCV: {e}")
-            import traceback
-            traceback.print_exc()
             return False
 
 def main():
