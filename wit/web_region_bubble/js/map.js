@@ -5,7 +5,7 @@ const regionPaths = {
     'Europe': 'M 120 40 L 160 40 L 180 60 L 160 80 L 120 60 Z',
     'Eastern Europe': 'M 180 60 L 220 40 L 240 60 L 220 80 L 180 80 Z',
     'Middle East': 'M 180 100 L 220 80 L 240 100 L 220 120 L 180 120 Z',
-    'Asia-Pacific': 'M 240 60 L 280 40 L 300 80 L 280 120 L 240 100 Z'
+    'Asia-Pacific (sum)': 'M 240 60 L 280 40 L 300 80 L 280 120 L 240 100 Z'
 };
 
 function createMapLegend() {
@@ -16,19 +16,22 @@ function createMapLegend() {
         'Europe': ['GBR', 'FRA', 'DEU', 'ITA', 'ESP', 'NLD', 'CHE', 'BEL', 'PRT', 'IRL', 'DNK', 'NOR', 'SWE', 'FIN'],
         'Eastern Europe': ['RUS', 'POL', 'UKR', 'CZE', 'HUN', 'ROU', 'BGR', 'SVK', 'BLR', 'LTU', 'LVA', 'EST'],
         'Middle East': ['SAU', 'ARE', 'IRN', 'ISR', 'QAT', 'KWT', 'OMN', 'BHR', 'JOR', 'LBN'],
-        'Asia-Pacific': ['CHN', 'JPN', 'KOR', 'AUS', 'IDN', 'IND', 'SGP', 'MYS', 'NZL', 'THA', 'VNM', 'PHL', 'TWN', 'HKG']
+        'Asia-Pacific (sum)': ['CHN', 'JPN', 'KOR', 'AUS', 'IDN', 'IND', 'SGP', 'MYS', 'NZL', 'THA', 'VNM', 'PHL', 'TWN', 'HKG']
     };
 
     // 创建数据
     const data = [];
     Object.entries(regionCountries).forEach(([region, countries]) => {
+        // Use the original color key for Asia-Pacific (sum)
+        const colorKey = region === 'Asia-Pacific (sum)' ? 'Asia-Pacific' : region;
+        
         data.push({
             type: 'choropleth',
             locations: countries,
             z: Array(countries.length).fill(1),
             name: region,
             showscale: false,
-            colorscale: [[0, appConfig.regionColors[region]], [1, appConfig.regionColors[region]]],
+            colorscale: [[0, appConfig.regionColors[colorKey]], [1, appConfig.regionColors[colorKey]]],
             marker: {
                 line: {
                     color: 'white',

@@ -68,9 +68,9 @@ layout = {
             size: 20
         },
         tickmode: 'array',
-        ticktext: ['0.1', '0.5', '1', '5', '10', '40', '90', '160', '250', '400'],
-        tickvals: [0.1, 0.5, 1, 5, 10, 40, 90, 160, 250, 400],
-        range: [Math.log10(0.05), Math.log10(400)],
+        ticktext: ['0', '10', '40', '90', '160', '250', '400', '600', '800'],
+        tickvals: [0, 10, 40, 90, 160, 250, 400, 600, 800],
+        range: [0, Math.log10(900)],
         autorange: false,
         fixedrange: true,
         ticks: 'outside',
@@ -209,6 +209,11 @@ async function fetchData() {
         // Process data
         const processedData = jsonData
             .filter(row => row['Region'] === 'APAC' && row['Market'] && row['Year'])
+            .filter(row => {
+                // Filter out Taiwan, Hong Kong, and Macau
+                const market = row['Market'];
+                return market !== 'Taiwan' && market !== 'Hong Kong' && market !== 'Macau';
+            })
             .map(row => {
                 // 标准化市场名称
                 let market = row['Market'];
@@ -307,7 +312,7 @@ function createBubbleChart(data, year) {
     // Create background text trace
     backgroundTrace = {
         x: [0.5],
-        y: [10],
+        y: [30],  // Adjust y position to better center the text vertically
         mode: 'text',
         text: [getEraText(year)],
         textposition: 'middle center',

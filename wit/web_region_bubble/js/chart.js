@@ -100,20 +100,20 @@ function processDataByRegion(jsonData) {
     uniqueRegions = [...new Set(jsonData.map(row => {
         // Map old region names to new ones
         const region = row['Region'];
-        if (region === 'APAC') return 'Asia-Pacific';
+        if (region === 'APAC') return 'Asia-Pacific (sum)';
         if (region === 'LATAM') return 'Latin America';
         return region;
-    }))].filter(region => region !== 'Asia-Pacific'); // Filter out Asia-Pacific
+    }))].filter(region => region !== 'Asia-Pacific (sum)'); // Filter out Asia-Pacific
     
     jsonData.forEach(row => {
         const year = row['Year'];
         let region = row['Region'];
         // Map old region names to new ones
-        if (region === 'APAC') region = 'Asia-Pacific';
+        if (region === 'APAC') region = 'Asia-Pacific (sum)';
         if (region === 'LATAM') region = 'Latin America';
         
         // Skip Asia-Pacific region
-        if (region === 'Asia-Pacific') return;
+        if (region === 'Asia-Pacific (sum)') return;
         
         if (!regionData[year]) {
             regionData[year] = {};
@@ -166,7 +166,7 @@ function createBubbleChart(data, year) {
     // 创建背景文字
     backgroundTrace = {
         x: [50],
-        y: [40],  // 降低y坐标值，使文字往下移
+        y: [50],  // 调整垂直位置使文字更好地居中
         mode: 'text',
         text: [getEraText(year)],
         textposition: 'middle center',
@@ -182,6 +182,9 @@ function createBubbleChart(data, year) {
     // 创建图例数据
     currentTraces = uniqueRegions.map(region => {
         const regionData = yearData.filter(d => d.Region === region);
+        // Get the correct color for Asia-Pacific (sum)
+        const colorKey = region === 'Asia-Pacific (sum)' ? 'Asia-Pacific' : region;
+        
         return {
             name: region,
             x: regionData.map(d => d['Online Penetration'] * appConfig.dataProcessing.onlinePenetrationMultiplier),
@@ -200,7 +203,7 @@ function createBubbleChart(data, year) {
                     return Math.max(appConfig.chart.minBubbleSize, 
                            Math.min(appConfig.chart.maxBubbleSize, size));
                 }),
-                color: appConfig.regionColors[region],
+                color: appConfig.regionColors[colorKey],
                 opacity: 0.75,
                 line: {
                     color: 'rgba(255, 255, 255, 0.8)',
@@ -486,7 +489,7 @@ function togglePlay() {
                     // 更新背景文字
                     backgroundTrace = {
                         x: [50],
-                        y: [40],
+                        y: [50],
                         mode: 'text',
                         text: [getEraText(years[currentIndex])],
                         textposition: 'middle center',
@@ -530,9 +533,38 @@ async function init() {
         }
         
         const jsonData = XLSX.utils.sheet_to_json(sheet);
-        processedData = processDataByRegion(jsonData);
+        
+        // Filter out Taiwan, Hong Kong, and Macau
+        const filteredData = jsonData.filter(row => {
+            const market = row['Market'];
+            return market !== 'Taiwan' && market !== 'Hong Kong' && market !== 'Macau';
+        });
+        
+        // Process region data
+        processedData = processDataByRegion(filteredData);
         years = [...new Set(processedData.map(d => d.Year))].sort();
         currentYearIndex = years.indexOf(appConfig.chart.defaultYear);
+        
+        // Process APAC countries data for the race chart
+        const apacCountriesData = filteredData
+            .filter(row => row['Region'] === 'APAC' && row['Market'] && row['Year'])
+            .map(row => {
+                // 标准化市场名称
+                let market = row['Market'];
+                if (market === 'Australia-New Zealand' || market === 'Australia/New Zealand') {
+                    market = 'Australia & New Zealand';
+                }
+                return {
+                    Market: market,
+                    Year: row['Year'],
+                    OnlinePenetration: row['Online Penetration'] / 100,
+                    OnlineBookings: row['Online Bookings'],
+                    GrossBookings: row['Gross Bookings']
+                };
+            });
+            
+        // Store APAC countries data globally so race-chart.js can access it
+        window.processedCountriesData = apacCountriesData;
         
         // 创建时间轴
         createTimeline();
