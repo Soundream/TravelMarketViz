@@ -558,7 +558,9 @@ def create_frame(args):
     
     # Use max of current frame and historical max
     display_max = max(max_value, historical_max)
-    ax.set_xlim(0, display_max * 1.3)  # Add extra space on the right for logos and labels
+    
+    # 增加右侧空间以容纳logo，避免logo被裁剪
+    ax.set_xlim(0, display_max * 1.5)  # 从1.3倍增加到1.5倍
     
     # 首先添加数值标签，使用统一的位置计算逻辑
     for i, bar in enumerate(bars):
@@ -580,10 +582,13 @@ def create_frame(args):
         
         # 计算文本宽度
         value_text = format_revenue(value, None)
-        value_width = len(value_text) * VALUE_FONT_SIZE * 0.6  # 估计文本宽度
+        value_width = len(value_text) * VALUE_FONT_SIZE * 0.8  # 进一步增加文本宽度估计值
         
-        # 使用固定的相对偏移量，避免位置计算不一致
-        x_offset = value + (display_max * 0.01) + value_width + (display_max * 0.02)
+        # 增加logo和数值标签之间的间距，防止重叠
+        margin = display_max * 0.06  # 增加间距比例
+        
+        # 使用固定的相对偏移量，避免位置计算不一致，添加更多空间
+        x_offset = value + (display_max * 0.01) + value_width + margin
         
         # 缩放因子固定，避免在帧之间变化
         zoom_factor = 0.8
@@ -681,24 +686,20 @@ def create_frame(args):
 def configure_video_settings():
     """Configure video encoding settings based on quality parameter"""
     if args.quality == 'high':
-        crf = '12'  # 降低CRF以提高质量（从15降低到12）
+        crf = '10'  # 降低CRF以提高质量（从12降低到10）
         preset = 'slow'  # Slow preset for better compression
-        bitrate = '20M'  # 增加比特率从15M到20M
+        bitrate = '25M'  # 增加比特率从20M到25M
     elif args.quality == 'medium':
-        crf = '18'  # 从20降低到18
+        crf = '16'  # 从18降低到16
         preset = 'medium'
-        bitrate = '12M'  # 从10M增加到12M
+        bitrate = '15M'  # 从12M增加到15M
     else:  # low
-        crf = '23'  # 从25降低到23
-        preset = 'fast'
-        bitrate = '8M'  # 从6M增加到8M
+        crf = '20'  # 从23降低到20
+        preset = 'medium'  # 从fast改为medium
+        bitrate = '10M'  # 从8M增加到10M
     
-    # Choose pixel format based on preserve-colors setting
-    if args.preserve_colors:
-        # Use higher quality pixel format to preserve color accuracy
-        pix_fmt = 'yuv444p'  # No chroma subsampling, better color preservation
-    else:
-        pix_fmt = 'yuv420p'  # Standard format, but has chroma subsampling
+    # 始终使用高质量像素格式以保持颜色准确度
+    pix_fmt = 'yuv444p'  # 无色度子采样，更好的颜色保存
     
     return {
         'crf': crf,
