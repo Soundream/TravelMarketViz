@@ -3,13 +3,37 @@ let isPlaying = true; // 默认为播放状态
 let playInterval;
 let currentYearIndex = 0;
 let years;
-let processedData;
+let processedRegionData;
+let processedCountryData;
 let timeline;
 let uniqueRegions;
+let selectedCountries;
 let backgroundTrace;
 let currentTraces;
 let layout;
 let config;
+
+// Debug logger function - logs to both console and debug panel
+function logMessage(message, type = 'info') {
+    // Log to console
+    if (type === 'error') {
+        console.error(message);
+    } else if (type === 'warn') {
+        console.warn(message);
+    } else {
+        console.log(message);
+    }
+    
+    // Also log to debug panel if it exists
+    const debugConsole = document.getElementById('debug-console');
+    if (debugConsole) {
+        const logLine = document.createElement('div');
+        logLine.className = `log-line log-${type}`;
+        logLine.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        debugConsole.appendChild(logLine);
+        debugConsole.scrollTop = debugConsole.scrollHeight;
+    }
+}
 
 // Add getEraText function at the top level
 function getEraText(year) {
@@ -30,6 +54,7 @@ function getEraText(year) {
 
 // Function to create timeline
 function createTimeline() {
+    console.log('Creating timeline with years:', years);
     const timelineWidth = document.getElementById('timeline').offsetWidth;
     const margin = { left: 80, right: 80 }; // 增加左右边距
     const width = timelineWidth - margin.left - margin.right;
@@ -79,21 +104,26 @@ function createTimeline() {
         scale: xScale,
         triangle: triangle
     };
+    
+    console.log('Timeline created successfully');
 }
 
 // Function to update timeline
 function updateTimeline(year) {
+    console.log('Updating timeline to year:', year);
     if (timeline && timeline.triangle) {
         timeline.triangle
             .transition()
             .duration(appConfig.animation.duration)
             .attr('transform', `translate(${timeline.scale(year)}, -10) rotate(180)`);
+    } else {
+        console.warn('Timeline or triangle is undefined');
     }
 }
 
 // Function to process Excel data by region
 function processDataByRegion(jsonData) {
-    console.log('Processing data:', jsonData); // Debug log
+    console.log('Processing region data with', jsonData.length, 'rows'); // Debug log
     const regionData = {};
     
     // Get unique regions first, excluding 'Asia-Pacific'
@@ -104,6 +134,8 @@ function processDataByRegion(jsonData) {
         if (region === 'LATAM') return 'Latin America';
         return region;
     }))].filter(region => region !== 'Asia-Pacific (sum)'); // Filter out Asia-Pacific
+    
+    console.log('Unique regions:', uniqueRegions);
     
     jsonData.forEach(row => {
         const year = row['Year'];
@@ -147,22 +179,64 @@ function processDataByRegion(jsonData) {
         });
     });
     
-    console.log('Processed data:', processedData); // Debug log
+    console.log('Processed region data:', processedData.length, 'entries'); // Debug log
     return processedData;
 }
 
-// Function to create the bubble chart
-function createBubbleChart(data, year) {
-    console.log('Creating chart for year:', year, 'with data:', data);
-    const yearData = data.filter(d => d.Year === year);
+// Function to process Excel data by country (similar to web_bubble_chart)
+function processDataByCountry(jsonData) {
+    console.log('Processing country data with', jsonData.length, 'rows'); // Debug log
     
-    // 计算所有年份的最大值，用于固定坐标轴范围
-    const allYears = data.reduce((acc, curr) => {
-        acc.maxOnlineBookings = Math.max(acc.maxOnlineBookings, curr['Online Bookings']);
-        acc.maxOnlinePenetration = Math.max(acc.maxOnlinePenetration, curr['Online Penetration']);
-        return acc;
-    }, { maxOnlineBookings: 0, maxOnlinePenetration: 0 });
+    // Set selected countries from config
+    selectedCountries = appConfig.defaultSelectedCountries || [];
+    console.log('Selected countries:', selectedCountries);
+    
+    // Process data for APAC countries
+    const processedData = jsonData
+        .filter(row => row['Region'] === 'APAC' && row['Market'] && row['Year'])
+        .map(row => {
+            // Standardize market names
+            let market = row['Market'];
+            if (market === 'Australia-New Zealand' || market === 'Australia/New Zealand') {
+                market = 'Australia & New Zealand';
+            }
+            return {
+                Year: parseInt(row['Year']),
+                Country: market,
+                'Gross Bookings': row['Gross Bookings'] || 0,
+                'Online Bookings': row['Online Bookings'] || 0,
+                'Online Penetration': (row['Online Bookings'] / row['Gross Bookings']) || 0
+            };
+        });
+    
+    console.log('Processed country data:', processedData.length, 'entries'); // Debug log
+    console.log('Sample country data:', processedData.slice(0, 2));
+    return processedData;
+}
 
+// Function to create the bubble chart with both regions and countries
+function createBubbleChart(regionData, countryData, year) {
+    logMessage('Creating chart for year: ' + year);
+    
+    // Filter data for the current year
+    const yearRegionData = regionData.filter(d => d.Year === year);
+    
+    // Filter country data - exclude Macau, Taiwan, and Hong Kong
+    const excludedCountries = ['Macau', 'Taiwan', 'Hong Kong'];
+    const yearCountryData = countryData.filter(d => {
+        const matchesYear = d.Year === year;
+        const isSelected = selectedCountries.includes(d.Country);
+        const isNotExcluded = !excludedCountries.includes(d.Country);
+        return matchesYear && isSelected && isNotExcluded;
+    });
+    logMessage('Year country data count: ' + yearCountryData.length);
+    
+    // Calculate max Gross Bookings for sizing
+    const allData = [...regionData, ...countryData];
+    const maxGrossBookings = d3.max(allData, d => {
+        return d['Gross Bookings'] || 0;
+    });
+    
     // 创建背景文字
     backgroundTrace = {
         x: [50],
@@ -172,17 +246,17 @@ function createBubbleChart(data, year) {
         textposition: 'middle center',
         textfont: {
             size: 60,
-            family: 'Monda, Arial',
+            family: 'Monda',
             color: 'rgba(200,200,200,0.3)'
         },
         hoverinfo: 'skip',
         showlegend: false
     };
 
-    // 创建图例数据
-    currentTraces = uniqueRegions.map(region => {
-        const regionData = yearData.filter(d => d.Region === region);
-        // Get the correct color for Asia-Pacific (sum)
+    // 创建区域气泡轨迹
+    const regionTraces = uniqueRegions.map(region => {
+        const regionData = yearRegionData.filter(d => d.Region === region);
+        // Get the correct color for the region
         const colorKey = region === 'Asia-Pacific (sum)' ? 'Asia-Pacific' : region;
         
         return {
@@ -216,8 +290,46 @@ function createBubbleChart(data, year) {
         };
     });
 
-    // 合并背景文字和数据轨迹
-    const allTraces = [backgroundTrace, ...currentTraces];
+    // Create country traces with visible markers
+    const countryTraces = yearCountryData.map(d => {
+        // Calculate bubble size based on gross bookings
+        const bubbleSize = Math.max(30, Math.sqrt(d['Gross Bookings'] / maxGrossBookings) * 45);
+        
+        return {
+            name: d.Country,
+            x: [d['Online Penetration'] * appConfig.dataProcessing.onlinePenetrationMultiplier],
+            y: [d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor],
+            mode: 'markers+text',
+            text: [d.Country],
+            textposition: 'bottom center',
+            textfont: {
+                family: 'Monda',
+                size: 12,
+                color: '#333'
+            },
+            hoverinfo: 'text',
+            hovertext: `
+                <b style="font-family: Monda">${d.Country}</b><br>
+                <span style="font-family: Monda">Share of Online Bookings: ${(d['Online Penetration'] * 100).toFixed(1)}%<br>
+                Online Bookings: $${(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor).toFixed(1)}B<br>
+                Gross Bookings: $${(d['Gross Bookings'] * appConfig.dataProcessing.bookingsScaleFactor).toFixed(1)}B</span>
+            `,
+            marker: {
+                size: bubbleSize,
+                symbol: 'circle',
+                color: appConfig.countryColors[d.Country] || '#999999',
+                opacity: 0.7,
+                line: {
+                    color: 'white',
+                    width: 1
+                }
+            },
+            showlegend: false
+        };
+    });
+
+    // 合并所有轨迹
+    const allTraces = [backgroundTrace, ...regionTraces, ...countryTraces];
 
     // 初始化全局 layout 变量
     layout = {
@@ -297,9 +409,9 @@ function createBubbleChart(data, year) {
         showlegend: false,
         margin: {
             l: 80,
-            r: 0,
-            t: 100,
-            b: 150
+            r: 80,  // Increase right margin
+            t: 80,
+            b: 100
         },
         width: null,
         height: 650,  // 增加图表高度
@@ -315,7 +427,14 @@ function createBubbleChart(data, year) {
         },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
-        autosize: true
+        autosize: true,
+        font: {
+            family: 'Monda'
+        },
+        transition: {
+            duration: 800,
+            easing: 'cubic-in-out'
+        }
     };
 
     // 初始化全局 config 变量
@@ -324,201 +443,161 @@ function createBubbleChart(data, year) {
         displayModeBar: false
     };
 
-    // 使用 Plotly.animate 实现平滑动画
+    logMessage('Plotting chart with ' + allTraces.length + ' traces');
+    
+    // If it's the first rendering, use newPlot. Otherwise, use react for smooth transitions
     if (document.getElementById('bubble-chart').data) {
-        // 获取之前的数据
-        const chartDiv = document.getElementById('bubble-chart');
-        const prevData = chartDiv.data;
-        
-        // 创建插值帧
-        const numFrames = 35;  // 增加帧数以获得更平滑的动画
-        const frames = [];
-        
-        for (let i = 0; i <= numFrames; i++) {
-            const t = i / numFrames; // 插值因子 (0 到 1)
-            
-            // 为每个轨迹创建插值数据
-            const interpolatedTraces = allTraces.map((trace, traceIndex) => {
-                const prevTrace = prevData[traceIndex];
-                
-                // 如果是背景文字，直接返回新的轨迹
-                if (trace.mode === 'text') return trace;
-                
-                return {
-                    ...trace,
-                    x: trace.x.map((x, idx) => {
-                        const prevX = prevTrace.x[idx] || 0;
-                        return prevX + (x - prevX) * t;
-                    }),
-                    y: trace.y.map((y, idx) => {
-                        const prevY = prevTrace.y[idx] || 0;
-                        return prevY + (y - prevY) * t;
-                    }),
-                    marker: {
-                        ...trace.marker,
-                        size: trace.marker.size.map((size, idx) => {
-                            const prevSize = prevTrace.marker.size[idx] || 0;
-                            return prevSize + (size - prevSize) * t;
-                        })
-                    }
-                };
-            });
-            
-            frames.push({
-                data: interpolatedTraces,
-                traces: Array.from({ length: allTraces.length }, (_, i) => i),
+        // Use animate for smoother transitions between frames
+        Plotly.animate('bubble-chart', 
+            {
+                data: allTraces,
                 layout: layout
-            });
-        }
-        
-        // 使用 Plotly.animate 播放动画帧
-        Plotly.animate('bubble-chart', frames, {
-            transition: {
-                duration: appConfig.animation.duration / numFrames,
-                easing: 'cubic-in-out'
-            },
-            frame: {
-                duration: appConfig.animation.duration / numFrames,
-                redraw: true
-            },
-            mode: 'immediate'
+            }, 
+            {
+                transition: {
+                    duration: 800,
+                    easing: 'cubic-in-out'
+                },
+                frame: {
+                    duration: 800
+                }
+            }
+        ).then(function() {
+            logMessage('Chart updated successfully');
+        }).catch(error => {
+            logMessage('Error updating chart: ' + error, 'error');
         });
     } else {
-        Plotly.newPlot('bubble-chart', allTraces, layout, config);
+        // First time rendering
+        Plotly.newPlot('bubble-chart', allTraces, layout, config).then(function() {
+            logMessage('Chart created successfully');
+        }).catch(error => {
+            logMessage('Error creating chart: ' + error, 'error');
+        });
     }
-
-    // 创建race chart
-    createRaceChart(data, year);
 
     // 更新时间轴
     updateTimeline(year);
-}
-
-// Function to handle play/pause
-function togglePlay() {
-    if (isPlaying) {
-        let lastTime = 0;
-        let lastUpdateTime = 0;
-        const animationDuration = 30000; // 30秒完成一个完整循环
-        const updateInterval = 1000 / 30; // 30fps
-        
-        function animate(currentTime) {
-            if (!isPlaying) return;  // 如果停止播放则退出动画
-            
-            if (!lastTime) lastTime = currentTime;
-            const elapsed = currentTime - lastTime;
-            
-            // 计算进度 (0 到 1)
-            const totalProgress = (elapsed % animationDuration) / animationDuration;
-            const indexFloat = totalProgress * (years.length - 1);
-            const currentIndex = Math.floor(indexFloat);
-            const nextIndex = (currentIndex + 1) % years.length;
-            const progress = indexFloat - currentIndex;
-
-            // 平滑更新时间轴三角形位置
-            if (timeline && timeline.triangle) {
-                const currentX = timeline.scale(years[currentIndex]);
-                const nextX = timeline.scale(years[nextIndex]);
-                const interpolatedX = currentX + (nextX - currentX) * progress;
-                timeline.triangle.attr('transform', `translate(${interpolatedX}, -10) rotate(180)`);
-            }
-
-            // 仅在指定间隔更新图表
-            if (currentTime - lastUpdateTime >= updateInterval) {
-                lastUpdateTime = currentTime;
-
-                // 获取当前和下一年的数据
-                const currentYearData = processedData.filter(d => d.Year === years[currentIndex]);
-                const nextYearData = processedData.filter(d => d.Year === years[nextIndex]);
-
-                // 创建插值数据
-                const interpolatedData = currentYearData.map(d => {
-                    const nextData = nextYearData.find(nd => nd.Region === d.Region) || d;
-                    return {
-                        Region: d.Region,
-                        Year: years[currentIndex],
-                        'Online Penetration': d['Online Penetration'] + (nextData['Online Penetration'] - d['Online Penetration']) * progress,
-                        'Online Bookings': d['Online Bookings'] + (nextData['Online Bookings'] - d['Online Bookings']) * progress,
-                        'Gross Bookings': d['Gross Bookings'] + (nextData['Gross Bookings'] - d['Gross Bookings']) * progress
-                    };
-                });
-
-                // 更新图表
-                const chartDiv = document.getElementById('bubble-chart');
-                if (chartDiv && chartDiv.data) {
-                    // 创建新的轨迹数据
-                    const traces = uniqueRegions.map(region => {
-                        const regionData = interpolatedData.filter(d => d.Region === region);
-                        return {
-                            name: region,
-                            x: regionData.map(d => d['Online Penetration'] * appConfig.dataProcessing.onlinePenetrationMultiplier),
-                            y: regionData.map(d => d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor),
-                            mode: 'markers',
-                            marker: {
-                                size: regionData.map(d => {
-                                    const size = Math.sqrt(d['Gross Bookings'] * appConfig.dataProcessing.bookingsScaleFactor) * 3;
-                                    return Math.max(appConfig.chart.minBubbleSize, 
-                                           Math.min(appConfig.chart.maxBubbleSize, size));
-                                }),
-                                color: appConfig.regionColors[region],
-                                opacity: 0.75,
-                                line: {
-                                    color: 'rgba(255, 255, 255, 0.8)',
-                                    width: 1.5
-                                }
-                            }
-                        };
-                    });
-
-                    // 更新气泡图
-                    Plotly.animate('bubble-chart', {
-                        data: [backgroundTrace, ...traces],
-                        traces: Array.from({ length: traces.length + 1 }, (_, i) => i),
-                        
-                    }, {
-                        transition: {
-                            duration: 0,
-                            easing: 'linear'
-                        },
-                        frame: {
-                            duration: 0,
-                            redraw: false
-                        }
-                    });
-
-                    // 更新背景文字
-                    backgroundTrace = {
-                        x: [50],
-                        y: [50],
-                        mode: 'text',
-                        text: [getEraText(years[currentIndex])],
-                        textposition: 'middle center',
-                        textfont: {
-                            size: 60,
-                            family: 'Monda, Arial',
-                            color: 'rgba(200,200,200,0.3)'
-                        },
-                        hoverinfo: 'skip',
-                        showlegend: false
-                    };
-
-                    // 更新race chart
-                    updateRaceChart(interpolatedData, years[currentIndex]);
-                }
-            }
-
-            requestAnimationFrame(animate);
+    
+    // 更新 race-chart
+    try {
+        if (typeof updateRaceChart === 'function') {
+            updateRaceChart(regionData, year);
         }
-
-        requestAnimationFrame(animate);
+    } catch (error) {
+        logMessage('Error updating race chart: ' + error, 'error');
     }
 }
 
-// Initialize the visualization
+// Toggle Play/Pause Function
+function togglePlay() {
+    logMessage('Toggle play/pause. Current state: ' + isPlaying);
+    isPlaying = !isPlaying;
+    
+    const playIcon = document.getElementById('playIcon');
+    const pauseIcon = document.getElementById('pauseIcon');
+    
+    if (isPlaying) {
+        logMessage('Starting animation');
+        // Show pause icon
+        if (playIcon) playIcon.style.display = 'none';
+        if (pauseIcon) pauseIcon.style.display = 'inline-block';
+        
+        // Start animation
+        playInterval = setInterval(() => {
+            currentYearIndex = (currentYearIndex + 1) % years.length;
+            const year = years[currentYearIndex];
+            logMessage('Animating to year: ' + year);
+            createBubbleChart(processedRegionData, processedCountryData, year);
+        }, appConfig.animation.frameDelay || 1500);
+    } else {
+        logMessage('Stopping animation');
+        // Show play icon
+        if (playIcon) playIcon.style.display = 'inline-block';
+        if (pauseIcon) pauseIcon.style.display = 'none';
+        
+        // Stop animation
+        clearInterval(playInterval);
+    }
+}
+
+// Function to display error messages
+function showError(message) {
+    logMessage(message, 'error');
+    const errorDiv = document.getElementById('error-message');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+}
+
+// Function to preload all country logo images
+function preloadCountryLogos(callback) {
+    if (!appConfig || !appConfig.countryLogos) {
+        logMessage('No country logos found in config', 'warn');
+        if (callback) callback();
+        return;
+    }
+    
+    const logoUrls = Object.values(appConfig.countryLogos);
+    logMessage(`Preloading ${logoUrls.length} country logos`);
+    
+    let loadedCount = 0;
+    const totalCount = logoUrls.length;
+    
+    // If no logos to load, call callback immediately
+    if (totalCount === 0) {
+        if (callback) callback();
+        return;
+    }
+    
+    // Preload each image
+    logoUrls.forEach(url => {
+        if (!url) {
+            loadedCount++;
+            if (loadedCount === totalCount && callback) callback();
+            return;
+        }
+        
+        // Ensure path is correct
+        let logoPath = url;
+        if (!url.startsWith('http') && !url.startsWith('/') && !url.startsWith('./')) {
+            logoPath = './' + url;
+        }
+        
+        const img = new Image();
+        img.onload = () => {
+            loadedCount++;
+            logMessage(`Loaded logo ${loadedCount}/${totalCount}: ${url}`);
+            if (loadedCount === totalCount && callback) callback();
+        };
+        img.onerror = () => {
+            loadedCount++;
+            logMessage(`Failed to load logo: ${url}`, 'error');
+            if (loadedCount === totalCount && callback) callback();
+        };
+        img.src = logoPath;
+    });
+}
+
+// Main initialization function
 async function init() {
     try {
-        console.log('Initializing visualization...');
-        const response = await fetch('./travel_market_summary.xlsx');
+        logMessage('Initializing visualization...');
+        
+        // Check if required elements exist
+        if (!document.getElementById('bubble-chart')) {
+            showError('Error: bubble-chart element not found in the DOM');
+            return;
+        }
+        
+        // Clear any previous error messages
+        const errorDiv = document.getElementById('error-message');
+        if (errorDiv) errorDiv.style.display = 'none';
+        
+        // Load Excel file
+        logMessage('Loading Excel file...');
+        const response = await fetch('travel_market_summary.xlsx');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -526,28 +605,107 @@ async function init() {
         const arrayBuffer = await response.arrayBuffer();
         const data = new Uint8Array(arrayBuffer);
         
+        logMessage('Parsing Excel data...');
         const workbook = XLSX.read(data, { type: 'array' });
-        const sheet = workbook.Sheets['Visualization Data'];
-        if (!sheet) {
-            throw new Error("Sheet 'Visualization Data' not found in Excel file");
+        logMessage('Available sheets: ' + workbook.SheetNames.join(', '));
+        
+        // Read visualization data sheet
+        const sheetName = workbook.SheetNames.includes('Visualization Data') 
+            ? 'Visualization Data' 
+            : workbook.SheetNames[0];
+        
+        logMessage('Using sheet: ' + sheetName);
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(sheet);
+        logMessage('Loaded ' + jsonData.length + ' rows from Excel');
+        
+        if (!jsonData || jsonData.length === 0) {
+            throw new Error('No data found in Excel file');
         }
         
-        const jsonData = XLSX.utils.sheet_to_json(sheet);
+        // Ensure config fields exist
+        if (!appConfig) {
+            throw new Error('Configuration not found. Make sure config.js is loaded.');
+        }
         
-        // Filter out Taiwan, Hong Kong, and Macau
-        const filteredData = jsonData.filter(row => {
-            const market = row['Market'];
-            return market !== 'Taiwan' && market !== 'Hong Kong' && market !== 'Macau';
-        });
+        logMessage('App configuration loaded:', appConfig ? 'yes' : 'no');
         
-        // Process region data
-        processedData = processDataByRegion(filteredData);
-        years = [...new Set(processedData.map(d => d.Year))].sort();
-        currentYearIndex = years.indexOf(appConfig.chart.defaultYear);
+        // Set animation settings if not already set
+        if (!appConfig.animation) {
+            appConfig.animation = {
+                frameDelay: 1500,
+                duration: 800
+            };
+        }
         
-        // Process APAC countries data for the race chart
-        const apacCountriesData = filteredData
-            .filter(row => row['Region'] === 'APAC' && row['Market'] && row['Year'])
+        if (!appConfig.defaultSelectedCountries) {
+            logMessage('No default countries found in config, using fallback list', 'warn');
+            appConfig.defaultSelectedCountries = [
+                'China', 'Japan', 'South Korea', 'Australia & New Zealand', 
+                'India', 'Indonesia', 'Singapore', 'Malaysia', 'Thailand', 
+                'Vietnam', 'Philippines'
+            ];
+        } else {
+            // Filter out Macau, Taiwan, and Hong Kong from defaultSelectedCountries
+            const excludedCountries = ['Macau', 'Taiwan', 'Hong Kong'];
+            appConfig.defaultSelectedCountries = appConfig.defaultSelectedCountries.filter(
+                country => !excludedCountries.includes(country)
+            );
+        }
+        
+        // Set selected countries from config
+        selectedCountries = [...appConfig.defaultSelectedCountries];
+        logMessage('Selected countries: ' + selectedCountries.join(', '));
+        
+        // Process data for regions and countries
+        logMessage('Processing region data...');
+        processedRegionData = processDataByRegion(jsonData);
+        logMessage('Processed ' + processedRegionData.length + ' region records');
+        
+        logMessage('Processing country data...');
+        processedCountryData = processDataByCountry(jsonData);
+        logMessage('Processed ' + processedCountryData.length + ' country records');
+        
+        if (processedRegionData.length === 0) {
+            throw new Error('No region data processed from Excel file');
+        }
+        
+        // Extract unique regions for chart traces
+        uniqueRegions = [...new Set(processedRegionData.map(d => d.Region))];
+        logMessage('Unique regions: ' + uniqueRegions.join(', '));
+        
+        // Extract all years from the data
+        years = [...new Set(processedRegionData.map(d => d.Year))].sort();
+        logMessage('Years in data: ' + years.join(', '));
+        
+        currentYearIndex = years.indexOf(appConfig.chart.defaultYear) !== -1 
+            ? years.indexOf(appConfig.chart.defaultYear) 
+            : 0;
+        
+        logMessage('Starting at year: ' + years[currentYearIndex]);
+        
+        // Create timeline
+        logMessage('Creating timeline...');
+        createTimeline();
+        
+        // Process APAC countries data for the race chart - exclude Macau, Taiwan, and Hong Kong
+        logMessage('Processing data for race chart...');
+        const excludedCountries = ['Macau', 'Taiwan', 'Hong Kong'];
+        
+        const apacCountriesData = jsonData
+            .filter(row => {
+                // Filter for APAC region with market and year data, excluding specific countries
+                if (row['Region'] !== 'APAC' || !row['Market'] || !row['Year']) return false;
+                
+                // Standardize market name for matching
+                let market = row['Market'];
+                if (market === 'Australia-New Zealand' || market === 'Australia/New Zealand') {
+                    market = 'Australia & New Zealand';
+                }
+                
+                // Exclude specific markets
+                return !excludedCountries.includes(market);
+            })
             .map(row => {
                 // 标准化市场名称
                 let market = row['Market'];
@@ -565,33 +723,47 @@ async function init() {
             
         // Store APAC countries data globally so race-chart.js can access it
         window.processedCountriesData = apacCountriesData;
+        logMessage('Stored ' + apacCountriesData.length + ' country entries for race chart');
         
-        // 创建时间轴
-        createTimeline();
-        
-        // 先创建初始图表数据
-        createBubbleChart(processedData, years[currentYearIndex]);
-
-        // 清空并重新创建地图图例
-        document.getElementById('map-legend').innerHTML = '';
-        createMapLegend();
-        
-        // 确保图表已经完全加载后再开始动画
-        setTimeout(() => {
-            isPlaying = true;
-            togglePlay();
-        }, 500);
+        // Preload all country logos before creating charts
+        preloadCountryLogos(() => {
+            // Create initial chart
+            logMessage('Creating initial bubble chart...');
+            createBubbleChart(processedRegionData, processedCountryData, years[currentYearIndex]);
+            
+            // Setup race chart
+            logMessage('Setting up race chart...');
+            if (typeof createRaceChart === 'function') {
+                createRaceChart(processedRegionData, years[currentYearIndex]);
+            } else {
+                logMessage('createRaceChart function not defined', 'warn');
+            }
+            
+            // Add click event listener for play/pause
+            logMessage('Adding event listeners...');
+            document.getElementById('playButton').addEventListener('click', function() {
+                togglePlay();
+            });
+            
+            // Start animation after a short delay
+            logMessage('Starting animation with delay...');
+            setTimeout(() => {
+                isPlaying = false; // Reset state
+                togglePlay(); // Start playing
+                logMessage('Animation started');
+            }, 1000);
+        });
         
     } catch (error) {
-        console.error('Error initializing visualization:', error);
-        document.getElementById('bubble-chart').innerHTML = `
-            <div style="color: red; padding: 20px;">
-                Error loading visualization: ${error.message}<br>
-                Please check the browser console for more details.
-            </div>
-        `;
+        showError(`Error initializing visualization: ${error.message}`);
+        console.error('Full error:', error);
     }
 }
 
-// Start the visualization when the page loads
-document.addEventListener('DOMContentLoaded', init); 
+// Initialize the application
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    // If DOMContentLoaded has already fired, run init directly
+    setTimeout(init, 0);
+} 

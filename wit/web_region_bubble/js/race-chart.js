@@ -331,23 +331,26 @@ function updateRaceChart(data, year, progress, nextIndex) {
             const nextCountry = nextYearApacData.find(c => c.Market === countryName);
             
             if (currentCountry && nextCountry) {
+                // 使用更平滑的插值函数
+                const smoothProgress = Math.pow(progress, 0.7); // 使曲线更平滑
+
                 // 两年都有数据，插值计算
                 combinedData.push({
                     Region: countryName,
-                    'Gross Bookings': currentCountry.GrossBookings + (nextCountry.GrossBookings - currentCountry.GrossBookings) * progress,
-                    'Online Bookings': currentCountry.OnlineBookings + (nextCountry.OnlineBookings - currentCountry.OnlineBookings) * progress,
-                    'Online Penetration': currentCountry.OnlinePenetration + (nextCountry.OnlinePenetration - currentCountry.OnlinePenetration) * progress,
+                    'Gross Bookings': currentCountry.GrossBookings + (nextCountry.GrossBookings - currentCountry.GrossBookings) * smoothProgress,
+                    'Online Bookings': currentCountry.OnlineBookings + (nextCountry.OnlineBookings - currentCountry.OnlineBookings) * smoothProgress,
+                    'Online Penetration': currentCountry.OnlinePenetration + (nextCountry.OnlinePenetration - currentCountry.OnlinePenetration) * smoothProgress,
                     Year: year,
                     isCountryData: true  // 标记为国家数据
                 });
             } else if (currentCountry && !nextCountry) {
-                // 当前年有，下一年没有，渐变消失
-                const opacity = 1 - progress;
-                if (opacity > 0) {
+                // 当前年有，下一年没有，使用平滑的淡出效果
+                const fadeOpacity = Math.pow(1 - progress, 0.7); // 平滑淡出
+                if (fadeOpacity > 0) {
                     combinedData.push({
                         Region: countryName,
-                        'Gross Bookings': currentCountry.GrossBookings * opacity,
-                        'Online Bookings': currentCountry.OnlineBookings * opacity,
+                        'Gross Bookings': currentCountry.GrossBookings * fadeOpacity,
+                        'Online Bookings': currentCountry.OnlineBookings * fadeOpacity,
                         'Online Penetration': currentCountry.OnlinePenetration,
                         Year: year,
                         fading: true,
@@ -355,11 +358,12 @@ function updateRaceChart(data, year, progress, nextIndex) {
                     });
                 }
             } else if (!currentCountry && nextCountry) {
-                // 当前年没有，下一年有，渐变出现
+                // 当前年没有，下一年有，使用平滑的淡入效果
+                const fadeInProgress = Math.pow(progress, 0.7); // 平滑淡入
                 combinedData.push({
                     Region: countryName,
-                    'Gross Bookings': nextCountry.GrossBookings * progress,
-                    'Online Bookings': nextCountry.OnlineBookings * progress,
+                    'Gross Bookings': nextCountry.GrossBookings * fadeInProgress,
+                    'Online Bookings': nextCountry.OnlineBookings * fadeInProgress,
                     'Online Penetration': nextCountry.OnlinePenetration,
                     Year: year,
                     fading: true,
@@ -456,7 +460,7 @@ function updateRaceChart(data, year, progress, nextIndex) {
             }]
         }, {
             transition: { duration: 0 },
-            frame: { duration: 0, redraw: false } // 避免重绘导致的闪烁
+            frame: { duration: 0, redraw: true } // 确保标签正确更新
         });
         
         // 更新上一次的数据
@@ -465,100 +469,119 @@ function updateRaceChart(data, year, progress, nextIndex) {
         return;
     }
     
-    // 简化动画处理，避免多次小步骤动画导致的抖动
-    // 创建插值数据
-    const interpolatedData = [];
-    
-    // 收集所有区域和国家
-    const allRegions = new Set();
-    sortedData.forEach(d => allRegions.add(d.region));
-    window.previousSortedData.forEach(d => allRegions.add(d.region));
-    
-    // 为每个区域创建插值
-    Array.from(allRegions).forEach(regionName => {
-        const currentItem = sortedData.find(d => d.region === regionName);
-        const previousItem = window.previousSortedData.find(d => d.region === regionName);
+    // 动画处理 - 使用小批次更新实现平滑过渡
+    // 每个批次只更新一小部分，分批次完成整个更新
+    const totalBatches = 6; // 分成6个批次
+    const batchUpdater = (batchNum) => {
+        if (batchNum >= totalBatches) return;
         
-        if (currentItem && previousItem) {
-            // 计算平滑插值
-            let tween = progress;
-            if (currentItem.isCountry) {
-                // 对国家数据使用缓动函数
-                tween = Math.pow(progress, 0.8);
-            }
+        // 计算当前批次的进度
+        const batchProgress = (batchNum + 1) / totalBatches;
+        const adjustedProgress = progress * batchProgress;
+        
+        // 创建插值数据
+        const interpolatedData = [];
+        
+        // 收集所有区域和国家
+        const allRegions = new Set();
+        sortedData.forEach(d => allRegions.add(d.region));
+        window.previousSortedData.forEach(d => allRegions.add(d.region));
+        
+        // 为每个区域创建插值
+        Array.from(allRegions).forEach(regionName => {
+            const currentItem = sortedData.find(d => d.region === regionName);
+            const previousItem = window.previousSortedData.find(d => d.region === regionName);
             
-            // 计算位置插值
-            const currentIndex = sortedData.findIndex(d => d.region === regionName);
-            const previousIndex = window.previousSortedData.findIndex(d => d.region === regionName);
-            const positionTween = currentItem.isCountry ? 
-                Math.pow(progress, 0.85) : // 国家位置变化更平滑
-                progress;
-            const position = previousIndex + (currentIndex - previousIndex) * positionTween;
-            
-            interpolatedData.push({
-                region: regionName,
-                value: previousItem.value + (currentItem.value - previousItem.value) * tween,
-                color: currentItem.color,
-                position: position,
-                isCountry: currentItem.isCountry
-            });
-        } else if (previousItem && !currentItem) {
-            // 淡出效果
-            const fadeOutOpacity = 1 - progress;
-            if (fadeOutOpacity > 0.05) {
+            if (currentItem && previousItem) {
+                // 使用缓动函数，APAC国家使用更平滑的缓动
+                let tween = adjustedProgress;
+                if (currentItem.isCountry) {
+                    // 对国家数据使用更平滑的缓动函数
+                    tween = Math.pow(adjustedProgress, 0.65);
+                }
+                
+                // 计算位置插值 - 关键是要确保标签位置也平滑过渡
+                const currentIndex = sortedData.findIndex(d => d.region === regionName);
+                const previousIndex = window.previousSortedData.findIndex(d => d.region === regionName);
+                
+                // 使用较慢的位置更新确保标签平滑变化
+                const positionTween = currentItem.isCountry ? 
+                    Math.pow(adjustedProgress, 0.65) : // 国家数据位置变化更平滑
+                    adjustedProgress;
+                
+                const position = previousIndex + (currentIndex - previousIndex) * positionTween;
+                
                 interpolatedData.push({
                     region: regionName,
-                    value: previousItem.value * fadeOutOpacity,
-                    color: previousItem.color,
-                    position: window.previousSortedData.findIndex(d => d.region === regionName),
-                    isCountry: previousItem.isCountry
+                    value: previousItem.value + (currentItem.value - previousItem.value) * tween,
+                    color: currentItem.color,
+                    position: position,
+                    isCountry: currentItem.isCountry
+                });
+            } else if (previousItem && !currentItem) {
+                // 淡出效果
+                const fadeOutOpacity = 1 - adjustedProgress;
+                if (fadeOutOpacity > 0.05) {
+                    interpolatedData.push({
+                        region: regionName,
+                        value: previousItem.value * fadeOutOpacity,
+                        color: previousItem.color,
+                        position: window.previousSortedData.findIndex(d => d.region === regionName),
+                        isCountry: previousItem.isCountry
+                    });
+                }
+            } else if (!previousItem && currentItem) {
+                // 淡入效果
+                interpolatedData.push({
+                    region: regionName,
+                    value: currentItem.value * adjustedProgress,
+                    color: currentItem.color,
+                    position: sortedData.findIndex(d => d.region === regionName),
+                    isCountry: currentItem.isCountry
                 });
             }
-        } else if (!previousItem && currentItem) {
-            // 淡入效果
-            interpolatedData.push({
-                region: regionName,
-                value: currentItem.value * progress,
-                color: currentItem.color,
-                position: sortedData.findIndex(d => d.region === regionName),
-                isCountry: currentItem.isCountry
-            });
-        }
-    });
-    
-    // 按位置排序
-    interpolatedData.sort((a, b) => a.position - b.position);
-    
-    // 确保坐标轴范围保持一致
-    Plotly.relayout('race-chart', {
-        'xaxis.range': [0, window.globalMaxValue * 1.2]
-    });
-    
-    // 更新图表，使用单步动画
-    Plotly.animate('race-chart', {
-        data: [{
-            y: interpolatedData.map(d => d.region),
-            x: interpolatedData.map(d => d.value),
-            marker: {
-                color: interpolatedData.map(d => d.color)
+        });
+        
+        // 按位置排序，确保位置和标签正确对应
+        interpolatedData.sort((a, b) => a.position - b.position);
+        
+        // 确保坐标轴范围保持一致
+        Plotly.relayout('race-chart', {
+            'xaxis.range': [0, window.globalMaxValue * 1.2]
+        });
+        
+        // 更新图表，每次包括完整的y轴数据，确保标签正确更新
+        Plotly.animate('race-chart', {
+            data: [{
+                y: interpolatedData.map(d => d.region),
+                x: interpolatedData.map(d => d.value),
+                marker: {
+                    color: interpolatedData.map(d => d.color)
+                },
+                text: interpolatedData.map(d => d.value.toFixed(1)),
+                texttemplate: '%{text}B'
+            }]
+        }, {
+            transition: {
+                duration: 20, // 短但平滑的过渡
+                easing: 'cubic-in-out'
             },
-            text: interpolatedData.map(d => d.value.toFixed(1)),
-            texttemplate: '%{text}B'
-        }]
-    }, {
-        transition: {
-            duration: 30, // 使用更长但更平滑的过渡
-            easing: 'cubic-in-out'
-        },
-        frame: {
-            duration: 30,
-            redraw: false // 避免完全重绘导致的跳动
-        }
-    });
+            frame: {
+                duration: 20,
+                redraw: true // 确保标签和位置完全重绘，这是解决标签不更新的关键
+            }
+        });
+        
+        // 继续下一批更新
+        setTimeout(() => batchUpdater(batchNum + 1), 25);
+    };
+    
+    // 开始第一批更新
+    batchUpdater(0);
     
     // 动画完成后更新参考数据
-    if (progress >= 0.99) {
+    setTimeout(() => {
         window.previousSortedData = sortedData.map(d => ({...d}));
         window.raceChartData = sortedData;
-    }
+    }, totalBatches * 30);
 } 
