@@ -115,7 +115,6 @@ function updateTimeline(year) {
         timeline.triangle
             .transition()
             .duration(appConfig.animation.duration)
-            .ease(d3.easeLinear)  // 使用线性缓动
             .attr('transform', `translate(${timeline.scale(year)}, -10) rotate(180)`);
     } else {
         console.warn('Timeline or triangle is undefined');
@@ -193,6 +192,63 @@ function processDataByCountry(jsonData) {
     console.log('Selected countries:', selectedCountries);
     
     // Process data for APAC countries
+    const apacCountriesData = jsonData
+        .filter(row => {
+            // Filter for APAC region with market and year data, excluding specific countries
+            if (row['Region'] !== 'APAC' || !row['Market'] || !row['Year']) {
+                return false;
+            }
+            
+            // Standardize market name for matching
+            let market = row['Market'];
+            if (market === 'Australia-New Zealand' || market === 'Australia/New Zealand') {
+                market = 'Australia & New Zealand';
+            }
+            
+            // 打印原始数据
+            console.error(`Excel原始数据 - ${row['Year']}年 ${market}:`, {
+                '国家/地区': market,
+                '年份': row['Year'],
+                'Excel表格中的在线预订值': row['Online Bookings'],
+                'Excel表格中的总预订值': row['Gross Bookings'],
+                'Excel表格中的在线渗透率': ((row['Online Bookings'] / row['Gross Bookings']) * 100).toFixed(1) + '%'
+            });
+            
+            // Exclude specific markets
+            return !['Macau', 'Taiwan', 'Hong Kong'].includes(market);
+        })
+        .map(row => {
+            // 标准化市场名称
+            let market = row['Market'];
+            if (market === 'Australia-New Zealand' || market === 'Australia/New Zealand') {
+                market = 'Australia & New Zealand';
+            }
+
+            const processedData = {
+                Market: market,
+                Year: row['Year'],
+                OnlinePenetration: row['Online Bookings'] / row['Gross Bookings'],
+                OnlineBookings: row['Online Bookings'],
+                GrossBookings: row['Gross Bookings']
+            };
+
+            // 打印处理后的数据
+            console.error(`Race Chart处理后数据 - ${row['Year']}年 ${market}:`, {
+                '国家/地区': market,
+                '年份': row['Year'],
+                'Race Chart使用的在线预订值': processedData.OnlineBookings,
+                'Race Chart使用的总预订值': processedData.GrossBookings,
+                'Race Chart使用的在线渗透率': (processedData.OnlinePenetration * 100).toFixed(1) + '%'
+            });
+
+            return processedData;
+        });
+            
+    // Store APAC countries data globally so race-chart.js can access it
+    window.processedCountriesData = apacCountriesData;
+    logMessage('Stored ' + apacCountriesData.length + ' country entries for race chart');
+    
+    // Process data for APAC countries
     const processedData = jsonData
         .filter(row => row['Region'] === 'APAC' && row['Market'] && row['Year'])
         .map(row => {
@@ -254,6 +310,86 @@ function createBubbleChart(regionData, countryData, year) {
         showlegend: false
     };
 
+    // 创建国家气泡轨迹
+    const countryTraces = yearCountryData.map(d => {
+        // 计算实际位置
+        const xPos = d['Online Penetration'] * 100; // 转换为百分比
+        const yPos = d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor;
+        
+        // 打印每年每个国家的数据
+        console.error(`${year}年 ${d.Country} 预订数据:`, {
+            '国家': d.Country,
+            '年份': year,
+            '在线预订值(Online Bookings)': d['Online Bookings'],
+            '总预订值(Gross Bookings)': d['Gross Bookings'],
+            '在线渗透率': (d['Online Penetration'] * 100).toFixed(1) + '%',
+            '缩放后的在线预订值': yPos,
+            'Y轴实际显示位置': yPos
+        });
+
+        return {
+            type: 'scatter',
+            name: d.Country,
+            x: [xPos],
+            y: [yPos],
+            mode: 'markers',
+            text: [d.Country],
+            hoverinfo: 'text',
+            hovertext: `
+                <b style="font-family: Monda">${d.Country}</b><br>
+                <span style="font-family: Monda">Share of Online Bookings: ${(d['Online Penetration'] * 100).toFixed(1)}%<br>
+                Online Bookings: $${(d['Online Bookings']).toFixed(1)}B<br>
+                Gross Bookings: $${(d['Gross Bookings']).toFixed(1)}B</span>
+            `,
+            marker: {
+                size: 1,
+                opacity: 0
+            },
+            showlegend: false
+        };
+    });
+
+    // 创建国家图标图像
+    const countryImages = yearCountryData.map(d => {
+        const logoUrl = appConfig.countryLogos[d.Country];
+        if (!logoUrl) {
+            logMessage(`No logo URL for country: ${d.Country}`, 'warn');
+            return null;
+        }
+
+        // 使用相对路径
+        let finalLogoUrl = './' + logoUrl.replace(/^[./]+/, '');
+
+        // 计算图标大小 - 确保不超过区域气泡的大小
+        const grossBookings = d['Gross Bookings'];
+        const maxRegionGrossBookings = d3.max(yearRegionData, d => d['Gross Bookings']);
+        const minSize = 0.02;
+        const maxSize = 0.05;
+        
+        // 使用平方根比例计算大小
+        const sizeRatio = Math.sqrt(grossBookings / maxRegionGrossBookings);
+        const finalSize = minSize + (maxSize - minSize) * sizeRatio;
+
+        // 计算实际位置
+        const xPos = d['Online Penetration'] * 100;
+        const yPos = d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor;
+
+        return {
+            source: finalLogoUrl,
+            xref: "x",
+            yref: "y",
+            x: xPos,
+            y: yPos,
+            sizex: finalSize * 100,
+            sizey: finalSize * 100,
+            sizing: "contain",
+            opacity: 0.9,
+            layer: "above",
+            xanchor: "center",
+            yanchor: "middle"
+        };
+    }).filter(Boolean);
+    
     // 创建区域气泡轨迹
     const regionTraces = uniqueRegions.map(region => {
         const regionData = yearRegionData.filter(d => d.Region === region);
@@ -262,19 +398,19 @@ function createBubbleChart(regionData, countryData, year) {
         
         return {
             name: region,
-            x: regionData.map(d => d['Online Penetration'] * appConfig.dataProcessing.onlinePenetrationMultiplier),
-            y: regionData.map(d => d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor),
+            x: regionData.map(d => d['Online Penetration'] * 100), // 转换为百分比
+            y: regionData.map(d => d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor), // 应用缩放因子
             mode: 'markers',
             hoverinfo: 'text',
             hovertext: regionData.map(d => `
                 <b style="font-family: Monda">${d.Region}</b><br>
                 <span style="font-family: Monda">Share of Online Bookings: ${(d['Online Penetration'] * 100).toFixed(1)}%<br>
-                Online Bookings: $${(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor).toFixed(1)}B<br>
-                Gross Bookings: $${(d['Gross Bookings'] * appConfig.dataProcessing.bookingsScaleFactor).toFixed(1)}B</span>
+                Online Bookings: $${(d['Online Bookings']).toFixed(1)}B<br>
+                Gross Bookings: $${(d['Gross Bookings']).toFixed(1)}B</span>
             `),
             marker: {
                 size: regionData.map(d => {
-                    const size = Math.sqrt(d['Gross Bookings'] * appConfig.dataProcessing.bookingsScaleFactor) * 3;
+                    const size = Math.sqrt(d['Gross Bookings']) * 3;
                     return Math.max(appConfig.chart.minBubbleSize, 
                            Math.min(appConfig.chart.maxBubbleSize, size));
                 }),
@@ -291,66 +427,6 @@ function createBubbleChart(regionData, countryData, year) {
         };
     });
 
-    // Create country traces with visible markers
-    const countryTraces = yearCountryData.map(d => {
-        // For countries, we will use a simple marker trace but will add images separately
-        return {
-          type: 'scatter',
-          name: d.Country,
-          x: [d['Online Penetration'] * appConfig.dataProcessing.onlinePenetrationMultiplier],
-          y: [d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor],
-          mode: 'markers+text',
-          text: [d.Country],
-          textposition: 'bottom center',
-          textfont: { family: 'Monda', size: 12, color: '#333' },
-          hoverinfo: 'text',
-          hovertext: `
-                <b style="font-family: Monda">${d.Country}</b><br>
-                <span style="font-family: Monda">Share of Online Bookings: ${(d['Online Penetration'] * 100).toFixed(1)}%<br>
-                Online Bookings: $${(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor).toFixed(1)}B<br>
-                Gross Bookings: $${(d['Gross Bookings'] * appConfig.dataProcessing.bookingsScaleFactor).toFixed(1)}B</span>
-            `,
-          marker: {
-            size: 3, // Tiny marker just as a fallback
-            color: 'rgba(0,0,0,0)', // Transparent
-            opacity: 0.3,
-          },
-          showlegend: false
-        };
-    });
-    
-    // Create the country logo images to add to layout
-    const countryImages = yearCountryData.map(d => {
-        const logoUrl = appConfig.countryLogos[d.Country];
-        if (!logoUrl) {
-            logMessage(`No logo URL for country: ${d.Country}`, 'warn');
-            return null;
-        }
-        
-        // Use the path that works from the debug panel
-        let finalLogoUrl = './' + logoUrl.replace(/^[./]+/, '');
-        
-        // Make the images MUCH larger and ensure they align with bubbles
-        const bubbleSize = Math.sqrt(d['Gross Bookings'] / maxGrossBookings);
-        // Make images 3-5x larger than before
-        const finalSize = Math.max(0.2, bubbleSize * 1.5); 
-        
-        return {
-            source: finalLogoUrl,
-            xref: "x",
-            yref: "y",
-            x: d['Online Penetration'] * appConfig.dataProcessing.onlinePenetrationMultiplier,
-            y: d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor,
-            sizex: finalSize,
-            sizey: finalSize,
-            sizing: "contain",
-            opacity: 1,
-            layer: "above",
-            xanchor: "center", 
-            yanchor: "middle"
-        };
-    }).filter(Boolean);
-    
     // 合并所有轨迹
     const allTraces = [backgroundTrace, ...regionTraces, ...countryTraces];
 
@@ -373,7 +449,7 @@ function createBubbleChart(regionData, countryData, year) {
                 },
                 standoff: 15
             },
-            range: [-5, 105],  // 进一步扩大横轴范围
+            range: [-5, 105],
             showgrid: true,
             gridcolor: '#eee',
             gridwidth: 1,
@@ -394,7 +470,8 @@ function createBubbleChart(regionData, countryData, year) {
             ticks: 'outside',
             ticklen: 8,
             tickwidth: 1,
-            tickcolor: '#ccc'
+            tickcolor: '#ccc',
+            fixedrange: true  // 防止用户意外缩放
         },
         yaxis: {
             title: {
@@ -427,7 +504,8 @@ function createBubbleChart(regionData, countryData, year) {
             ticks: 'outside',
             ticklen: 8,
             tickwidth: 1,
-            tickcolor: '#ccc'
+            tickcolor: '#ccc',
+            fixedrange: true  // 防止用户意外缩放
         },
         showlegend: false,
         margin: {
@@ -455,8 +533,8 @@ function createBubbleChart(regionData, countryData, year) {
             family: 'Monda'
         },
         transition: {
-            duration: 800,
-            easing: 'linear'
+            duration: appConfig.animation.duration || 800,
+            easing: 'cubic-in-out'
         },
         // Add country logo images to layout
         images: countryImages
@@ -470,35 +548,29 @@ function createBubbleChart(regionData, countryData, year) {
 
     logMessage(`Plotting chart with ${allTraces.length} traces and ${countryImages.length} country images`);
     
-    // If it's the first rendering, use newPlot. Otherwise, use react for smooth transitions
-    if (document.getElementById('bubble-chart').data) {
-        // Use animate for smoother transitions between frames
-        Plotly.animate('bubble-chart', 
-            {
-                data: allTraces,
-                layout: layout
-            }, 
-            {
-                transition: {
-                    duration: appConfig.animation.duration,
-                    easing: 'linear'
-                },
-                frame: {
-                    duration: appConfig.animation.duration,
-                    redraw: false
-                }
-            }
-        ).then(function() {
-            logMessage('Chart updated successfully');
-        }).catch(error => {
-            logMessage('Error updating chart: ' + error, 'error');
-        });
-    } else {
-        // First time rendering
+    // 如果是第一次渲染，使用 newPlot，否则使用 animate 进行平滑过渡
+    if (!document.getElementById('bubble-chart').data) {
         Plotly.newPlot('bubble-chart', allTraces, layout, config).then(function() {
             logMessage('Chart created successfully');
         }).catch(error => {
             logMessage('Error creating chart: ' + error, 'error');
+        });
+    } else {
+        // 清除之前的图像
+        const currentLayout = document.getElementById('bubble-chart').layout;
+        currentLayout.images = [];
+        
+        // 使用 react 进行完整重绘
+        Plotly.react('bubble-chart', allTraces, {
+            ...layout,
+            transition: {
+                duration: appConfig.animation.duration || 800,
+                easing: 'cubic-in-out'
+            }
+        }, config).then(function() {
+            logMessage('Chart updated successfully');
+        }).catch(error => {
+            logMessage('Error updating chart: ' + error, 'error');
         });
     }
 
@@ -530,34 +602,20 @@ function togglePlay() {
         if (pauseIcon) pauseIcon.style.display = 'inline-block';
         
         // Start animation
-        let lastTime = performance.now();
-        let accumulatedTime = 0;
-        const frameInterval = appConfig.animation.frameDelay;
-        
-        const animate = (currentTime) => {
-            if (!isPlaying) return;
-            
-            const deltaTime = currentTime - lastTime;
-            accumulatedTime += deltaTime;
-            
-            if (accumulatedTime >= frameInterval) {
-                currentYearIndex = (currentYearIndex + 1) % years.length;
-                const year = years[currentYearIndex];
-                logMessage('Animating to year: ' + year);
-                createBubbleChart(processedRegionData, processedCountryData, year);
-                accumulatedTime = 0;
-            }
-            
-            lastTime = currentTime;
-            requestAnimationFrame(animate);
-        };
-        
-        requestAnimationFrame(animate);
+        playInterval = setInterval(() => {
+            currentYearIndex = (currentYearIndex + 1) % years.length;
+            const year = years[currentYearIndex];
+            logMessage('Animating to year: ' + year);
+            createBubbleChart(processedRegionData, processedCountryData, year);
+        }, appConfig.animation.frameDelay || 1500);
     } else {
         logMessage('Stopping animation');
         // Show play icon
         if (playIcon) playIcon.style.display = 'inline-block';
         if (pauseIcon) pauseIcon.style.display = 'none';
+        
+        // Stop animation
+        clearInterval(playInterval);
     }
 }
 
@@ -783,43 +841,6 @@ async function init() {
         // Create timeline
         logMessage('Creating timeline...');
         createTimeline();
-        
-        // Process APAC countries data for the race chart - exclude Macau, Taiwan, and Hong Kong
-        logMessage('Processing data for race chart...');
-        const excludedCountries = ['Macau', 'Taiwan', 'Hong Kong'];
-        
-        const apacCountriesData = jsonData
-            .filter(row => {
-                // Filter for APAC region with market and year data, excluding specific countries
-                if (row['Region'] !== 'APAC' || !row['Market'] || !row['Year']) return false;
-                
-                // Standardize market name for matching
-                let market = row['Market'];
-                if (market === 'Australia-New Zealand' || market === 'Australia/New Zealand') {
-                    market = 'Australia & New Zealand';
-                }
-                
-                // Exclude specific markets
-                return !excludedCountries.includes(market);
-            })
-            .map(row => {
-                // 标准化市场名称
-                let market = row['Market'];
-                if (market === 'Australia-New Zealand' || market === 'Australia/New Zealand') {
-                    market = 'Australia & New Zealand';
-                }
-                return {
-                    Market: market,
-                    Year: row['Year'],
-                    OnlinePenetration: row['Online Penetration'] / 100,
-                    OnlineBookings: row['Online Bookings'],
-                    GrossBookings: row['Gross Bookings']
-                };
-            });
-            
-        // Store APAC countries data globally so race-chart.js can access it
-        window.processedCountriesData = apacCountriesData;
-        logMessage('Stored ' + apacCountriesData.length + ' country entries for race chart');
         
         // Preload all country logos before creating charts
         preloadCountryLogos(() => {

@@ -65,8 +65,8 @@ const appConfig = {
 
     // Animation settings
     animation: {
-        duration: 500,            
-        frameDelay: 500,         
+        duration: 800,            
+        frameDelay: 1200,         
     },
 
     // Chart settings
