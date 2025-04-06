@@ -283,36 +283,10 @@ async function fetchData() {
 function createBubbleChart(data, year) {
     const yearData = data.filter(d => d.Year === year && selectedCompanies.includes(d.Market));
     
-    // 只在2005年输出原始数据和计算后的值
-    if (year === 2005) {
-        yearData.forEach(d => {
-            const rawValue = d.OnlineBookings;
-            const scaledValue = rawValue / 1e9; // 直接转换为十亿
-            console.log(`${d.Market}:`);
-            console.log(`  Raw: ${rawValue}`);
-            console.log(`  Scaled (bn): ${scaledValue}`);
-            console.log('-------------------');
-        });
-    }
-
-    // 输出中国的数据
-    const chinaData = yearData.find(d => d.Market === 'China');
-    if (chinaData) {
-        const rawValue = chinaData.OnlineBookings;
-        const scaledValue = rawValue / 1e9; // 转换为十亿
-        const safeValue = Math.max(scaledValue, 0.1);
-        const logValue = Math.log10(safeValue);
-        console.log(`Year ${year} China:`);
-        console.log(`  Raw Online Bookings: ${rawValue.toLocaleString()}`);
-        console.log(`  Billions: ${scaledValue.toFixed(2)}B`);
-        console.log(`  Log Value: ${logValue.toFixed(2)}`);
-        console.log('-------------------');
-    }
-
     // Create background text trace
     backgroundTrace = {
         x: [0.5],
-        y: [30],  // Adjust y position to better center the text vertically
+        y: [30],
         mode: 'text',
         text: [getEraText(year)],
         textposition: 'middle center',
@@ -333,7 +307,7 @@ function createBubbleChart(data, year) {
             const safeValue = Math.max(rawValue, 0.1);
             return Math.log10(safeValue);
         }),
-        mode: 'none',  // 完全移除所有可视元素
+        mode: 'none',
         showlegend: false,
         hoverinfo: 'none',
         visible: true,
@@ -348,33 +322,17 @@ function createBubbleChart(data, year) {
                       '<extra></extra>'
     };
 
-    // Create images
+    // Create images with optimized size calculation
+    const maxGrossBookings = d3.max(data, d => d.GrossBookings);
     const images = yearData.map(d => {
         const logo = appConfig.companyLogos[d.Market];
-        if (!logo) {
-            console.warn('No logo found for market:', d.Market);
-            return null;
-        }
+        if (!logo) return null;
 
-        const maxGrossBookings = d3.max(data, d => d.GrossBookings);
         const relativeSize = Math.pow(d.GrossBookings / maxGrossBookings, 0.6);
         const targetSize = relativeSize * 0.8 + 0.01;
-
-        // 计算对数坐标系下的y值
         const rawValue = d.OnlineBookings / 1e9;
         const safeValue = Math.max(rawValue, 0.1);
         const yValue = Math.log10(safeValue);
-
-        // 只在2005年输出调试信息
-        if (year === 2005) {
-            console.log(`${d.Market}:`);
-            console.log(`  Raw Online Bookings: ${d.OnlineBookings}`);
-            console.log(`  Converted to billions: ${rawValue}`);
-            console.log(`  Safe value: ${safeValue}`);
-            console.log(`  Final log10 y-value: ${yValue}`);
-            console.log(`  Pixel position: ${layout.yaxis.range[0] + (Math.log10(safeValue) / Math.log10(1000)) * (layout.yaxis.range[1] - layout.yaxis.range[0])}`);
-            console.log('-------------------');
-        }
 
         return {
             source: logo,
@@ -395,8 +353,6 @@ function createBubbleChart(data, year) {
     // Check if the chart already exists
     const chartDiv = document.getElementById('bubble-chart');
     if (!chartDiv.data) {
-        console.log('Initial chart creation');
-        // First time creation
         Plotly.newPlot('bubble-chart', [backgroundTrace, trace], {
             ...layout,
             images: images,
@@ -406,32 +362,21 @@ function createBubbleChart(data, year) {
             doubleClick: false,
             displayModeBar: false,
             staticPlot: false
-        }).then(() => {
-            Plotly.relayout('bubble-chart', { images });
         });
-        // Create race chart
         createRaceChart(data, year);
     } else {
-        // Update existing chart with animation
-        Plotly.animate('bubble-chart', {
-            data: [backgroundTrace, trace],
-            layout: {
-                ...layout,
-                images,
-                datarevision: Date.now()
-            }
-        }, {
-            transition: {
-                duration: 0,
-                easing: 'linear'
-            },
-            frame: {
-                duration: 0,
-                redraw: true
-            },
-            mode: 'immediate'
-        });
-        // Update race chart
+        // Optimize update by using batch updates
+        const update = {
+            'data[0].x': [backgroundTrace.x],
+            'data[0].y': [backgroundTrace.y],
+            'data[0].text': [backgroundTrace.text],
+            'data[1].x': trace.x,
+            'data[1].y': trace.y,
+            'data[1].customdata': trace.customdata,
+            images: images
+        };
+
+        Plotly.update('bubble-chart', update, {}, [0, 1]);
         updateRaceChart(data, year);
     }
 }
@@ -448,72 +393,53 @@ async function init() {
         years = [...new Set(processedData.map(d => d.Year))].sort();
         currentYearIndex = years.indexOf(appConfig.chart.defaultYear);
         
-        // Create timeline
         createTimeline();
-        
-        // Create initial chart
         createBubbleChart(processedData, years[currentYearIndex]);
         
-        // Start animation
+        // Optimized animation loop
         setTimeout(() => {
             isPlaying = true;
-            let lastTime = 0;
-            const animationDuration = 30000; // 调整为15秒完成一个循环
-            const minFrameTime = 1000 / 60; // 限制最大帧率为60fps
-            let lastFrameTime = 0;
+            let startTime = null;
+            const animationDuration = 30000; // 30 seconds for one complete cycle
+            const frameInterval = 50; // Limit updates to every 50ms (20fps)
+            let lastUpdateTime = 0;
             
             function animate(currentTime) {
-                if (!isPlaying) {
-                    return;
-                }
-//对于bubble大小的调节，参考web_region_bubble
-                // 控制帧率
-                if (currentTime - lastFrameTime < minFrameTime) {
+                if (!isPlaying) return;
+                
+                if (!startTime) startTime = currentTime;
+                const now = currentTime;
+                
+                // Limit frame rate
+                if (now - lastUpdateTime < frameInterval) {
                     requestAnimationFrame(animate);
                     return;
                 }
-                lastFrameTime = currentTime;
-
-                if (!lastTime) lastTime = currentTime;
-                const elapsed = currentTime - lastTime;
                 
-                // 计算当前进度 (0 到 1)
-                const totalProgress = (elapsed % animationDuration) / animationDuration;
-                const indexFloat = totalProgress * (years.length - 1);
+                const elapsed = (now - startTime) % animationDuration;
+                const progress = elapsed / animationDuration;
+                const indexFloat = progress * (years.length - 1);
                 const currentIndex = Math.floor(indexFloat);
-                const nextIndex = (currentIndex + 1) % years.length;
-                const progress = indexFloat - currentIndex;
-
-                // 更新时间轴标记
+                
+                // Update timeline marker
                 if (timeline && timeline.triangle) {
-                    const currentX = timeline.scale(years[currentIndex]);
-                    const nextX = timeline.scale(years[nextIndex]);
-                    const interpolatedX = currentX + (nextX - currentX) * progress;
+                    const currentYear = years[currentIndex];
+                    const nextYear = years[Math.min(currentIndex + 1, years.length - 1)];
+                    const yearProgress = indexFloat - currentIndex;
+                    const currentX = timeline.scale(currentYear);
+                    const nextX = timeline.scale(nextYear);
+                    const interpolatedX = currentX + (nextX - currentX) * yearProgress;
                     timeline.triangle.attr('transform', `translate(${interpolatedX}, -10) rotate(180)`);
                 }
-
-                // 获取当前和下一年的数据
-                const currentYearData = processedData.filter(d => d.Year === years[currentIndex]);
-                const nextYearData = processedData.filter(d => d.Year === years[nextIndex]);
-
-                // 创建插值数据
-                const interpolatedData = currentYearData.map(d => {
-                    const nextData = nextYearData.find(nd => nd.Market === d.Market) || d;
-                    return {
-                        Market: d.Market,
-                        Year: years[currentIndex],
-                        OnlinePenetration: d.OnlinePenetration + (nextData.OnlinePenetration - d.OnlinePenetration) * progress,
-                        OnlineBookings: d.OnlineBookings + (nextData.OnlineBookings - d.OnlineBookings) * progress,
-                        GrossBookings: d.GrossBookings + (nextData.GrossBookings - d.GrossBookings) * progress
-                    };
-                });
-
-                // 更新图表
-                createBubbleChart(interpolatedData, years[currentIndex]);
                 
+                // Update charts with current year data
+                const currentYearData = processedData.filter(d => d.Year === years[currentIndex]);
+                createBubbleChart(currentYearData, years[currentIndex]);
+                
+                lastUpdateTime = now;
                 requestAnimationFrame(animate);
             }
-
+            
             requestAnimationFrame(animate);
         }, 500);
         
