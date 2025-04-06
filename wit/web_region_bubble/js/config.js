@@ -29,20 +29,20 @@ const appConfig = {
 
     // Country logos for bubbles
     countryLogos: {
-        "Singapore": "logos/Singapore Flag Icon.png",
-        "China": "logos/China Flag Icon.png",
-        "India": "logos/India Icon.png",
-        "Indonesia": "logos/Indonesia Flag.png",
-        "Malaysia": "logos/Malaysia Icon.png",
-        "Thailand": "logos/Thailand Icon.png",
-        "Vietnam": "logos/China Flag Icon.png",
-        "Philippines": "logos/Singapore Flag Icon.png",
-        "Japan": "logos/Japan Icon.png",
-        "South Korea": "logos/Korea Icon.png",
-        "Hong Kong": "logos/Hong Kong Icon.png",
-        "Taiwan": "logos/Taiwan Icon.png",
-        "Macau": "logos/Macau Icon.png",
-        "Australia & New Zealand": "logos/Australia Icon.png"
+        "Singapore":              "logos/Singapore%20Flag%20Icon.png",
+        "China":                  "logos/China%20Flag%20Icon.png",
+        "India":                  "logos/India%20Icon.png",
+        "Indonesia":              "logos/Indonesia%20Flag.png",
+        "Malaysia":               "logos/Malaysia%20Icon.png",
+        "Thailand":               "logos/Thailand%20Icon.png",
+        "Vietnam":                "logos/Vietnam%20Icon.png",
+        "Philippines":            "logos/Philippines%20Icon.png",
+        "Japan":                  "logos/Japan%20Icon.png",
+        "South Korea":            "logos/Korea%20Icon.png",
+        "Hong Kong":              "logos/Hong%20Kong%20Icon.png",
+        "Taiwan":                 "logos/Taiwan%20Icon.png",
+        "Macau":                  "logos/Macau%20Icon.png",
+        "Australia & New Zealand":"logos/Australia%20Icon.png"
     },
 
     // Default countries to display
@@ -65,8 +65,8 @@ const appConfig = {
 
     // Animation settings
     animation: {
-        duration: 800,            
-        frameDelay: 1200,         
+        duration: 500,            
+        frameDelay: 500,         
     },
 
     // Chart settings

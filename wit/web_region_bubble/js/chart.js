@@ -115,6 +115,7 @@ function updateTimeline(year) {
         timeline.triangle
             .transition()
             .duration(appConfig.animation.duration)
+            .ease(d3.easeLinear)  // 使用线性缓动
             .attr('transform', `translate(${timeline.scale(year)}, -10) rotate(180)`);
     } else {
         console.warn('Timeline or triangle is undefined');
@@ -292,42 +293,64 @@ function createBubbleChart(regionData, countryData, year) {
 
     // Create country traces with visible markers
     const countryTraces = yearCountryData.map(d => {
-        // Calculate bubble size based on gross bookings
-        const bubbleSize = Math.max(30, Math.sqrt(d['Gross Bookings'] / maxGrossBookings) * 45);
-        
+        // For countries, we will use a simple marker trace but will add images separately
         return {
-            name: d.Country,
-            x: [d['Online Penetration'] * appConfig.dataProcessing.onlinePenetrationMultiplier],
-            y: [d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor],
-            mode: 'markers+text',
-            text: [d.Country],
-            textposition: 'bottom center',
-            textfont: {
-                family: 'Monda',
-                size: 12,
-                color: '#333'
-            },
-            hoverinfo: 'text',
-            hovertext: `
+          type: 'scatter',
+          name: d.Country,
+          x: [d['Online Penetration'] * appConfig.dataProcessing.onlinePenetrationMultiplier],
+          y: [d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor],
+          mode: 'markers+text',
+          text: [d.Country],
+          textposition: 'bottom center',
+          textfont: { family: 'Monda', size: 12, color: '#333' },
+          hoverinfo: 'text',
+          hovertext: `
                 <b style="font-family: Monda">${d.Country}</b><br>
                 <span style="font-family: Monda">Share of Online Bookings: ${(d['Online Penetration'] * 100).toFixed(1)}%<br>
                 Online Bookings: $${(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor).toFixed(1)}B<br>
                 Gross Bookings: $${(d['Gross Bookings'] * appConfig.dataProcessing.bookingsScaleFactor).toFixed(1)}B</span>
             `,
-            marker: {
-                size: bubbleSize,
-                symbol: 'circle',
-                color: appConfig.countryColors[d.Country] || '#999999',
-                opacity: 0.7,
-                line: {
-                    color: 'white',
-                    width: 1
-                }
-            },
-            showlegend: false
+          marker: {
+            size: 3, // Tiny marker just as a fallback
+            color: 'rgba(0,0,0,0)', // Transparent
+            opacity: 0.3,
+          },
+          showlegend: false
         };
     });
-
+    
+    // Create the country logo images to add to layout
+    const countryImages = yearCountryData.map(d => {
+        const logoUrl = appConfig.countryLogos[d.Country];
+        if (!logoUrl) {
+            logMessage(`No logo URL for country: ${d.Country}`, 'warn');
+            return null;
+        }
+        
+        // Use the path that works from the debug panel
+        let finalLogoUrl = './' + logoUrl.replace(/^[./]+/, '');
+        
+        // Make the images MUCH larger and ensure they align with bubbles
+        const bubbleSize = Math.sqrt(d['Gross Bookings'] / maxGrossBookings);
+        // Make images 3-5x larger than before
+        const finalSize = Math.max(0.2, bubbleSize * 1.5); 
+        
+        return {
+            source: finalLogoUrl,
+            xref: "x",
+            yref: "y",
+            x: d['Online Penetration'] * appConfig.dataProcessing.onlinePenetrationMultiplier,
+            y: d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor,
+            sizex: finalSize,
+            sizey: finalSize,
+            sizing: "contain",
+            opacity: 1,
+            layer: "above",
+            xanchor: "center", 
+            yanchor: "middle"
+        };
+    }).filter(Boolean);
+    
     // 合并所有轨迹
     const allTraces = [backgroundTrace, ...regionTraces, ...countryTraces];
 
@@ -433,8 +456,10 @@ function createBubbleChart(regionData, countryData, year) {
         },
         transition: {
             duration: 800,
-            easing: 'cubic-in-out'
-        }
+            easing: 'linear'
+        },
+        // Add country logo images to layout
+        images: countryImages
     };
 
     // 初始化全局 config 变量
@@ -443,7 +468,7 @@ function createBubbleChart(regionData, countryData, year) {
         displayModeBar: false
     };
 
-    logMessage('Plotting chart with ' + allTraces.length + ' traces');
+    logMessage(`Plotting chart with ${allTraces.length} traces and ${countryImages.length} country images`);
     
     // If it's the first rendering, use newPlot. Otherwise, use react for smooth transitions
     if (document.getElementById('bubble-chart').data) {
@@ -455,11 +480,12 @@ function createBubbleChart(regionData, countryData, year) {
             }, 
             {
                 transition: {
-                    duration: 800,
-                    easing: 'cubic-in-out'
+                    duration: appConfig.animation.duration,
+                    easing: 'linear'
                 },
                 frame: {
-                    duration: 800
+                    duration: appConfig.animation.duration,
+                    redraw: false
                 }
             }
         ).then(function() {
@@ -504,20 +530,34 @@ function togglePlay() {
         if (pauseIcon) pauseIcon.style.display = 'inline-block';
         
         // Start animation
-        playInterval = setInterval(() => {
-            currentYearIndex = (currentYearIndex + 1) % years.length;
-            const year = years[currentYearIndex];
-            logMessage('Animating to year: ' + year);
-            createBubbleChart(processedRegionData, processedCountryData, year);
-        }, appConfig.animation.frameDelay || 1500);
+        let lastTime = performance.now();
+        let accumulatedTime = 0;
+        const frameInterval = appConfig.animation.frameDelay;
+        
+        const animate = (currentTime) => {
+            if (!isPlaying) return;
+            
+            const deltaTime = currentTime - lastTime;
+            accumulatedTime += deltaTime;
+            
+            if (accumulatedTime >= frameInterval) {
+                currentYearIndex = (currentYearIndex + 1) % years.length;
+                const year = years[currentYearIndex];
+                logMessage('Animating to year: ' + year);
+                createBubbleChart(processedRegionData, processedCountryData, year);
+                accumulatedTime = 0;
+            }
+            
+            lastTime = currentTime;
+            requestAnimationFrame(animate);
+        };
+        
+        requestAnimationFrame(animate);
     } else {
         logMessage('Stopping animation');
         // Show play icon
         if (playIcon) playIcon.style.display = 'inline-block';
         if (pauseIcon) pauseIcon.style.display = 'none';
-        
-        // Stop animation
-        clearInterval(playInterval);
     }
 }
 
@@ -552,9 +592,10 @@ function preloadCountryLogos(callback) {
     }
     
     // Preload each image
-    logoUrls.forEach(url => {
+    Object.entries(appConfig.countryLogos).forEach(([country, url]) => {
         if (!url) {
             loadedCount++;
+            logMessage(`No logo URL for country: ${country}`, 'warn');
             if (loadedCount === totalCount && callback) callback();
             return;
         }
@@ -565,19 +606,46 @@ function preloadCountryLogos(callback) {
             logoPath = './' + url;
         }
         
+        logMessage(`Attempting to load logo for ${country}: ${logoPath}`);
+        
         const img = new Image();
         img.onload = () => {
             loadedCount++;
-            logMessage(`Loaded logo ${loadedCount}/${totalCount}: ${url}`);
+            logMessage(`Loaded logo ${loadedCount}/${totalCount}: ${country} (${logoPath})`);
             if (loadedCount === totalCount && callback) callback();
         };
         img.onerror = () => {
             loadedCount++;
-            logMessage(`Failed to load logo: ${url}`, 'error');
+            logMessage(`Failed to load logo for ${country}: ${logoPath}`, 'error');
             if (loadedCount === totalCount && callback) callback();
         };
         img.src = logoPath;
     });
+}
+
+// Add this function after preloadCountryLogos
+function verifyCountryLogosConfiguration() {
+    if (!appConfig || !appConfig.countryLogos) {
+        logMessage('WARNING: appConfig.countryLogos is not defined. Country logos will not be displayed.', 'warn');
+        return;
+    }
+    
+    logMessage(`Country logos configuration contains ${Object.keys(appConfig.countryLogos).length} entries`);
+    
+    // Check configuration for selected countries
+    if (selectedCountries && selectedCountries.length > 0) {
+        const missingLogos = selectedCountries.filter(country => !appConfig.countryLogos[country]);
+        if (missingLogos.length > 0) {
+            logMessage(`WARNING: The following selected countries have no logo configured: ${missingLogos.join(', ')}`, 'warn');
+        }
+        
+        // Log all country logo mappings for debugging
+        logMessage('Country logo configuration:');
+        selectedCountries.forEach(country => {
+            const logo = appConfig.countryLogos[country];
+            logMessage(`  ${country}: ${logo || 'No logo configured'}`, logo ? 'info' : 'warn');
+        });
+    }
 }
 
 // Main initialization function
@@ -594,6 +662,34 @@ async function init() {
         // Clear any previous error messages
         const errorDiv = document.getElementById('error-message');
         if (errorDiv) errorDiv.style.display = 'none';
+        
+        // Verify country logos configuration
+        verifyCountryLogosConfiguration();
+        
+        // Ensure appConfig.countryLogos exists - if not, create it from the web_bubble_chart example
+        if (!appConfig.countryLogos || Object.keys(appConfig.countryLogos).length === 0) {
+            logMessage('WARNING: appConfig.countryLogos not found or empty, creating default configuration', 'warn');
+            
+            // Use the same logos as in web_bubble_chart
+            appConfig.countryLogos = {
+                "Singapore": "logos/Singapore Flag Icon.png",
+                "China": "logos/China Flag Icon.png",
+                "India": "logos/India Icon.png",
+                "Indonesia": "logos/Indonesia Flag.png",
+                "Malaysia": "logos/Malaysia Icon.png",
+                "Thailand": "logos/Thailand Icon.png",
+                "Vietnam": "logos/China Flag Icon.png",
+                "Philippines": "logos/Singapore Flag Icon.png",
+                "Japan": "logos/Japan Icon.png",
+                "South Korea": "logos/Korea Icon.png",
+                "Hong Kong": "logos/Hong Kong Icon.png",
+                "Taiwan": "logos/Taiwan Icon.png",
+                "Macau": "logos/Macau Icon.png",
+                "Australia & New Zealand": "logos/Australia Icon.png"
+            };
+            
+            logMessage('Created default country logos configuration with ' + Object.keys(appConfig.countryLogos).length + ' entries');
+        }
         
         // Load Excel file
         logMessage('Loading Excel file...');

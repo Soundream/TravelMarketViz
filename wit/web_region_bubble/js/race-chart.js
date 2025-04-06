@@ -296,7 +296,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
         cancelAnimationFrame(animationFrameId);
     }
 
-    // 获取当前年份的数据
+    // 获取当前年份的数据并处理
     const yearData = data.filter(d => d.Year === year);
     const excludedCountries = ['Macau', 'Taiwan', 'Hong Kong'];
     const apacCountriesData = window.processedCountriesData ? 
@@ -342,8 +342,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
     ];
 
     requiredRegions.forEach(region => {
-        const exists = combinedData.some(d => d.Region === region);
-        if (!exists && region !== 'Asia-Pacific (sum)') {
+        if (!combinedData.some(d => d.Region === region) && region !== 'Asia-Pacific (sum)') {
             combinedData.push({
                 Region: region,
                 Year: year,
@@ -394,68 +393,77 @@ function updateRaceChart(data, year, forceUpdate = false) {
         .sort((a, b) => a.value - b.value)
         .slice(-15);
 
-    // 获取当前显示的数据
-    const currentData = window.raceChartData || targetData;
-
-    // 如果是强制更新或者第一次更新，直接设置数据
+    // 如果是第一次更新或强制更新，直接设置数据
     if (forceUpdate || !window.raceChartData) {
-        Plotly.animate('race-chart', {
-            data: [{
-                y: targetData.map(d => d.displayName),
-                x: targetData.map(d => d.value),
-                marker: { color: targetData.map(d => d.color) },
-                text: targetData.map(d => d.value.toFixed(1))
-            }]
-        }, {
-            transition: { duration: 0 },
-            frame: { duration: 0 }
-        });
         window.raceChartData = targetData;
+        Plotly.newPlot('race-chart', [{
+            type: 'bar',
+            orientation: 'h',
+            x: targetData.map(d => d.value),
+            y: targetData.map(d => d.displayName),
+            text: targetData.map(d => d.value.toFixed(1)),
+            textposition: 'outside',
+            marker: {
+                color: targetData.map(d => d.color),
+                width: 0.6
+            },
+            hoverinfo: 'text',
+            texttemplate: '%{text:$.1f}B',
+            textfont: { family: 'Monda', size: 14 }
+        }], {
+            xaxis: {
+                range: [0, window.globalMaxValue * 1.2],
+                title: {
+                    text: 'Gross Bookings (USD bn)',
+                    font: { family: 'Monda', size: 16 }
+                },
+                fixedrange: true
+            },
+            yaxis: {
+                autorange: true,
+                fixedrange: true,
+                showgrid: false,
+                tickfont: { family: 'Monda', size: 14 }
+            },
+            margin: { l: 120, r: 60, t: 10, b: 50 },
+            height: 550,
+            width: 400,
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            showlegend: false,
+            bargap: 0.15,
+            font: { family: 'Monda' }
+        }, {
+            displayModeBar: false,
+            responsive: false
+        });
         return;
     }
 
-    // 开始动画
-    animationStartTime = performance.now();
+    // 分两步更新：先更新标签和颜色，再平滑更新数值
+    // 1. 立即更新标签和颜色
+    Plotly.restyle('race-chart', {
+        y: [targetData.map(d => d.displayName)],
+        'marker.color': [targetData.map(d => d.color)]
+    });
 
-    function animate(currentTime) {
-        if (!animationStartTime) animationStartTime = currentTime;
-        const progress = Math.min(1, (currentTime - animationStartTime) / animationDuration);
-
-        // 创建当前帧的数据
-        const frameData = targetData.map((target, i) => {
-            const current = currentData.find(c => c.displayName === target.displayName) || 
-                          { value: 0, color: target.color };
-            
-            return {
-                displayName: target.displayName,
-                value: lerp(current.value, target.value, progress),
-                color: target.color
-            };
-        });
-
-        // 排序并更新图表
-        const sortedFrameData = frameData.sort((a, b) => a.value - b.value);
-
-        Plotly.animate('race-chart', {
-            data: [{
-                y: sortedFrameData.map(d => d.displayName),
-                x: sortedFrameData.map(d => d.value),
-                marker: { color: sortedFrameData.map(d => d.color) },
-                text: sortedFrameData.map(d => d.value.toFixed(1))
-            }]
-        }, {
-            transition: { duration: 0,easing: 'linear' },
-            frame: { duration: 0 }
-        });
-
-        if (progress < 1) {
-            animationFrameId = requestAnimationFrame(animate);
-        } else {
-            window.raceChartData = targetData;
-            animationFrameId = null;
-            animationStartTime = null;
+    // 2. 平滑更新条形图长度
+    Plotly.animate('race-chart', {
+        data: [{
+            x: targetData.map(d => d.value),
+            text: targetData.map(d => d.value.toFixed(1))
+        }]
+    }, {
+        transition: {
+            duration: appConfig.animation.duration,
+            easing: 'linear'
+        },
+        frame: {
+            duration: appConfig.animation.duration,
+            redraw: false
         }
-    }
+    });
 
-    animationFrameId = requestAnimationFrame(animate);
-} 
+    // 更新存储的数据
+    window.raceChartData = targetData;
+}
