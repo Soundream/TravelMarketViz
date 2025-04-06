@@ -261,7 +261,7 @@ function createRaceChart(data, year) {
     if (!window.raceChartConfig) {
         window.raceChartConfig = {
             animationDuration: 30000, // 默认30秒总时长
-            transitionDuration: 700   // 帧之间的过渡时间
+            transitionDuration: 700 // 帧之间的过渡时间
         };
     }
     console.log("Race chart animation duration:", window.raceChartConfig.animationDuration);
@@ -444,7 +444,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
                 text: sortedFrameData.map(d => d.value.toFixed(1))
             }]
         }, {
-            transition: { duration: 0 },
+            transition: { duration: 0,easing: 'linear' },
             frame: { duration: 0 }
         });
 
