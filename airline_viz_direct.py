@@ -30,11 +30,11 @@ parser.add_argument('--fps', type=int, default=60, help='Frames per second (defa
 parser.add_argument('--output', type=str, default='output/airline_revenue.mp4', help='Output video file path')
 parser.add_argument('--quality', type=str, choices=['high', 'medium', 'low'], default='high', 
                     help='Video quality: high, medium, or low (default: high)')
-parser.add_argument('--frames-per-year', type=int, default=600, help='Number of frames to generate per year (default: 600)')
+parser.add_argument('--frames-per-year', type=int, default=6000, help='Number of frames to generate per year (default: 600)')
 parser.add_argument('--preserve-colors', action='store_true', default=True, 
                     help='Preserve original colors in video (default: True)')
 parser.add_argument('--quarters-only', action='store_true', help='Only generate frames for each quarter')
-parser.add_argument('--duration', type=int, default=300, help='Target video duration in seconds (default: 300)')
+parser.add_argument('--duration', type=int, default=600, help='Target video duration in seconds (default: 300)')
 parser.add_argument('--monda-font', type=str, default=None, help='Path to Monda font file (optional)')
 args = parser.parse_args()
 
@@ -337,16 +337,7 @@ def create_frame(args):
     fig = plt.figure(figsize=(fig_width, fig_height), facecolor='white', dpi=OUTPUT_DPI)
     fig.set_size_inches(fig_width, fig_height, forward=True)
     
-    # 使用easeInOutCubic缓动函数使动画更平滑
-    def ease_in_out_cubic(t):
-        if t < 0.5:
-            return 4 * t * t * t
-        else:
-            return 1 - ((-2 * t + 2) ** 3) / 2
-    
-    # 对插值应用缓动函数
-    if frame_fraction > 0:
-        frame_fraction = ease_in_out_cubic(frame_fraction)
+    # 使用线性匀速插值，不对frame_fraction做任何变换
     
     if frame_fraction == 0 or quarters_only:
         current_quarter = quarters_data[frame_int]
@@ -359,8 +350,8 @@ def create_frame(args):
             q1_data = revenue_data_arg.loc[q1]
             q2_data = revenue_data_arg.loc[q2]
             
-            # 使用平滑的缓动效果进行插值
-            smooth_t = frame_fraction
+            # 使用线性匀速插值
+            smooth_t = frame_fraction  # 线性匀速，不应用任何缓动函数
             interpolated_data = q1_data * (1 - smooth_t) + q2_data * smooth_t
         else:
             current_quarter = quarters_data[frame_int]
@@ -397,8 +388,11 @@ def create_frame(args):
             year1, quarter1 = parse_quarter(q1)
             year2, quarter2 = parse_quarter(q2)
             
+            # 线性匀速插值年份和季度
             year_fraction1 = year1 + (quarter1 - 1) * 0.25
             year_fraction2 = year2 + (quarter2 - 1) * 0.25
+            
+            # 使用原始frame_fraction执行线性插值，不应用任何缓动
             year_fraction = year_fraction1 * (1 - frame_fraction) + year_fraction2 * frame_fraction
             
             year_integer = int(year_fraction)
@@ -407,6 +401,7 @@ def create_frame(args):
             current_month = month
             current_year = year_integer
         else:
+            # 在最后一个季度后的线性过渡
             year_fraction = year + (quarter - 1) * 0.25 + frame_fraction * 0.25
             year_integer = int(year_fraction)
             month = int((year_fraction - year_integer) * 12) + 1
@@ -666,7 +661,8 @@ def create_frame(args):
                        fontsize=16, color=text_color)
     
     # Add current position marker (inverted triangle)
-    timeline_position = frame_int + frame_fraction
+    # 直接使用原始frame_fraction确保线性匀速过渡
+    timeline_position = frame_int + frame_fraction  # 线性匀速，不应用缓动函数
     ax_timeline.plot(timeline_position, 0.03, marker='v', color='#4e843d', markersize=10, zorder=5)
     
     # Remove timeline ticks
