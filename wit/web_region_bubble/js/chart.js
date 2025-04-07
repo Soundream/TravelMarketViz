@@ -654,17 +654,36 @@ function togglePlay() {
         if (playIcon) playIcon.style.display = 'none';
         if (pauseIcon) pauseIcon.style.display = 'inline-block';
         
-        // 恢复使用更简单的 setInterval 实现，确保可靠性
+        // 清除现有的间隔
         if (playInterval) {
             clearInterval(playInterval);
         }
         
-        playInterval = setInterval(() => {
-            currentYearIndex = (currentYearIndex + 1) % years.length;
-            const year = years[currentYearIndex];
-            logMessage('Animating to year: ' + year);
-            createBubbleChart(processedRegionData, processedCountryData, year);
-        }, appConfig.animation.frameDelay || 2000);
+        // 使用一个变量来跟踪最后的更新时间
+        let lastUpdateTime = Date.now();
+        
+        // 使用动态间隔，确保帧之间平滑过渡而不中断
+        const animationLoop = () => {
+            const now = Date.now();
+            const elapsed = now - lastUpdateTime;
+            
+            // 当前动画完成，开始下一帧
+            if (elapsed >= appConfig.animation.duration) {
+                currentYearIndex = (currentYearIndex + 1) % years.length;
+                const year = years[currentYearIndex];
+                logMessage('Animating to year: ' + year);
+                createBubbleChart(processedRegionData, processedCountryData, year);
+                lastUpdateTime = now;
+            }
+            
+            // 如果还在播放，继续循环
+            if (isPlaying) {
+                requestAnimationFrame(animationLoop);
+            }
+        };
+        
+        // 启动动画循环
+        requestAnimationFrame(animationLoop);
         
     } else {
         logMessage('Stopping animation');

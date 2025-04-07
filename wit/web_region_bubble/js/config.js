@@ -65,7 +65,7 @@ const appConfig = {
 
     // Animation settings
     animation: {
-        frameDelay: 5000,    // 增加帧之间的延迟，确保完整的两步动画有足够时间完成
+        frameDelay: 1800,    // 将帧之间的延迟设置为与动画持续时间相同，消除中间的停顿
         duration: 1800,      // 每一步动画的持续时间
         transitionDuration: 1800  // 保持一致的持续时间
     },

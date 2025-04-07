@@ -143,7 +143,7 @@ function createRaceChart(data, year) {
 
         let color;
         if (regionName === 'Asia-Pacific (sum)' || isApacCountry) {
-            color = '#FF4B4B';
+            color = '#FF4B4B'; // 保持原始颜色
         } else if (regionName === 'Europe') {
             color = '#4169E1';
         } else if (regionName === 'Eastern Europe') {
@@ -164,27 +164,43 @@ function createRaceChart(data, year) {
             value: value,
             originalValue: grossBookings,
             color: color,
-            isApacCountry: isApacCountry
+            isRegion: !isApacCountry
         };
     });
 
-    // 按值排序并取前15名
-    const sortedData = processedData
-        .filter(d => d.value > 0.1)
+    // 区分区域和国家数据并各自排序
+    const regionData = processedData
+        .filter(d => d.isRegion && d.value > 0.1)
         .sort((a, b) => a.value - b.value);
+    
+    const countryData = processedData
+        .filter(d => !d.isRegion && d.value > 0.1)
+        .sort((a, b) => a.value - b.value);
+    
+    // 取前5个区域和前10个国家
+    const top5Regions = regionData.slice(-5);
+    const top10Countries = countryData.slice(-10);
+    
+    // 由于Plotly在水平条形图中是从下到上渲染，所以要将区域放在上方，需要在数组中放在后面
+    const targetData = [...top10Countries, ...top5Regions];
 
-    console.log("Sorted data before top 15 selection:", sortedData.map(d => ({
+    // 获取当前最大值（可能是区域或国家的最大值）
+    const currentTopValue = Math.max(
+        top5Regions.length > 0 ? top5Regions[top5Regions.length - 1].value : 0,
+        top10Countries.length > 0 ? top10Countries[top10Countries.length - 1].value : 0
+    );
+    console.log("Current top value:", currentTopValue);
+    console.log("Historical max value:", historicalMaxValue);
+    
+    // 使用历史最大值和当前最大值中的较大值
+    const xAxisMax = Math.max(currentTopValue, historicalMaxValue);
+    console.log("Using x-axis max:", xAxisMax);
+
+    console.log("Final sorted data:", targetData.map(d => ({
         region: d.region,
         value: d.value,
-        originalValue: d.originalValue
-    })));
-
-    const top15Data = sortedData.slice(-15);
-
-    console.log("Final top 15 data:", top15Data.map(d => ({
-        region: d.region,
-        value: d.value,
-        originalValue: d.originalValue
+        originalValue: d.originalValue,
+        isRegion: d.isRegion
     })));
 
     // 填充图表数据
@@ -208,19 +224,10 @@ function createRaceChart(data, year) {
         cliponaxis: false
     };
 
-    barData.y = top15Data.map(d => d.displayName);
-    barData.x = top15Data.map(d => d.value);
-    barData.marker.color = top15Data.map(d => d.color);
-    barData.text = top15Data.map(d => d.value);
-
-    // 获取当前最大值（第一名的值）
-    const currentTopValue = top15Data[top15Data.length - 1].value;
-    console.log("Current top value:", currentTopValue);
-    console.log("Historical max value:", historicalMaxValue);
-    
-    // 使用历史最大值和当前最大值中的较大值
-    const xAxisMax = Math.max(currentTopValue, historicalMaxValue);
-    console.log("Using x-axis max:", xAxisMax);
+    barData.y = targetData.map(d => d.displayName);
+    barData.x = targetData.map(d => d.value);
+    barData.marker.color = targetData.map(d => d.color);
+    barData.text = targetData.map(d => d.value);
 
     // 创建布局
     const layout = {
@@ -281,7 +288,20 @@ function createRaceChart(data, year) {
         bargap: 0.15,
         font: {
             family: 'Monda'
-        }
+        },
+        // 添加区域分隔线
+        shapes: [{
+            type: 'line',
+            x0: 0,
+            y0: top10Countries.length - 0.5, // 分隔线位于国家和区域之间
+            x1: xAxisMax * 1.2,
+            y1: top10Countries.length - 0.5,
+            line: {
+                color: '#ddd',
+                width: 1,
+                dash: 'dot'
+            }
+        }]
     };
 
     // 创建配置
@@ -304,8 +324,8 @@ function createRaceChart(data, year) {
     Plotly.newPlot('race-chart', [barData], layout, config);
     
     // 存储当前数据以便进行平滑过渡
-    window.raceChartData = top15Data;
-    window.previousSortedData = top15Data.map(d => ({...d}));
+    window.raceChartData = targetData;
+    window.previousSortedData = targetData.map(d => ({...d}));
 }
 
 // 添加线性插值函数
@@ -395,7 +415,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
 
         let color;
         if (regionName === 'Asia-Pacific (sum)' || isApacCountry) {
-            color = '#FF4B4B';
+            color = '#FF4B4B'; // 保持原始颜色
         } else if (regionName === 'Europe') {
             color = '#4169E1';
         } else if (regionName === 'Eastern Europe') {
@@ -417,18 +437,32 @@ function updateRaceChart(data, year, forceUpdate = false) {
             region: regionName,
             displayName: displayName,
             value: isNaN(value) ? 0 : value,
-            color: color
+            color: color,
+            isRegion: !isApacCountry
         };
     });
 
-    // 按值排序并取前15名
-    const targetData = processedData
-        .filter(d => d.value > 0.1)
-        .sort((a, b) => a.value - b.value)
-        .slice(-15);
+    // 区分区域和国家数据并各自排序
+    const regionData = processedData
+        .filter(d => d.isRegion && d.value > 0.1)
+        .sort((a, b) => a.value - b.value);
+    
+    const countryData = processedData
+        .filter(d => !d.isRegion && d.value > 0.1)
+        .sort((a, b) => a.value - b.value);
+    
+    // 取前5个区域和前10个国家
+    const top5Regions = regionData.slice(-5);
+    const top10Countries = countryData.slice(-10);
+    
+    // 由于Plotly在水平条形图中是从下到上渲染，所以要将区域放在上方，需要在数组中放在后面
+    const targetData = [...top10Countries, ...top5Regions];
 
-    // 获取当前最大值（第一名的值）
-    const currentTopValue = targetData[targetData.length - 1].value;
+    // 获取当前最大值（可能是区域或国家的最大值）
+    const currentTopValue = Math.max(
+        top5Regions.length > 0 ? top5Regions[top5Regions.length - 1].value : 0,
+        top10Countries.length > 0 ? top10Countries[top10Countries.length - 1].value : 0
+    );
     console.log("Current top value:", currentTopValue);
     console.log("Historical max value:", historicalMaxValue);
     
@@ -441,7 +475,8 @@ function updateRaceChart(data, year, forceUpdate = false) {
         region: d.region,
         displayName: d.displayName,
         value: d.value,
-        color: d.color
+        color: d.color,
+        isRegion: d.isRegion
     })));
 
     // 如果是第一次更新，直接绘制图表
@@ -493,7 +528,20 @@ function updateRaceChart(data, year, forceUpdate = false) {
             plot_bgcolor: 'rgba(0,0,0,0)',
             showlegend: false,
             bargap: 0.15,
-            font: { family: 'Monda' }
+            font: { family: 'Monda' },
+            // 添加区域分隔线
+            shapes: [{
+                type: 'line',
+                x0: 0,
+                y0: top10Countries.length - 0.5, // 分隔线位于国家和区域之间
+                x1: xAxisMax * 1.2,
+                y1: top10Countries.length - 0.5,
+                line: {
+                    color: '#ddd',
+                    width: 1,
+                    dash: 'dot'
+                }
+            }]
         }, {
             displayModeBar: false,
             responsive: false
@@ -514,7 +562,20 @@ function updateRaceChart(data, year, forceUpdate = false) {
         layout: {
             xaxis: {
                 range: [0, xAxisMax * 1.2]
-            }
+            },
+            // 更新分隔线位置
+            shapes: [{
+                type: 'line',
+                x0: 0,
+                y0: top10Countries.length - 0.5, // 分隔线位于国家和区域之间
+                x1: xAxisMax * 1.2,
+                y1: top10Countries.length - 0.5,
+                line: {
+                    color: '#ddd',
+                    width: 1,
+                    dash: 'dot'
+                }
+            }]
         }
     }, {
         transition: {
