@@ -194,7 +194,7 @@ function processDataByCountry(jsonData) {
     // Process data for APAC countries
     const apacCountriesData = jsonData
         .filter(row => {
-            // Filter for APAC region with market and year data, excluding specific countries
+            // Filter for APAC region with market and year data
             if (row['Region'] !== 'APAC' || !row['Market'] || !row['Year']) {
                 return false;
             }
@@ -214,8 +214,8 @@ function processDataByCountry(jsonData) {
                 'Excel表格中的在线渗透率': ((row['Online Bookings'] / row['Gross Bookings']) * 100).toFixed(1) + '%'
             });
             
-            // Exclude specific markets
-            return !['Macau', 'Taiwan', 'Hong Kong'].includes(market);
+            // 不再排除特定市场
+            return true;
         })
         .map(row => {
             // 标准化市场名称
@@ -278,13 +278,11 @@ function createBubbleChart(regionData, countryData, year) {
     // Filter data for the current year
     const yearRegionData = regionData.filter(d => d.Year === year);
     
-    // Filter country data - exclude Macau, Taiwan, and Hong Kong
-    const excludedCountries = ['Macau', 'Taiwan', 'Hong Kong'];
+    // Filter country data - 不再排除任何国家
     const yearCountryData = countryData.filter(d => {
         const matchesYear = d.Year === year;
         const isSelected = selectedCountries.includes(d.Country);
-        const isNotExcluded = !excludedCountries.includes(d.Country);
-        return matchesYear && isSelected && isNotExcluded;
+        return matchesYear && isSelected;
     });
     logMessage('Year country data count: ' + yearCountryData.length);
     
@@ -874,14 +872,8 @@ async function init() {
             appConfig.defaultSelectedCountries = [
                 'China', 'Japan', 'South Korea', 'Australia & New Zealand', 
                 'India', 'Indonesia', 'Singapore', 'Malaysia', 'Thailand', 
-                'Vietnam', 'Philippines'
+                'Vietnam', 'Philippines', 'Hong Kong', 'Taiwan', 'Macau'
             ];
-        } else {
-            // Filter out Macau, Taiwan, and Hong Kong from defaultSelectedCountries
-            const excludedCountries = ['Macau', 'Taiwan', 'Hong Kong'];
-            appConfig.defaultSelectedCountries = appConfig.defaultSelectedCountries.filter(
-                country => !excludedCountries.includes(country)
-            );
         }
         
         // Set selected countries from config
