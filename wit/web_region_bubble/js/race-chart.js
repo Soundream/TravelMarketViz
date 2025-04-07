@@ -1,19 +1,19 @@
 // 定义国家代码映射
 const countryCodeMapping = {
-    "Singapore": "Singapore",
-    "China": "China",
-    "India": "India",
-    "Indonesia": "Indonesia",
-    "Malaysia": "Malaysia",
-    "Thailand": "Thailand",
-    "Vietnam": "Vietnam",
-    "Philippines": "Philippines",
-    "Japan": "Japan",
-    "South Korea": "South Korea",
-    "Hong Kong": "Hong Kong",
-    "Taiwan": "Taiwan",
-    "Macau": "Macau",
-    "Australia & New Zealand": "Australia & NZ"
+    "Singapore": "SG",
+    "China": "CN",
+    "India": "IN",
+    "Indonesia": "ID",
+    "Malaysia": "MY",
+    "Thailand": "TH",
+    "Vietnam": "VN",
+    "Philippines": "PH",
+    "Japan": "JP",
+    "South Korea": "KR",
+    "Hong Kong": "HK",
+    "Taiwan": "TW",
+    "Macau": "MO",
+    "Australia & New Zealand": "AU/NZ"
 };
 
 // 获取国家代码的辅助函数
@@ -51,10 +51,11 @@ function createRaceChart(data, year) {
         return;
     }
 
-    // 获取APAC国家数据（修改这部分，不再排除三个地区）
+    // 获取APAC国家数据
+    const excludedCountries = ['Macau', 'Taiwan', 'Hong Kong'];
     const apacCountriesData = window.processedCountriesData ? 
         window.processedCountriesData.filter(d => {
-            const matches = d.Year === year;
+            const matches = d.Year === year && !excludedCountries.includes(d.Market);
             if (matches) {
                 console.log(`APAC country data for ${d.Market}:`, d);
             }
@@ -66,7 +67,7 @@ function createRaceChart(data, year) {
     // 组合区域和国家数据
     let combinedData = [...yearData];
 
-    // 添加Asia-Pacific (sum)数据 - 确保包含所有APAC国家
+    // 添加Asia-Pacific (sum)数据
     const apacSumExists = combinedData.some(d => d.Region === 'Asia-Pacific (sum)');
     
     if (!apacSumExists && apacCountriesData.length > 0) {
@@ -128,7 +129,14 @@ function createRaceChart(data, year) {
     const processedData = combinedData.map(d => {
         const regionName = d.Region;
         const isApacCountry = apacCountriesData.some(c => c.Market === regionName);
-        const displayName = isApacCountry ? getCountryCode(regionName) : regionName;
+        
+        // 特殊处理Australia & New Zealand，其他国家保持全名
+        let displayName = regionName;
+        if (regionName === 'Australia & New Zealand') {
+            displayName = 'Australia & NZ';
+        }
+        
+        const isRegion = requiredRegions.includes(regionName);
         
         // 确保数值是有效的
         const grossBookings = parseFloat(d['Gross Bookings']) || 0;
@@ -142,7 +150,7 @@ function createRaceChart(data, year) {
 
         let color;
         if (regionName === 'Asia-Pacific (sum)' || isApacCountry) {
-            color = '#FF4B4B'; // 保持原始颜色
+            color = '#FF4B4B';
         } else if (regionName === 'Europe') {
             color = '#4169E1';
         } else if (regionName === 'Eastern Europe') {
@@ -163,7 +171,8 @@ function createRaceChart(data, year) {
             value: value,
             originalValue: grossBookings,
             color: color,
-            isRegion: !isApacCountry
+            isApacCountry: isApacCountry,
+            isRegion: isRegion
         };
     });
 
@@ -171,11 +180,11 @@ function createRaceChart(data, year) {
     const regionData = processedData
         .filter(d => d.isRegion && d.value > 0.1)
         .sort((a, b) => a.value - b.value);
-    
+
     const countryData = processedData
         .filter(d => !d.isRegion && d.value > 0.1)
         .sort((a, b) => a.value - b.value);
-    
+
     // 取所有区域和前9个国家
     const allRegions = regionData; // 保留所有区域
     const top9Countries = countryData.slice(-9); // 只取前9个国家
@@ -189,30 +198,22 @@ function createRaceChart(data, year) {
         allRegions.length > 0 ? allRegions[allRegions.length - 1].value : 0
     );
     console.log("Current top value:", currentTopValue);
-    console.log("Historical max value:", historicalMaxValue);
     
     // 使用历史最大值和当前最大值中的较大值
     const xAxisMax = Math.max(currentTopValue, historicalMaxValue);
     console.log("Using x-axis max:", xAxisMax);
 
-    console.log("Final sorted data:", targetData.map(d => ({
-        region: d.region,
-        value: d.value,
-        originalValue: d.originalValue,
-        isRegion: d.isRegion
-    })));
-
-    // 填充图表数据
+    // 创建柱状图数据
     const barData = {
         type: 'bar',
-        x: [],
-        y: [],
+        x: targetData.map(d => d.value),
+        y: targetData.map(d => d.displayName),
         orientation: 'h',
         marker: {
-            color: [],
+            color: targetData.map(d => d.color),
             width: 0.6
         },
-        text: [],
+        text: targetData.map(d => d.value),
         textposition: 'outside',
         hoverinfo: 'text',
         texttemplate: '%{text:$.1f}B',
@@ -222,12 +223,7 @@ function createRaceChart(data, year) {
         },
         cliponaxis: false
     };
-
-    barData.y = targetData.map(d => d.displayName);
-    barData.x = targetData.map(d => d.value);
-    barData.marker.color = targetData.map(d => d.color);
-    barData.text = targetData.map(d => d.value);
-
+    
     // 创建布局
     const layout = {
         title: {
@@ -256,8 +252,8 @@ function createRaceChart(data, year) {
                 family: 'Monda',
                 size: 14
             },
-            range: [0, xAxisMax * 1.2], // 使用计算出的最大值
-            fixedrange: false, // 允许动态更新
+            range: [0, xAxisMax * 1.2],
+            fixedrange: false,
             ticks: 'outside',
             ticklen: 8,
             tickwidth: 1,
@@ -279,7 +275,7 @@ function createRaceChart(data, year) {
             b: 50
         },
         height: 550,
-        width: 400, // 固定宽度，避免波动
+        width: 400,
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         showlegend: false,
@@ -288,11 +284,10 @@ function createRaceChart(data, year) {
         font: {
             family: 'Monda'
         },
-        // 添加区域分隔线
         shapes: [{
             type: 'line',
             x0: 0,
-            y0: top9Countries.length - 0.5, // 分隔线位于国家和区域之间
+            y0: top9Countries.length - 0.5,
             x1: xAxisMax * 1.2,
             y1: top9Countries.length - 0.5,
             line: {
@@ -306,18 +301,9 @@ function createRaceChart(data, year) {
     // 创建配置
     const config = {
         displayModeBar: false,
-        responsive: false, // 固定大小，避免自动响应式调整
+        responsive: false,
         staticPlot: false
     };
-
-    // 初始化全局动画配置
-    if (!window.raceChartConfig) {
-        window.raceChartConfig = {
-            animationDuration: 30000, // 默认30秒总时长
-            transitionDuration: 700 // 帧之间的过渡时间
-        };
-    }
-    console.log("Race chart animation duration:", window.raceChartConfig.animationDuration);
     
     // 渲染图表
     Plotly.newPlot('race-chart', [barData], layout, config);
@@ -351,8 +337,10 @@ function updateRaceChart(data, year, forceUpdate = false) {
 
     // 获取当前年份的数据并处理
     const yearData = data.filter(d => d.Year === year);
+    const excludedCountries = ['Macau', 'Taiwan', 'Hong Kong'];
     const apacCountriesData = window.processedCountriesData ? 
-        window.processedCountriesData.filter(d => d.Year === year) : [];
+        window.processedCountriesData.filter(d => 
+            d.Year === year && !excludedCountries.includes(d.Market)) : [];
 
     // 组合并处理数据
     let combinedData = [...yearData];
@@ -408,11 +396,28 @@ function updateRaceChart(data, year, forceUpdate = false) {
     const processedData = combinedData.map(d => {
         const regionName = d.Region;
         const isApacCountry = apacCountriesData.some(c => c.Market === regionName);
-        const displayName = isApacCountry ? getCountryCode(regionName) : regionName;
+        
+        // 特殊处理Australia & New Zealand，其他国家保持全名
+        let displayName = regionName;
+        if (regionName === 'Australia & New Zealand') {
+            displayName = 'Australia & NZ';
+        }
+        
+        const isRegion = requiredRegions.includes(regionName);
+        
+        // 确保数值是有效的
+        const grossBookings = parseFloat(d['Gross Bookings']) || 0;
+        const value = grossBookings * appConfig.dataProcessing.bookingsScaleFactor;
+        
+        console.log(`Processing ${regionName}:`, {
+            originalValue: d['Gross Bookings'],
+            processedValue: value,
+            scaleFactor: appConfig.dataProcessing.bookingsScaleFactor
+        });
 
         let color;
         if (regionName === 'Asia-Pacific (sum)' || isApacCountry) {
-            color = '#FF4B4B'; // 保持原始颜色
+            color = '#FF4B4B';
         } else if (regionName === 'Europe') {
             color = '#4169E1';
         } else if (regionName === 'Eastern Europe') {
@@ -427,15 +432,14 @@ function updateRaceChart(data, year, forceUpdate = false) {
             color = '#888888';
         }
 
-        const grossBookings = d['Gross Bookings'] || 0;
-        const value = grossBookings * appConfig.dataProcessing.bookingsScaleFactor;
-
         return {
             region: regionName,
             displayName: displayName,
-            value: isNaN(value) ? 0 : value,
+            value: value,
+            originalValue: grossBookings,
             color: color,
-            isRegion: !isApacCountry
+            isApacCountry: isApacCountry,
+            isRegion: isRegion
         };
     });
 
@@ -443,11 +447,11 @@ function updateRaceChart(data, year, forceUpdate = false) {
     const regionData = processedData
         .filter(d => d.isRegion && d.value > 0.1)
         .sort((a, b) => a.value - b.value);
-    
+
     const countryData = processedData
         .filter(d => !d.isRegion && d.value > 0.1)
         .sort((a, b) => a.value - b.value);
-    
+
     // 取所有区域和前9个国家
     const allRegions = regionData; // 保留所有区域
     const top9Countries = countryData.slice(-9); // 只取前9个国家
@@ -461,24 +465,15 @@ function updateRaceChart(data, year, forceUpdate = false) {
         allRegions.length > 0 ? allRegions[allRegions.length - 1].value : 0
     );
     console.log("Current top value:", currentTopValue);
-    console.log("Historical max value:", historicalMaxValue);
     
     // 使用历史最大值和当前最大值中的较大值
     const xAxisMax = Math.max(currentTopValue, historicalMaxValue);
     console.log("Using x-axis max:", xAxisMax);
 
-    // 打印排序后的数据，用于调试
-    console.error(`${year}年排序后的数据:`, targetData.map(d => ({
-        region: d.region,
-        displayName: d.displayName,
-        value: d.value,
-        color: d.color,
-        isRegion: d.isRegion
-    })));
-
     // 如果是第一次更新，直接绘制图表
     if (!window.raceChartData) {
         window.raceChartData = targetData;
+        
         Plotly.newPlot('race-chart', [{
             type: 'bar',
             orientation: 'h',
@@ -526,11 +521,10 @@ function updateRaceChart(data, year, forceUpdate = false) {
             showlegend: false,
             bargap: 0.15,
             font: { family: 'Monda' },
-            // 添加区域分隔线
             shapes: [{
                 type: 'line',
                 x0: 0,
-                y0: top9Countries.length - 0.5, // 分隔线位于国家和区域之间
+                y0: top9Countries.length - 0.5,
                 x1: xAxisMax * 1.2,
                 y1: top9Countries.length - 0.5,
                 line: {
@@ -543,10 +537,11 @@ function updateRaceChart(data, year, forceUpdate = false) {
             displayModeBar: false,
             responsive: false
         });
+        
         return;
     }
-
-    // 使用 Plotly.animate 实现平滑过渡，加快颜色过渡速度
+    
+    // 使用 Plotly.animate 实现平滑过渡
     Plotly.animate('race-chart', 
         {
             data: [{
