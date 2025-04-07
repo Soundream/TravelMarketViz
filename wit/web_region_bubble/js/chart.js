@@ -310,96 +310,6 @@ function createBubbleChart(regionData, countryData, year) {
         showlegend: false
     };
 
-    // 创建国家气泡轨迹
-    const countryTraces = yearCountryData.map(d => {
-        // 计算实际位置
-        const xPos = d['Online Penetration'] * 100; // 转换为百分比
-        const yPos = d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor;
-        
-        // 打印每年每个国家的数据
-        console.error(`${year}年 ${d.Country} 预订数据:`, {
-            '国家': d.Country,
-            '年份': year,
-            '在线预订值(Online Bookings)': d['Online Bookings'],
-            '总预订值(Gross Bookings)': d['Gross Bookings'],
-            '在线渗透率': (d['Online Penetration'] * 100).toFixed(1) + '%',
-            '缩放后的在线预订值': yPos,
-            'Y轴实际显示位置': yPos
-        });
-
-        return {
-            type: 'scatter',
-            name: d.Country,
-            x: [xPos],
-            y: [yPos],
-            mode: 'markers',
-            text: [d.Country],
-            hoverinfo: 'text',
-            hovertext: `
-                <b style="font-family: Monda">${d.Country}</b><br>
-                <span style="font-family: Monda">Share of Online Bookings: ${(d['Online Penetration'] * 100).toFixed(1)}%<br>
-                Online Bookings: $${(d['Online Bookings']).toFixed(1)}B<br>
-                Gross Bookings: $${(d['Gross Bookings']).toFixed(1)}B</span>
-            `,
-            marker: {
-                size: 1,
-                opacity: 0
-            },
-            showlegend: false
-        };
-    });
-
-    // 创建国家图标图像
-    const countryImages = yearCountryData.map(d => {
-        const logoUrl = appConfig.countryLogos[d.Country];
-        if (!logoUrl) {
-            logMessage(`No logo URL for country: ${d.Country}`, 'warn');
-            return null;
-        }
-
-        // 使用相对路径
-        let finalLogoUrl = './' + logoUrl.replace(/^[./]+/, '');
-
-        // 计算图标大小
-        const grossBookings = d['Gross Bookings'];
-        const maxRegionGrossBookings = d3.max(yearRegionData, d => d['Gross Bookings']);
-        const minSize = 0.02;
-        const maxSize = 0.05;
-        
-        const sizeRatio = Math.sqrt(grossBookings / maxRegionGrossBookings);
-        const finalSize = minSize + (maxSize - minSize) * sizeRatio;
-
-        // 计算实际位置
-        const xPos = d['Online Penetration'] * 100;
-        const yVal = d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor;
-        
-        // 打印调试信息
-        console.log(`${d.Country} - Original Value: ${yVal}`);
-        
-        // 使用实际值进行对数转换
-        const logYPos = Math.log10(Math.max(yVal, 0.1));
-        const minLogY = Math.log10(0.1);
-        const maxLogY = Math.log10(800);
-        const normalizedY = (logYPos - minLogY) / (maxLogY - minLogY);
-
-        console.log(`${d.Country} - Normalized Position: ${normalizedY}`);
-
-        return {
-            source: finalLogoUrl,
-            xref: "x",
-            yref: "paper",
-            x: xPos,
-            y: normalizedY,
-            sizex: finalSize * 100,
-            sizey: finalSize * 100,
-            sizing: "contain",
-            opacity: 0.9,
-            layer: "above",
-            xanchor: "center",
-            yanchor: "middle"
-        };
-    }).filter(Boolean);
-    
     // 创建区域气泡轨迹
     const regionTraces = uniqueRegions.map(region => {
         const regionData = yearRegionData.filter(d => d.Region === region);
@@ -436,11 +346,99 @@ function createBubbleChart(regionData, countryData, year) {
             type: 'scatter'
         };
     });
-
+    
+    // 创建国家轨迹（可见的标记，用于平滑动画）
+    const countryTraces = yearCountryData.map(d => {
+        // 计算实际位置
+        const xPos = d['Online Penetration'] * 100; // 转换为百分比
+        const yPos = d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor;
+        
+        // 计算图标大小基于总预订值
+        const grossBookings = d['Gross Bookings'];
+        const maxRegionGrossBookings = d3.max(yearRegionData, d => d['Gross Bookings']);
+        const minSize = 15;
+        const maxSize = 30;
+        
+        const sizeRatio = Math.sqrt(grossBookings / maxRegionGrossBookings);
+        const finalSize = minSize + (maxSize - minSize) * sizeRatio;
+        
+        return {
+            name: d.Country,
+            x: [xPos],
+            y: [yPos],
+            mode: 'markers',
+            text: [d.Country],
+            hoverinfo: 'text',
+            hovertext: `
+                <b style="font-family: Monda">${d.Country}</b><br>
+                <span style="font-family: Monda">Share of Online Bookings: ${(d['Online Penetration'] * 100).toFixed(1)}%<br>
+                Online Bookings: $${(d['Online Bookings']).toFixed(1)}B<br>
+                Gross Bookings: $${(d['Gross Bookings']).toFixed(1)}B</span>
+            `,
+            marker: {
+                size: finalSize,
+                color: 'rgba(255,255,255,0.5)',  // 使用更透明的颜色
+                line: {
+                    color: 'rgba(200,200,200,0.5)',  // 更透明的边框
+                    width: 1
+                }
+            },
+            showlegend: false
+        };
+    });
+    
+    // 为每个国家创建图标，作为带有图片标记的轨迹
+    const countryImagesMap = {};
+    
+    yearCountryData.forEach(d => {
+        const xPos = d['Online Penetration'] * 100;
+        const yPos = d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor;
+        
+        // 计算图标大小
+        const grossBookings = d['Gross Bookings'];
+        const maxRegionGrossBookings = d3.max(yearRegionData, d => d['Gross Bookings']);
+        const minSize = 0.02;
+        const maxSize = 0.05;
+        
+        const sizeRatio = Math.sqrt(grossBookings / maxRegionGrossBookings);
+        const finalSize = minSize + (maxSize - minSize) * sizeRatio;
+        
+        const logoUrl = appConfig.countryLogos[d.Country];
+        if (!logoUrl) return;
+        
+        // 使用相对路径
+        let finalLogoUrl = './' + logoUrl.replace(/^[./]+/, '');
+        
+        // 使用一致的Y值计算方法，确保平滑过渡
+        const logYPos = Math.log10(Math.max(yPos, 0.1));
+        const minLogY = Math.log10(0.1);
+        const maxLogY = Math.log10(800);
+        const normalizedY = (logYPos - minLogY) / (maxLogY - minLogY);
+        
+        // 存储每个国家的图像信息
+        countryImagesMap[d.Country] = {
+            source: finalLogoUrl,
+            xref: "x",
+            yref: "paper",
+            x: xPos,
+            y: normalizedY,
+            sizex: finalSize * 100,
+            sizey: finalSize * 100,
+            sizing: "contain",
+            opacity: 0.9,
+            layer: "above",
+            xanchor: "center",
+            yanchor: "middle"
+        };
+    });
+    
+    // 将图标转换为数组
+    const countryImages = Object.values(countryImagesMap);
+    
     // 合并所有轨迹
     const allTraces = [backgroundTrace, ...regionTraces, ...countryTraces];
-
-    // 初始化全局 layout 变量
+    
+    // 初始化全局 layout 变量 - 不包含 images
     layout = {
         title: {
             text: '',  // 移除标题
@@ -543,11 +541,12 @@ function createBubbleChart(regionData, countryData, year) {
             family: 'Monda'
         },
         transition: {
-            duration: appConfig.animation.duration || 800,
+            duration: appConfig.animation.duration,
             easing: 'linear'
         },
-        // Add country logo images to layout
-        images: countryImages
+        // 注意: 移除 images 属性，交由动画逻辑处理
+        // images: countryImages,
+        datarevision: Date.now()
     };
 
     // 初始化全局 config 变量
@@ -558,35 +557,71 @@ function createBubbleChart(regionData, countryData, year) {
 
     logMessage(`Plotting chart with ${allTraces.length} traces and ${countryImages.length} country images`);
     
-    // 如果是第一次渲染，使用 newPlot，否则使用 animate 进行平滑过渡
-    if (!document.getElementById('bubble-chart').data) {
-        Plotly.newPlot('bubble-chart', allTraces, layout, config).then(function() {
-            logMessage('Chart created successfully');
+    // 如果是第一次渲染，使用 newPlot，否则使用分步动画实现平滑过渡
+    const chartDiv = document.getElementById('bubble-chart');
+    
+    if (!chartDiv.data) {
+        // 初次渲染使用 newPlot
+        // 确保初始布局包含图像
+        const initialLayout = {
+            ...layout,
+            images: countryImages
+        };
+        
+        Plotly.newPlot('bubble-chart', allTraces, initialLayout, config).then(function() {
+            logMessage('Chart created successfully with initial images');
         }).catch(error => {
             logMessage('Error creating chart: ' + error, 'error');
         });
     } else {
-        // 使用 animate 进行平滑过渡动画，提供更流畅的效果
-        Plotly.animate('bubble-chart', 
+        // 分两步实现平滑过渡
+        // 1. 先用 animate 更新数据点（气泡、背景文字等）
+        Plotly.animate('bubble-chart',
+            { data: allTraces },
             {
-                data: allTraces,
-                layout: {
-                    ...layout,
-                    images: countryImages  // 确保图像也得到更新
-                }
-            }, 
-            {
-                transition: {
-                    duration: appConfig.animation.duration || 1000,
-                    easing: 'linear'
+                transition: { 
+                    duration: appConfig.animation.duration, 
+                    easing: 'linear' 
                 },
-                frame: {
-                    duration: appConfig.animation.duration || 1000,
-                    redraw: true
+                frame: { 
+                    duration: appConfig.animation.duration, 
+                    redraw: false 
                 }
             }
-        ).then(function() {
-            logMessage('Chart updated successfully with animation');
+        ).then(() => {
+            // 2. 再用 relayout 平滑更新图像位置
+            // 获取当前布局中的图像数量
+            const currentLayout = chartDiv.layout || {};
+            const currentImages = currentLayout.images || [];
+            
+            // 准备图像更新对象
+            const imgUpdates = {};
+            
+            // 处理数量不同的情况
+            if (currentImages.length !== countryImages.length) {
+                // 数量不同，需要全部替换
+                imgUpdates.images = countryImages;
+                logMessage(`Replacing all images (${currentImages.length} → ${countryImages.length})`);
+            } else {
+                // 数量相同，可以单独更新坐标
+                countryImages.forEach((img, i) => {
+                    imgUpdates[`images[${i}].x`] = img.x;
+                    imgUpdates[`images[${i}].y`] = img.y;
+                    imgUpdates[`images[${i}].sizex`] = img.sizex;
+                    imgUpdates[`images[${i}].sizey`] = img.sizey;
+                });
+                logMessage(`Updating positions for ${countryImages.length} images`);
+            }
+            
+            // 应用图像更新，并设置平滑过渡
+            Plotly.relayout('bubble-chart', imgUpdates, {
+                transition: {
+                    duration: appConfig.animation.duration,
+                    easing: 'linear'
+                }
+            });
+            
+            logMessage('Chart images updated with smooth transition');
         }).catch(error => {
             logMessage('Error updating chart: ' + error, 'error');
         });
@@ -619,19 +654,18 @@ function togglePlay() {
         if (playIcon) playIcon.style.display = 'none';
         if (pauseIcon) pauseIcon.style.display = 'inline-block';
         
-        // Start animation with consistent timing
-        const animationInterval = appConfig.animation.frameDelay || 1500;
-        const animationDuration = appConfig.animation.duration || 800;
-        
-        // Ensure animation interval is longer than animation duration for smooth transitions
-        const effectiveInterval = Math.max(animationInterval, animationDuration + 200);
+        // 恢复使用更简单的 setInterval 实现，确保可靠性
+        if (playInterval) {
+            clearInterval(playInterval);
+        }
         
         playInterval = setInterval(() => {
             currentYearIndex = (currentYearIndex + 1) % years.length;
             const year = years[currentYearIndex];
             logMessage('Animating to year: ' + year);
             createBubbleChart(processedRegionData, processedCountryData, year);
-        }, effectiveInterval);
+        }, appConfig.animation.frameDelay || 2000);
+        
     } else {
         logMessage('Stopping animation');
         // Show play icon
@@ -888,11 +922,17 @@ async function init() {
             
             // Start animation after a short delay
             logMessage('Starting animation with delay...');
-            // 恢复自动播放的代码
             setTimeout(() => {
-                isPlaying = false; // Reset state
-                togglePlay(); // Start playing
-                logMessage('Animation started');
+                try {
+                    // 确保正确的状态转换
+                    isPlaying = false; // Reset state first
+                    logMessage('Calling togglePlay() to start animation');
+                    togglePlay(); // Start playing
+                    logMessage('Animation started successfully');
+                } catch (error) {
+                    logMessage('Error starting animation: ' + error.message, 'error');
+                    console.error('Animation start error:', error);
+                }
             }, 1000);
             
             // 不再需要手动设置播放按钮状态，因为togglePlay会处理
