@@ -366,7 +366,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
     });
 
     // 确保所有必要区域都存在
-    const requiredRegions = [
+    const mainRegions = [
         'Europe', 
         'Eastern Europe', 
         'Latin America', 
@@ -375,7 +375,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
         'Asia-Pacific (sum)'
     ];
 
-    requiredRegions.forEach(region => {
+    mainRegions.forEach(region => {
         if (!combinedData.some(d => d.Region === region) && region !== 'Asia-Pacific (sum)') {
             combinedData.push({
                 Region: region,
@@ -387,7 +387,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
         }
     });
 
-    // 处理数据
+    // 处理数据并分离regions和countries
     const processedData = combinedData.map(d => {
         const regionName = d.Region;
         const isApacCountry = apacCountriesData.some(c => c.Market === regionName);
@@ -417,115 +417,141 @@ function updateRaceChart(data, year, forceUpdate = false) {
             region: regionName,
             displayName: displayName,
             value: isNaN(value) ? 0 : value,
-            color: color
+            color: color,
+            isRegion: mainRegions.includes(regionName)
         };
     });
 
-    // 按值排序并取前15名
-    const targetData = processedData
-        .filter(d => d.value > 0.1)
-        .sort((a, b) => a.value - b.value)
-        .slice(-15);
+    // 分别排序regions和countries
+    const regions = processedData
+        .filter(d => d.isRegion && d.value > 0.1)
+        .sort((a, b) => b.value - a.value);
 
-    // 获取当前最大值（第一名的值）
-    const currentTopValue = targetData[targetData.length - 1].value;
-    console.log("Current top value:", currentTopValue);
-    console.log("Historical max value:", historicalMaxValue);
-    
-    // 使用历史最大值和当前最大值中的较大值
-    const xAxisMax = Math.max(currentTopValue, historicalMaxValue);
-    console.log("Using x-axis max:", xAxisMax);
+    const countries = processedData
+        .filter(d => !d.isRegion && d.value > 0.1)
+        .sort((a, b) => b.value - a.value);
 
-    // 打印排序后的数据，用于调试
+    // 合并数据，保持regions在上，countries在下，然后反转顺序
+    // 因为Plotly条形图是从下往上绘制的，所以需要反转来保持正确的显示顺序
+    const targetData = [...regions, ...countries].reverse();
+
+    // 获取当前最大值
+    const currentTopValue = Math.max(...targetData.map(d => d.value));
+    historicalMaxValue = Math.max(historicalMaxValue, currentTopValue);
+    const xAxisMax = historicalMaxValue;
+
+    // 打印排序后的数据用于调试
     console.error(`${year}年排序后的数据:`, targetData.map(d => ({
         region: d.region,
         displayName: d.displayName,
-        value: d.value,
-        color: d.color
+        value: d.value.toFixed(1),
+        isRegion: d.isRegion
     })));
 
-    // 如果是第一次更新，直接绘制图表
-    if (!window.raceChartData) {
-        window.raceChartData = targetData;
-        Plotly.newPlot('race-chart', [{
-            type: 'bar',
-            orientation: 'h',
-            x: targetData.map(d => d.value),
-            y: targetData.map(d => d.displayName),
-            text: targetData.map(d => d.value.toFixed(1)),
-            textposition: 'outside',
-            marker: {
-                color: targetData.map(d => d.color),
-                width: 0.6
-            },
-            hoverinfo: 'text',
-            texttemplate: '%{text:$.1f}B',
-            textfont: { family: 'Monda', size: 14 }
-        }], {
-            xaxis: {
-                range: [0, xAxisMax * 1.2],
-                title: {
-                    text: 'Gross Bookings (USD bn)',
-                    font: { family: 'Monda', size: 16 }
-                },
-                fixedrange: false,
-                showgrid: true,
-                gridcolor: '#eee',
-                gridwidth: 1,
-                zeroline: true,
-                zerolinecolor: '#eee',
-                tickfont: { family: 'Monda', size: 14 },
-                ticks: 'outside',
-                ticklen: 8,
-                tickwidth: 1,
-                tickcolor: '#ccc'
-            },
-            yaxis: {
-                autorange: true,
-                fixedrange: true,
-                showgrid: false,
-                tickfont: { family: 'Monda', size: 14 }
-            },
-            margin: { l: 120, r: 60, t: 10, b: 50 },
-            height: 550,
-            width: 400,
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            showlegend: false,
-            bargap: 0.15,
-            font: { family: 'Monda' }
-        }, {
-            displayModeBar: false,
-            responsive: false
-        });
-        return;
-    }
-
-    // 使用 Plotly.animate 实现平滑过渡
-    Plotly.animate('race-chart', {
-        data: [{
-            x: targetData.map(d => d.value),
-            y: targetData.map(d => d.displayName),
-            text: targetData.map(d => d.value.toFixed(1)),
-            marker: {
-                color: targetData.map(d => d.color)
-            }
-        }],
-        layout: {
-            xaxis: {
-                range: [0, xAxisMax * 1.2]
-            }
-        }
-    }, {
-        transition: {
-            duration: appConfig.animation.duration,
-            easing: 'linear'
+    // 创建图表数据
+    const trace = {
+        type: 'bar',
+        orientation: 'h',
+        x: targetData.map(d => d.value),
+        y: targetData.map(d => d.displayName),
+        text: targetData.map(d => d.value.toFixed(1)),
+        textposition: 'outside',
+        marker: {
+            color: targetData.map(d => d.color),
+            width: 0.1
         },
-        frame: {
-            duration: appConfig.animation.duration,
-            redraw: true
-        }
-    });
+        hoverinfo: 'text',
+        texttemplate: '%{text:$.1f}B',
+        textfont: { family: 'Monda', size: 14 }
+    };
+
+    const layout = {
+        xaxis: {
+            range: [0, xAxisMax * 1.2],
+            title: {
+                text: 'Gross Bookings (USD bn)',
+                font: { family: 'Monda', size: 16 }
+            },
+            fixedrange: false,
+            showgrid: true,
+            gridcolor: '#eee',
+            gridwidth: 1,
+            zeroline: true,
+            zerolinecolor: '#eee',
+            tickfont: { family: 'Monda', size: 14 },
+            ticks: 'outside',
+            ticklen: 8,
+            tickwidth: 1,
+            tickcolor: '#ccc'
+        },
+        yaxis: {
+            autorange: false,
+            fixedrange: true,
+            showgrid: false,
+            tickfont: { family: 'Monda', size: 14 },
+            ticktext: targetData.map(d => d.displayName),
+            tickvals: targetData.map((_, i) => i),
+            tickmode: 'array',
+            range: [-1, targetData.length]
+        },
+        margin: { l: 120, r: 60, t: 30, b: 50 },
+        height: 650,
+        width: 400,
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        showlegend: false,
+        bargap: 0.08,
+        font: { family: 'Monda' }
+    };
+
+    const config = {
+        displayModeBar: false,
+        responsive: false
+    };
+
+    // 使用 Plotly.animate 进行更新
+    if (!window.raceChartData) {
+        // 首次初始化
+        Plotly.newPlot('race-chart', [trace], layout, config);
+    } else {
+        // 后续更新使用 animate
+        const animateConfig = {
+            data: [{
+                x: targetData.map(d => d.value),
+                y: targetData.map(d => d.displayName),
+                text: targetData.map(d => d.value.toFixed(1)),
+                marker: {
+                    color: targetData.map(d => d.color),
+                    width: 0.1
+                }
+            }],
+            layout: {
+                xaxis: {
+                    range: [0, xAxisMax * 1.2]
+                },
+                yaxis: {
+                    ticktext: targetData.map(d => d.displayName),
+                    tickvals: targetData.map((_, i) => i),
+                    tickmode: 'array',
+                    range: [-1, targetData.length]
+                }
+            },
+            traces: [0]
+        };
+
+        const transitionConfig = {
+            transition: {
+                duration: appConfig.animation.duration,
+                easing: 'linear'
+            },
+            frame: {
+                duration: appConfig.animation.duration,
+                redraw: false
+            }
+        };
+        
+        Plotly.animate('race-chart', animateConfig, transitionConfig);
+    }
 
     // 更新存储的数据
     window.raceChartData = targetData;
