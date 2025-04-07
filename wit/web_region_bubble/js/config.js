@@ -65,8 +65,9 @@ const appConfig = {
 
     // Animation settings
     animation: {
-        duration: 800,            
-        frameDelay: 1200,         
+        frameDelay: 2000,    // 更长的帧延迟，让每个动画有足够时间完成
+        duration: 1500,      // 更长的过渡持续时间，使动画更平滑
+        transitionDuration: 1500  // 保持一致的过渡持续时间
     },
 
     // Chart settings

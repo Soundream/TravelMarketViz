@@ -544,7 +544,7 @@ function createBubbleChart(regionData, countryData, year) {
         },
         transition: {
             duration: appConfig.animation.duration || 800,
-            easing: 'cubic-in-out'
+            easing: 'linear'
         },
         // Add country logo images to layout
         images: countryImages
@@ -566,19 +566,27 @@ function createBubbleChart(regionData, countryData, year) {
             logMessage('Error creating chart: ' + error, 'error');
         });
     } else {
-        // 清除之前的图像
-        const currentLayout = document.getElementById('bubble-chart').layout;
-        currentLayout.images = [];
-        
-        // 使用 react 进行完整重绘
-        Plotly.react('bubble-chart', allTraces, {
-            ...layout,
-            transition: {
-                duration: appConfig.animation.duration || 800,
-                easing: 'cubic-in-out'
+        // 使用 animate 进行平滑过渡动画，提供更流畅的效果
+        Plotly.animate('bubble-chart', 
+            {
+                data: allTraces,
+                layout: {
+                    ...layout,
+                    images: countryImages  // 确保图像也得到更新
+                }
+            }, 
+            {
+                transition: {
+                    duration: appConfig.animation.duration || 1000,
+                    easing: 'linear'
+                },
+                frame: {
+                    duration: appConfig.animation.duration || 1000,
+                    redraw: true
+                }
             }
-        }, config).then(function() {
-            logMessage('Chart updated successfully');
+        ).then(function() {
+            logMessage('Chart updated successfully with animation');
         }).catch(error => {
             logMessage('Error updating chart: ' + error, 'error');
         });
@@ -611,13 +619,19 @@ function togglePlay() {
         if (playIcon) playIcon.style.display = 'none';
         if (pauseIcon) pauseIcon.style.display = 'inline-block';
         
-        // Start animation
+        // Start animation with consistent timing
+        const animationInterval = appConfig.animation.frameDelay || 1500;
+        const animationDuration = appConfig.animation.duration || 800;
+        
+        // Ensure animation interval is longer than animation duration for smooth transitions
+        const effectiveInterval = Math.max(animationInterval, animationDuration + 200);
+        
         playInterval = setInterval(() => {
             currentYearIndex = (currentYearIndex + 1) % years.length;
             const year = years[currentYearIndex];
             logMessage('Animating to year: ' + year);
             createBubbleChart(processedRegionData, processedCountryData, year);
-        }, appConfig.animation.frameDelay || 1500);
+        }, effectiveInterval);
     } else {
         logMessage('Stopping animation');
         // Show play icon
@@ -874,11 +888,21 @@ async function init() {
             
             // Start animation after a short delay
             logMessage('Starting animation with delay...');
+            // 恢复自动播放的代码
             setTimeout(() => {
                 isPlaying = false; // Reset state
                 togglePlay(); // Start playing
                 logMessage('Animation started');
             }, 1000);
+            
+            // 不再需要手动设置播放按钮状态，因为togglePlay会处理
+            /*
+            const playIcon = document.getElementById('playIcon');
+            const pauseIcon = document.getElementById('pauseIcon');
+            if (playIcon) playIcon.style.display = 'inline-block';
+            if (pauseIcon) pauseIcon.style.display = 'none';
+            isPlaying = false;
+            */
         });
         
     } catch (error) {
