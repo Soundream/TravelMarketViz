@@ -1,19 +1,19 @@
 // 定义国家代码映射
 const countryCodeMapping = {
-    "Singapore": "SG",
-    "China": "CN",
-    "India": "IN",
-    "Indonesia": "ID",
-    "Malaysia": "MY",
-    "Thailand": "TH",
-    "Vietnam": "VN",
-    "Philippines": "PH",
-    "Japan": "JP",
-    "South Korea": "KR",
-    "Hong Kong": "HK",
-    "Taiwan": "TW",
-    "Macau": "MO",
-    "Australia & New Zealand": "AU/NZ"
+    "Singapore": "Singapore",
+    "China": "China",
+    "India": "India",
+    "Indonesia": "Indonesia",
+    "Malaysia": "Malaysia",
+    "Thailand": "Thailand",
+    "Vietnam": "Vietnam",
+    "Philippines": "Philippines",
+    "Japan": "Japan",
+    "South Korea": "South Korea",
+    "Hong Kong": "Hong Kong",
+    "Taiwan": "Taiwan",
+    "Macau": "Macau",
+    "Australia & New Zealand": "Australia & NZ"
 };
 
 // 获取国家代码的辅助函数
