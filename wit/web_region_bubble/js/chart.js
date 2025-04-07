@@ -360,26 +360,36 @@ function createBubbleChart(regionData, countryData, year) {
         // 使用相对路径
         let finalLogoUrl = './' + logoUrl.replace(/^[./]+/, '');
 
-        // 计算图标大小 - 确保不超过区域气泡的大小
+        // 计算图标大小
         const grossBookings = d['Gross Bookings'];
         const maxRegionGrossBookings = d3.max(yearRegionData, d => d['Gross Bookings']);
         const minSize = 0.02;
         const maxSize = 0.05;
         
-        // 使用平方根比例计算大小
         const sizeRatio = Math.sqrt(grossBookings / maxRegionGrossBookings);
         const finalSize = minSize + (maxSize - minSize) * sizeRatio;
 
         // 计算实际位置
         const xPos = d['Online Penetration'] * 100;
-        const yPos = d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor;
+        const yVal = d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor;
+        
+        // 打印调试信息
+        console.log(`${d.Country} - Original Value: ${yVal}`);
+        
+        // 使用实际值进行对数转换
+        const logYPos = Math.log10(Math.max(yVal, 0.1));
+        const minLogY = Math.log10(0.1);
+        const maxLogY = Math.log10(800);
+        const normalizedY = (logYPos - minLogY) / (maxLogY - minLogY);
+
+        console.log(`${d.Country} - Normalized Position: ${normalizedY}`);
 
         return {
             source: finalLogoUrl,
             xref: "x",
-            yref: "y",
+            yref: "paper",
             x: xPos,
-            y: yPos,
+            y: normalizedY,
             sizex: finalSize * 100,
             sizey: finalSize * 100,
             sizing: "contain",
@@ -496,9 +506,9 @@ function createBubbleChart(regionData, countryData, year) {
                 size: 20
             },
             tickmode: 'array',
-            ticktext: ['0', '10', '40', '90', '160', '250', '400', '600', '800'],
-            tickvals: [0, 10, 40, 90, 160, 250, 400, 600, 800],
-            range: [0, Math.log10(900)],
+            ticktext: ['0.1', '0.5', '1', '2', '5', '10', '20', '50', '100', '200', '500', '800'],
+            tickvals: [0.1, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 800],
+            range: [Math.log10(0.1), Math.log10(800)],
             autorange: false,
             showticklabels: true,
             ticks: 'outside',
