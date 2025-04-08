@@ -12,7 +12,6 @@ let backgroundTrace;
 let currentTraces;
 let layout;
 let config;
-let flagImages = {}; // 新增：存储国旗图像对象
 let resizeTimeout; // 新增：用于处理窗口调整大小事件
 
 // Debug logger function - logs to both console and debug panel
@@ -245,11 +244,12 @@ function processDataByCountry(jsonData) {
 }
 
 // Function to create the bubble chart with both regions and countries
-function createBubbleChart(regionData, countryData, year) {
+function createBubbleChart(regionData, countryData, year, progress = 0) {
     logMessage('Creating chart for year: ' + year);
     
     // Filter data for the current year
-    const yearRegionData = regionData.filter(d => d.Year === year);
+    const yearRegionData = regionData;  // 已经是插值后的数据
+    const yearCountryData = countryData; // 已经是插值后的数据
     
     // 需要在气泡图中过滤掉的国家 - 但不在总和计算中排除
     const excludedCountries = ['Taiwan', 'Hong Kong', 'Macau'];
@@ -258,7 +258,7 @@ function createBubbleChart(regionData, countryData, year) {
     const minOnlineBookingsThreshold = 1.0;
     
     // Filter country data - 仅在气泡图显示中排除特定国家
-    const yearCountryData = countryData.filter(d => {
+    const filteredCountryData = yearCountryData.filter(d => {
         const matchesYear = d.Year === year;
         const isSelected = selectedCountries.includes(d.Country);
         const isExcluded = excludedCountries.includes(d.Country);
@@ -266,7 +266,7 @@ function createBubbleChart(regionData, countryData, year) {
         
         return matchesYear && isSelected && !isExcluded && hasEnoughOnlineBookings;
     });
-    logMessage('Year country data count: ' + yearCountryData.length);
+    logMessage('Year country data count: ' + filteredCountryData.length);
     
     // 计算全局最大 Gross Bookings（排除无效值）
     const allData = [...regionData, ...countryData].filter(d => 
@@ -381,14 +381,14 @@ function createBubbleChart(regionData, countryData, year) {
     };
 
     // 获取所有国家的 Gross Bookings 并排序
-    const allCountriesGrossBookings = yearCountryData.map(d => ({
+    const allCountriesGrossBookings = filteredCountryData.map(d => ({
         country: d.Country,
         grossBookings: d['Gross Bookings']
     }));
     allCountriesGrossBookings.sort((a, b) => b.grossBookings - a.grossBookings);
 
     // 填充组合轨迹的数据
-    yearCountryData.forEach(d => {
+    filteredCountryData.forEach(d => {
         const yPos = d['Online Penetration'] * 100;
         // Apply scaling factor first, then ensure minimum value
         const xPos = Math.max(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor, minOnlineBookingsThreshold * appConfig.dataProcessing.bookingsScaleFactor);
@@ -431,36 +431,59 @@ function createBubbleChart(regionData, countryData, year) {
         combinedCountryTrace.marker.size.push(size);
     });
 
-    // 更新标志轨迹
-    const flagTraces = yearCountryData.map(d => {
-        const yPos = d['Online Penetration'] * 100;
-        // Apply scaling factor first, then ensure minimum value
-        const xPos = Math.max(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor, minOnlineBookingsThreshold * appConfig.dataProcessing.bookingsScaleFactor);
-        const logoUrl = appConfig.countryLogos[d.Country];
+    // 合并所有轨迹
+    const allTraces = [backgroundTrace, ...regionTraces, combinedCountryTrace];
+    
+    // 创建国旗图片配置
+    const flagImages = filteredCountryData.map(d => {
+        // 计算x坐标，确保在对数坐标下正确显示
+        const minBooking = d3.min(processedCountryData, d => d['Online Bookings']);
+        const maxBooking = d3.max(processedCountryData, d => d['Online Bookings']);
+
+// 对于每个国家，使用下面的公式计算 x 坐标：
+        // const u = 0.003*(Math.log10(d['Online Bookings']) - Math.log10(minBooking)) / (Math.log10(maxBooking) - Math.log10(minBooking));
         
-        if (!logoUrl) return null;
+        // const xPos = 1 + u * (800 - 1);
+        const baseU = (Math.log10(d['Online Bookings']) - Math.log10(minBooking)) / (Math.log10(maxBooking) - Math.log10(minBooking));
+
+// 采用压缩函数：f(u)= 1 - sqrt(1 - u)
+// 当 u 接近 1 时 f(u) 的增长会放缓，从而让较大的 d 值增长变慢
+const adjustedU = 1 - Math.sqrt(1 - baseU);
+
+// 将 adjustedU 映射到 x 轴的数据范围 [1,800]
+const xPos = 1 + 0.003*adjustedU * (800 - 1);
+        const yPos = d['Online Penetration'] * 100;
+        
+        // 计算相对尺寸
+        const relativeSize = Math.pow(d['Gross Bookings'] / maxGrossBookings, 0.6);
+        const targetSize = relativeSize * 0.1+ 0.01;
+        
+        const logoUrl = appConfig.countryLogos[d.Country];
+        if (!logoUrl) {
+            logMessage(`No logo URL found for country: ${d.Country}`, 'warn');
+            return null;
+        }
+
+        // 确保路径正确
+        const imagePath = './' + logoUrl.replace(/^[./]+/, '');
+        logMessage(`Creating flag image for ${d.Country} at path: ${imagePath}`);
 
         return {
-            name: d.Country + ' flag',
-            x: [xPos],
-            y: [yPos],
-            mode: 'markers',
-            type: 'scatter',
-            hoverinfo: 'skip',
-            showlegend: false,
-            marker: {
-                size: 1,
-                opacity: 0
-            },
-            customdata: [{
-                logoUrl: './' + logoUrl.replace(/^[./]+/, ''),
-                country: d.Country
-            }]
+            source: imagePath,
+            x: xPos - 1.1,
+            y: yPos,
+            xref: 'x',
+            yref: 'y',
+            sizex: targetSize * 200, // 调整尺寸比例
+            sizey: targetSize * 200,
+            xanchor: 'center',
+            yanchor: 'middle',
+            sizing: 'contain',
+            opacity: 1,
+            layer: 'above',
+            visible: true
         };
-    }).filter(trace => trace !== null);
-
-    // 合并所有轨迹
-    const allTraces = [backgroundTrace, ...regionTraces, combinedCountryTrace, ...flagTraces];
+    }).filter(img => img !== null);
     
     // 初始化全局 layout 变量
     layout = {
@@ -472,6 +495,7 @@ function createBubbleChart(regionData, countryData, year) {
             },
             y: 0.95
         },
+        images: flagImages, // 添加国旗图片配置
         xaxis: {
             title: {
                 text: 'Online Bookings (USD bn)',
@@ -577,7 +601,7 @@ function createBubbleChart(regionData, countryData, year) {
         displayModeBar: false
     };
 
-    logMessage(`Plotting chart with ${allTraces.length} traces (${flagTraces.length} flag traces)`);
+    logMessage(`Plotting chart with ${allTraces.length} traces and ${flagImages.length} flag images`);
     
     // 如果是第一次渲染，使用 newPlot，否则使用分步动画实现平滑过渡
     const chartDiv = document.getElementById('bubble-chart');
@@ -586,196 +610,55 @@ function createBubbleChart(regionData, countryData, year) {
         // 初次渲染使用 newPlot
         Plotly.newPlot('bubble-chart', allTraces, layout, config).then(function() {
             logMessage('Chart created successfully');
-            // 初始渲染后更新国旗图像
-            updateFlagImagesFromTraces(chartDiv, 0); // 初始化不需要动画
+            // 验证国旗图片是否正确加载
+            logMessage(`Number of flag images: ${flagImages.length}`);
+            flagImages.forEach(img => {
+                logMessage(`Flag image: ${img.source}, size: ${img.sizex}`);
+            });
         }).catch(error => {
             logMessage('Error creating chart: ' + error, 'error');
         });
     } else {
-        // 使用 animate 一次性更新所有 traces（包括透明国旗点），实现平滑过渡
+        // 使用 animate 立即更新所有 traces 和 layout
         const animationConfig = {
             transition: { 
-                duration: appConfig.animation.duration, 
+                duration: 0,
                 easing: 'linear' 
             },
             frame: { 
-                duration: appConfig.animation.duration,
-                redraw: false // 避免不必要的重绘
-            }
+                duration: 0,
+                redraw: true
+            },
+            mode: 'immediate'
         };
         
-        // 确保现有标记点能够平滑过渡
         try {
-            // 对图表进行深度更新，确保所有元素都平滑过渡
             Plotly.animate('bubble-chart', {
                 data: allTraces,
-                traces: Array.from(Array(allTraces.length).keys()) // 更新所有轨迹
+                layout: {
+                    ...layout,
+                    datarevision: Date.now()
+                }
             }, animationConfig).then(() => {
-                // 动画完成后更新国旗图像
-                updateFlagImagesFromTraces(chartDiv, appConfig.animation.duration);
                 logMessage('Chart and flag images updated with linear transition');
             }).catch(error => {
                 logMessage('Error updating chart: ' + error, 'error');
             });
         } catch (error) {
             logMessage('Animation error, falling back to update: ' + error, 'warn');
-            // 如果动画失败，回退到更新
             Plotly.update('bubble-chart', 
                 {data: allTraces},
                 layout
-            ).then(() => {
-                // 更新完成后更新国旗
-                updateFlagImagesFromTraces(chartDiv);
-            });
+            );
         }
     }
 
     // 更新时间轴
-    updateTimeline(year);
-}
-
-// Add styles to the page for country flags
-function addFlagStyles() {
-    // Check if styles already exist
-    if (document.getElementById('country-flag-styles')) return;
-    
-    // Create style element
-    const style = document.createElement('style');
-    style.id = 'country-flag-styles';
-    style.textContent = `
-        #bubble-chart {
-            position: relative; /* 确保容器是定位上下文 */
-        }
-        .country-flag {
-            position: absolute;
-            pointer-events: none;
-            z-index: 999;
-            border-radius: 50%;
-            object-fit: cover;
-            transition-property: left, top, width, height, opacity;
-            transition-timing-function: linear;
-            transition-duration: ${appConfig?.animation?.duration || 800}ms;
-            box-shadow: 0 0 1px rgba(0,0,0,0.3);
-            will-change: left, top, width, height, opacity;
-            backface-visibility: hidden;
-        }
-        
-        .country-flag.entering {
-            opacity: 0;
-        }
-    `;
-    document.head.appendChild(style);
-    logMessage('Added styles for country flags');
-}
-
-// 新函数：根据当前的透明标记点位置更新国旗图像
-function updateFlagImagesFromTraces(chartDiv, duration = null, progress = 0) {
-    const plotElement = chartDiv;
-    if (!plotElement || !plotElement._fullLayout) return;
-
-    const countryTrace = plotElement.data.find(trace => trace.name === 'Country Bubbles');
-    if (!countryTrace) return;
-
-    const plotOffsetX = plotElement.getBoundingClientRect().left;
-    const plotOffsetY = plotElement.getBoundingClientRect().top;
-    
-    // 调整国旗偏移量以适应新的x轴范围
-    const horizontalOffset = window.flagOffsetX || 87;  // 从47改为35
-    const verticalOffset = window.flagOffsetY || 30;
-    
-    // 获取x轴范围
-    const xRange = plotElement._fullLayout.xaxis.range;
-    const minXValue = Math.pow(10, xRange[0]);  // 现在是1而不是0.1
-
-    // 更新每个国家的旗帜位置
-    countryTrace._countries.forEach((country, index) => {
-        if (!selectedCountries.includes(country)) return;
-
-        const xData = countryTrace.x[index];
-        const yData = countryTrace.y[index];
-        
-        // 获取或创建国旗图像元素
-        let flagImg = flagImages[country];
-        
-        // 如果x值小于最小值，隐藏国旗
-        if (xData < minXValue) {
-            if (flagImg) {
-                flagImg.style.opacity = '0';
-                flagImg.style.visibility = 'hidden';
-            }
-            return;
-        }
-
-        const xPx = plotElement._fullLayout.xaxis.d2p(xData);
-        const yPx = plotElement._fullLayout.yaxis.d2p(yData);
-        const finalX = plotOffsetX + xPx + horizontalOffset;
-        const finalY = plotOffsetY + yPx + verticalOffset;
-        const bubbleSize = countryTrace._flagSizes[index];
-
-        const logoUrl = appConfig.countryLogos[country];
-        if (logoUrl) {
-            // 如果是新创建的国旗或之前是隐藏状态，先淡入显示但不移动位置
-            const isNewOrHidden = !flagImg || flagImg.style.visibility === 'hidden';
-            
-            createFlagImage(
-                country,
-                './' + logoUrl.replace(/^[./]+/, ''),
-                finalX,
-                finalY,
-                bubbleSize,
-                isNewOrHidden ? 0 : (duration || appConfig.animation.duration) // 新显示的国旗立即定位，不使用动画
-            );
-            
-            // 确保国旗可见
-            if (flagImg) {
-                if (isNewOrHidden) {
-                    // 新显示的国旗使用淡入效果
-                    flagImg.style.transition = `opacity ${appConfig.animation.duration}ms linear`;
-                    flagImg.style.visibility = 'visible';
-                    setTimeout(() => {
-                        flagImg.style.opacity = '1';
-                    }, 10);
-                } else {
-                    // 已显示的国旗保持正常动画
-                    flagImg.style.transition = `all ${duration || appConfig.animation.duration}ms linear`;
-                    flagImg.style.opacity = '1';
-                    flagImg.style.visibility = 'visible';
-                }
-            }
-        }
-    });
-}
-
-// 更新createFlagImage函数
-function createFlagImage(country, logoUrl, x, y, size, duration) {
-    const chartContainer = document.getElementById('bubble-chart');
-    if (!chartContainer) return;
-    
-    const img = flagImages[country] || document.createElement('img');
-    
-    if (!flagImages[country]) {
-        img.src = logoUrl;
-        img.alt = country;
-        img.className = 'country-flag';
-        img.style.position = 'absolute';
-        img.style.opacity = '0';
-        img.style.visibility = 'hidden';
-        chartContainer.appendChild(img);
-        flagImages[country] = img;
-        
-        // 错误处理
-        img.onerror = () => {
-            logMessage(`Error loading flag image for ${country}: ${logoUrl}`, 'error');
-            img.style.backgroundColor = 'rgba(200, 200, 200, 0.8)';
-            img.style.border = '1px solid white';
-        };
+    const timelinePosition = year + (year - year) * progress;
+    if (timeline && timeline.triangle) {
+        timeline.triangle
+            .attr('transform', `translate(${timeline.scale(timelinePosition)}, -10) rotate(180)`);
     }
-    
-    // 设置位置和大小
-    img.style.left = `${Math.round(x - size/2)}px`;
-    img.style.top = `${Math.round(y - size/2)}px`;
-    img.style.width = `${Math.round(size)}px`;
-    img.style.height = `${Math.round(size)}px`;
 }
 
 // Toggle Play/Pause Function
@@ -798,19 +681,10 @@ function togglePlay() {
         // 创建动画控制器
         const animationController = {
             startTime: Date.now(),
-            totalDuration: appConfig.animation.duration * years.length,
-            frameDuration: appConfig.animation.duration,
-            lastFrameTime: Date.now(),
-            lastFlagUpdateTime: Date.now(),
-            animationInProgress: false,
-            currentTransform: null // 用于存储当前的变换状态
+            totalDuration: 38000, // 38秒 = 38000毫秒
+            frameDuration: 16, // 约60fps
+            lastFrameTime: Date.now()
         };
-        
-        // 确保开始时国旗图像就正确定位
-        const chartDiv = document.getElementById('bubble-chart');
-        if (chartDiv && chartDiv.data) {
-            updateFlagImagesFromTraces(chartDiv, 0);
-        }
         
         // 使用requestAnimationFrame实现平滑动画
         const renderFrame = () => {
@@ -821,26 +695,50 @@ function togglePlay() {
             const cyclePosition = (elapsedSinceStart % animationController.totalDuration) / animationController.totalDuration;
             const yearPosition = cyclePosition * years.length;
             const currentYearIndex = Math.floor(yearPosition);
-            const nextYearIndex = (currentYearIndex + 1) % years.length;
-            
-            // 计算当前帧在两年之间的插值比例 (0-1)
-            const frameProgress = yearPosition - currentYearIndex;
+            const progress = yearPosition - currentYearIndex; // 插值进度 (0-1)
             
             // 获取当前年份和下一年份的数据
             const currentYear = years[currentYearIndex];
+            const nextYearIndex = (currentYearIndex + 1) % years.length;
             const nextYear = years[nextYearIndex];
             
-            // 仅在年份变化时更新主气泡图
-            if (currentYearIndex !== window.lastYearIndex) {
-                window.lastYearIndex = currentYearIndex;
-                createBubbleChart(processedRegionData, processedCountryData, currentYear);
-            }
+            // 获取当前和下一年的数据
+            const currentRegionData = processedRegionData.filter(d => d.Year === currentYear);
+            const nextRegionData = processedRegionData.filter(d => d.Year === nextYear);
+            const currentCountryData = processedCountryData.filter(d => d.Year === currentYear);
+            const nextCountryData = processedCountryData.filter(d => d.Year === nextYear);
             
-            // 平滑更新国旗位置
-            if (chartDiv && chartDiv.data && now - animationController.lastFlagUpdateTime >= 16) {
-                const remainingDuration = animationController.frameDuration * (1 - frameProgress);
-                updateFlagImagesFromTraces(chartDiv, remainingDuration, frameProgress);
-                animationController.lastFlagUpdateTime = now;
+            // 创建插值数据
+            const interpolatedRegionData = currentRegionData.map(d => {
+                const nextData = nextRegionData.find(nd => nd.Region === d.Region) || d;
+                return {
+                    Year: currentYear,
+                    Region: d.Region,
+                    'Gross Bookings': d['Gross Bookings'] + (nextData['Gross Bookings'] - d['Gross Bookings']) * progress,
+                    'Online Bookings': d['Online Bookings'] + (nextData['Online Bookings'] - d['Online Bookings']) * progress,
+                    'Online Penetration': d['Online Penetration'] + (nextData['Online Penetration'] - d['Online Penetration']) * progress
+                };
+            });
+            
+            const interpolatedCountryData = currentCountryData.map(d => {
+                const nextData = nextCountryData.find(nd => nd.Country === d.Country) || d;
+                return {
+                    Year: currentYear,
+                    Country: d.Country,
+                    'Gross Bookings': d['Gross Bookings'] + (nextData['Gross Bookings'] - d['Gross Bookings']) * progress,
+                    'Online Bookings': d['Online Bookings'] + (nextData['Online Bookings'] - d['Online Bookings']) * progress,
+                    'Online Penetration': d['Online Penetration'] + (nextData['Online Penetration'] - d['Online Penetration']) * progress
+                };
+            });
+            
+            // 更新图表，使用插值数据
+            createBubbleChart(interpolatedRegionData, interpolatedCountryData, currentYear, progress);
+            
+            // 更新时间轴位置（使用插值）
+            const timelinePosition = currentYear + (nextYear - currentYear) * progress;
+            if (timeline && timeline.triangle) {
+                timeline.triangle
+                    .attr('transform', `translate(${timeline.scale(timelinePosition)}, -10) rotate(180)`);
             }
             
             requestAnimationFrame(renderFrame);
@@ -947,12 +845,6 @@ function verifyCountryLogosConfiguration() {
 async function init() {
     try {
         logMessage('Initializing visualization...');
-        
-        // 添加国旗样式
-        addFlagStyles();
-        
-        // 添加窗口大小改变事件处理器
-        window.addEventListener('resize', handleWindowResize);
         
         // Check if required elements exist
         if (!document.getElementById('bubble-chart')) {
@@ -1108,16 +1000,17 @@ async function init() {
     }
 }
 
-// 处理窗口大小改变，确保国旗图像正确定位
+// 修改 handleWindowResize 函数，因为不再需要手动更新国旗位置
 function handleWindowResize() {
-    // 使用防抖动，避免过多更新
     if (resizeTimeout) clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(() => {
-        logMessage('Window resized, repositioning flag images');
+        logMessage('Window resized, updating chart');
         const chartDiv = document.getElementById('bubble-chart');
         if (chartDiv && chartDiv.data) {
-            // 窗口调整大小后，使用0时间立即重新定位图像，避免动画
-            updateFlagImagesFromTraces(chartDiv, 0);
+            Plotly.relayout(chartDiv, {
+                width: chartDiv.offsetWidth,
+                height: chartDiv.offsetHeight
+            });
         }
     }, 100);
 }
@@ -1128,34 +1021,4 @@ if (document.readyState === 'loading') {
 } else {
     // If DOMContentLoaded has already fired, run init directly
     setTimeout(init, 0);
-}
-
-// 添加一个微调国旗位置的控制面板，便于实时调整 (仅在调试模式下显示)
-window.adjustFlagPositions = function(xOffset, yOffset) {
-    // 更新全局偏移量
-    window.flagOffsetX = xOffset !== undefined ? xOffset : (window.flagOffsetX || 0);
-    window.flagOffsetY = yOffset !== undefined ? yOffset : (window.flagOffsetY || 0);
-    
-    logMessage(`Adjusting flag positions: X offset=${window.flagOffsetX}, Y offset=${window.flagOffsetY}`);
-    
-    // 刷新所有国旗位置
-    const chartDiv = document.getElementById('bubble-chart');
-    if (chartDiv && chartDiv.data) {
-        updateFlagImagesFromTraces(chartDiv);
-    }
-    
-    return `Flags adjusted: X=${window.flagOffsetX}, Y=${window.flagOffsetY}`;
-};
-
-// 修改刷新国旗的函数，考虑调整参数
-window.refreshFlags = function() {
-    const chartDiv = document.getElementById('bubble-chart');
-    if (chartDiv && chartDiv.data) {
-        logMessage('Manual refresh of flag positions');
-        updateFlagImagesFromTraces(chartDiv);
-    }
-    
-    // 添加调试提示
-    logMessage('提示: 您可以使用 window.adjustFlagPositions(xOffset, yOffset) 微调国旗位置');
-    logMessage('例如: window.adjustFlagPositions(2, -1) 将国旗向右移动2px，向上移动1px');
-}; 
+} 
