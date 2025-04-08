@@ -540,42 +540,61 @@ function updateRaceChart(data, year, forceUpdate = false) {
         'y': [targetData.map(d => d.displayName)]
     });
 
-    // 2. 然后使用动画更新数值和长度
-    Plotly.animate('race-chart', 
-        {
-            data: [{
-                x: targetData.map(d => d.value),
-                text: targetData.map(d => d.value.toFixed(1))
-            }],
-            layout: {
-                xaxis: {
-                    range: [0, xAxisMax * 1.2]
-                },
-                shapes: [{
-                    type: 'line',
-                    x0: 0,
-                    y0: top9Countries.length - 0.5,
-                    x1: xAxisMax * 1.2,
-                    y1: top9Countries.length - 0.5,
-                    line: {
-                        color: '#ddd',
-                        width: 1,
-                        dash: 'dot'
-                    }
-                }]
-            }
-        },
-        {
-            transition: {
-                duration: appConfig.animation.duration,
-                easing: 'linear'
+    // 获取当前值和目标值
+    const currentData = document.getElementById('race-chart').data[0];
+    const currentValues = currentData.x;
+    const targetValues = targetData.map(d => d.value);
+    
+    // 设置动画开始时间
+    const startTime = performance.now();
+    const duration = appConfig.animation.duration;
+
+    // 创建动画函数
+    function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // 计算当前帧的值
+        const currentFrameValues = currentValues.map((startVal, i) => {
+            const endVal = targetValues[i];
+            return startVal + (endVal - startVal) * progress;
+        });
+
+        // 更新图表数据
+        Plotly.update('race-chart', {
+            x: [currentFrameValues],
+            text: [currentFrameValues.map(val => val.toFixed(1))],
+            texttemplate: ['%{text}B']
+        }, {
+            xaxis: {
+                range: [0, xAxisMax * 1.2]
             },
-            frame: {
-                duration: appConfig.animation.duration,
-                redraw: false
+            shapes: [{
+                type: 'line',
+                x0: 0,
+                y0: top9Countries.length - 0.5,
+                x1: xAxisMax * 1.2,
+                y1: top9Countries.length - 0.5,
+                line: {
+                    color: '#ddd',
+                    width: 1,
+                    dash: 'dot'
+                }
+            }]
+        }, {
+            transition: {
+                duration: 0
             }
+        });
+
+        // 如果动画未完成，继续下一帧
+        if (progress < 1) {
+            requestAnimationFrame(animate);
         }
-    );
+    }
+
+    // 开始动画
+    requestAnimationFrame(animate);
 
     // 更新存储的数据
     window.raceChartData = targetData;
