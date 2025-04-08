@@ -63,13 +63,6 @@ const appConfig = {
         'Macau'
     ],
 
-    // Animation settings
-    animation: {
-        frameDelay: 1800,    // 将帧之间的延迟设置为与动画持续时间相同，消除中间的停顿
-        duration: 1800,      // 每一步动画的持续时间
-        transitionDuration: 1800  // 保持一致的持续时间
-    },
-
     // Chart settings
     chart: {
         minBubbleSize: 15,        // 增加最小气泡大小
@@ -77,7 +70,18 @@ const appConfig = {
         defaultYear: 2005,        
         xAxisTitle: 'Share of Online Bookings (%)',
         yAxisTitle: 'Online Bookings (USD bn)',
-        sizeMetric: 'Gross Bookings'
+        sizeMetric: 'Gross Bookings',
+        margin: {
+            l: 80,    // 左边距增加，为y轴标题留出更多空间
+            r: 30,    // 右边距
+            t: 30,    // 上边距
+            b: 60     // 下边距，为x轴标题留出空间
+        },
+        yaxis: {
+            title: {
+                standoff: 30  // y轴标题与轴的距离
+            }
+        }
     },
 
     // Data processing

@@ -213,7 +213,7 @@ function processDataByRegion(jsonData) {
     return processedData;
 }
 
-// Function to process Excel data by country (similar to web_bubble_chart)
+// Function to process Excel data by country
 function processDataByCountry(jsonData) {
     console.log('Processing country data with', jsonData.length, 'rows'); // Debug log
     
@@ -222,62 +222,6 @@ function processDataByCountry(jsonData) {
     console.log('Selected countries:', selectedCountries);
     
     // Process data for APAC countries
-    const apacCountriesData = jsonData
-        .filter(row => {
-            // Filter for APAC region with market and year data
-            if (row['Region'] !== 'APAC' || !row['Market'] || !row['Year']) {
-                return false;
-            }
-            
-            // Standardize market name for matching
-            let market = row['Market'];
-            if (market === 'Australia-New Zealand' || market === 'Australia/New Zealand') {
-                market = 'Australia & New Zealand';
-            }
-            
-            // 打印原始数据
-            console.error(`原始数据 - ${row['Year']}年 ${market}:`, {
-                '国家/地区': market,
-                '年份': row['Year'],
-                'Excel表格中的在线预订值': row['Online Bookings'],
-                'Excel表格中的总预订值': row['Gross Bookings'],
-                'Excel表格中的在线渗透率': ((row['Online Bookings'] / row['Gross Bookings']) * 100).toFixed(1) + '%'
-            });
-            
-            // 不再排除任何国家
-            return true;
-        })
-        .map(row => {
-            // 标准化市场名称
-            let market = row['Market'];
-            if (market === 'Australia-New Zealand' || market === 'Australia/New Zealand') {
-                market = 'Australia & New Zealand';
-            }
-
-            const processedData = {
-                Market: market,
-                Year: row['Year'],
-                OnlinePenetration: row['Online Bookings'] / row['Gross Bookings'],
-                OnlineBookings: row['Online Bookings'],
-                GrossBookings: row['Gross Bookings']
-            };
-
-            // 打印处理后的数据
-            console.error(`Race Chart处理后数据 - ${row['Year']}年 ${market}:`, {
-                '国家/地区': market,
-                '年份': row['Year'],
-                'Race Chart使用的在线预订值': processedData.OnlineBookings,
-                'Race Chart使用的总预订值': processedData.GrossBookings,
-                'Race Chart使用的在线渗透率': (processedData.OnlinePenetration * 100).toFixed(1) + '%'
-            });
-
-            return processedData;
-        });
-            
-    // Store APAC countries data globally so race-chart.js can access it
-    window.processedCountriesData = apacCountriesData;
-    
-    // Process data for APAC countries - 这里保留所有国家数据，后续在可视化时再过滤
     const processedData = jsonData
         .filter(row => row['Region'] === 'APAC' && row['Market'] && row['Year'])
         .map(row => {
@@ -311,7 +255,7 @@ function createBubbleChart(regionData, countryData, year) {
     const excludedCountries = ['Taiwan', 'Hong Kong', 'Macau'];
     
     // 最小在线预订值阈值(十亿)
-    const minOnlineBookingsThreshold = 0.2;
+    const minOnlineBookingsThreshold = 1.0;
     
     // Filter country data - 仅在气泡图显示中排除特定国家
     const yearCountryData = countryData.filter(d => {
@@ -332,7 +276,7 @@ function createBubbleChart(regionData, countryData, year) {
     console.log('Global max Gross Bookings:', maxGrossBookings);
 
     // 定义y轴范围
-    const yAxisRange = [Math.log10(0.1), Math.log10(800)];
+    const yAxisRange = [Math.log10(1), Math.log10(800)];
     
     // 创建背景文字
     backgroundTrace = {
@@ -446,7 +390,8 @@ function createBubbleChart(regionData, countryData, year) {
     // 填充组合轨迹的数据
     yearCountryData.forEach(d => {
         const yPos = d['Online Penetration'] * 100;
-        const xPos = d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor;
+        // Apply scaling factor first, then ensure minimum value
+        const xPos = Math.max(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor, minOnlineBookingsThreshold * appConfig.dataProcessing.bookingsScaleFactor);
         
         // 检查当前国家是否在后五名
         const isSmallCountry = allCountriesGrossBookings.findIndex(c => c.country === d.Country) >= allCountriesGrossBookings.length - 5;
@@ -489,7 +434,8 @@ function createBubbleChart(regionData, countryData, year) {
     // 更新标志轨迹
     const flagTraces = yearCountryData.map(d => {
         const yPos = d['Online Penetration'] * 100;
-        const xPos = d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor;
+        // Apply scaling factor first, then ensure minimum value
+        const xPos = Math.max(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor, minOnlineBookingsThreshold * appConfig.dataProcessing.bookingsScaleFactor);
         const logoUrl = appConfig.countryLogos[d.Country];
         
         if (!logoUrl) return null;
@@ -549,9 +495,9 @@ function createBubbleChart(regionData, countryData, year) {
                 size: 20
             },
             tickmode: 'array',
-            ticktext: ['0.1', '0.5', '1', '2', '5', '10', '20', '50', '100', '200', '500', '800'],
-            tickvals: [0.1, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 800],
-            range: [Math.log10(0.1), Math.log10(800)],
+            ticktext: ['1', '2', '5', '10', '20', '50', '100', '200', '500', '800'],
+            tickvals: [1, 2, 5, 10, 20, 50, 100, 200, 500, 800],
+            range: [Math.log10(1), Math.log10(800)],
             autorange: false,
             showticklabels: true,
             ticks: 'outside',
@@ -567,7 +513,7 @@ function createBubbleChart(regionData, countryData, year) {
                     family: 'Monda',
                     size: 22
                 },
-                standoff: 15
+                standoff: 5
             },
             range: [-5, 105],
             showgrid: true,
@@ -595,14 +541,14 @@ function createBubbleChart(regionData, countryData, year) {
         },
         showlegend: false,
         margin: {
-            l: 80,
-            r: 80,  // Increase right margin
+            l: 120,  // 增加左边距
+            r: 80,
             t: 80,
-            b: 100
+            b: 100,
+            pad: 10  // 添加内边距
         },
-        width: null,
-        height: 650,  // 增加图表高度
-        
+        width: 1200,  // 增加图表宽度到1200px
+        height: 650,  // 保持图表高度不变
         hovermode: 'closest',
         hoverlabel: {
             bgcolor: 'white',
@@ -686,15 +632,6 @@ function createBubbleChart(regionData, countryData, year) {
 
     // 更新时间轴
     updateTimeline(year);
-    
-    // 更新 race-chart
-    try {
-        if (typeof updateRaceChart === 'function') {
-            updateRaceChart(regionData, year);
-        }
-    } catch (error) {
-        logMessage('Error updating race chart: ' + error, 'error');
-    }
 }
 
 // Add styles to the page for country flags
@@ -734,34 +671,21 @@ function addFlagStyles() {
 // 新函数：根据当前的透明标记点位置更新国旗图像
 function updateFlagImagesFromTraces(chartDiv, duration = null, progress = 0) {
     const plotElement = chartDiv;
-    if (!plotElement || !plotElement.data) {
-        logMessage('Cannot update flag images: chart not initialized', 'error');
-        return;
-    }
+    if (!plotElement || !plotElement._fullLayout) return;
 
-    // 找到组合国家轨迹
-    const countryTrace = plotElement.data.find(trace => 
-        trace.name === 'Country Bubbles' && 
-        Array.isArray(trace._countries));
+    const countryTrace = plotElement.data.find(trace => trace.name === 'Country Bubbles');
+    if (!countryTrace) return;
 
-    if (!countryTrace) {
-        logMessage('Cannot find country trace', 'error');
-        return;
-    }
-
-    // 获取图表区域信息
-    const plotArea = chartDiv.querySelector('.subplot.xy');
-    if (!plotArea) return;
-
-    const plotRect = plotArea.getBoundingClientRect();
-    const chartRect = chartDiv.getBoundingClientRect();
-    const plotOffsetX = plotRect.left - chartRect.left;
-    const plotOffsetY = plotRect.top - chartRect.top;
-    const horizontalOffset = window.flagOffsetX || 47;
-    const verticalOffset = window.flagOffsetY || 10;
-
-    // 更新最小x值为0.2
-    const minXValue = 0.2;
+    const plotOffsetX = plotElement.getBoundingClientRect().left;
+    const plotOffsetY = plotElement.getBoundingClientRect().top;
+    
+    // 调整国旗偏移量以适应新的x轴范围
+    const horizontalOffset = window.flagOffsetX || 87;  // 从47改为35
+    const verticalOffset = window.flagOffsetY || 30;
+    
+    // 获取x轴范围
+    const xRange = plotElement._fullLayout.xaxis.range;
+    const minXValue = Math.pow(10, xRange[0]);  // 现在是1而不是0.1
 
     // 更新每个国家的旗帜位置
     countryTrace._countries.forEach((country, index) => {
@@ -1160,14 +1084,6 @@ async function init() {
             // Create initial chart
             logMessage('Creating initial bubble chart...');
             createBubbleChart(processedRegionData, processedCountryData, years[currentYearIndex]);
-            
-            // Setup race chart
-            logMessage('Setting up race chart...');
-            if (typeof createRaceChart === 'function') {
-                createRaceChart(processedRegionData, years[currentYearIndex]);
-            } else {
-                logMessage('createRaceChart function not defined', 'warn');
-            }
             
             // Add click event listener for play/pause
             logMessage('Adding event listeners...');

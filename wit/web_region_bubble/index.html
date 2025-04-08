@@ -23,26 +23,8 @@
         
         .main-content {
             flex: 1;
-            max-width: calc(100% - 420px);
+            max-width: 100%;
             padding-right: 20px;
-        }
-        
-        .side-content {
-            width: 400px;
-            padding-left: 20px;
-            margin-top: 100px; /* Add top margin to align better */
-        }
-        
-        .race-chart-container {
-            background-color: white;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        
-        #race-chart {
-            width: 400px !important;
-            height: 550px !important;
         }
         
         /* Force all fonts to be Monda */
@@ -88,15 +70,6 @@
                         </button>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <div class="side-content">
-            <!-- Race chart -->
-            <div class="race-chart-container">
-                <div class="chart-title">APAC Online Bookings Races</div>
-                <div class="chart-subtitle">Trailing 10 Markets in APAC</div>
-                <div id="race-chart"></div>
             </div>
         </div>
     </div>
@@ -149,26 +122,24 @@
             document.body.appendChild(script);
         }
         
-        // Load scripts in sequence
-        loadScript('js/race-chart.js', function() {
-            loadScript('js/chart.js', function() {
-                // Initialize the visualization once all scripts are loaded
-                if (typeof init === 'function') {
-                    window.addEventListener('DOMContentLoaded', init);
-                    // Also try to initialize if DOM is already loaded
-                    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-                        init();
-                    }
-                } else {
-                    const errorMsg = 'Error: init function not found. Check if chart.js loaded correctly.';
-                    console.error(errorMsg);
-                    const errorDiv = document.getElementById('error-message');
-                    if (errorDiv) {
-                        errorDiv.textContent = errorMsg;
-                        errorDiv.style.display = 'block';
-                    }
+        // Load chart.js directly
+        loadScript('js/chart.js', function() {
+            // Initialize the visualization once all scripts are loaded
+            if (typeof init === 'function') {
+                window.addEventListener('DOMContentLoaded', init);
+                // Also try to initialize if DOM is already loaded
+                if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                    init();
                 }
-            });
+            } else {
+                const errorMsg = 'Error: init function not found. Check if chart.js loaded correctly.';
+                console.error(errorMsg);
+                const errorDiv = document.getElementById('error-message');
+                if (errorDiv) {
+                    errorDiv.textContent = errorMsg;
+                    errorDiv.style.display = 'block';
+                }
+            }
         });
     </script>
 </body>
