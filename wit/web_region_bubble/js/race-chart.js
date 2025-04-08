@@ -174,12 +174,13 @@ function createRaceChart(data, year) {
         .filter(d => d.isRegion && d.value > 0.1)
         .sort((a, b) => a.value - b.value);
 
+    const excludedRegions = ['Hong Kong', 'Macau', 'Taiwan'];
     const countryData = processedData
-        .filter(d => !d.isRegion && d.value > 0.1)
+        .filter(d => !d.isRegion && d.value > 0.1 && !excludedRegions.includes(d.region))
         .sort((a, b) => a.value - b.value);
 
-    // 取所有区域和前9个国家
-    const allRegions = regionData; // 保留所有区域
+    // 取所有区域和前9个国家（不包括被排除的地区）
+    const allRegions = regionData;
     const top9Countries = countryData.slice(-9); // 只取前9个国家
 
     // 由于Plotly在水平条形图中是从下到上渲染，所以要将区域放在上方，需要在数组中放在后面
@@ -439,12 +440,13 @@ function updateRaceChart(data, year, forceUpdate = false) {
         .filter(d => d.isRegion && d.value > 0.1)
         .sort((a, b) => a.value - b.value);
 
+    const excludedRegions = ['Hong Kong', 'Macau', 'Taiwan'];
     const countryData = processedData
-        .filter(d => !d.isRegion && d.value > 0.1)
+        .filter(d => !d.isRegion && d.value > 0.1 && !excludedRegions.includes(d.region))
         .sort((a, b) => a.value - b.value);
 
-    // 取所有区域和前9个国家
-    const allRegions = regionData; // 保留所有区域
+    // 取所有区域和前9个国家（不包括被排除的地区）
+    const allRegions = regionData;
     const top9Countries = countryData.slice(-9); // 只取前9个国家
 
     // 由于Plotly在水平条形图中是从下到上渲染，所以要将区域放在上方，需要在数组中放在后面
