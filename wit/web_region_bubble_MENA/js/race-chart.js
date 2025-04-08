@@ -97,7 +97,6 @@ function createRaceChart(data, year) {
         'North America',
         'Asia-Pacific'
     ];
-
     requiredRegions.forEach(region => {
         const exists = combinedData.some(d => d.Region === region);
         if (!exists && region !== 'Asia-Pacific') {
