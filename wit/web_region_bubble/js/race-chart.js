@@ -52,15 +52,8 @@ function createRaceChart(data, year) {
     }
 
     // 获取APAC国家数据
-    const excludedCountries = ['Macau', 'Taiwan', 'Hong Kong'];
     const apacCountriesData = window.processedCountriesData ? 
-        window.processedCountriesData.filter(d => {
-            const matches = d.Year === year && !excludedCountries.includes(d.Market);
-            if (matches) {
-                console.log(`APAC country data for ${d.Market}:`, d);
-            }
-            return matches;
-        }) : [];
+        window.processedCountriesData.filter(d => d.Year === year) : [];
 
     console.log("APAC countries data:", apacCountriesData);
 
@@ -337,10 +330,8 @@ function updateRaceChart(data, year, forceUpdate = false) {
 
     // 获取当前年份的数据并处理
     const yearData = data.filter(d => d.Year === year);
-    const excludedCountries = ['Macau', 'Taiwan', 'Hong Kong'];
     const apacCountriesData = window.processedCountriesData ? 
-        window.processedCountriesData.filter(d => 
-            d.Year === year && !excludedCountries.includes(d.Market)) : [];
+        window.processedCountriesData.filter(d => d.Year === year) : [];
 
     // 组合并处理数据
     let combinedData = [...yearData];
