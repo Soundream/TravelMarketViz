@@ -111,15 +111,15 @@ config = {
 // Add getEraText function at the top level
 function getEraText(year) {
     const yearNum = parseInt(year);
-    if (yearNum >= 2005 && yearNum <= 2007) {
+    if (yearNum >= 2005 && yearNum <= 2008) {
         return "Growth of WWW";
-    } else if (yearNum >= 2007 && yearNum <= 2008) {
+    } else if (yearNum >= 2008 && yearNum <= 2009) {
         return "Great Recession";
-    } else if (yearNum >= 2009 && yearNum <= 2018) {
+    } else if (yearNum >= 2010 && yearNum <= 2020) {
         return "Growth of Mobile";
-    } else if (yearNum >= 2019 && yearNum <= 2020) {
+    } else if (yearNum >= 2021 && yearNum <= 2022) {
         return "Global Pandemic";
-    } else if (yearNum >= 2021) {
+    } else if (yearNum >= 2022) {
         return "Post-Pandemic Recovery";
     }
     return "";

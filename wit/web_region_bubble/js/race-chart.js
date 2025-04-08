@@ -533,15 +533,19 @@ function updateRaceChart(data, year, forceUpdate = false) {
     }
     
     // 使用 Plotly.animate 实现平滑过渡
+    
+    // 1. 首先立即更新颜色和标签位置
+    Plotly.restyle('race-chart', {
+        'marker.color': [targetData.map(d => d.color)],
+        'y': [targetData.map(d => d.displayName)]
+    });
+
+    // 2. 然后使用动画更新数值和长度
     Plotly.animate('race-chart', 
         {
             data: [{
-                y: targetData.map(d => d.displayName),
                 x: targetData.map(d => d.value),
-                text: targetData.map(d => d.value.toFixed(1)),
-                marker: {
-                    color: targetData.map(d => d.color)
-                }
+                text: targetData.map(d => d.value.toFixed(1))
             }],
             layout: {
                 xaxis: {
@@ -568,7 +572,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
             },
             frame: {
                 duration: appConfig.animation.duration,
-                redraw: true
+                redraw: false
             }
         }
     );
