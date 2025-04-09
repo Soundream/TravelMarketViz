@@ -42,11 +42,21 @@ const appConfig = {
         "Hong Kong":              "logos/Hong%20Kong%20Icon.png",
         "Taiwan":                 "logos/Taiwan%20Icon.png",
         "Macau":                  "logos/Macau%20Icon.png",
-        "Australia & New Zealand":"logos/Australia%20Icon.png"
+        "Australia & New Zealand":"logos/Australia%20Icon.png",
+        "Egypt":                  "logos/Egypt%20Flag%20Icon.png",
+        "Qatar":                  "logos/Qatar%20Flag%20Icon.png",
+        "Rest of Middle East":    "logos/Rest%20of%20Middle%20East%20Flag%20Icon.png",
+        "Saudi Arabia":           "logos/Saudi%20Arabia%20Flag%20Icon.png",
+        "U.A.E.":                 "logos/UAE%20Flag%20Icon.png"
     },
 
     // Default countries to display
     defaultSelectedCountries: [
+        'Egypt',
+        'Qatar',
+        'Rest of Middle East',
+        'Saudi Arabia',
+        'U.A.E.',
         'China',
         'Japan',
         'South Korea',

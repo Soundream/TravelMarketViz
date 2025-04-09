@@ -217,15 +217,12 @@ function processDataByCountry(jsonData) {
     selectedCountries = appConfig.defaultSelectedCountries || [];
     console.log('Selected countries:', selectedCountries);
     
-    // Process data for APAC countries
+    // Process data for Middle East countries
     const processedData = jsonData
-        .filter(row => row['Region'] === 'APAC' && row['Market'] && row['Year'])
+        .filter(row => row['Region'] === 'Middle East' && row['Market'] && row['Year'])
         .map(row => {
             // Standardize market names
             let market = row['Market'];
-            if (market === 'Australia-New Zealand' || market === 'Australia/New Zealand') {
-                market = 'Australia & New Zealand';
-            }
             return {
                 Year: parseInt(row['Year']),
                 Country: market,
@@ -469,22 +466,14 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
     
     // 创建国旗图片配置
     const flagImages = filteredCountryData.map(d => {
-        // 计算x坐标，确保在对数坐标下正确显示
-        const minBooking = d3.min(processedCountryData, d => d['Online Bookings']);
-        const maxBooking = d3.max(processedCountryData, d => d['Online Bookings']);
+        // Calculate x-position using logarithmic scale
+        const xPos = Math.log10(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor);
 
-// 对于每个国家，使用下面的公式计算 x 坐标：
-        // const u = 0.003*(Math.log10(d['Online Bookings']) - Math.log10(minBooking)) / (Math.log10(maxBooking) - Math.log10(minBooking));
-        
-        // const xPos = 1 + u * (800 - 1);
-        const baseU = (Math.log10(d['Online Bookings']) - Math.log10(minBooking)) / (Math.log10(maxBooking) - Math.log10(minBooking));
-
-// 采用压缩函数：f(u)= 1 - sqrt(1 - u)
-// 当 u 接近 1 时 f(u) 的增长会放缓，从而让较大的 d 值增长变慢
-const adjustedU = 1 - Math.sqrt(1 - baseU);
-
-// 将 adjustedU 映射到 x 轴的数据范围 [1,800]
-const xPos = 1 + 0.003*adjustedU * (800 - 1);
+        // Ensure xPos is within the axis range
+        const xAxisMin = Math.log10(1);
+        const xAxisMax = Math.log10(800);
+        const xPosNormalized = (xPos - xAxisMin) / (xAxisMax - xAxisMin);
+        const xPosFinal = xAxisMin + xPosNormalized * (xAxisMax - xAxisMin);
         const yPos = d['Online Penetration'] * 100;
         
         // 计算相对尺寸
@@ -503,7 +492,7 @@ const xPos = 1 + 0.003*adjustedU * (800 - 1);
 
         return {
             source: imagePath,
-            x: xPos - 1.1,
+            x: xPosFinal  ,
             y: yPos,
             xref: 'x',
             yref: 'y',
