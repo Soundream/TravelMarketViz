@@ -1,7 +1,7 @@
 const appConfig = {
     // Region colors with vibrant values
     regionColors: {
-        // 'Asia-Pacific': '#FF4B4B',        // Removed Asia-Pacific
+        'Asia-Pacific': '#FF4B4B',        // Restored Asia-Pacific with red color
         'Europe': '#4169E1',              // 鲜艳的蓝色
         'Eastern Europe': '#9370DB',      // 鲜艳的紫色
         'Latin America': '#32CD32',       // 鲜艳的绿色

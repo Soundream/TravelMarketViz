@@ -156,14 +156,15 @@ function processDataByRegion(jsonData) {
     console.log('Processing region data with', jsonData.length, 'rows'); // Debug log
     const regionData = {};
     
-    // Get unique regions first, excluding 'Asia-Pacific'
+    // Get unique regions, now including Asia-Pacific
     uniqueRegions = [...new Set(jsonData.map(row => {
         // Map old region names to new ones
         const region = row['Region'];
-        if (region === 'APAC') return 'Asia-Pacific (sum)';
+        if (region === 'APAC') return 'Asia-Pacific';
         if (region === 'LATAM') return 'Latin America';
+        if (region === 'Middle East') return 'Middle East (sum)';
         return region;
-    }))].filter(region => region !== 'Asia-Pacific (sum)'); // Filter out Asia-Pacific
+    }))];
     
     console.log('Unique regions:', uniqueRegions);
     
@@ -171,11 +172,9 @@ function processDataByRegion(jsonData) {
         const year = row['Year'];
         let region = row['Region'];
         // Map old region names to new ones
-        if (region === 'APAC') region = 'Asia-Pacific (sum)';
+        if (region === 'APAC') region = 'Asia-Pacific';
         if (region === 'LATAM') region = 'Latin America';
-        
-        // Skip Asia-Pacific region
-        if (region === 'Asia-Pacific (sum)') return;
+        if (region === 'Middle East') region = 'Middle East (sum)';
         
         if (!regionData[year]) {
             regionData[year] = {};
@@ -343,7 +342,7 @@ function createBubbleChart(regionData, countryData, year) {
     // 创建区域气泡轨迹
     const regionTraces = uniqueRegions.map(region => {
         const regionData = yearRegionData.filter(d => d.Region === region);
-        const colorKey = region === 'Asia-Pacific (sum)' ? 'Asia-Pacific' : region;
+        const colorKey = region === 'Asia-Pacific' ? 'Asia-Pacific' : region;
 
         // 获取所有区域的 Gross Bookings 并排序
         const allRegionsGrossBookings = yearRegionData.map(d => ({

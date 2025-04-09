@@ -76,19 +76,19 @@ function createRaceChart(data, year) {
         combinedData.push(countryData);
     });
 
-    // 确保所有主要区域都有数据
+    // Ensure all major regions have data
     const requiredRegions = [
         'Europe', 
         'Eastern Europe', 
         'Latin America', 
-        'Middle East', 
+        'Middle East (sum)', 
         'North America',
-        'Asia-Pacific (sum)'
+        'Asia-Pacific'
     ];
 
     requiredRegions.forEach(region => {
         const exists = combinedData.some(d => d.Region === region);
-        if (!exists && region !== 'Asia-Pacific (sum)') {
+        if (!exists) {
             console.warn(`Adding placeholder for missing region: ${region}`);
             combinedData.push({
                 Region: region,
@@ -103,20 +103,24 @@ function createRaceChart(data, year) {
     // Debug log to check combined data before processing
     console.log("Combined data before processing for race chart:", combinedData);
 
-    // 处理数据
+    // Process data
     const processedData = combinedData.map(d => {
         const regionName = d.Region;
         const isApacCountry = middleEastCountriesData.some(c => c.Market === regionName);
         
-        // 特殊处理Australia & New Zealand，其他国家保持全名
+        // Special handling for display names
         let displayName = regionName;
         if (regionName === 'Australia & New Zealand') {
             displayName = 'Australia & NZ';
         }
-        
+        // Add "(sum)" to Middle East region display name
+        if (regionName === 'Middle East (sum)') {
+            displayName = 'Middle East (sum)';
+        }
+
         const isRegion = requiredRegions.includes(regionName);
         
-        // 确保数值是有效的
+        // Ensure values are valid
         const grossBookings = parseFloat(d['Gross Bookings']) || 0;
         const value = grossBookings * appConfig.dataProcessing.bookingsScaleFactor;
         
@@ -127,7 +131,7 @@ function createRaceChart(data, year) {
         });
 
         let color;
-        if (regionName === 'Middle East' || middleEastCountriesData.some(c => c.Market === regionName)) {
+        if (regionName === 'Middle East (sum)' || middleEastCountriesData.some(c => c.Market === regionName)) {
             color = '#DEB887';
         } else if (regionName === 'Europe') {
             color = '#4169E1';
@@ -137,15 +141,10 @@ function createRaceChart(data, year) {
             color = '#32CD32';
         } else if (regionName === 'North America') {
             color = '#40E0D0';
+        } else if (regionName === 'Asia-Pacific') {
+            color = '#FF4B4B'; // Original red color for Asia-Pacific
         } else {
             color = '#888888';
-        }
-
-        // Special handling for display names
-        if (regionName === 'Asia-Pacific (sum)') {
-            displayName = 'Asia-Pacific';
-        } else if (regionName === 'Middle East') {
-            displayName = 'Middle East (sum)';
         }
 
         return {
@@ -195,7 +194,7 @@ function createRaceChart(data, year) {
         orientation: 'h',
         marker: {
             color: targetData.map(d => d.color),
-            width: 0.6
+            width: 0.2
         },
         text: targetData.map(d => d.value),
         textposition: 'outside',
@@ -343,13 +342,13 @@ function updateRaceChart(data, year, forceUpdate = false) {
         'Europe', 
         'Eastern Europe', 
         'Latin America', 
-        'Middle East', 
+        'Middle East (sum)', 
         'North America',
-        'Asia-Pacific (sum)'
+        'Asia-Pacific'
     ];
 
     requiredRegions.forEach(region => {
-        if (!combinedData.some(d => d.Region === region) && region !== 'Asia-Pacific (sum)') {
+        if (!combinedData.some(d => d.Region === region)) {
             combinedData.push({
                 Region: region,
                 Year: year,
@@ -370,6 +369,10 @@ function updateRaceChart(data, year, forceUpdate = false) {
         if (regionName === 'Australia & New Zealand') {
             displayName = 'Australia & NZ';
         }
+        // Add "(sum)" to Middle East region display name
+        if (regionName === 'Middle East (sum)') {
+            displayName = 'Middle East (sum)';
+        }
         
         const isRegion = requiredRegions.includes(regionName);
         
@@ -384,7 +387,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
         });
 
         let color;
-        if (regionName === 'Middle East' || middleEastCountriesData.some(c => c.Market === regionName)) {
+        if (regionName === 'Middle East (sum)' || middleEastCountriesData.some(c => c.Market === regionName)) {
             color = '#DEB887';
         } else if (regionName === 'Europe') {
             color = '#4169E1';
@@ -394,15 +397,10 @@ function updateRaceChart(data, year, forceUpdate = false) {
             color = '#32CD32';
         } else if (regionName === 'North America') {
             color = '#40E0D0';
+        } else if (regionName === 'Asia-Pacific') {
+            color = '#FF4B4B'; // Original red color for Asia-Pacific
         } else {
             color = '#888888';
-        }
-
-        // Special handling for display names
-        if (regionName === 'Asia-Pacific (sum)') {
-            displayName = 'Asia-Pacific';
-        } else if (regionName === 'Middle East') {
-            displayName = 'Middle East (sum)';
         }
 
         return {
@@ -457,7 +455,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
             textposition: 'outside',
             marker: {
                 color: targetData.map(d => d.color),
-                width: 0.6
+                width: 0.4
             },
             hoverinfo: 'text',
             texttemplate: '%{text:$.1f}B',
