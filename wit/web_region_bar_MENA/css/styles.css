@@ -1,0 +1,367 @@
+body {
+    font-family: 'Monda', sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: white;
+}
+
+.container {
+    max-width: 2800px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 100px 20px 40px 20px;
+}
+
+h1 {
+    font-family: 'Montserrat', sans-serif;
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+.main-title {
+    font-family: 'Monda', sans-serif;
+    text-align: center;
+    color: #333;
+    font-size: 28px;
+    margin: 60px 0 20px 0;
+    font-weight: 500;
+}
+
+.controls {
+    margin-bottom: 20px;
+}
+
+#timeline {
+    width: 100%;
+    height: 40px;
+    position: relative;
+    margin: 0 auto;
+}
+
+#timeline .timeline-axis path,
+#timeline .timeline-axis line {
+    stroke: #ccc;
+    stroke-width: 1px;
+}
+
+#timeline .timeline-axis text {
+    fill: #666;
+    font-size: 18px;
+    font-family: 'Monda', sans-serif;
+}
+
+/* Add styles for the tick marks in the timeline */
+#timeline .timeline-axis .tick line {
+    stroke: #ccc;
+    stroke-width: 1px;
+}
+
+.control-button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+    min-width: 40px;
+}
+
+.control-button:hover {
+    background-color: #45a049;
+}
+
+.visualization-container {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+#bubble-chart {
+    width: 100%;
+    height: 650px;
+}
+
+.timeline-container {
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* Position race chart container to not overlap with bubble chart */
+.dual-chart-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 400px;
+    z-index: 10;
+}
+
+.chart-title {
+    font-family: 'Monda', sans-serif;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.chart-subtitle {
+    font-family: 'Monda', sans-serif;
+    font-size: 14px;
+    color: #666;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.map-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding: 0;
+    margin-top: -30px;
+    gap: 0;
+}
+
+#map-legend {
+    position: absolute;
+    top: 0;
+    right: -10px;
+    width: 450px;
+    height: 250px;
+    background-color: white;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    overflow: visible;
+}
+
+.race-chart-container {
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+#race-chart {
+    width: 400px !important;
+    height: 550px !important;
+    background-color: white;
+}
+
+.map-region {
+    fill-opacity: 0.9;
+    stroke: #ffffff;
+    stroke-width: 1.5;
+    transition: all 0.3s ease;
+}
+
+.map-region:hover {
+    fill-opacity: 1;
+    cursor: pointer;
+    stroke-width: 2;
+}
+
+.map-label {
+    font-family: 'Monda', sans-serif;
+    font-size: 10px;
+    pointer-events: none;
+    user-select: none;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.tooltip {
+    position: absolute;
+    display: none;
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.region-label {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.metric-value {
+    font-family: 'Monda', sans-serif;
+    color: #666;
+}
+
+@media (max-width: 1800px) {
+    .visualization-container {
+        grid-template-columns: 1fr 440px;
+        height: 850px;
+    }
+    #map-legend {
+        width: 350px;
+        height: 240px;
+    }
+    #race-chart {
+        top: 220px;
+        left: 30px;
+        width: 400px !important;
+        height: 550px !important;
+    }
+}
+
+@media (max-width: 1600px) {
+    .visualization-container {
+        grid-template-columns: 1fr 420px;
+        height: 850px;
+    }
+    #map-legend {
+        width: 330px;
+        height: 230px;
+    }
+    #race-chart {
+        top: 220px;
+        left: 20px;
+        width: 400px !important;
+        height: 550px !important;
+    }
+}
+
+@media (max-width: 1400px) {
+    .visualization-container {
+        grid-template-columns: 1fr 400px;
+        height: 850px;
+    }
+    #map-legend {
+        width: 380px;
+        height: 220px;
+        right: 0;
+    }
+    #race-chart {
+        width: 400px !important;
+        height: 550px !important;
+        top: 200px;
+        left: 30px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .visualization-container {
+        grid-template-columns: 1fr 380px;
+        height: 850px;
+    }
+    #map-legend {
+        width: 370px;
+        height: 210px;
+    }
+    #race-chart {
+        width: 400px !important;
+        height: 550px !important;
+        top: 190px;
+        left: 30px;
+    }
+}
+
+@media (max-width: 900px) {
+    .visualization-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        height: auto;
+        gap: 40px;
+    }
+    
+    .chart-wrapper {
+        height: 500px;
+        padding-right: 0;
+    }
+    
+    .map-wrapper {
+        height: 400px;
+    }
+    
+    #race-chart {
+        width: 400px !important;
+        height: 550px !important;
+    }
+}
+
+/* Debug Panel Styles */
+#debug-panel {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 400px;
+    height: 300px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    z-index: 1000;
+    font-family: monospace;
+    font-size: 12px;
+    border-top-left-radius: 5px;
+    overflow: hidden;
+    box-shadow: -2px -2px 10px rgba(0,0,0,0.2);
+}
+
+.debug-header {
+    display: flex;
+    justify-content: space-between;
+    background: #333;
+    padding: 5px 10px;
+    border-bottom: 1px solid #555;
+}
+
+.debug-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.debug-button {
+    background: #555;
+    border: none;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px;
+}
+
+.debug-button:hover {
+    background: #777;
+}
+
+#debug-console {
+    height: calc(100% - 30px);
+    overflow-y: auto;
+    padding: 5px 10px;
+}
+
+.log-line {
+    margin: 2px 0;
+    word-wrap: break-word;
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+.log-error {
+    color: #ff6b6b;
+}
+
+.log-warn {
+    color: #feca57;
+}
+
+/* Error message */
+#error-message {
+    padding: 15px;
+    margin: 15px;
+    background-color: rgba(255, 0, 0, 0.1);
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    border-radius: 5px;
+    text-align: center;
+} 

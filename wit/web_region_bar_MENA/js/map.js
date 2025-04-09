@@ -1,29 +1,29 @@
 // 更准确的世界地图区域定义
 const regionPaths = {
-    'North America': 'M 20 40 L 80 40 L 100 80 L 60 100 L 20 80 Z',
-    'Latin America': 'M 60 100 L 100 100 L 80 160 L 40 160 L 20 120 Z',
-    'Europe': 'M 120 40 L 160 40 L 180 60 L 160 80 L 120 60 Z',
-    'Eastern Europe': 'M 180 60 L 220 40 L 240 60 L 220 80 L 180 80 Z',
-    'Middle East': 'M 180 100 L 220 80 L 240 100 L 220 120 L 180 120 Z',
-    'Asia-Pacific (sum)': 'M 240 60 L 280 40 L 300 80 L 280 120 L 240 100 Z'
+    'Europe': 'M 160 20 L 200 20 L 200 60 L 160 60 Z',
+    'Eastern Europe': 'M 200 20 L 240 20 L 240 60 L 200 60 Z',
+    'North America': 'M 80 20 L 160 20 L 160 60 L 80 60 Z',
+    'Latin America': 'M 80 60 L 160 60 L 160 100 L 80 100 Z',
+    'Middle East (sum)': 'M 200 60 L 240 60 L 240 100 L 200 100 Z',
+    'Asia-Pacific': 'M 240 60 L 280 40 L 300 80 L 280 120 L 240 100 Z'
 };
 
 function createMapLegend() {
     // 定义区域和对应的国家代码
     const regionCountries = {
+        'Europe': ['DEU', 'FRA', 'GBR', 'ITA', 'ESP', 'NLD', 'CHE', 'AUT', 'BEL', 'PRT', 'IRL', 'GRC', 'DNK', 'NOR', 'SWE', 'FIN', 'ISL'],
+        'Eastern Europe': ['RUS', 'UKR', 'POL', 'CZE', 'HUN', 'ROU', 'SVK', 'SVN', 'HRV', 'SRB', 'MNE', 'ALB', 'MKD', 'BGR', 'BLR', 'EST', 'LVA', 'LTU'],
         'North America': ['USA', 'CAN', 'MEX'],
-        'Latin America': ['BRA', 'ARG', 'COL', 'CHL', 'PER', 'VEN', 'ECU', 'BOL', 'PRY', 'URY'],
-        'Europe': ['GBR', 'FRA', 'DEU', 'ITA', 'ESP', 'NLD', 'CHE', 'BEL', 'PRT', 'IRL', 'DNK', 'NOR', 'SWE', 'FIN'],
-        'Eastern Europe': ['RUS', 'POL', 'UKR', 'CZE', 'HUN', 'ROU', 'BGR', 'SVK', 'BLR', 'LTU', 'LVA', 'EST'],
-        'Middle East': ['SAU', 'ARE', 'IRN', 'ISR', 'QAT', 'KWT', 'OMN', 'BHR', 'JOR', 'LBN'],
-        'Asia-Pacific (sum)': ['CHN', 'JPN', 'KOR', 'AUS', 'IDN', 'IND', 'SGP', 'MYS', 'NZL', 'THA', 'VNM', 'PHL', 'TWN', 'HKG']
+        'Latin America': ['BRA', 'ARG', 'COL', 'CHL', 'PER', 'VEN', 'BOL', 'ECU', 'PRY', 'URY', 'PAN', 'CRI', 'GTM', 'SLV', 'HND', 'NIC', 'DOM', 'CUB', 'JAM'],
+        'Middle East (sum)': ['SAU', 'ARE', 'TUR', 'IRN', 'ISR', 'EGY', 'IRQ', 'QAT', 'KWT', 'JOR', 'LBN', 'OMN', 'BHR', 'SYR', 'YEM'],
+        'Asia-Pacific': ['CHN', 'JPN', 'KOR', 'AUS', 'IDN', 'IND', 'SGP', 'MYS', 'NZL', 'THA', 'VNM', 'PHL', 'TWN', 'HKG']
     };
 
     // 创建数据
     const data = [];
     Object.entries(regionCountries).forEach(([region, countries]) => {
-        // Use the original color key for Asia-Pacific (sum)
-        const colorKey = region === 'Asia-Pacific (sum)' ? 'Asia-Pacific' : region;
+        // Use the original color key for Asia-Pacific
+        const colorKey = region === 'Asia-Pacific' ? 'Asia-Pacific' : region;
         
         data.push({
             type: 'choropleth',
