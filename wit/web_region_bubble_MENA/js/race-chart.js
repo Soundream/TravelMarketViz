@@ -1,16 +1,19 @@
 // 定义国家代码映射
 const countryCodeMapping = {
-    "Saudi Arabia": "SA",
-    "United Arab Emirates": "AE",
-    "Qatar": "QA",
-    "Kuwait": "KW",
-    "Oman": "OM",
-    "Bahrain": "BH",
-    "Egypt": "EG",
-    "Jordan": "JO",
-    "Lebanon": "LB",
-    "Israel": "IL",
-    "Turkey": "TR"
+    "Singapore": "SG",
+    "China": "CN",
+    "India": "IN",
+    "Indonesia": "ID",
+    "Malaysia": "MY",
+    "Thailand": "TH",
+    "Vietnam": "VN",
+    "Philippines": "PH",
+    "Japan": "JP",
+    "South Korea": "KR",
+    "Hong Kong": "HK",
+    "Taiwan": "TW",
+    "Macau": "MO",
+    "Australia & New Zealand": "AU/NZ"
 };
 
 // 获取国家代码的辅助函数
@@ -48,34 +51,19 @@ function createRaceChart(data, year) {
         return;
     }
 
-    // 获取Middle East国家数据
+    // Replace APAC countries data with Middle Eastern countries data
     const middleEastCountriesData = window.processedCountriesData ? 
-        window.processedCountriesData.filter(d => d.Year === year) : [];
+        window.processedCountriesData.filter(d => d.Year === year && ['Egypt', 'Qatar', 'Rest of Middle East', 'Saudi Arabia', 'U.A.E.'].includes(d.Market)) : [];
 
-    console.log("Middle East countries data:", middleEastCountriesData);
+    console.log("Middle Eastern countries data:", middleEastCountriesData);
 
-    // 组合区域和国家数据
+    // Combine region and country data
     let combinedData = [...yearData];
 
-    // 添加Middle East (sum)数据
-    const middleEastSumExists = combinedData.some(d => d.Region === 'Middle East (sum)');
-    
-    if (!middleEastSumExists && middleEastCountriesData.length > 0) {
-        const middleEastSum = {
-            Region: 'Middle East (sum)',
-            Year: year,
-            'Gross Bookings': middleEastCountriesData.reduce((sum, c) => sum + c.GrossBookings, 0),
-            'Online Bookings': middleEastCountriesData.reduce((sum, c) => sum + c.OnlineBookings, 0)
-        };
-        
-        // 计算在线渗透率
-        middleEastSum['Online Penetration'] = middleEastSum['Online Bookings'] / middleEastSum['Gross Bookings'];
-        
-        console.log("Calculated Middle East (sum):", middleEastSum);
-        combinedData.push(middleEastSum);
-    }
+    // Debug log to check if Middle Eastern countries are being processed
+    console.log("Middle Eastern countries data for race chart:", middleEastCountriesData);
 
-    // 添加Middle East国家数据
+    // Ensure Middle Eastern countries are added to combinedData
     middleEastCountriesData.forEach(country => {
         const countryData = {
             Region: country.Market,
@@ -84,7 +72,7 @@ function createRaceChart(data, year) {
             'Online Penetration': country.OnlinePenetration,
             Year: country.Year
         };
-        console.log(`Adding country data for ${country.Market}:`, countryData);
+        console.log(`Adding Middle Eastern country data for ${country.Market}:`, countryData);
         combinedData.push(countryData);
     });
 
@@ -93,13 +81,14 @@ function createRaceChart(data, year) {
         'Europe', 
         'Eastern Europe', 
         'Latin America', 
-        'Middle East (sum)', 
+        'Middle East', 
         'North America',
-        'Asia-Pacific'
+        'Asia-Pacific (sum)'
     ];
+
     requiredRegions.forEach(region => {
         const exists = combinedData.some(d => d.Region === region);
-        if (!exists && region !== 'Asia-Pacific') {
+        if (!exists && region !== 'Asia-Pacific (sum)') {
             console.warn(`Adding placeholder for missing region: ${region}`);
             combinedData.push({
                 Region: region,
@@ -111,13 +100,19 @@ function createRaceChart(data, year) {
         }
     });
 
-    // 处理数据前先打印
-    console.log("Combined data before processing:", combinedData);
+    // Debug log to check combined data before processing
+    console.log("Combined data before processing for race chart:", combinedData);
 
     // 处理数据
     const processedData = combinedData.map(d => {
         const regionName = d.Region;
-        const isMiddleEastCountry = middleEastCountriesData.some(c => c.Market === regionName);
+        const isApacCountry = middleEastCountriesData.some(c => c.Market === regionName);
+        
+        // 特殊处理Australia & New Zealand，其他国家保持全名
+        let displayName = regionName;
+        if (regionName === 'Australia & New Zealand') {
+            displayName = 'Australia & NZ';
+        }
         
         const isRegion = requiredRegions.includes(regionName);
         
@@ -132,7 +127,7 @@ function createRaceChart(data, year) {
         });
 
         let color;
-        if (regionName === 'Middle East (sum)' || isMiddleEastCountry) {
+        if (regionName === 'Middle East' || middleEastCountriesData.some(c => c.Market === regionName)) {
             color = '#DEB887';
         } else if (regionName === 'Europe') {
             color = '#4169E1';
@@ -140,21 +135,26 @@ function createRaceChart(data, year) {
             color = '#9370DB';
         } else if (regionName === 'Latin America') {
             color = '#32CD32';
-        } else if (regionName === 'Asia-Pacific') {
-            color = '#FF4B4B';
         } else if (regionName === 'North America') {
             color = '#40E0D0';
         } else {
             color = '#888888';
         }
 
+        // Special handling for display names
+        if (regionName === 'Asia-Pacific (sum)') {
+            displayName = 'Asia-Pacific';
+        } else if (regionName === 'Middle East') {
+            displayName = 'Middle East (sum)';
+        }
+
         return {
             region: regionName,
-            displayName: regionName,
+            displayName: displayName,
             value: value,
             originalValue: grossBookings,
             color: color,
-            isMiddleEastCountry: isMiddleEastCountry,
+            isApacCountry: isApacCountry,
             isRegion: isRegion
         };
     });
@@ -164,11 +164,12 @@ function createRaceChart(data, year) {
         .filter(d => d.isRegion && d.value > 0.1)
         .sort((a, b) => a.value - b.value);
 
+    const excludedRegions = ['Hong Kong', 'Macau', 'Taiwan'];
     const countryData = processedData
-        .filter(d => !d.isRegion && d.value > 0.1)
+        .filter(d => !d.isRegion && d.value > 0.1 && !excludedRegions.includes(d.region))
         .sort((a, b) => a.value - b.value);
 
-    // 取所有区域和前9个国家
+    // 取所有区域和前9个国家（不包括被排除的地区）
     const allRegions = regionData;
     const top9Countries = countryData.slice(-9); // 只取前9个国家
 
@@ -321,26 +322,12 @@ function updateRaceChart(data, year, forceUpdate = false) {
     // 获取当前年份的数据并处理
     const yearData = data.filter(d => d.Year === year);
     const middleEastCountriesData = window.processedCountriesData ? 
-        window.processedCountriesData.filter(d => d.Year === year) : [];
+        window.processedCountriesData.filter(d => d.Year === year && ['Egypt', 'Qatar', 'Rest of Middle East', 'Saudi Arabia', 'U.A.E.'].includes(d.Market)) : [];
 
     // 组合并处理数据
     let combinedData = [...yearData];
 
-    // 添加 Middle East (sum) 数据
-    const middleEastSumExists = combinedData.some(d => d.Region === 'Middle East (sum)');
-    if (!middleEastSumExists && middleEastCountriesData.length > 0) {
-        const middleEastSum = {
-            Region: 'Middle East (sum)',
-            Year: year,
-            'Gross Bookings': middleEastCountriesData.reduce((sum, c) => sum + c.GrossBookings, 0),
-            'Online Bookings': middleEastCountriesData.reduce((sum, c) => sum + c.OnlineBookings, 0),
-            'Online Penetration': 0
-        };
-        middleEastSum['Online Penetration'] = middleEastSum['Online Bookings'] / middleEastSum['Gross Bookings'];
-        combinedData.push(middleEastSum);
-    }
-
-    // 添加 Middle East 国家数据
+    // Add Middle East countries data
     middleEastCountriesData.forEach(country => {
         combinedData.push({
             Region: country.Market,
@@ -356,13 +343,13 @@ function updateRaceChart(data, year, forceUpdate = false) {
         'Europe', 
         'Eastern Europe', 
         'Latin America', 
-        'Middle East (sum)', 
+        'Middle East', 
         'North America',
-        'Asia-Pacific'
+        'Asia-Pacific (sum)'
     ];
 
     requiredRegions.forEach(region => {
-        if (!combinedData.some(d => d.Region === region) && region !== 'Asia-Pacific') {
+        if (!combinedData.some(d => d.Region === region) && region !== 'Asia-Pacific (sum)') {
             combinedData.push({
                 Region: region,
                 Year: year,
@@ -376,7 +363,13 @@ function updateRaceChart(data, year, forceUpdate = false) {
     // 处理数据
     const processedData = combinedData.map(d => {
         const regionName = d.Region;
-        const isMiddleEastCountry = middleEastCountriesData.some(c => c.Market === regionName);
+        const isApacCountry = middleEastCountriesData.some(c => c.Market === regionName);
+        
+        // 特殊处理Australia & New Zealand，其他国家保持全名
+        let displayName = regionName;
+        if (regionName === 'Australia & New Zealand') {
+            displayName = 'Australia & NZ';
+        }
         
         const isRegion = requiredRegions.includes(regionName);
         
@@ -391,7 +384,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
         });
 
         let color;
-        if (regionName === 'Middle East (sum)' || isMiddleEastCountry) {
+        if (regionName === 'Middle East' || middleEastCountriesData.some(c => c.Market === regionName)) {
             color = '#DEB887';
         } else if (regionName === 'Europe') {
             color = '#4169E1';
@@ -399,21 +392,26 @@ function updateRaceChart(data, year, forceUpdate = false) {
             color = '#9370DB';
         } else if (regionName === 'Latin America') {
             color = '#32CD32';
-        } else if (regionName === 'Asia-Pacific') {
-            color = '#FF4B4B';
         } else if (regionName === 'North America') {
             color = '#40E0D0';
         } else {
             color = '#888888';
         }
 
+        // Special handling for display names
+        if (regionName === 'Asia-Pacific (sum)') {
+            displayName = 'Asia-Pacific';
+        } else if (regionName === 'Middle East') {
+            displayName = 'Middle East (sum)';
+        }
+
         return {
             region: regionName,
-            displayName: regionName,
+            displayName: displayName,
             value: value,
             originalValue: grossBookings,
             color: color,
-            isMiddleEastCountry: isMiddleEastCountry,
+            isApacCountry: isApacCountry,
             isRegion: isRegion
         };
     });
@@ -423,11 +421,12 @@ function updateRaceChart(data, year, forceUpdate = false) {
         .filter(d => d.isRegion && d.value > 0.1)
         .sort((a, b) => a.value - b.value);
 
+    const excludedRegions = ['Hong Kong', 'Macau', 'Taiwan'];
     const countryData = processedData
-        .filter(d => !d.isRegion && d.value > 0.1)
+        .filter(d => !d.isRegion && d.value > 0.1 && !excludedRegions.includes(d.region))
         .sort((a, b) => a.value - b.value);
 
-    // 取所有区域和前9个国家
+    // 取所有区域和前9个国家（不包括被排除的地区）
     const allRegions = regionData;
     const top9Countries = countryData.slice(-9); // 只取前9个国家
 

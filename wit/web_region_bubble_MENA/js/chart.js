@@ -221,61 +221,51 @@ function processDataByCountry(jsonData) {
     selectedCountries = appConfig.defaultSelectedCountries || [];
     console.log('Selected countries:', selectedCountries);
     
-    // Process data for APAC countries
-    const apacCountriesData = jsonData
+    // Modify the data processing logic to ensure that the Middle Eastern countries are included and processed correctly
+    const middleEastCountriesData = jsonData
         .filter(row => {
-            // Filter for APAC region with market and year data
-            if (row['Region'] !== 'APAC' || !row['Market'] || !row['Year']) {
+            // Filter for Middle Eastern region with market and year data
+            if (!['Egypt', 'Qatar', 'Rest of Middle East', 'Saudi Arabia', 'U.A.E.'].includes(row['Market']) || !row['Year']) {
                 return false;
             }
             
             // Standardize market name for matching
             let market = row['Market'];
-            if (market === 'Australia-New Zealand' || market === 'Australia/New Zealand') {
-                market = 'Australia & New Zealand';
-            }
-            
-            // 打印原始数据
-            console.error(`原始数据 - ${row['Year']}年 ${market}:`, {
-                '国家/地区': market,
-                '年份': row['Year'],
-                'Excel表格中的在线预订值': row['Online Bookings'],
-                'Excel表格中的总预订值': row['Gross Bookings'],
-                'Excel表格中的在线渗透率': ((row['Online Bookings'] / row['Gross Bookings']) * 100).toFixed(1) + '%'
+
+            // Print original data
+            console.error(`Original data - ${row['Year']} ${market}:`, {
+                'Country/Region': market,
+                'Year': row['Year'],
+                'Online Bookings in Excel': row['Online Bookings'],
+                'Gross Bookings in Excel': row['Gross Bookings'],
+                'Online Penetration in Excel': ((row['Online Bookings'] / row['Gross Bookings']) * 100).toFixed(1) + '%'
             });
             
-            // 不再排除任何国家
             return true;
         })
         .map(row => {
-            // 标准化市场名称
-            let market = row['Market'];
-            if (market === 'Australia-New Zealand' || market === 'Australia/New Zealand') {
-                market = 'Australia & New Zealand';
-            }
-
             const processedData = {
-                Market: market,
+                Market: row['Market'],
                 Year: row['Year'],
                 OnlinePenetration: row['Online Bookings'] / row['Gross Bookings'],
                 OnlineBookings: row['Online Bookings'],
                 GrossBookings: row['Gross Bookings']
             };
 
-            // 打印处理后的数据
-            console.error(`Race Chart处理后数据 - ${row['Year']}年 ${market}:`, {
-                '国家/地区': market,
-                '年份': row['Year'],
-                'Race Chart使用的在线预订值': processedData.OnlineBookings,
-                'Race Chart使用的总预订值': processedData.GrossBookings,
-                'Race Chart使用的在线渗透率': (processedData.OnlinePenetration * 100).toFixed(1) + '%'
+            // Print processed data
+            console.error(`Processed data for Race Chart - ${row['Year']} ${row['Market']}:`, {
+                'Country/Region': row['Market'],
+                'Year': row['Year'],
+                'Online Bookings for Race Chart': processedData.OnlineBookings,
+                'Gross Bookings for Race Chart': processedData.GrossBookings,
+                'Online Penetration for Race Chart': (processedData.OnlinePenetration * 100).toFixed(1) + '%'
             });
 
             return processedData;
         });
-            
-    // Store APAC countries data globally so race-chart.js can access it
-    window.processedCountriesData = apacCountriesData;
+
+    // Store Middle Eastern countries data globally so race-chart.js can access it
+    window.processedCountriesData = middleEastCountriesData;
     
     // Process data for APAC countries - 这里保留所有国家数据，后续在可视化时再过滤
     const processedData = jsonData
