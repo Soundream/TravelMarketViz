@@ -224,7 +224,7 @@ function processDataByCountry(jsonData) {
     const middleEastCountriesData = jsonData
         .filter(row => {
             // Filter for Middle Eastern region with market and year data
-            if (!['Egypt', 'Qatar', 'Rest of Middle East', 'Saudi Arabia', 'U.A.E.'].includes(row['Market']) || !row['Year']) {
+            if (!['Egypt', 'Qatar', 'Rest of Middle East', 'Saudi Arabia', 'U.A.E.', 'Malaysia', 'Indonesia'].includes(row['Market']) || !row['Year']) {
                 return false;
             }
             

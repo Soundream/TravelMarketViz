@@ -53,7 +53,8 @@ function createRaceChart(data, year) {
 
     // Replace APAC countries data with Middle Eastern countries data
     const middleEastCountriesData = window.processedCountriesData ? 
-        window.processedCountriesData.filter(d => d.Year === year && ['Egypt', 'Qatar', 'Rest of Middle East', 'Saudi Arabia', 'U.A.E.'].includes(d.Market)) : [];
+        window.processedCountriesData.filter(d => d.Year === year && 
+            ['Egypt', 'Qatar', 'Rest of Middle East', 'Saudi Arabia', 'U.A.E.', 'Malaysia', 'Indonesia'].includes(d.Market)) : [];
 
     console.log("Middle Eastern countries data:", middleEastCountriesData);
 
@@ -106,7 +107,8 @@ function createRaceChart(data, year) {
     // Process data
     const processedData = combinedData.map(d => {
         const regionName = d.Region;
-        const isApacCountry = middleEastCountriesData.some(c => c.Market === regionName);
+        const isApacCountry = middleEastCountriesData.some(c => c.Market === regionName) || 
+                            ['Malaysia', 'Indonesia'].includes(regionName);
         
         // Special handling for display names
         let displayName = regionName;
@@ -141,8 +143,8 @@ function createRaceChart(data, year) {
             color = '#32CD32';
         } else if (regionName === 'North America') {
             color = '#40E0D0';
-        } else if (regionName === 'Asia-Pacific') {
-            color = '#FF4B4B'; // Original red color for Asia-Pacific
+        } else if (regionName === 'Asia-Pacific' || ['Malaysia', 'Indonesia'].includes(regionName)) {
+            color = '#FF4B4B'; // Original red color for Asia-Pacific and new countries
         } else {
             color = '#888888';
         }
@@ -259,19 +261,7 @@ function createRaceChart(data, year) {
         bargap: 0.15,
         font: {
             family: 'Monda'
-        },
-        shapes: [{
-            type: 'line',
-            x0: 0,
-            y0: countryData.length - 0.5,
-            x1: xAxisMax * 1.2,
-            y1: countryData.length - 0.5,
-            line: {
-                color: '#ddd',
-                width: 1,
-                dash: 'dot'
-            }
-        }]
+        }
     };
 
     // 创建配置
@@ -314,7 +304,8 @@ function updateRaceChart(data, year, forceUpdate = false) {
     // 获取当前年份的数据并处理
     const yearData = data.filter(d => d.Year === year);
     const middleEastCountriesData = window.processedCountriesData ? 
-        window.processedCountriesData.filter(d => d.Year === year && ['Egypt', 'Qatar', 'Rest of Middle East', 'Saudi Arabia', 'U.A.E.'].includes(d.Market)) : [];
+        window.processedCountriesData.filter(d => d.Year === year && 
+            ['Egypt', 'Qatar', 'Rest of Middle East', 'Saudi Arabia', 'U.A.E.', 'Malaysia', 'Indonesia'].includes(d.Market)) : [];
 
     // 组合并处理数据
     let combinedData = [...yearData];
@@ -355,7 +346,8 @@ function updateRaceChart(data, year, forceUpdate = false) {
     // 处理数据
     const processedData = combinedData.map(d => {
         const regionName = d.Region;
-        const isApacCountry = middleEastCountriesData.some(c => c.Market === regionName);
+        const isApacCountry = middleEastCountriesData.some(c => c.Market === regionName) || 
+                            ['Malaysia', 'Indonesia'].includes(regionName);
         
         // 特殊处理Australia & New Zealand，其他国家保持全名
         let displayName = regionName;
@@ -390,8 +382,8 @@ function updateRaceChart(data, year, forceUpdate = false) {
             color = '#32CD32';
         } else if (regionName === 'North America') {
             color = '#40E0D0';
-        } else if (regionName === 'Asia-Pacific') {
-            color = '#FF4B4B'; // Original red color for Asia-Pacific
+        } else if (regionName === 'Asia-Pacific' || ['Malaysia', 'Indonesia'].includes(regionName)) {
+            color = '#FF4B4B'; // Original red color for Asia-Pacific and new countries
         } else {
             color = '#888888';
         }
@@ -478,19 +470,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
             plot_bgcolor: 'rgba(0,0,0,0)',
             showlegend: false,
             bargap: 0.15,
-            font: { family: 'Monda' },
-            shapes: [{
-                type: 'line',
-                x0: 0,
-                y0: countryData.length - 0.5,
-                x1: xAxisMax * 1.2,
-                y1: countryData.length - 0.5,
-                line: {
-                    color: '#ddd',
-                    width: 1,
-                    dash: 'dot'
-                }
-            }]
+            font: { family: 'Monda' }
         }, {
             displayModeBar: false,
             responsive: false
@@ -535,19 +515,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
         }, {
             xaxis: {
                 range: [0, xAxisMax * 1.2]
-            },
-            shapes: [{
-                type: 'line',
-                x0: 0,
-                y0: countryData.length - 0.5,
-                x1: xAxisMax * 1.2,
-                y1: countryData.length - 0.5,
-                line: {
-                    color: '#ddd',
-                    width: 1,
-                    dash: 'dot'
-                }
-            }]
+            }
         }, {
             transition: {
                 duration: 0
