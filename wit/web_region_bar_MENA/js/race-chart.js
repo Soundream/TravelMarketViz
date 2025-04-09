@@ -119,6 +119,10 @@ function createRaceChart(data, year) {
         if (regionName === 'Middle East (sum)') {
             displayName = 'Middle East (sum)';
         }
+        // Convert U.A.E. to UAE
+        if (regionName === 'U.A.E.') {
+            displayName = 'UAE';
+        }
 
         const isRegion = requiredRegions.includes(regionName);
         
@@ -133,7 +137,7 @@ function createRaceChart(data, year) {
         });
 
         let color;
-        if (regionName === 'Middle East (sum)' || middleEastCountriesData.some(c => c.Market === regionName)) {
+        if (regionName === 'Middle East (sum)' || (middleEastCountriesData.some(c => c.Market === regionName) && !['Malaysia', 'Indonesia'].includes(regionName))) {
             color = '#DEB887';
         } else if (regionName === 'Europe') {
             color = '#4169E1';
@@ -144,7 +148,7 @@ function createRaceChart(data, year) {
         } else if (regionName === 'North America') {
             color = '#40E0D0';
         } else if (regionName === 'Asia-Pacific' || ['Malaysia', 'Indonesia'].includes(regionName)) {
-            color = '#FF4B4B'; // Original red color for Asia-Pacific and new countries
+            color = '#FF4B4B'; // Red color for Asia-Pacific, Malaysia and Indonesia
         } else {
             color = '#888888';
         }
@@ -230,7 +234,7 @@ function createRaceChart(data, year) {
                 family: 'Monda',
                 size: 14
             },
-            range: [0, xAxisMax * 1.2],
+            range: [0, 70],
             fixedrange: false,
             ticks: 'outside',
             ticklen: 8,
@@ -252,13 +256,14 @@ function createRaceChart(data, year) {
             t: 10,
             b: 50
         },
-        height: 550,
+        height: 400,
         width: 400,
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         showlegend: false,
         barmode: 'group',
-        bargap: 0.15,
+        bargap: 0.1,
+        bargroupgap: 0.1,
         font: {
             family: 'Monda'
         }
@@ -358,6 +363,10 @@ function updateRaceChart(data, year, forceUpdate = false) {
         if (regionName === 'Middle East (sum)') {
             displayName = 'Middle East (sum)';
         }
+        // Convert U.A.E. to UAE
+        if (regionName === 'U.A.E.') {
+            displayName = 'UAE';
+        }
         
         const isRegion = requiredRegions.includes(regionName);
         
@@ -372,7 +381,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
         });
 
         let color;
-        if (regionName === 'Middle East (sum)' || middleEastCountriesData.some(c => c.Market === regionName)) {
+        if (regionName === 'Middle East (sum)' || (middleEastCountriesData.some(c => c.Market === regionName) && !['Malaysia', 'Indonesia'].includes(regionName))) {
             color = '#DEB887';
         } else if (regionName === 'Europe') {
             color = '#4169E1';
@@ -383,7 +392,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
         } else if (regionName === 'North America') {
             color = '#40E0D0';
         } else if (regionName === 'Asia-Pacific' || ['Malaysia', 'Indonesia'].includes(regionName)) {
-            color = '#FF4B4B'; // Original red color for Asia-Pacific and new countries
+            color = '#FF4B4B'; // Red color for Asia-Pacific, Malaysia and Indonesia
         } else {
             color = '#888888';
         }
@@ -464,12 +473,13 @@ function updateRaceChart(data, year, forceUpdate = false) {
                 tickfont: { family: 'Monda', size: 14 }
             },
             margin: { l: 120, r: 60, t: 10, b: 50 },
-            height: 550,
+            height: 400,
             width: 400,
             paper_bgcolor: 'rgba(0,0,0,0)',
             plot_bgcolor: 'rgba(0,0,0,0)',
             showlegend: false,
-            bargap: 0.15,
+            bargap: 0.5,
+            bargroupgap: 0.1,
             font: { family: 'Monda' }
         }, {
             displayModeBar: false,
@@ -514,7 +524,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
             texttemplate: ['%{text}B']
         }, {
             xaxis: {
-                range: [0, xAxisMax * 1.2]
+                range: [0, 70]
             }
         }, {
             transition: {
