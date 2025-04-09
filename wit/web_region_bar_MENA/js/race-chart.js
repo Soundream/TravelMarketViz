@@ -168,18 +168,11 @@ function createRaceChart(data, year) {
         .filter(d => !d.isRegion && d.value > 0.1 && !excludedRegions.includes(d.region))
         .sort((a, b) => a.value - b.value);
 
-    // 取所有区域和前9个国家（不包括被排除的地区）
-    const allRegions = regionData;
-    const top9Countries = countryData.slice(-9); // 只取前9个国家
+    // 只取国家数据，不包含区域数据
+    const targetData = countryData;
 
-    // 由于Plotly在水平条形图中是从下到上渲染，所以要将区域放在上方，需要在数组中放在后面
-    const targetData = [...top9Countries, ...allRegions];
-
-    // 获取当前最大值（可能是区域或国家的最大值）
-    const currentTopValue = Math.max(
-        top9Countries.length > 0 ? top9Countries[top9Countries.length - 1].value : 0,
-        allRegions.length > 0 ? allRegions[allRegions.length - 1].value : 0
-    );
+    // 获取当前最大值
+    const currentTopValue = countryData.length > 0 ? countryData[countryData.length - 1].value : 0;
     console.log("Current top value:", currentTopValue);
     
     // 使用历史最大值和当前最大值中的较大值
@@ -270,9 +263,9 @@ function createRaceChart(data, year) {
         shapes: [{
             type: 'line',
             x0: 0,
-            y0: top9Countries.length - 0.5,
+            y0: countryData.length - 0.5,
             x1: xAxisMax * 1.2,
-            y1: top9Countries.length - 0.5,
+            y1: countryData.length - 0.5,
             line: {
                 color: '#ddd',
                 width: 1,
@@ -424,18 +417,11 @@ function updateRaceChart(data, year, forceUpdate = false) {
         .filter(d => !d.isRegion && d.value > 0.1 && !excludedRegions.includes(d.region))
         .sort((a, b) => a.value - b.value);
 
-    // 取所有区域和前9个国家（不包括被排除的地区）
-    const allRegions = regionData;
-    const top9Countries = countryData.slice(-9); // 只取前9个国家
+    // 只取国家数据，不包含区域数据
+    const targetData = countryData;
 
-    // 由于Plotly在水平条形图中是从下到上渲染，所以要将区域放在上方，需要在数组中放在后面
-    const targetData = [...top9Countries, ...allRegions];
-
-    // 获取当前最大值（可能是区域或国家的最大值）
-    const currentTopValue = Math.max(
-        top9Countries.length > 0 ? top9Countries[top9Countries.length - 1].value : 0,
-        allRegions.length > 0 ? allRegions[allRegions.length - 1].value : 0
-    );
+    // 获取当前最大值
+    const currentTopValue = countryData.length > 0 ? countryData[countryData.length - 1].value : 0;
     console.log("Current top value:", currentTopValue);
     
     // 使用历史最大值和当前最大值中的较大值
@@ -496,9 +482,9 @@ function updateRaceChart(data, year, forceUpdate = false) {
             shapes: [{
                 type: 'line',
                 x0: 0,
-                y0: top9Countries.length - 0.5,
+                y0: countryData.length - 0.5,
                 x1: xAxisMax * 1.2,
-                y1: top9Countries.length - 0.5,
+                y1: countryData.length - 0.5,
                 line: {
                     color: '#ddd',
                     width: 1,
@@ -553,9 +539,9 @@ function updateRaceChart(data, year, forceUpdate = false) {
             shapes: [{
                 type: 'line',
                 x0: 0,
-                y0: top9Countries.length - 0.5,
+                y0: countryData.length - 0.5,
                 x1: xAxisMax * 1.2,
-                y1: top9Countries.length - 0.5,
+                y1: countryData.length - 0.5,
                 line: {
                     color: '#ddd',
                     width: 1,

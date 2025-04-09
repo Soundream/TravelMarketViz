@@ -278,8 +278,8 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
     
     // 创建背景文字
     backgroundTrace = {
-        y: [50],  // 水平居中
-        x: [Math.pow(10, (yAxisRange[0] + yAxisRange[1]) / 2)],  // 在对数坐标系中垂直居中
+        y: [50],  // Vertically centered
+        x: [Math.pow(10, (Math.log10(0.1) + Math.log10(50)) / 2)],  // Correctly centered in log scale
         mode: 'text',
         text: [getEraText(year)],
         textposition: 'middle center',
@@ -426,8 +426,15 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
     // 填充组合轨迹的数据
     filteredCountryData.forEach(d => {
         const yPos = d['Online Penetration'] * 100;
-        // Apply scaling factor first, then ensure minimum value
-        const xPos = Math.max(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor, minOnlineBookingsThreshold * appConfig.dataProcessing.bookingsScaleFactor);
+        // Define x-axis range
+        const xAxisRange = [Math.log10(0.1), Math.log10(50)];
+
+        // Update xPos calculation for countries
+        const xPos = Math.max(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor, 0.1 * appConfig.dataProcessing.bookingsScaleFactor);
+        
+        // Ensure xPos is within the axis range
+        const xPosNormalized = (Math.log10(xPos) - xAxisRange[0]) / (xAxisRange[1] - xAxisRange[0]);
+        const xPosFinal = xAxisRange[0] + xPosNormalized * (xAxisRange[1] - xAxisRange[0]);
         
         // 检查当前国家是否在后五名
         const isSmallCountry = allCountriesGrossBookings.findIndex(c => c.country === d.Country) >= allCountriesGrossBookings.length - 5;
@@ -453,7 +460,7 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
             isSmallCountry: isSmallCountry
         });
 
-        combinedCountryTrace.x.push(xPos);
+        combinedCountryTrace.x.push(xPosFinal);
         combinedCountryTrace.y.push(yPos);
         combinedCountryTrace._flagSizes.push(size);
         combinedCountryTrace._countries.push(d.Country);
@@ -476,8 +483,8 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
         const xPos = Math.log10(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor);
 
         // Ensure xPos is within the axis range
-        const xAxisMin = Math.log10(1);
-        const xAxisMax = Math.log10(800);
+        const xAxisMin = Math.log10(0.1);
+        const xAxisMax = Math.log10(50);
         const xPosNormalized = (xPos - xAxisMin) / (xAxisMax - xAxisMin);
         const xPosFinal = xAxisMin + xPosNormalized * (xAxisMax - xAxisMin);
         const yPos = d['Online Penetration'] * 100;
@@ -552,9 +559,9 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
                 size: 20
             },
             tickmode: 'array',
-            ticktext: ['1', '2', '5', '10', '20', '50', '100', '200', '500', '800'],
-            tickvals: [1, 2, 5, 10, 20, 50, 100, 200, 500, 800],
-            range: [Math.log10(1), Math.log10(800)],
+            ticktext: ['0.1', '0.5', '1', '5', '10', '20', '50'],
+            tickvals: [0.1, 0.5, 1, 5, 10, 20, 50],
+            range: [Math.log10(0.1), Math.log10(50)],
             autorange: false,
             showticklabels: true,
             ticks: 'outside',
