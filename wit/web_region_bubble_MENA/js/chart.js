@@ -136,6 +136,10 @@ function computeBubbleSize(grossBookings, maxGrossBookings, minSize = 10, maxSiz
     const clamped = Math.max(0, Math.min(1, ratio)); // 限制在 [0, 1]
     const size = minSize + (maxSize - minSize) * clamped;
 
+    // Apply scaling factor to increase overall size
+    const scalingFactor = 3; // Increase size by 20%
+    const enhancedSize = size * scalingFactor;
+
     // Debug 日志 - 使用 window.debug 标志来控制是否输出调试信息
     if (window.debug) {
         console.debug('Bubble size calculation:', {
@@ -143,11 +147,11 @@ function computeBubbleSize(grossBookings, maxGrossBookings, minSize = 10, maxSiz
             maxGrossBookings,
             ratio,
             clamped,
-            finalSize: size
+            finalSize: enhancedSize
         });
     }
 
-    return size;
+    return enhancedSize;
 }
 
 // Function to process Excel data by region
@@ -213,13 +217,13 @@ function processDataByRegion(jsonData) {
 function processDataByCountry(jsonData) {
     console.log('Processing country data with', jsonData.length, 'rows'); // Debug log
     
-    // Set selected countries from config
-    selectedCountries = appConfig.defaultSelectedCountries || [];
+    // Set selected countries to include Malaysia, Indonesia, and Middle East countries
+    selectedCountries = ['Malaysia', 'Indonesia', 'Egypt', 'Qatar', 'Rest of Middle East', 'Saudi Arabia', 'U.A.E.'];
     console.log('Selected countries:', selectedCountries);
     
-    // Process data for Middle East countries
+    // Process data for selected countries
     const processedData = jsonData
-        .filter(row => row['Region'] === 'Middle East' && row['Market'] && row['Year'])
+        .filter(row => selectedCountries.includes(row['Market']) && row['Year'])
         .map(row => {
             // Standardize market names
             let market = row['Market'];
@@ -290,7 +294,9 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
 
     // 创建区域气泡轨迹
     const regionTraces = uniqueRegions.map(region => {
-        if (region === 'Middle East') return null; // Exclude Middle East
+        // Exclude regions without PNG images
+        if (!appConfig.countryLogos[region]) return null;
+        if (region === 'Middle East' || region === 'Asia-Pacific') return null; // Exclude Middle East and Asia-Pacific
         const regionData = yearRegionData.filter(d => d.Region === region);
         const colorKey = appConfig.regionColors[region] || region;
 
@@ -354,40 +360,40 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
         };
     }).filter(region => region !== null);
     
-    // Add APAC region with red color
-    const apacRegionData = yearRegionData.filter(d => d.Region === 'Asia-Pacific');
-    regionTraces.push({
-        name: 'Asia-Pacific',
-        y: apacRegionData.map(d => d['Online Penetration'] * 100),
-        x: apacRegionData.map(d => d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor),
-        mode: 'markers',
-        hoverinfo: 'text',
-        hovertext: apacRegionData.map(d => `
-            <b style="font-family: Monda">${d.Region}</b><br>
-            <span style="font-family: Monda">Share of Online Bookings: ${(d['Online Penetration'] * 100).toFixed(1)}%<br>
-            Online Bookings: $${(d['Online Bookings']).toFixed(1)}B<br>
-            Gross Bookings: $${(d['Gross Bookings']).toFixed(1)}B<br>
-            Bubble Size: ${computeBubbleSize(d['Gross Bookings'], maxGrossBookings, 
-                appConfig.chart.minBubbleSize, appConfig.chart.maxBubbleSize).toFixed(1)}</span>
-        `),
-        marker: {
-            size: apacRegionData.map(d => computeBubbleSize(
-                d['Gross Bookings'],
-                maxGrossBookings,
-                appConfig.chart.minBubbleSize || 10,
-                appConfig.chart.maxBubbleSize || 120
-            )),
-            color: '#FF4B4B', // Set APAC bubble color to '#FF4B4B'
-            opacity: 0.75,
-            line: {
-                color: 'rgba(255, 255, 255, 0.8)',
-                width: 1.5
-            }
-        },
-        showlegend: true,
-        legendgroup: 'Asia-Pacific',
-        type: 'scatter'
-    });
+    // // Add APAC region with red color
+    // const apacRegionData = yearRegionData.filter(d => d.Region === 'Asia-Pacific');
+    // regionTraces.push({
+    //     name: 'Asia-Pacific',
+    //     y: apacRegionData.map(d => d['Online Penetration'] * 100),
+    //     x: apacRegionData.map(d => d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor),
+    //     mode: 'markers',
+    //     hoverinfo: 'text',
+    //     hovertext: apacRegionData.map(d => `
+    //         <b style="font-family: Monda">${d.Region}</b><br>
+    //         <span style="font-family: Monda">Share of Online Bookings: ${(d['Online Penetration'] * 100).toFixed(1)}%<br>
+    //         Online Bookings: $${(d['Online Bookings']).toFixed(1)}B<br>
+    //         Gross Bookings: $${(d['Gross Bookings']).toFixed(1)}B<br>
+    //         Bubble Size: ${computeBubbleSize(d['Gross Bookings'], maxGrossBookings, 
+    //             appConfig.chart.minBubbleSize, appConfig.chart.maxBubbleSize).toFixed(1)}</span>
+    //     `),
+    //     marker: {
+    //         size: apacRegionData.map(d => computeBubbleSize(
+    //             d['Gross Bookings'],
+    //             maxGrossBookings,
+    //             appConfig.chart.minBubbleSize || 10,
+    //             appConfig.chart.maxBubbleSize || 120
+    //         )),
+    //         color: '#FF4B4B', // Set APAC bubble color to '#FF4B4B'
+    //         opacity: 0.75,
+    //         line: {
+    //             color: 'rgba(255, 255, 255, 0.8)',
+    //             width: 1.5
+    //         }
+    //     },
+    //     showlegend: true,
+    //     legendgroup: 'Asia-Pacific',
+    //     type: 'scatter'
+    // });
     
     // 更新组合国家轨迹
     const combinedCountryTrace = {
@@ -478,7 +484,7 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
         
         // 计算相对尺寸
         const relativeSize = Math.pow(d['Gross Bookings'] / maxGrossBookings, 0.6);
-        const targetSize = relativeSize * 0.1+ 0.01;
+        const targetSize = relativeSize * 0.1 + 0.01;
         
         const logoUrl = appConfig.countryLogos[d.Country];
         if (!logoUrl) {
@@ -490,14 +496,19 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
         const imagePath = './' + logoUrl.replace(/^[./]+/, '');
         logMessage(`Creating flag image for ${d.Country} at path: ${imagePath}`);
 
+        // Apply scaling factor to image size
+        const scalingFactor = 3; // Use the same scaling factor as for bubbles
+        const scaledSizeX = targetSize * 200 * scalingFactor;
+        const scaledSizeY = targetSize * 200 * scalingFactor;
+
         return {
             source: imagePath,
-            x: xPosFinal  ,
+            x: xPosFinal,
             y: yPos,
             xref: 'x',
             yref: 'y',
-            sizex: targetSize * 200, // 调整尺寸比例
-            sizey: targetSize * 200,
+            sizex: scaledSizeX, // Adjusted size
+            sizey: scaledSizeY, // Adjusted size
             xanchor: 'center',
             yanchor: 'middle',
             sizing: 'contain',
