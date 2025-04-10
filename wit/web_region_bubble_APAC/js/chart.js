@@ -279,7 +279,7 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
     // 创建背景文字
     backgroundTrace = {
         y: [50],  // Vertically centered
-        x: [Math.pow(10, (Math.log10(0.1) + Math.log10(50)) / 2)],  // Correctly centered in log scale
+        x: [Math.pow(10, (Math.log10(0.5) + Math.log10(500)) / 2)],  // 使用对数中点确保水平居中
         mode: 'text',
         text: [getEraText(year)],
         textposition: 'middle center',
@@ -426,15 +426,10 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
     // 填充组合轨迹的数据
     filteredCountryData.forEach(d => {
         const yPos = d['Online Penetration'] * 100;
-        // Define x-axis range
-        const xAxisRange = [Math.log10(0.5), Math.log10(500)];
-
-        // Update xPos calculation for countries
-        const xPos = Math.max(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor, 0.5);
         
-        // Ensure xPos is within the axis range
-        const xPosNormalized = (Math.log10(xPos) - xAxisRange[0]) / (xAxisRange[1] - xAxisRange[0]);
-        const xPosFinal = xAxisRange[0] + xPosNormalized * (xAxisRange[1] - xAxisRange[0]);
+        // 确保在对数刻度下正确处理x轴位置
+        const xPos = Math.max(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor, 0.5);
+        const xPosFinal = Math.log10(xPos);  // 直接使用对数值，因为我们的轴已经是对数刻度
         
         // 检查当前国家是否在后五名
         const isSmallCountry = allCountriesGrossBookings.findIndex(c => c.country === d.Country) >= allCountriesGrossBookings.length - 5;
@@ -480,18 +475,13 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
     // 创建国旗图片配置
     const flagImages = filteredCountryData.map(d => {
         // 如果 Online Bookings 小于 0.5，不显示国旗
-        if (d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor < 0.5) {
+        const onlineBookings = d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor;
+        if (onlineBookings < 0.5) {
             return null;
         }
 
-        // Calculate x-position using logarithmic scale
-        const xPos = Math.log10(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor);
-
-        // Ensure xPos is within the axis range
-        const xAxisMin = Math.log10(0.5);  // 修改为 0.5
-        const xAxisMax = Math.log10(500);  // 修改为 500
-        const xPosNormalized = (xPos - xAxisMin) / (xAxisMax - xAxisMin);
-        const xPosFinal = xAxisMin + xPosNormalized * (xAxisMax - xAxisMin);
+        // 直接使用对数值作为x坐标
+        const xPosFinal = Math.log10(Math.max(onlineBookings, 0.5));
         const yPos = d['Online Penetration'] * 100;
         
         // 计算相对尺寸
@@ -506,7 +496,6 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
 
         // 确保路径正确
         const imagePath = './' + logoUrl.replace(/^[./]+/, '');
-        logMessage(`Creating flag image for ${d.Country} at path: ${imagePath}`);
 
         // Apply scaling factor to image size
         const scalingFactor = 3;
@@ -526,7 +515,8 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
             sizing: 'contain',
             opacity: 1,
             layer: 'above',
-            visible: true
+            visible: true,
+            name: d.Country  // 添加国家名称用于标识
         };
     }).filter(img => img !== null);
     
@@ -655,16 +645,11 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
         // 初次渲染使用 newPlot
         Plotly.newPlot('bubble-chart', allTraces, layout, config).then(function() {
             logMessage('Chart created successfully');
-            // 验证国旗图片是否正确加载
-            logMessage(`Number of flag images: ${flagImages.length}`);
-            flagImages.forEach(img => {
-                logMessage(`Flag image: ${img.source}, size: ${img.sizex}`);
-            });
         }).catch(error => {
             logMessage('Error creating chart: ' + error, 'error');
         });
     } else {
-        // 使用 animate 立即更新所有 traces 和 layout
+        // 使用 animate 更新，确保图片和数据同步更新
         const animationConfig = {
             transition: { 
                 duration: 0,
@@ -678,12 +663,40 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
         };
         
         try {
+            // 确保layout中的images数组与现有的保持一致的顺序
+            const currentLayout = chartDiv.layout || {};
+            const currentImages = currentLayout.images || [];
+            
+            // 更新现有图片的位置和大小，保持顺序不变
+            const updatedImages = currentImages.map(currentImg => {
+                const matchingNewImg = flagImages.find(newImg => newImg.name === currentImg.name);
+                if (matchingNewImg) {
+                    return {
+                        ...currentImg,
+                        x: matchingNewImg.x,
+                        y: matchingNewImg.y,
+                        sizex: matchingNewImg.sizex,
+                        sizey: matchingNewImg.sizey
+                    };
+                }
+                return currentImg;
+            });
+
+            // 添加新的图片
+            flagImages.forEach(newImg => {
+                if (!currentImages.find(img => img.name === newImg.name)) {
+                    updatedImages.push(newImg);
+                }
+            });
+
+            const updatedLayout = {
+                ...layout,
+                images: updatedImages
+            };
+
             Plotly.animate('bubble-chart', {
                 data: allTraces,
-                layout: {
-                    ...layout,
-                    datarevision: Date.now()
-                }
+                layout: updatedLayout
             }, animationConfig).then(() => {
                 logMessage('Chart and flag images updated with linear transition');
             }).catch(error => {
@@ -767,11 +780,17 @@ function togglePlay() {
             
             const interpolatedCountryData = currentCountryData.map(d => {
                 const nextData = nextCountryData.find(nd => nd.Country === d.Country) || d;
+                // 在对数空间中进行插值
+                const currentLogBookings = Math.log10(d['Online Bookings'] || 0.5);
+                const nextLogBookings = Math.log10(nextData['Online Bookings'] || 0.5);
+                const interpolatedLogBookings = currentLogBookings + (nextLogBookings - currentLogBookings) * progress;
+                const interpolatedBookings = Math.pow(10, interpolatedLogBookings);
+
                 return {
                     Year: currentYear,
                     Country: d.Country,
                     'Gross Bookings': d['Gross Bookings'] + (nextData['Gross Bookings'] - d['Gross Bookings']) * progress,
-                    'Online Bookings': d['Online Bookings'] + (nextData['Online Bookings'] - d['Online Bookings']) * progress,
+                    'Online Bookings': interpolatedBookings,
                     'Online Penetration': d['Online Penetration'] + (nextData['Online Penetration'] - d['Online Penetration']) * progress
                 };
             });
