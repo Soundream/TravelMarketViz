@@ -78,7 +78,7 @@ function init() {
         setTimeout(() => {
             isPlaying = true;
             let startTime = null;
-            const animationDuration = 100000; // 100 seconds for one complete cycle
+            const animationDuration = 323000; // 100 seconds for one complete cycle
             const frameInterval = 50; // Limit updates to every 50ms (20fps)
             let lastUpdateTime = 0;
             

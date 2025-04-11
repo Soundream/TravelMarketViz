@@ -26,11 +26,11 @@ matplotlib.use('Agg')  # Use Agg backend for better performance
 
 # Add argument parser
 parser = argparse.ArgumentParser(description='Generate airline revenue bar chart race visualization directly as video')
-parser.add_argument('--fps', type=int, default=60, help='Frames per second (default: 60)')
+parser.add_argument('--fps', type=int, default=30, help='Frames per second (default: 60)')
 parser.add_argument('--output', type=str, default='output/airline_revenue.mp4', help='Output video file path')
 parser.add_argument('--quality', type=str, choices=['high', 'medium', 'low'], default='high', 
                     help='Video quality: high, medium, or low (default: high)')
-parser.add_argument('--frames-per-year', type=int, default=6000, help='Number of frames to generate per year (default: 600)')
+parser.add_argument('--frames-per-year', type=int, default=300, help='Number of frames to generate per year (default: 600)')
 parser.add_argument('--preserve-colors', action='store_true', default=True, 
                     help='Preserve original colors in video (default: True)')
 parser.add_argument('--quarters-only', action='store_true', help='Only generate frames for each quarter')
@@ -557,46 +557,44 @@ def create_frame(args):
     # 增加右侧空间以容纳logo，避免logo被裁剪
     ax.set_xlim(0, display_max * 1.5)  # 从1.3倍增加到1.5倍
     
-    # 首先添加数值标签，使用统一的位置计算逻辑
+    # 预先计算所有元素的位置，确保同步
+    element_positions = []
     for i, bar in enumerate(bars):
         value = quarter_data[i]
+        # 使用统一的位置计算公式
+        base_position = value
+        text_offset = display_max * 0.01  # 文本偏移量
+        logo_offset = display_max * 0.08  # 减小logo偏移量，从0.15改为0.08
+        
+        element_positions.append({
+            'index': i,
+            'y': y_positions[i],
+            'value': value,
+            'text_position': base_position + text_offset,
+            'logo_position': base_position + logo_offset
+        })
+    
+    # 按照预计算的位置添加文本
+    for pos in element_positions:
+        value = pos['value']
         value_text = format_revenue(value, None)
-        
-        # 使用统一公式计算文本位置
-        text_position = value + (display_max * 0.01)
-        
-        ax.text(text_position, y_positions[i], value_text,
+        ax.text(pos['text_position'], pos['y'], value_text,
                 va='center', ha='left', fontsize=VALUE_FONT_SIZE, color=text_color)
     
-    # 现在添加所有处理过的logo，使用与数值标签相同的位置计算逻辑
+    # 使用相同的预计算位置添加logo
     for logo_data in logos_data:
         i = logo_data['index']
-        y = logo_data['y']
         img_array = logo_data['img_array']
-        value = logo_data['value']
+        pos = element_positions[i]
         
-        # 计算文本宽度
-        value_text = format_revenue(value, None)
-        value_width = len(value_text) * VALUE_FONT_SIZE * 0.8  # 进一步增加文本宽度估计值
+        # 创建OffsetImage对象，增大zoom值
+        img_box = OffsetImage(img_array, zoom=0.9)  # 增大zoom从0.5到0.9
+        img_box.image.axes = ax
         
-        # 增加logo和数值标签之间的间距，防止重叠
-        margin = display_max * 0.06  # 增加间距比例
-        
-        # 使用固定的相对偏移量，避免位置计算不一致，添加更多空间
-        x_offset = value + (display_max * 0.01) + value_width + margin
-        
-        # 缩放因子固定，避免在帧之间变化
-        zoom_factor = 0.8
-        
-        # 特殊处理Air France-KLM logo
-        current_logo_path = logos[i] if i < len(logos) else None
-        if current_logo_path == "airline-bar-video/logos/Air-France-KLM-Holding-Logo.png":
-            zoom_factor = 0.5  # 对特定logo减小缩放因子
-        
-        imagebox = OffsetImage(img_array, zoom=zoom_factor)
-        ab = AnnotationBbox(imagebox, (x_offset, y),
-                          box_alignment=(0, 0.5),  # 左中对齐
-                          frameon=False)
+        # 使用预计算的logo位置创建AnnotationBbox
+        ab = AnnotationBbox(img_box, (pos['logo_position'], pos['y']),
+                           frameon=False,
+                           box_alignment=(0, 0.5))
         ax.add_artist(ab)
     
     # Set fixed y-axis limits - reduced padding to move bars up
