@@ -155,14 +155,14 @@ function processDataByRegion(jsonData) {
     console.log('Processing region data with', jsonData.length, 'rows'); // Debug log
     const regionData = {};
     
-    // Get unique regions first, including 'Asia-Pacific'
+    // Get unique regions first, excluding 'Asia-Pacific'
     uniqueRegions = [...new Set(jsonData.map(row => {
         // Map old region names to new ones
         const region = row['Region'];
-        if (region === 'APAC') return 'Asia-Pacific';
+        if (region === 'APAC') return 'Asia-Pacific (sum)';
         if (region === 'LATAM') return 'Latin America';
         return region;
-    }))];
+    }))].filter(region => region !== 'Asia-Pacific (sum)'); // Filter out Asia-Pacific
     
     console.log('Unique regions:', uniqueRegions);
     
@@ -170,8 +170,11 @@ function processDataByRegion(jsonData) {
         const year = row['Year'];
         let region = row['Region'];
         // Map old region names to new ones
-        if (region === 'APAC') region = 'Asia-Pacific';
+        if (region === 'APAC') region = 'Asia-Pacific (sum)';
         if (region === 'LATAM') region = 'Latin America';
+        
+        // Skip Asia-Pacific region
+        if (region === 'Asia-Pacific (sum)') return;
         
         if (!regionData[year]) {
             regionData[year] = {};
@@ -246,9 +249,27 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
     
     // Filter data for the current year
     const yearRegionData = regionData;  // 已经是插值后的数据
+    const yearCountryData = countryData; // 已经是插值后的数据
+    
+    // 需要在气泡图中过滤掉的国家 - 但不在总和计算中排除
+    const excludedCountries = ['Taiwan', 'Hong Kong', 'Macau'];
+    
+    // 最小在线预订值阈值(十亿)
+    const minOnlineBookingsThreshold = 1.0;
+    
+    // Filter country data - 仅在气泡图显示中排除特定国家
+    const filteredCountryData = yearCountryData.filter(d => {
+        const matchesYear = d.Year === year;
+        const isSelected = selectedCountries.includes(d.Country);
+        const isExcluded = excludedCountries.includes(d.Country);
+        const hasEnoughOnlineBookings = d['Online Bookings'] >= minOnlineBookingsThreshold;
+        
+        return matchesYear && isSelected && !isExcluded && hasEnoughOnlineBookings;
+    });
+    logMessage('Year country data count: ' + filteredCountryData.length);
     
     // 计算全局最大 Gross Bookings（排除无效值）
-    const allData = regionData.filter(d => 
+    const allData = [...regionData, ...countryData].filter(d => 
         d['Gross Bookings'] && !isNaN(d['Gross Bookings']) && d['Gross Bookings'] > 0
     );
     const maxGrossBookings = d3.max(allData, d => d['Gross Bookings']);
@@ -276,7 +297,7 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
     // 创建区域气泡轨迹
     const regionTraces = uniqueRegions.map(region => {
         const regionData = yearRegionData.filter(d => d.Region === region);
-        const colorKey = region === 'Asia-Pacific' ? 'Asia-Pacific' : region;
+        const colorKey = region === 'Asia-Pacific (sum)' ? 'Asia-Pacific' : region;
 
         // 获取所有区域的 Gross Bookings 并排序
         const allRegionsGrossBookings = yearRegionData.map(d => ({
@@ -338,8 +359,131 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
         };
     });
     
-    // 合并所有轨迹，只包含背景和区域气泡
-    const allTraces = [backgroundTrace, ...regionTraces];
+    // 更新组合国家轨迹
+    const combinedCountryTrace = {
+        name: 'Country Bubbles',
+        x: [],
+        y: [],
+        mode: 'markers',  // 移除 text 模式
+        hoverinfo: 'text',
+        hovertext: [],
+        marker: {
+            size: [],
+            color: 'rgba(255,255,255,0)',
+            line: {
+                color: 'rgba(200,200,200,0)',
+                width: 0
+            }
+        },
+        showlegend: false,
+        _flagSizes: [],
+        _countries: []
+    };
+
+    // 获取所有国家的 Gross Bookings 并排序
+    const allCountriesGrossBookings = filteredCountryData.map(d => ({
+        country: d.Country,
+        grossBookings: d['Gross Bookings']
+    }));
+    allCountriesGrossBookings.sort((a, b) => b.grossBookings - a.grossBookings);
+
+    // 填充组合轨迹的数据
+    filteredCountryData.forEach(d => {
+        const yPos = d['Online Penetration'] * 100;
+        // Apply scaling factor first, then ensure minimum value
+        const xPos = Math.max(d['Online Bookings'] * appConfig.dataProcessing.bookingsScaleFactor, minOnlineBookingsThreshold * appConfig.dataProcessing.bookingsScaleFactor);
+        
+        // 检查当前国家是否在后五名
+        const isSmallCountry = allCountriesGrossBookings.findIndex(c => c.country === d.Country) >= allCountriesGrossBookings.length - 5;
+        
+        // 使用统一的气泡大小计算函数
+        let size = computeBubbleSize(
+            d['Gross Bookings'],
+            maxGrossBookings,
+            appConfig.chart.minBubbleSize || 10,
+            appConfig.chart.maxBubbleSize || 120
+        );
+
+        // 如果是较小的国家，减小气泡大小
+        if (isSmallCountry) {
+            // 减小 30% 的大小，但不小于最小气泡尺寸
+            const minSize = appConfig.chart.minBubbleSize || 10;
+            size = Math.max(size * 0.7, minSize);
+        }
+
+        console.log(`${year} - Country ${d.Country} bubble:`, {
+            grossBookings: d['Gross Bookings'],
+            size: size,
+            isSmallCountry: isSmallCountry
+        });
+
+        combinedCountryTrace.x.push(xPos);
+        combinedCountryTrace.y.push(yPos);
+        combinedCountryTrace._flagSizes.push(size);
+        combinedCountryTrace._countries.push(d.Country);
+        combinedCountryTrace.hovertext.push(`
+            <b style="font-family: Monda">${d.Country}</b><br>
+            <span style="font-family: Monda">Share of Online Bookings: ${(d['Online Penetration'] * 100).toFixed(1)}%<br>
+            Online Bookings: $${(d['Online Bookings']).toFixed(1)}B<br>
+            Gross Bookings: $${(d['Gross Bookings']).toFixed(1)}B<br>
+            Bubble Size: ${size.toFixed(1)}</span>
+        `);
+        combinedCountryTrace.marker.size.push(size);
+    });
+
+    // 合并所有轨迹
+    const allTraces = [backgroundTrace, ...regionTraces, combinedCountryTrace];
+    
+    // 创建国旗图片配置
+    const flagImages = filteredCountryData.map(d => {
+        // 计算x坐标，确保在对数坐标下正确显示
+        const minBooking = d3.min(processedCountryData, d => d['Online Bookings']);
+        const maxBooking = d3.max(processedCountryData, d => d['Online Bookings']);
+
+// 对于每个国家，使用下面的公式计算 x 坐标：
+        // const u = 0.003*(Math.log10(d['Online Bookings']) - Math.log10(minBooking)) / (Math.log10(maxBooking) - Math.log10(minBooking));
+        
+        // const xPos = 1 + u * (800 - 1);
+        const baseU = (Math.log10(d['Online Bookings']) - Math.log10(minBooking)) / (Math.log10(maxBooking) - Math.log10(minBooking));
+
+// 采用压缩函数：f(u)= 1 - sqrt(1 - u)
+// 当 u 接近 1 时 f(u) 的增长会放缓，从而让较大的 d 值增长变慢
+const adjustedU = 1 - Math.sqrt(1 - baseU);
+
+// 将 adjustedU 映射到 x 轴的数据范围 [1,800]
+const xPos = 1 + 0.003*adjustedU * (800 - 1);
+        const yPos = d['Online Penetration'] * 100;
+        
+        // 计算相对尺寸
+        const relativeSize = Math.pow(d['Gross Bookings'] / maxGrossBookings, 0.6);
+        const targetSize = relativeSize * 0.1+ 0.01;
+        
+        const logoUrl = appConfig.countryLogos[d.Country];
+        if (!logoUrl) {
+            logMessage(`No logo URL found for country: ${d.Country}`, 'warn');
+            return null;
+        }
+
+        // 确保路径正确
+        const imagePath = './' + logoUrl.replace(/^[./]+/, '');
+        logMessage(`Creating flag image for ${d.Country} at path: ${imagePath}`);
+
+        return {
+            source: imagePath,
+            x: xPos - 1.1,
+            y: yPos,
+            xref: 'x',
+            yref: 'y',
+            sizex: targetSize * 200, // 调整尺寸比例
+            sizey: targetSize * 200,
+            xanchor: 'center',
+            yanchor: 'middle',
+            sizing: 'contain',
+            opacity: 1,
+            layer: 'above',
+            visible: true
+        };
+    }).filter(img => img !== null);
     
     // 初始化全局 layout 变量
     layout = {
@@ -351,6 +495,7 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
             },
             y: 0.95
         },
+        images: flagImages, // 添加国旗图片配置
         xaxis: {
             title: {
                 text: 'Online Bookings (USD bn)',
@@ -456,7 +601,7 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
         displayModeBar: false
     };
 
-    logMessage(`Plotting chart with ${allTraces.length} traces`);
+    logMessage(`Plotting chart with ${allTraces.length} traces and ${flagImages.length} flag images`);
     
     // 如果是第一次渲染，使用 newPlot，否则使用分步动画实现平滑过渡
     const chartDiv = document.getElementById('bubble-chart');
@@ -465,6 +610,11 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
         // 初次渲染使用 newPlot
         Plotly.newPlot('bubble-chart', allTraces, layout, config).then(function() {
             logMessage('Chart created successfully');
+            // 验证国旗图片是否正确加载
+            logMessage(`Number of flag images: ${flagImages.length}`);
+            flagImages.forEach(img => {
+                logMessage(`Flag image: ${img.source}, size: ${img.sizex}`);
+            });
         }).catch(error => {
             logMessage('Error creating chart: ' + error, 'error');
         });
@@ -490,7 +640,7 @@ function createBubbleChart(regionData, countryData, year, progress = 0) {
                     datarevision: Date.now()
                 }
             }, animationConfig).then(() => {
-                logMessage('Chart updated with linear transition');
+                logMessage('Chart and flag images updated with linear transition');
             }).catch(error => {
                 logMessage('Error updating chart: ' + error, 'error');
             });

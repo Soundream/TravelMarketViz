@@ -131,7 +131,7 @@ for directory in [logos_dir, output_dir, frames_dir]:
 
 # Load the data from CSV
 print("Loading data...")
-data = pd.read_csv('Animated Bubble Chart Online Travel Revenue.csv')
+data = pd.read_csv('Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue1.csv')
 print(f"Loaded {len(data)} rows of data")
 
 # Process the data to get annual Q1 data and special handling for 2024
@@ -343,7 +343,7 @@ ticker_to_company = {v: k for k, v in company_to_ticker.items()}
 # Define the list of companies to display
 selected_companies = [
     'ABNB', 'BKNG', 'DESP', 'EaseMyTrip', 'EDR', 'EXPE', 'LMN',
-    'MMYT', 'Ixigo', 'OWW', 'SEERA', 'TCOM', 'TRIP', 'TRVG', 'Webjet', 'Yatra',"Travelocity",'Orbitz'
+    'MMYT', 'Ixigo', 'OWW', 'SEERA', 'TCOM', 'TRIP', 'TRVG', 'Webjet', 'Yatra', "Travelocity", 'Orbitz', 'LONG', 'TCEL'
 ]
 
 # Color dictionary for companies
@@ -353,10 +353,12 @@ color_dict = {
     'EXPE': '#778899', 'LMN': '#778899', 'OWW': '#778899',
     'SEERA': '#778899', 'TCOM': '#2577e3', 'TRIP': '#778899',
     'TRVG': '#778899', 'WBJ': '#e74c3c', 'YTRA': '#e74c3c',
-    'MMYT': '#e74c3c', 'IXIGO': '#e74c3c',"Travelocity":'#778899','Orbitz': '#778899','Webjet': '#e74c3c',
+    'MMYT': '#e74c3c', 'IXIGO': '#e74c3c', "Travelocity": '#778899', 'Orbitz': '#778899', 'Webjet': '#e74c3c',
     'Yatra': '#e74c3c',
     'Ixigo': '#e74c3c',
     'EaseMyTrip': '#00a0e2',
+    'LONG': '#E60010',  # RGB(230,0,16)
+    'TCEL': '#5B318F',  # RGB(91,49,143)
 }
 
 # Company-specific settings for logos
@@ -395,7 +397,8 @@ logo_settings = {
     'Ixigo': {'zoom': 0.26, 'offset': 120 },
     'LMN_2014_2015': {'zoom': 0.27, 'offset': 130},
     'EaseMyTrip': {'zoom': 0.26, 'offset': 120},
-    
+    'LONG': {'zoom': 0.25, 'offset': 120},  # Added Elong settings
+    'TCEL': {'zoom': 0.35, 'offset': 120},  # Added TongCheng settings
 }
 
 # Load company logos
@@ -412,6 +415,16 @@ for company in selected_companies:
             logos['PCLN_post2014'] = preprocess_logo(plt.imread(pcln_logo_path_2014))
         if os.path.exists(bkng_logo_path):
             logos['BKNG'] = preprocess_logo(plt.imread(bkng_logo_path))
+    elif company == 'TCEL':
+        # 特别处理 TongCheng logo
+        tcel_logo_path = os.path.join(logos_dir, 'TongCheng_logo.png')
+        if os.path.exists(tcel_logo_path):
+            logos['TCEL'] = preprocess_logo(plt.imread(tcel_logo_path))
+    elif company == 'LONG':
+        # 特别处理 Elong logo
+        long_logo_path = os.path.join(logos_dir, 'Elong_logo.png')
+        if os.path.exists(long_logo_path):
+            logos['LONG'] = preprocess_logo(plt.imread(long_logo_path))
     elif company == 'TRVG':
         trvg_logo_old = os.path.join(logos_dir, 'Trivago1.jpg')
         trvg_logo_mid = os.path.join(logos_dir, 'Trivago2.jpg')

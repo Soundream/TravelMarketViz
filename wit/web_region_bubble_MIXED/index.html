@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regional Online Travel Bubble Chart</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.plot.ly/plotly-2.12.1.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.2/package/dist/xlsx.full.min.js"></script>
+    <!-- Load configuration first to ensure it's available -->
+    <script src="js/config.js"></script>
+    <style>
+        .page-layout {
+            display: flex;
+            flex-direction: row;
+            position: relative;
+            width: 100%;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        .main-content {
+            flex: 1;
+            max-width: 100%;
+            padding-right: 20px;
+        }
+        
+        /* Force all fonts to be Monda */
+        * {
+            font-family: 'Monda', sans-serif !important;
+        }
+        
+        /* Make bubble chart use available space */
+        #bubble-chart {
+            width: 100% !important;
+            height: 650px !important;
+        }
+        
+        /* Make sure text is using Monda in Plotly charts */
+        .gtitle, .xtitle, .ytitle, .annotation, .legend, 
+        .modebar, .xtick text, .ytick text {
+            font-family: 'Monda', sans-serif !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-container">
+        <div class="header">
+            <h1 class="title">
+                <span class="first-line">Comparison of Online & Total Market Size</span>
+                <span class="second-line">by Region</span>
+            </h1>
+            <div class="subtitle">Online bookings represent varying shares of the total travel market by region</div>
+        </div>
+    </div>
+    
+    <div class="page-layout">
+        <div class="main-content">
+            <div class="visualization-container">
+                <div id="bubble-chart"></div>
+                <div id="error-message" style="color: red; font-weight: bold; margin: 20px; display: none;"></div>
+                <div class="timeline-container">
+                    <div id="timeline"></div>
+                    <div class="controls">
+                        <button id="playButton" class="control-button">
+                            <i id="playIcon" class="fas fa-play"></i>
+                            <i id="pauseIcon" class="fas fa-pause" style="display: none;"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Debug panel (visible by default for troubleshooting) -->
+    <div id="debug-panel" style="display: block;">
+        <div class="debug-header">
+            <span>Debug Console</span>
+            <div class="debug-controls">
+                <button id="clear-debug" class="debug-button">Clear</button>
+                <button id="close-debug" class="debug-button">Close</button>
+            </div>
+        </div>
+        <div id="debug-console"></div>
+    </div>
+    
+    <!-- Load JS Files -->
+    <script>
+        // Setup debug panel functionality
+        document.getElementById('clear-debug').addEventListener('click', function() {
+            document.getElementById('debug-console').innerHTML = '';
+        });
+        
+        document.getElementById('close-debug').addEventListener('click', function() {
+            document.getElementById('debug-panel').style.display = 'none';
+        });
+        
+        // Helper function to load script with error handling
+        function loadScript(src, callback) {
+            const script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = src;
+            script.onload = callback;
+            script.onerror = function() {
+                const errorMsg = `Failed to load script: ${src}`;
+                console.error(errorMsg);
+                const debugConsole = document.getElementById('debug-console');
+                if (debugConsole) {
+                    const logLine = document.createElement('div');
+                    logLine.className = 'log-line log-error';
+                    logLine.textContent = `[${new Date().toLocaleTimeString()}] ${errorMsg}`;
+                    debugConsole.appendChild(logLine);
+                }
+                const errorDiv = document.getElementById('error-message');
+                if (errorDiv) {
+                    errorDiv.textContent = errorMsg;
+                    errorDiv.style.display = 'block';
+                }
+            };
+            document.body.appendChild(script);
+        }
+        
+        // Load chart.js directly
+        loadScript('js/chart.js', function() {
+            // Initialize the visualization once all scripts are loaded
+            if (typeof init === 'function') {
+                window.addEventListener('DOMContentLoaded', init);
+                // Also try to initialize if DOM is already loaded
+                if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                    init();
+                }
+            } else {
+                const errorMsg = 'Error: init function not found. Check if chart.js loaded correctly.';
+                console.error(errorMsg);
+                const errorDiv = document.getElementById('error-message');
+                if (errorDiv) {
+                    errorDiv.textContent = errorMsg;
+                    errorDiv.style.display = 'block';
+                }
+            }
+        });
+    </script>
+</body>
+</html> 
