@@ -478,7 +478,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
             paper_bgcolor: 'rgba(0,0,0,0)',
             plot_bgcolor: 'rgba(0,0,0,0)',
             showlegend: false,
-            bargap: 0.5,
+            bargap: 0.1,
             bargroupgap: 0.1,
             font: { family: 'Monda' }
         }, {
@@ -489,38 +489,68 @@ function updateRaceChart(data, year, forceUpdate = false) {
         return;
     }
     
-    // 使用 Plotly.animate 实现平滑过渡
+    // 保存当前图表状态
+    const currentData = {
+        x: [...document.getElementById('race-chart').data[0].x],
+        y: [...document.getElementById('race-chart').data[0].y],
+        colors: [...document.getElementById('race-chart').data[0].marker.color]
+    };
     
-    // 1. 首先立即更新颜色和标签位置
-    Plotly.restyle('race-chart', {
-        'marker.color': [targetData.map(d => d.color)],
-        'y': [targetData.map(d => d.displayName)]
+    // 创建映射关系以便跟踪每个国家
+    const currentEntries = currentData.y.map((name, index) => ({
+        name,
+        value: currentData.x[index],
+        color: currentData.colors[index]
+    }));
+    
+    // 创建目标状态的数据映射
+    const targetMapping = new Map();
+    targetData.forEach(d => {
+        targetMapping.set(d.displayName, {
+            value: d.value,
+            color: d.color
+        });
     });
-
-    // 获取当前值和目标值
-    const currentData = document.getElementById('race-chart').data[0];
-    const currentValues = currentData.x;
-    const targetValues = targetData.map(d => d.value);
     
     // 设置动画开始时间
     const startTime = performance.now();
     const duration = appConfig.animation.duration;
-
+    
     // 创建动画函数
     function animate(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-
-        // 计算当前帧的值
-        const currentFrameValues = currentValues.map((startVal, i) => {
-            const endVal = targetValues[i];
-            return startVal + (endVal - startVal) * progress;
+        
+        // 计算当前帧的每个条形的值
+        let currentFrameEntries = currentEntries.map(entry => {
+            const targetInfo = targetMapping.get(entry.name);
+            if (!targetInfo) return entry; // 如果目标中没有这个条目，保持不变
+            
+            const startValue = entry.value;
+            const endValue = targetInfo.value;
+            const currentValue = startValue + (endValue - startValue) * progress;
+            
+            return {
+                name: entry.name,
+                value: currentValue,
+                color: targetInfo.color
+            };
         });
-
-        // 更新图表数据
+        
+        // 对当前帧的条形按值排序
+        currentFrameEntries.sort((a, b) => a.value - b.value);
+        
+        // 提取排序后的数据
+        const sortedNames = currentFrameEntries.map(e => e.name);
+        const sortedValues = currentFrameEntries.map(e => e.value);
+        const sortedColors = currentFrameEntries.map(e => e.color);
+        
+        // 更新图表，使用sorted数据
         Plotly.update('race-chart', {
-            x: [currentFrameValues],
-            text: [currentFrameValues.map(val => val.toFixed(1))],
+            x: [sortedValues],
+            y: [sortedNames],
+            'marker.color': [sortedColors],
+            text: [sortedValues.map(val => val.toFixed(1))],
             texttemplate: ['%{text}B']
         }, {
             xaxis: {
@@ -531,16 +561,16 @@ function updateRaceChart(data, year, forceUpdate = false) {
                 duration: 0
             }
         });
-
+        
         // 如果动画未完成，继续下一帧
         if (progress < 1) {
-            requestAnimationFrame(animate);
+            animationFrameId = requestAnimationFrame(animate);
+        } else {
+            // 动画结束，更新存储的数据
+            window.raceChartData = targetData;
         }
     }
-
+    
     // 开始动画
-    requestAnimationFrame(animate);
-
-    // 更新存储的数据
-    window.raceChartData = targetData;
+    animationFrameId = requestAnimationFrame(animate);
 }
