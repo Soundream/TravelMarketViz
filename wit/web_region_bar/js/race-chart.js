@@ -53,8 +53,7 @@ function createRaceChart(data, year) {
 
     // Replace APAC countries data with Middle Eastern countries data
     const middleEastCountriesData = window.processedCountriesData ? 
-        window.processedCountriesData.filter(d => d.Year === year && 
-            ['Egypt', 'Qatar', 'Rest of Middle East', 'Saudi Arabia', 'U.A.E.', 'Malaysia', 'Indonesia'].includes(d.Market)) : [];
+        window.processedCountriesData.filter(d => d.Year === year && ['Egypt', 'Qatar', 'Rest of Middle East', 'Saudi Arabia', 'U.A.E.'].includes(d.Market)) : [];
 
     console.log("Middle Eastern countries data:", middleEastCountriesData);
 
@@ -107,21 +106,16 @@ function createRaceChart(data, year) {
     // Process data
     const processedData = combinedData.map(d => {
         const regionName = d.Region;
-        const isApacCountry = middleEastCountriesData.some(c => c.Market === regionName) || 
-                            ['Malaysia', 'Indonesia'].includes(regionName);
+        const isApacCountry = middleEastCountriesData.some(c => c.Market === regionName);
         
         // Special handling for display names
         let displayName = regionName;
         if (regionName === 'Australia & New Zealand') {
             displayName = 'Australia & NZ';
         }
-        // Add "(sum)" to Middle East region display name
+        // Update Middle East region display name without (sum)
         if (regionName === 'Middle East (sum)') {
-            displayName = 'Middle East (sum)';
-        }
-        // Convert U.A.E. to UAE
-        if (regionName === 'U.A.E.') {
-            displayName = 'UAE';
+            displayName = 'Middle East';
         }
 
         const isRegion = requiredRegions.includes(regionName);
@@ -137,7 +131,7 @@ function createRaceChart(data, year) {
         });
 
         let color;
-        if (regionName === 'Middle East (sum)' || (middleEastCountriesData.some(c => c.Market === regionName) && !['Malaysia', 'Indonesia'].includes(regionName))) {
+        if (regionName === 'Middle East (sum)' || middleEastCountriesData.some(c => c.Market === regionName)) {
             color = '#DEB887';
         } else if (regionName === 'Europe') {
             color = '#4169E1';
@@ -147,8 +141,8 @@ function createRaceChart(data, year) {
             color = '#32CD32';
         } else if (regionName === 'North America') {
             color = '#40E0D0';
-        } else if (regionName === 'Asia-Pacific' || ['Malaysia', 'Indonesia'].includes(regionName)) {
-            color = '#FF4B4B'; // Red color for Asia-Pacific, Malaysia and Indonesia
+        } else if (regionName === 'Asia-Pacific') {
+            color = '#FF4B4B'; // Original red color for Asia-Pacific
         } else {
             color = '#888888';
         }
@@ -164,21 +158,16 @@ function createRaceChart(data, year) {
         };
     });
 
-    // 区分区域和国家数据并各自排序
+    // 只保留区域数据并排序
     const regionData = processedData
         .filter(d => d.isRegion && d.value > 0.1)
         .sort((a, b) => a.value - b.value);
 
-    const excludedRegions = ['Hong Kong', 'Macau', 'Taiwan'];
-    const countryData = processedData
-        .filter(d => !d.isRegion && d.value > 0.1 && !excludedRegions.includes(d.region))
-        .sort((a, b) => a.value - b.value);
-
-    // 只取国家数据，不包含区域数据
-    const targetData = countryData;
+    // 只使用区域数据
+    const targetData = [...regionData];
 
     // 获取当前最大值
-    const currentTopValue = countryData.length > 0 ? countryData[countryData.length - 1].value : 0;
+    const currentTopValue = regionData.length > 0 ? regionData[regionData.length - 1].value : 0;
     console.log("Current top value:", currentTopValue);
     
     // 使用历史最大值和当前最大值中的较大值
@@ -193,7 +182,7 @@ function createRaceChart(data, year) {
         orientation: 'h',
         marker: {
             color: targetData.map(d => d.color),
-            width: 0.2
+            width: 0.15
         },
         text: targetData.map(d => d.value),
         textposition: 'outside',
@@ -232,17 +221,20 @@ function createRaceChart(data, year) {
             zerolinecolor: '#eee',
             tickfont: {
                 family: 'Monda',
-                size: 18
+                size: 30,
+                weight: 'bold'
             },
-            range: [0, 70],
+            range: [0, xAxisMax * 1.2],
             fixedrange: false,
             ticks: 'outside',
             ticklen: 8,
-            tickwidth: 1,
+            tickwidth: 2,
             tickcolor: '#ccc',
             showticklabels: true,
-            tickvals: [0, 20, 40, 60],
-            ticktext: ['0', '20', '40', '60']
+            tickvals: [0, 200, 400, 600],
+            ticktext: ['0', '200', '400', '600'],
+            tickmode: 'array',
+            layer: 'above'
         },
         yaxis: {
             showgrid: false,
@@ -257,7 +249,7 @@ function createRaceChart(data, year) {
             l: 120,
             r: 60,
             t: 10,
-            b: 50
+            b: 70  // 增加底部边距以适应更大的字体
         },
         height: 400,
         width: 400,
@@ -265,8 +257,7 @@ function createRaceChart(data, year) {
         plot_bgcolor: 'rgba(0,0,0,0)',
         showlegend: false,
         barmode: 'group',
-        bargap: 0.1,
-        bargroupgap: 0.1,
+        bargap: 0.15,
         font: {
             family: 'Monda'
         }
@@ -275,8 +266,10 @@ function createRaceChart(data, year) {
     // 创建配置
     const config = {
         displayModeBar: false,
-        responsive: false,
-        staticPlot: false
+        responsive: true,
+        staticPlot: false,
+        doubleClick: false,
+        scrollZoom: false
     };
     
     // 渲染图表
@@ -312,8 +305,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
     // 获取当前年份的数据并处理
     const yearData = data.filter(d => d.Year === year);
     const middleEastCountriesData = window.processedCountriesData ? 
-        window.processedCountriesData.filter(d => d.Year === year && 
-            ['Egypt', 'Qatar', 'Rest of Middle East', 'Saudi Arabia', 'U.A.E.', 'Malaysia', 'Indonesia'].includes(d.Market)) : [];
+        window.processedCountriesData.filter(d => d.Year === year && ['Egypt', 'Qatar', 'Rest of Middle East', 'Saudi Arabia', 'U.A.E.'].includes(d.Market)) : [];
 
     // 组合并处理数据
     let combinedData = [...yearData];
@@ -354,21 +346,16 @@ function updateRaceChart(data, year, forceUpdate = false) {
     // 处理数据
     const processedData = combinedData.map(d => {
         const regionName = d.Region;
-        const isApacCountry = middleEastCountriesData.some(c => c.Market === regionName) || 
-                            ['Malaysia', 'Indonesia'].includes(regionName);
+        const isApacCountry = middleEastCountriesData.some(c => c.Market === regionName);
         
-        // 特殊处理Australia & New Zealand，其他国家保持全名
+        // Special handling for display names
         let displayName = regionName;
         if (regionName === 'Australia & New Zealand') {
             displayName = 'Australia & NZ';
         }
-        // Add "(sum)" to Middle East region display name
+        // Update Middle East region display name without (sum)
         if (regionName === 'Middle East (sum)') {
-            displayName = 'Middle East (sum)';
-        }
-        // Convert U.A.E. to UAE
-        if (regionName === 'U.A.E.') {
-            displayName = 'UAE';
+            displayName = 'Middle East';
         }
         
         const isRegion = requiredRegions.includes(regionName);
@@ -384,7 +371,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
         });
 
         let color;
-        if (regionName === 'Middle East (sum)' || (middleEastCountriesData.some(c => c.Market === regionName) && !['Malaysia', 'Indonesia'].includes(regionName))) {
+        if (regionName === 'Middle East (sum)' || middleEastCountriesData.some(c => c.Market === regionName)) {
             color = '#DEB887';
         } else if (regionName === 'Europe') {
             color = '#4169E1';
@@ -394,8 +381,8 @@ function updateRaceChart(data, year, forceUpdate = false) {
             color = '#32CD32';
         } else if (regionName === 'North America') {
             color = '#40E0D0';
-        } else if (regionName === 'Asia-Pacific' || ['Malaysia', 'Indonesia'].includes(regionName)) {
-            color = '#FF4B4B'; // Red color for Asia-Pacific, Malaysia and Indonesia
+        } else if (regionName === 'Asia-Pacific') {
+            color = '#FF4B4B'; // Original red color for Asia-Pacific
         } else {
             color = '#888888';
         }
@@ -411,21 +398,16 @@ function updateRaceChart(data, year, forceUpdate = false) {
         };
     });
 
-    // 区分区域和国家数据并各自排序
+    // 只保留区域数据并排序
     const regionData = processedData
         .filter(d => d.isRegion && d.value > 0.1)
         .sort((a, b) => a.value - b.value);
 
-    const excludedRegions = ['Hong Kong', 'Macau', 'Taiwan'];
-    const countryData = processedData
-        .filter(d => !d.isRegion && d.value > 0.1 && !excludedRegions.includes(d.region))
-        .sort((a, b) => a.value - b.value);
-
-    // 只取国家数据，不包含区域数据
-    const targetData = countryData;
+    // 只使用区域数据
+    const targetData = [...regionData];
 
     // 获取当前最大值
-    const currentTopValue = countryData.length > 0 ? countryData[countryData.length - 1].value : 0;
+    const currentTopValue = regionData.length > 0 ? regionData[regionData.length - 1].value : 0;
     console.log("Current top value:", currentTopValue);
     
     // 使用历史最大值和当前最大值中的较大值
@@ -445,7 +427,7 @@ function updateRaceChart(data, year, forceUpdate = false) {
             textposition: 'outside',
             marker: {
                 color: targetData.map(d => d.color),
-                width: 0.4
+                width: 0.15
             },
             hoverinfo: 'text',
             texttemplate: '%{text:$.1f}B',
@@ -463,14 +445,20 @@ function updateRaceChart(data, year, forceUpdate = false) {
                 gridwidth: 1,
                 zeroline: true,
                 zerolinecolor: '#eee',
-                tickfont: { family: 'Monda', size: 18 },
+                tickfont: { 
+                    family: 'Monda', 
+                    size: 30,
+                    weight: 'bold'
+                },
                 ticks: 'outside',
                 ticklen: 8,
-                tickwidth: 1,
+                tickwidth: 2,
                 tickcolor: '#ccc',
                 showticklabels: true,
                 tickvals: [0, 200, 400, 600],
-                ticktext: ['0', '200', '400', '600']
+                ticktext: ['0', '200', '400', '600'],
+                tickmode: 'array',
+                layer: 'above'
             },
             yaxis: {
                 autorange: true,
@@ -478,14 +466,13 @@ function updateRaceChart(data, year, forceUpdate = false) {
                 showgrid: false,
                 tickfont: { family: 'Monda', size: 14 }
             },
-            margin: { l: 120, r: 60, t: 10, b: 50 },
+            margin: { l: 120, r: 60, t: 10, b: 70 },
             height: 400,
             width: 400,
             paper_bgcolor: 'rgba(0,0,0,0)',
             plot_bgcolor: 'rgba(0,0,0,0)',
             showlegend: false,
-            bargap: 0.1,
-            bargroupgap: 0.1,
+            bargap: 0.5,
             font: { family: 'Monda' }
         }, {
             displayModeBar: false,
@@ -495,92 +482,58 @@ function updateRaceChart(data, year, forceUpdate = false) {
         return;
     }
     
-    // 保存当前图表状态
-    const currentData = {
-        x: [...document.getElementById('race-chart').data[0].x],
-        y: [...document.getElementById('race-chart').data[0].y],
-        colors: [...document.getElementById('race-chart').data[0].marker.color]
-    };
+    // 使用 Plotly.animate 实现平滑过渡
     
-    // 创建映射关系以便跟踪每个国家
-    const currentEntries = currentData.y.map((name, index) => ({
-        name,
-        value: currentData.x[index],
-        color: currentData.colors[index]
-    }));
-    
-    // 创建目标状态的数据映射
-    const targetMapping = new Map();
-    targetData.forEach(d => {
-        targetMapping.set(d.displayName, {
-            value: d.value,
-            color: d.color
-        });
+    // 1. 首先立即更新颜色和标签位置
+    Plotly.restyle('race-chart', {
+        'marker.color': [targetData.map(d => d.color)],
+        'y': [targetData.map(d => d.displayName)]
     });
+
+    // 获取当前值和目标值
+    const currentData = document.getElementById('race-chart').data[0];
+    const currentValues = currentData.x;
+    const targetValues = targetData.map(d => d.value);
     
     // 设置动画开始时间
     const startTime = performance.now();
     const duration = appConfig.animation.duration;
-    
+
     // 创建动画函数
     function animate(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        
-        // 计算当前帧的每个条形的值
-        let currentFrameEntries = currentEntries.map(entry => {
-            const targetInfo = targetMapping.get(entry.name);
-            if (!targetInfo) return entry; // 如果目标中没有这个条目，保持不变
-            
-            const startValue = entry.value;
-            const endValue = targetInfo.value;
-            const currentValue = startValue + (endValue - startValue) * progress;
-            
-            return {
-                name: entry.name,
-                value: currentValue,
-                color: targetInfo.color
-            };
+
+        // 计算当前帧的值
+        const currentFrameValues = currentValues.map((startVal, i) => {
+            const endVal = targetValues[i];
+            return startVal + (endVal - startVal) * progress;
         });
-        
-        // 对当前帧的条形按值排序
-        currentFrameEntries.sort((a, b) => a.value - b.value);
-        
-        // 提取排序后的数据
-        const sortedNames = currentFrameEntries.map(e => e.name);
-        const sortedValues = currentFrameEntries.map(e => e.value);
-        const sortedColors = currentFrameEntries.map(e => e.color);
-        
-        // 更新图表，使用sorted数据
+
+        // 更新图表数据
         Plotly.update('race-chart', {
-            x: [sortedValues],
-            y: [sortedNames],
-            'marker.color': [sortedColors],
-            text: [sortedValues.map(val => val.toFixed(1))],
+            x: [currentFrameValues],
+            text: [currentFrameValues.map(val => val.toFixed(1))],
             texttemplate: ['%{text}B']
         }, {
             xaxis: {
-                range: [0, 70],
-                showticklabels: true,
-                tickvals: [0, 20, 40, 60],
-                ticktext: ['0', '200', '400', '600'],
-                tickfont: { family: 'Monda', size: 18 }
+                range: [0, xAxisMax * 1.2]
             }
         }, {
             transition: {
                 duration: 0
             }
         });
-        
+
         // 如果动画未完成，继续下一帧
         if (progress < 1) {
-            animationFrameId = requestAnimationFrame(animate);
-        } else {
-            // 动画结束，更新存储的数据
-            window.raceChartData = targetData;
+            requestAnimationFrame(animate);
         }
     }
-    
+
     // 开始动画
-    animationFrameId = requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
+
+    // 更新存储的数据
+    window.raceChartData = targetData;
 }

@@ -47,7 +47,7 @@ function getEraText(year) {
         return "Growth of Mobile";
     } else if (yearNum >= 2019 && yearNum <= 2020) {
         return "Global Pandemic";
-    } else if (yearNum >= 2021) {
+    } else if (yearNum >= 2021 && yearNum <= 2021) {
         return "Post-Pandemic Recovery";
     }
     return "";
