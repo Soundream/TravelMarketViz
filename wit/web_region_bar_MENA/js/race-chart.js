@@ -232,14 +232,17 @@ function createRaceChart(data, year) {
             zerolinecolor: '#eee',
             tickfont: {
                 family: 'Monda',
-                size: 14
+                size: 18
             },
             range: [0, 70],
             fixedrange: false,
             ticks: 'outside',
             ticklen: 8,
             tickwidth: 1,
-            tickcolor: '#ccc'
+            tickcolor: '#ccc',
+            showticklabels: true,
+            tickvals: [0, 20, 40, 60],
+            ticktext: ['0', '20', '40', '60']
         },
         yaxis: {
             showgrid: false,
@@ -460,11 +463,14 @@ function updateRaceChart(data, year, forceUpdate = false) {
                 gridwidth: 1,
                 zeroline: true,
                 zerolinecolor: '#eee',
-                tickfont: { family: 'Monda', size: 14 },
+                tickfont: { family: 'Monda', size: 18 },
                 ticks: 'outside',
                 ticklen: 8,
                 tickwidth: 1,
-                tickcolor: '#ccc'
+                tickcolor: '#ccc',
+                showticklabels: true,
+                tickvals: [0, 20, 40, 60],
+                ticktext: ['0', '20', '40', '60']
             },
             yaxis: {
                 autorange: true,
@@ -554,7 +560,11 @@ function updateRaceChart(data, year, forceUpdate = false) {
             texttemplate: ['%{text}B']
         }, {
             xaxis: {
-                range: [0, 70]
+                range: [0, 70],
+                showticklabels: true,
+                tickvals: [0, 20, 40, 60],
+                ticktext: ['0', '20', '40', '60'],
+                tickfont: { family: 'Monda', size: 18 }
             }
         }, {
             transition: {
