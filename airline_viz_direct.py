@@ -24,6 +24,9 @@ import io
 from io import BytesIO
 matplotlib.use('Agg')  # Use Agg backend for better performance
 
+
+# TODO: what is a way to make this animation no more clunky? I think it's a bit slow.
+
 # Add argument parser
 parser = argparse.ArgumentParser(description='Generate airline revenue bar chart race visualization directly as video')
 parser.add_argument('--fps', type=int, default=30, help='Frames per second (default: 60)')
@@ -34,7 +37,7 @@ parser.add_argument('--frames-per-year', type=int, default=300, help='Number of 
 parser.add_argument('--preserve-colors', action='store_true', default=True, 
                     help='Preserve original colors in video (default: True)')
 parser.add_argument('--quarters-only', action='store_true', help='Only generate frames for each quarter')
-parser.add_argument('--duration', type=int, default=600, help='Target video duration in seconds (default: 300)')
+parser.add_argument('--duration', type=int, default=150, help='Target video duration in seconds (default: 300)')
 parser.add_argument('--monda-font', type=str, default=None, help='Path to Monda font file (optional)')
 args = parser.parse_args()
 
@@ -329,20 +332,24 @@ def create_frame(args):
     frame_idx, quarters_data, revenue_data_arg, metadata_arg, quarters_only = args
     optimize_figure_for_performance()
     
+    # 关闭matplotlib的缓存和异步渲染选项，确保同步渲染
+    plt.rcParams['figure.raise_window'] = False
+    plt.rcParams['figure.max_open_warning'] = 0
+    plt.ioff()  # 关闭交互模式
+    
     frame_int = int(frame_idx)
     frame_fraction = frame_idx - frame_int
     fig_width = FIGURE_SIZE[0]
     fig_height = FIGURE_SIZE[1]
     
+    # 创建带有明确尺寸的图形对象
     fig = plt.figure(figsize=(fig_width, fig_height), facecolor='white', dpi=OUTPUT_DPI)
     fig.set_size_inches(fig_width, fig_height, forward=True)
     
-    # 使用线性匀速插值，不对frame_fraction做任何变换
-    
+    # 数据插值计算 - 线性匀速插值
     if frame_fraction == 0 or quarters_only:
         current_quarter = quarters_data[frame_int]
-        quarter_data_main = revenue_data_arg.loc[current_quarter]
-        interpolated_data = quarter_data_main
+        interpolated_data = revenue_data_arg.loc[current_quarter].copy()
     else:
         if frame_int < len(quarters_data) - 1:
             q1 = quarters_data[frame_int]
@@ -350,29 +357,25 @@ def create_frame(args):
             q1_data = revenue_data_arg.loc[q1]
             q2_data = revenue_data_arg.loc[q2]
             
-            # 使用线性匀速插值
-            smooth_t = frame_fraction  # 线性匀速，不应用任何缓动函数
-            interpolated_data = q1_data * (1 - smooth_t) + q2_data * smooth_t
+            # 使用线性匀速插值，不做任何缓动处理
+            interpolated_data = q1_data * (1 - frame_fraction) + q2_data * frame_fraction
         else:
             current_quarter = quarters_data[frame_int]
-            interpolated_data = revenue_data_arg.loc[current_quarter]
+            interpolated_data = revenue_data_arg.loc[current_quarter].copy()
     
+    # 基本样式设置
     text_color = '#808080'
     
+    # 创建子图布局
     gs = fig.add_gridspec(2, 1, height_ratios=[0.15, 1], 
-                          left=0.1, right=0.9,
-                          bottom=0.1, top=0.95,
-                          hspace=0.05)
+                        left=0.1, right=0.9,
+                        bottom=0.1, top=0.95,
+                        hspace=0.05)
     
     ax_timeline = fig.add_subplot(gs[0])
     ax = fig.add_subplot(gs[1])
 
-    quarter_data = []
-    colors = []
-    labels = []
-    logos = []
-    logos_data = []
-    
+    # 计算当前帧的日期信息
     if frame_int < len(quarters_data):
         current_quarter = quarters_data[frame_int]
     else:
@@ -380,19 +383,17 @@ def create_frame(args):
     
     year, quarter = parse_quarter(current_quarter)
     
+    # 日期计算
     if frame_fraction > 0:
-        # 计算年份和月份进度，确保时间轴平滑过渡
         if frame_int < len(quarters_data) - 1:
             q1 = quarters_data[frame_int]
             q2 = quarters_data[frame_int + 1]
             year1, quarter1 = parse_quarter(q1)
             year2, quarter2 = parse_quarter(q2)
             
-            # 线性匀速插值年份和季度
+            # 线性插值年份和季度
             year_fraction1 = year1 + (quarter1 - 1) * 0.25
             year_fraction2 = year2 + (quarter2 - 1) * 0.25
-            
-            # 使用原始frame_fraction执行线性插值，不应用任何缓动
             year_fraction = year_fraction1 * (1 - frame_fraction) + year_fraction2 * frame_fraction
             
             year_integer = int(year_fraction)
@@ -401,7 +402,6 @@ def create_frame(args):
             current_month = month
             current_year = year_integer
         else:
-            # 在最后一个季度后的线性过渡
             year_fraction = year + (quarter - 1) * 0.25 + frame_fraction * 0.25
             year_integer = int(year_fraction)
             month = int((year_fraction - year_integer) * 12) + 1
@@ -414,15 +414,17 @@ def create_frame(args):
         current_month = month_mapping[quarter]
         current_year = year
     
-    # 获取当前帧所有公司列表及其排序键
-    airline_data = []
+    # 创建统一的数据结构，确保所有元素位置同步
+    unified_bar_data = []
+    
+    # 收集并处理所有公司数据
     for airline in interpolated_data.index:
         value = interpolated_data[airline]
-        if pd.notna(value) and value > 0:  # Only include positive non-null values
+        if pd.notna(value) and value > 0:
             region = metadata_arg.loc['Region', airline]
             color = region_colors.get(region, '#808080')
             
-            # Special handling for Air France-KLM label
+            # 处理航空公司标签
             if airline == "Air France-KLM":
                 if current_year < 2004 or (current_year == 2004 and current_month < 5):
                     label = "KL"
@@ -433,61 +435,111 @@ def create_frame(args):
                 iata_code = metadata_arg.loc['IATA Code', airline]
                 label = iata_code if pd.notna(iata_code) else airline[:3]
             
-            # Get logo path using IATA code and current_year/current_month
+            # 获取logo路径
             logo_path = get_logo_path(airline, current_year, iata_code, current_month)
             
-            airline_data.append({
+            unified_bar_data.append({
                 'airline': airline,
                 'value': value,
                 'region': region,
                 'color': color,
                 'label': label,
-                'logo_path': logo_path
+                'logo_path': logo_path,
+                'iata_code': iata_code
             })
     
-    # Check if we have any valid data
-    if not airline_data:
+    # 检查数据有效性
+    if not unified_bar_data:
         fig.suptitle(f'No data available for {current_quarter}', fontsize=14)
         buf = BytesIO()
         plt.savefig(buf, format='rgba', dpi=OUTPUT_DPI)
         buf.seek(0)
         plt.close(fig)
-        return np.frombuffer(buf.getvalue(), dtype=np.uint8).reshape((int(fig_height * OUTPUT_DPI), int(fig_width * OUTPUT_DPI), -1))
+        # 使用固定尺寸创建帧
+        frame_array = np.frombuffer(buf.getvalue(), dtype=np.uint8).reshape((int(fig_height * OUTPUT_DPI), int(fig_width * OUTPUT_DPI), -1))
+        return frame_array
     
-    # 按照value对公司数据进行排序
-    airline_data.sort(key=lambda x: x['value'], reverse=True)
+    # 对数据进行排序
+    unified_bar_data.sort(key=lambda x: x['value'], reverse=True)
     
-    # Limit to top N airlines
-    if len(airline_data) > MAX_BARS:
-        airline_data = airline_data[:MAX_BARS]
+    # 限制最大显示条数
+    if len(unified_bar_data) > MAX_BARS:
+        unified_bar_data = unified_bar_data[:MAX_BARS]
     
-    # 提取排序后的数据列表
-    quarter_data = [item['value'] for item in airline_data]
-    colors = [item['color'] for item in airline_data]
-    labels = [item['label'] for item in airline_data]
-    logos = [item['logo_path'] for item in airline_data]
+    # 计算显示所需的最大值范围
+    max_value = max(item['value'] for item in unified_bar_data) if unified_bar_data else 0
     
-    # Calculate fixed positions for bars
-    num_bars = len(quarter_data)
-    y_positions = np.arange(num_bars) * TOTAL_BAR_HEIGHT
+    # 获取历史最大值
+    historical_max = 0
+    for i in range(frame_int + 1):
+        quarter_historical = quarters_data[i]
+        historical_data = revenue_data_arg.loc[quarter_historical]
+        quarter_max = historical_data.max()
+        if pd.notna(quarter_max) and quarter_max > historical_max:
+            historical_max = quarter_max
     
-    # Create bars
-    bars = ax.barh(y_positions, quarter_data, 
-                   height=BAR_HEIGHT, 
-                   color=colors,
-                   edgecolor='none')
+    # 使用当前帧最大值和历史最大值的较大者
+    display_max = max(max_value, historical_max)
     
-    # 处理logo
-    for i, (logo_path, y) in enumerate(zip(logos, y_positions)):
+    # 预先计算所有元素位置
+    for idx, item in enumerate(unified_bar_data):
+        y_pos = idx * TOTAL_BAR_HEIGHT
+        value = item['value']
+        
+        # 存储所有需要的位置信息
+        item.update({
+            'y_position': y_pos,
+            'text_position': value + display_max * 0.01,  # 文本偏移量
+            'logo_position': value + display_max * 0.08,  # logo偏移量
+            'formatted_value': format_revenue(value, None)
+        })
+    
+    # 提取需要的数据列表，确保一致性
+    y_positions = [item['y_position'] for item in unified_bar_data]
+    values = [item['value'] for item in unified_bar_data]
+    colors = [item['color'] for item in unified_bar_data]
+    labels = [item['label'] for item in unified_bar_data]
+    
+    # 设置图表边界
+    ax.set_xlim(0, display_max * 1.5)
+    total_height = MAX_BARS * TOTAL_BAR_HEIGHT
+    ax.set_ylim(total_height, -BAR_PADDING * 2)
+    
+    # 创建条形图，确保完全渲染
+    bars = ax.barh(y_positions, values, height=BAR_HEIGHT, color=colors, edgecolor='none')
+    
+    # 设置标签和格式
+    ax.set_yticks(y_positions)
+    ax.set_yticklabels(labels, fontsize=TICK_FONT_SIZE, color=text_color)
+    ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_revenue))
+    ax.xaxis.set_tick_params(labelsize=TICK_FONT_SIZE, colors=text_color)
+    for label in ax.get_xticklabels():
+        label.set_color(text_color)
+    
+    # 第一次绘制以确保所有元素初始化
+    fig.canvas.draw()
+    
+    # 同步添加数值文本和logo，确保与条形图同步更新
+    # 先准备所有文本和logo对象
+    text_objects = []
+    logo_objects = []
+    
+    # 添加数值文本
+    for item in unified_bar_data:
+        text = ax.text(item['text_position'], item['y_position'], item['formatted_value'],
+                va='center', ha='left', fontsize=VALUE_FONT_SIZE, color=text_color)
+        text_objects.append(text)
+    
+    # 处理并添加logo
+    for item in unified_bar_data:
+        logo_path = item['logo_path']
         if logo_path and os.path.exists(logo_path):
             try:
                 img = plt.imread(logo_path)
                 
-                img_height = BAR_HEIGHT * 0.8
-                aspect_ratio = img.shape[1] / img.shape[0]
-                img_width = img_height * aspect_ratio
-                
+                # 预处理logo图像
                 target_height_pixels = int(40)
+                aspect_ratio = img.shape[1] / img.shape[0]
                 target_width_pixels = int(target_height_pixels * aspect_ratio)
                 
                 if isinstance(img, np.ndarray):
@@ -499,6 +551,7 @@ def create_frame(args):
                 
                 pil_img = pil_img.resize((target_width_pixels, target_height_pixels), Image.Resampling.LANCZOS)
                 
+                # 增强logo图像
                 if pil_img.mode == 'RGBA':
                     r, g, b, a = pil_img.split()
                     rgb = Image.merge('RGB', (r, g, b))
@@ -519,115 +572,33 @@ def create_frame(args):
                 if img_array.dtype != np.float32 and img_array.max() > 1.0:
                     img_array = img_array.astype(np.float32) / 255.0
                 
-                logos_data.append({
-                    'img_array': img_array,
-                    'index': i,
-                    'y': y,
-                    'value': quarter_data[i]  # 保存对应的值，确保位置计算一致
-                })
+                # 创建并添加logo
+                img_box = OffsetImage(img_array, zoom=0.9)
+                img_box.image.axes = ax
+                
+                ab = AnnotationBbox(img_box, (item['logo_position'], item['y_position']),
+                                frameon=False,
+                                box_alignment=(0, 0.5))
+                ax.add_artist(ab)
+                logo_objects.append(ab)
                 
             except Exception as e:
                 continue
     
-    # Customize the plot
-    ax.set_yticks(y_positions)
-    ax.set_yticklabels(labels, fontsize=TICK_FONT_SIZE, color=text_color)
-    
-    # Format x-axis with custom formatter and set consistent colors
-    ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_revenue))
-    ax.xaxis.set_tick_params(labelsize=TICK_FONT_SIZE, colors=text_color)
-    for label in ax.get_xticklabels():
-        label.set_color(text_color)
-    
-    # 计算一致的显示最大值，确保所有元素位置计算基于相同的比例
-    max_value = max(quarter_data) if quarter_data else 0
-    
-    # Get historical maximum value across all quarters up to current frame
-    historical_max = 0
-    for i in range(frame_int + 1):
-        quarter_historical = quarters_data[i]
-        historical_data = revenue_data_arg.loc[quarter_historical]
-        quarter_max = historical_data.max()
-        if pd.notna(quarter_max) and quarter_max > historical_max:
-            historical_max = quarter_max
-    
-    # Use max of current frame and historical max
-    display_max = max(max_value, historical_max)
-    
-    # 增加右侧空间以容纳logo，避免logo被裁剪
-    ax.set_xlim(0, display_max * 1.5)  # 从1.3倍增加到1.5倍
-    
-    # 预先计算所有元素的位置，确保同步
-    element_positions = []
-    for i, bar in enumerate(bars):
-        value = quarter_data[i]
-        # 使用统一的位置计算公式
-        base_position = value
-        text_offset = display_max * 0.01  # 文本偏移量
-        logo_offset = display_max * 0.08  # 减小logo偏移量，从0.15改为0.08
-        
-        element_positions.append({
-            'index': i,
-            'y': y_positions[i],
-            'value': value,
-            'text_position': base_position + text_offset,
-            'logo_position': base_position + logo_offset
-        })
-    
-    # 按照预计算的位置添加文本
-    for pos in element_positions:
-        value = pos['value']
-        value_text = format_revenue(value, None)
-        ax.text(pos['text_position'], pos['y'], value_text,
-                va='center', ha='left', fontsize=VALUE_FONT_SIZE, color=text_color)
-    
-    # 使用相同的预计算位置添加logo
-    for logo_data in logos_data:
-        i = logo_data['index']
-        img_array = logo_data['img_array']
-        pos = element_positions[i]
-        
-        # 创建OffsetImage对象，增大zoom值
-        img_box = OffsetImage(img_array, zoom=0.9)  # 增大zoom从0.5到0.9
-        img_box.image.axes = ax
-        
-        # 使用预计算的logo位置创建AnnotationBbox
-        ab = AnnotationBbox(img_box, (pos['logo_position'], pos['y']),
-                           frameon=False,
-                           box_alignment=(0, 0.5))
-        ax.add_artist(ab)
-    
-    # Set fixed y-axis limits - reduced padding to move bars up
-    total_height = MAX_BARS * TOTAL_BAR_HEIGHT
-    ax.set_ylim(total_height, -BAR_PADDING * 2)  # Reduced negative padding to move bars up
-    
-    # Add grid lines
+    # 添加网格线和调整轴样式
     ax.grid(True, axis='x', alpha=0.3, which='major', linestyle='--')
-    
-    # Style the axes
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
     ax.tick_params(axis='y', which='both', left=False)
-    
-    # Add simplified Revenue label at the bottom with consistent color
     ax.set_xlabel('Revenue', fontsize=16, labelpad=10, color=text_color)
     
-    # Set up timeline - New style with smoother animation
-    ax_timeline.set_facecolor('none')  # Transparent background
-    
-    # Get min and max quarters for timeline
-    min_quarter = quarters_data[0]
-    max_quarter = quarters_data[-1]
-    min_year, min_q = parse_quarter(min_quarter)
-    max_year, max_q = parse_quarter(max_quarter)
-    
-    # Set timeline limits with padding
+    # 设置时间轴
+    ax_timeline.set_facecolor('none')
     ax_timeline.set_xlim(-1, len(quarters_data) + 0.5)
     ax_timeline.set_ylim(-0.2, 0.2)
     
-    # Set up timeline styling
     ax_timeline.spines['top'].set_visible(False)
     ax_timeline.spines['right'].set_visible(False)
     ax_timeline.spines['left'].set_visible(False)
@@ -636,44 +607,43 @@ def create_frame(args):
     ax_timeline.spines['bottom'].set_color(text_color)
     ax_timeline.spines['bottom'].set_position(('data', 0))
     
-    # Add quarter markers with vertical lines
+    # 添加季度标记
     for i, quarter in enumerate(quarters_data):
         year, q = parse_quarter(quarter)
-        if q == 1:  # Major tick for Q1
+        if q == 1:
             ax_timeline.vlines(i, -0.03, 0, colors=text_color, linewidth=1.5)
-            # Show label for every other year, starting from 2025 and going backwards
-            if year % 2 == 1 or year == 2025:  # Show years that are odd (2023, 2021, etc.) plus 2025
+            if year % 2 == 1 or year == 2025:
                 ax_timeline.text(i, -0.07, str(year), ha='center', va='top', 
-                               fontsize=16, color=text_color)
-        else:  # Minor tick for other quarters
+                              fontsize=16, color=text_color)
+        else:
             ax_timeline.vlines(i, -0.02, 0, colors=text_color, linewidth=0.5, alpha=0.7)
     
-    # 确保2025年的标记显示在时间轴上
-    # 检查最后一个季度是否为2024年第4季度
+    # 添加2025年标记（如果需要）
     last_year, last_q = parse_quarter(quarters_data[-1])
     if last_year == 2024 and last_q == 4:
-        # 在时间轴上添加2025年的标记
         next_year_pos = len(quarters_data)
         ax_timeline.vlines(next_year_pos, -0.03, 0, colors=text_color, linewidth=1.5)
         ax_timeline.text(next_year_pos, -0.07, "2025", ha='center', va='top', 
-                       fontsize=16, color=text_color)
+                      fontsize=16, color=text_color)
     
-    # Add current position marker (inverted triangle)
-    # 直接使用原始frame_fraction确保线性匀速过渡
-    timeline_position = frame_int + frame_fraction  # 线性匀速，不应用缓动函数
+    # 添加当前位置标记
+    timeline_position = frame_int + frame_fraction
     ax_timeline.plot(timeline_position, 0.03, marker='v', color='#4e843d', markersize=10, zorder=5)
-    
-    # Remove timeline ticks
     ax_timeline.set_xticks([])
     ax_timeline.set_yticks([])
     
-    # Render the figure to a numpy array
+    # 强制重新绘制，确保所有元素同步更新
+    fig.canvas.draw()
+    
+    # 渲染为图像 - 移除bbox_inches='tight'以确保尺寸固定
     buf = BytesIO()
-    plt.savefig(buf, format='rgba', dpi=OUTPUT_DPI)
+    plt.savefig(buf, format='rgba', dpi=OUTPUT_DPI, pad_inches=0.1)
     buf.seek(0)
+    
+    # 关闭图形以释放内存
     plt.close(fig)
     
-    # Convert to numpy array for video encoding
+    # 转换为numpy数组 - 使用固定的预期尺寸
     frame_array = np.frombuffer(buf.getvalue(), dtype=np.uint8).reshape((int(fig_height * OUTPUT_DPI), int(fig_width * OUTPUT_DPI), -1))
     return frame_array
 
@@ -748,52 +718,47 @@ def create_video_directly(frame_indices, output_path, fps):
         
         # Create a progress bar
         total_frames = len(frame_indices)
-
-        # Calculate optimal chunk size for multiprocessing
+        
+        # 修改处理方式，防止多进程渲染不同步的问题
+        # 方案1：使用较小的批次并确保同步处理
         cpu_count = mp.cpu_count()
-        # 减小chunk_size以提高更新频率，使生成更平滑
-        chunk_size = max(1, min(total_frames // (cpu_count * 8), 20))  # 更小的块大小
-
-        # Prepare arguments for multiprocessing
+        batch_size = max(1, cpu_count // 2)  # 减小批量大小
+        
+        # 准备多进程参数
         frame_args = [(idx, quarters, revenue_data, metadata, args.quarters_only) for idx in frame_indices]
         
-        # 创建有序字典保存帧
-        from collections import OrderedDict
-        frame_buffer = OrderedDict()
-        next_frame_idx = 0
-        
-        # Create a pool of workers
-        with mp.Pool(processes=cpu_count) as pool:
-            # Create frames in parallel using imap for better order consistency
-            with tqdm(total=total_frames, desc="Generating frames", unit="frame",
-                     bar_format="{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
-                try:
-                    # 使用imap而不是imap_unordered可以保持顺序一致
-                    for idx, frame in enumerate(pool.imap(create_frame, frame_args, chunksize=chunk_size)):
-                        # Convert frame if needed
+        # 创建进度条
+        with tqdm(total=total_frames, desc="Generating frames", unit="frame",
+                 bar_format="{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
+            
+            # 分批处理帧以确保顺序和同步
+            for batch_start in range(0, total_frames, batch_size):
+                batch_end = min(batch_start + batch_size, total_frames)
+                batch_args = frame_args[batch_start:batch_end]
+                
+                # 使用进程池处理当前批次
+                with mp.Pool(processes=batch_size) as pool:
+                    # 使用map而不是imap确保完全同步的顺序
+                    batch_frames = pool.map(create_frame, batch_args)
+                    
+                    # 按顺序写入帧
+                    for frame in batch_frames:
+                        # 转换帧格式
                         if frame.dtype != np.uint8:
                             frame = (frame * 255).astype(np.uint8)
                         
-                        # Ensure frame is in correct RGB format
-                        if frame.shape[2] == 4:  # RGBA format
-                            frame = frame[:, :, :3]  # Remove alpha channel
+                        # 确保帧是RGB格式
+                        if frame.shape[2] == 4:  # RGBA格式
+                            frame = frame[:, :, :3]  # 移除alpha通道
                         
-                        # Write the frame to FFmpeg process
-                        try:
-                            ffmpeg_process.stdin.write(frame.tobytes())
-                            pbar.update(1)
-                            # 每100帧打印一次状态更新
-                            if idx % 100 == 0:
-                                print(f"\nProcessed {idx}/{total_frames} frames")
-                        except IOError as e:
-                            print("\nError writing frame to FFmpeg:", e)
-                            break
-                except Exception as e:
-                    print("\nError during frame generation:", e)
-                    pool.terminate()
-                    raise e
+                        # 写入帧到FFmpeg进程
+                        ffmpeg_process.stdin.write(frame.tobytes())
+                        pbar.update(1)
+                
+                # 每批次打印状态
+                print(f"\nProcessed frames {batch_start}-{batch_end-1} of {total_frames}")
 
-        # Close the pipe and wait for FFmpeg to finish
+        # 关闭管道并等待FFmpeg完成
         print("\nFinishing video encoding...")
         ffmpeg_process.stdin.close()
         ffmpeg_process.wait()
@@ -803,7 +768,7 @@ def create_video_directly(frame_indices, output_path, fps):
             print(f"\nFFmpeg error: {stderr}")
             return False
         
-        # Check if output file was created successfully
+        # 检查输出文件
         if os.path.exists(output_path) and os.path.getsize(output_path) > 100000:
             print("\nVideo created successfully!")
             return True
@@ -812,53 +777,58 @@ def create_video_directly(frame_indices, output_path, fps):
             return False
             
     except (FileNotFoundError, subprocess.SubprocessError) as e:
+        print(f"\nFFmpeg error: {e}")
         print("\nFalling back to OpenCV...")
         try:
-            # Initialize video writer
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Try MP4V codec
+            # 初始化视频编写器
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # 尝试MP4V编解码器
             out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
             
             if not out.isOpened():
                 print("Error: Could not initialize video writer")
                 return False
             
-            # Create frames and write to video using multiprocessing
+            # 创建帧并写入视频
             total_frames = len(frame_indices)
             
-            # Calculate optimal chunk size for multiprocessing
-            cpu_count = mp.cpu_count()
-            chunk_size = max(1, min(total_frames // (cpu_count * 8), 20))  # 更小的块大小
-
-            # Create a pool of workers
-            with mp.Pool(processes=cpu_count) as pool:
-                with tqdm(total=total_frames, desc="Generating frames (OpenCV)", unit="frame",
-                         bar_format="{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
-                    try:
-                        # 使用imap而不是imap_unordered可以保持顺序一致
-                        for idx, frame in enumerate(pool.imap(create_frame, frame_args, chunksize=chunk_size)):
-                            # Convert frame to BGR format (required by OpenCV)
+            # 同样使用批处理方式处理OpenCV版本
+            batch_size = max(1, cpu_count // 2)
+            
+            # 使用进度条
+            with tqdm(total=total_frames, desc="Generating frames (OpenCV)", unit="frame",
+                     bar_format="{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]") as pbar:
+                
+                # 分批处理
+                for batch_start in range(0, total_frames, batch_size):
+                    batch_end = min(batch_start + batch_size, total_frames)
+                    batch_args = frame_args[batch_start:batch_end]
+                    
+                    # 使用进程池处理当前批次
+                    with mp.Pool(processes=batch_size) as pool:
+                        # 使用map而不是imap确保同步
+                        batch_frames = pool.map(create_frame, batch_args)
+                        
+                        # 按顺序写入帧
+                        for frame in batch_frames:
+                            # 转换帧格式
                             if frame.dtype != np.uint8:
                                 frame = (frame * 255).astype(np.uint8)
                             
-                            # Convert RGB to BGR
+                            # 转换为BGR格式（OpenCV要求）
                             if frame.shape[2] >= 3:
                                 frame = cv2.cvtColor(frame[:, :, :3], cv2.COLOR_RGB2BGR)
                             
-                            # Write the frame
+                            # 写入帧
                             out.write(frame)
                             pbar.update(1)
-                            # 每100帧打印一次状态更新
-                            if idx % 100 == 0:
-                                print(f"\nProcessed {idx}/{total_frames} frames")
-                    except Exception as e:
-                        print("\nError during frame generation:", e)
-                        pool.terminate()
-                        raise e
+                    
+                    # 每批次打印状态
+                    print(f"\nProcessed frames {batch_start}-{batch_end-1} of {total_frames}")
             
-            # Release the video writer
+            # 释放视频编写器
             out.release()
             
-            # Check if output file was created successfully
+            # 检查输出文件
             if os.path.exists(output_path) and os.path.getsize(output_path) > 100000:
                 print("\nVideo created successfully!")
                 return True
@@ -867,7 +837,7 @@ def create_video_directly(frame_indices, output_path, fps):
                 return False
                 
         except Exception as e:
-            print("\nError:", e)
+            print(f"\nOpenCV error: {e}")
             return False
 
 def main():
