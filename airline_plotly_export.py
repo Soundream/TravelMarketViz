@@ -171,7 +171,11 @@ def export_visualization():
             xaxis=dict(
                 title="Revenue",
                 tickformat="$,.0f",
-                range=[0, revenue_data.max().max() * 1.1]
+                range=[0, revenue_data.max().max() * 1.1],
+                showgrid=True,
+                gridcolor='lightgrey',
+                gridwidth=1,
+                griddash='dot'  # 更细密的点状虚线
             ),
             yaxis=dict(
                 title="Airline",

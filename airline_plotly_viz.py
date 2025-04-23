@@ -189,7 +189,11 @@ def create_visualization():
                 xaxis=dict(
                     title="Revenue",
                     tickformat="$,.0f",
-                    range=[0, revenue_data.max().max() * 1.1]
+                    range=[0, revenue_data.max().max() * 1.1],
+                    showgrid=True,
+                    gridcolor='lightgrey',
+                    gridwidth=1,
+                    griddash='dot'  # 更细密的点状虚线
                 ),
                 yaxis=dict(
                     title="Airline",
@@ -241,6 +245,17 @@ def create_visualization():
         )
     )
     
+    # Add frames to the figure
+    fig.frames = frames
+    
+    # Define animation settings for the entire figure
+    animation_settings = {
+        "frame": {"duration": args.transition_duration, "redraw": True},
+        "fromcurrent": True,
+        "transition": {"duration": args.transition_duration, "easing": "linear"},
+        "mode": "immediate"
+    }
+    
     # Update layout
     fig.update_layout(
         title={
@@ -256,7 +271,11 @@ def create_visualization():
         xaxis=dict(
             title="Revenue",
             tickformat="$,.0f",
-            range=[0, revenue_data.max().max() * 1.1]
+            range=[0, revenue_data.max().max() * 1.1],
+            showgrid=True,
+            gridcolor='lightgrey',
+            gridwidth=1,
+            griddash='dot'  # 更细密的点状虚线
         ),
         yaxis=dict(
             title="Airline",
@@ -274,14 +293,7 @@ def create_visualization():
                     {
                         "label": "Play",
                         "method": "animate",
-                        "args": [
-                            None,
-                            {
-                                "frame": {"duration": args.transition_duration, "redraw": True},
-                                "fromcurrent": True,
-                                "transition": {"duration": args.transition_duration, "easing": "linear"}
-                            }
-                        ]
+                        "args": [None, animation_settings]
                     },
                     {
                         "label": "Pause",
@@ -310,7 +322,7 @@ def create_visualization():
                             {
                                 "frame": {"duration": args.transition_duration, "redraw": True},
                                 "mode": "immediate",
-                                "transition": {"duration": args.transition_duration}
+                                "transition": {"duration": args.transition_duration, "easing": "linear"}
                             }
                         ]
                     }
@@ -331,9 +343,6 @@ def create_visualization():
         font=dict(family="Arial, sans-serif", size=14),
         margin=dict(l=100, r=20, t=100, b=80),
     )
-    
-    # Add frames to the figure
-    fig.frames = frames
     
     # Add legend for regions
     for region, color in region_colors.items():
