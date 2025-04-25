@@ -295,6 +295,14 @@ def create_visualization():
                             line=dict(width=0, color='rgba(0,0,0,0)')),
                 text=initial_data['formatted_revenues'],
                 textposition='outside',
+                textfont=dict(
+                    family='Monda',
+                    size=14,
+                    color='black'
+                ),
+                cliponaxis=False,  # 确保文本不会被裁剪
+                textangle=0,  # 保持文本水平
+                constraintext='none',  # 不限制文本位置
                 hoverinfo='none',
                 width=0.8,
                 showlegend=False
@@ -366,25 +374,32 @@ def create_visualization():
                 'text': "Airline",
                 'font': {'family': 'Monda', 'size': 16}
             },
-            tickfont={'family': 'Monda', 'size': 14}
+            tickfont={'family': 'Monda', 'size': 14},
+            fixedrange=True  # 固定y轴范围
         ),
         plot_bgcolor='white',
         paper_bgcolor='white',
         hovermode="closest",
         font=dict(family="Monda", size=14),
-        margin=dict(l=100, r=150, t=100, b=140),  # 调整右侧边距
+        margin=dict(l=100, r=150, t=100, b=140),
         showlegend=True,
         legend=dict(
             itemsizing='constant',
             title=dict(text='Regions'),
             tracegroupgap=0,
-            orientation="h",  # 水平方向排列图例项
-            yanchor="top",    # 顶部对齐
-            y=-0.15,          # 放在图表下方
-            xanchor="center", # 水平居中
-            x=0.5             # 水平居中位置
+            orientation="h",
+            yanchor="top",
+            y=-0.15,
+            xanchor="center",
+            x=0.5
         ),
-        xaxis_range=x_axis_range
+        xaxis_range=x_axis_range,
+        bargap=0.15,        # 调整条形图之间的间距
+        bargroupgap=0.1,    # 调整条形图组之间的间距
+        uniformtext=dict(    # 统一文本大小和位置
+            mode='hide',
+            minsize=14
+        )
     )
     
     # Convert to HTML
@@ -522,6 +537,14 @@ def create_visualization():
                     }},
                     text: initialData.formatted_revenues,
                     textposition: 'outside',
+                    textfont: {{
+                        family: 'Monda',
+                        size: 14,
+                        color: 'black'
+                    }},
+                    cliponaxis: false,
+                    textangle: 0,
+                    constraintext: 'none',
                     hoverinfo: 'none',
                     width: 0.8,
                     showlegend: false
@@ -627,11 +650,12 @@ def create_visualization():
             // Create the initial plot with all traces
             await Plotly.newPlot(chartDiv, traces, layout);
             
-            // Animation helper function with easing
-            function easeInOutCubic(t) {{
-                return t < 0.5
-                    ? 4 * t * t * t
-                    : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            // 跟踪历史最大值
+            let historicalMaxRevenue = Math.max(...initialData.revenues);
+            
+            // Linear animation helper function
+            function linearEasing(t) {{
+                return t;  // 直接返回t，实现线性动画
             }}
             
             function animate(fromData, toData) {{
@@ -642,7 +666,7 @@ def create_visualization():
                     function step(currentTime) {{
                         const elapsedTime = currentTime - startTime;
                         const rawProgress = Math.min(elapsedTime / animationDuration, 1);
-                        const progress = easeInOutCubic(rawProgress);  // 使用缓动函数
+                        const progress = linearEasing(rawProgress);  // 使用线性缓动
                         
                         // 限制帧率
                         if (currentTime - lastFrameTime < 16) {{
@@ -657,20 +681,21 @@ def create_visualization():
                             return startVal + (toData.revenues[i] - startVal) * progress;
                         }});
                         
-                        const maxRevenue = Math.max(...interpolatedRevenues);
+                        // 计算当前最大值和历史最大值中的较大者
+                        const currentMaxRevenue = Math.max(...interpolatedRevenues);
+                        historicalMaxRevenue = Math.max(historicalMaxRevenue, currentMaxRevenue);
+                        const xAxisMax = historicalMaxRevenue * 1.5;  // 使用历史最大值来设置坐标轴范围
                         
                         try {{
                             // 更新数据，保持bar宽度
                             Plotly.restyle(chartDiv, {{
                                 'x': [interpolatedRevenues, interpolatedRevenues],
-                                'width': [0.8, 0.8]  // 明确设置宽度
+                                'width': [0.8, 0.8]
                             }}, [0, 1]);
                             
-                            // 更新布局，包括logo
+                            // 更新布局，包括logo和坐标轴范围
                             Plotly.relayout(chartDiv, {{
-                                'xaxis.range': [0, maxRevenue * 1.5],
-                                'yaxis.ticktext': toData.airlines,
-                                'yaxis.tickvals': toData.airlines,
+                                'xaxis.range': [0, xAxisMax],
                                 'images': toData.logos.map((logo, i) => {{
                                     if (!logo) return null;
                                     
@@ -678,10 +703,10 @@ def create_visualization():
                                         source: logo,
                                         xref: "x",
                                         yref: "y",
-                                        x: interpolatedRevenues[i] * 1.05 + 1000,  // 使用当前插值的revenue
+                                        x: interpolatedRevenues[i] * 1.05 + 1000,
                                         y: toData.airlines[i],
-                                        sizex: interpolatedRevenues[i] * 0.1 * 3,  // 减小logo大小到一半
-                                        sizey: 0.3 * 3,  // 减小logo大小到一半
+                                        sizex: interpolatedRevenues[i] * 0.1 * 3,
+                                        sizey: 0.3 * 3,
                                         xanchor: "left",
                                         yanchor: "middle",
                                         sizing: "contain",
@@ -707,7 +732,7 @@ def create_visualization():
                                         'width': [0.8, 0.8]
                                     }},
                                     {{
-                                        'xaxis.range': [0, Math.max(...toData.revenues) * 1.5],
+                                        'xaxis.range': [0, xAxisMax],
                                         'yaxis.ticktext': toData.airlines,
                                         'yaxis.tickvals': toData.airlines,
                                         'images': toData.logos.map((logo, i) => {{
@@ -718,8 +743,8 @@ def create_visualization():
                                                 yref: "y",
                                                 x: toData.revenues[i] * 1.05 + 1000,
                                                 y: toData.airlines[i],
-                                                sizex: toData.revenues[i] * 0.1 * 3,  // 减小logo大小到一半
-                                                sizey: 0.3 * 3,  // 减小logo大小到一半
+                                                sizex: toData.revenues[i] * 0.1 * 3,
+                                                sizey: 0.3 * 3,
                                                 xanchor: "left",
                                                 yanchor: "middle",
                                                 sizing: "contain",
