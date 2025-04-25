@@ -231,6 +231,7 @@ def create_visualization():
         hover_texts = []
         logos = []
         
+        # Create lists for each airline's data
         for airline, revenue in top_airlines.items():
             if pd.notna(revenue) and revenue > 0:
                 region = metadata.loc['Region', airline]
@@ -253,15 +254,15 @@ def create_visualization():
                 hover_text += f"IATA Code: {iata_code}"
                 hover_texts.append(hover_text)
         
-        # Store data in reverse order
+        # Store data (already sorted by revenue due to top_airlines being sorted)
         quarter_info = {
             'quarter': quarter,
-            'airlines': airlines[::-1],
-            'revenues': revenues[::-1],
-            'colors': colors[::-1],
-            'hover_texts': hover_texts[::-1],
-            'formatted_revenues': [format_revenue(rev) for rev in revenues[::-1]],
-            'logos': logos[::-1]
+            'airlines': airlines,
+            'revenues': revenues,
+            'colors': colors,
+            'hover_texts': hover_texts,
+            'formatted_revenues': [format_revenue(rev) for rev in revenues],
+            'logos': logos
         }
         all_quarters_data.append(quarter_info)
     
@@ -271,13 +272,13 @@ def create_visualization():
     # Create initial chart
     fig = go.Figure()
     
-    # Add traces
+    # Add traces - Note: Reversing the order of airlines and revenues
     fig.add_trace(
             go.Bar(
-                x=initial_data['revenues'],
-                y=initial_data['airlines'],
+                x=initial_data['revenues'],  # Reverse the order
+                y=initial_data['airlines'],  # Reverse the order
                 orientation='h',
-                marker=dict(color=initial_data['colors'],
+                marker=dict(color=initial_data['colors'][::-1],  # Reverse the order
                             line=dict(width=0, color='rgba(0,0,0,0)')),
                 hoverinfo='none',
                 width=0.8,
@@ -288,21 +289,21 @@ def create_visualization():
     # Add text layer with transparent bars
     fig.add_trace(
             go.Bar(
-                x=initial_data['revenues'],
-                y=initial_data['airlines'],
+                x=initial_data['revenues'][::-1],  # Reverse the order
+                y=initial_data['airlines'][::-1],  # Reverse the order
                 orientation='h',
                 marker=dict(color='rgba(0,0,0,0)',
                             line=dict(width=0, color='rgba(0,0,0,0)')),
-                text=initial_data['formatted_revenues'],
+                text=initial_data['formatted_revenues'][::-1],  # Reverse the order
                 textposition='outside',
                 textfont=dict(
                     family='Monda',
                     size=14,
                     color='black'
                 ),
-                cliponaxis=False,  # 确保文本不会被裁剪
-                textangle=0,  # 保持文本水平
-                constraintext='none',  # 不限制文本位置
+                cliponaxis=False,
+                textangle=0,
+                constraintext='none',
                 hoverinfo='none',
                 width=0.8,
                 showlegend=False
@@ -322,19 +323,22 @@ def create_visualization():
             )
         )
 
-    # 添加logo，大幅增加尺寸
-    for i, (airline, revenue, logo) in enumerate(zip(initial_data['airlines'], initial_data['revenues'], initial_data['logos'])):
+    # Add logos - Note: Using reversed indices
+    for i, (airline, revenue, logo) in enumerate(zip(
+            initial_data['airlines'][::-1],  # Reverse the order
+            initial_data['revenues'][::-1],  # Reverse the order
+            initial_data['logos'][::-1])):  # Reverse the order
         if logo:
             fig.add_layout_image(
                 dict(
                     source=logo,
-                    xref="x",        # 使用x轴坐标系统
-                    yref="y",        # y轴仍然使用数据坐标
-                    x=revenue * 1.05, # 放在每个条形图右侧
-                    y=airline,       # y位置对应航空公司名称
-                    sizex=revenue * 0.2 * 3, # 根据revenue动态调整大小
-                    sizey=0.6 * 3,       # 固定高度
-                    xanchor="left",  # 左侧对齐
+                    xref="x",
+                    yref="y",
+                    x=revenue * 1.05,
+                    y=airline,
+                    sizex=revenue * 0.2 * 3,
+                    sizey=0.6 * 3,
+                    xanchor="left",
                     yanchor="middle",
                     sizing="contain"
                 )
@@ -342,9 +346,9 @@ def create_visualization():
 
     # 调整x轴以容纳logo
     max_revenue = revenue_data.max().max()
-    x_axis_range = [0, max_revenue * 1.5]  # 确保图表有足够空间
+    x_axis_range = [0, max_revenue * 1.5]
 
-    # Update layout
+    # Update layout with reversed yaxis
     fig.update_layout(
         title={
             'text': "Airline Revenue Visualization",
@@ -375,7 +379,8 @@ def create_visualization():
                 'font': {'family': 'Monda', 'size': 16}
             },
             tickfont={'family': 'Monda', 'size': 14},
-            fixedrange=True  # 固定y轴范围
+            fixedrange=True,  # 固定y轴范围
+            autorange='reversed'  # 反转y轴顺序
         ),
         plot_bgcolor='white',
         paper_bgcolor='white',
@@ -394,9 +399,9 @@ def create_visualization():
             x=0.5
         ),
         xaxis_range=x_axis_range,
-        bargap=0.15,        # 调整条形图之间的间距
-        bargroupgap=0.1,    # 调整条形图组之间的间距
-        uniformtext=dict(    # 统一文本大小和位置
+        bargap=0.15,
+        bargroupgap=0.1,
+        uniformtext=dict(
             mode='hide',
             minsize=14
         )
@@ -415,7 +420,7 @@ def create_visualization():
     quarters_data_json = json.dumps(all_quarters_data)
     
     # Create custom HTML
-    custom_html = f"""
+    custom_html = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -467,10 +472,10 @@ def create_visualization():
     
     <div class="control-panel">
         <div class="quarter-display">
-            <span id="current-quarter">{initial_data['quarter']}</span>
+            <span id="current-quarter">{initial_quarter}</span>
         </div>
         <div class="slider-container">
-            <input type="range" id="quarter-slider" min="0" max="{len(quarters) - 1}" step="1" value="0">
+            <input type="range" id="quarter-slider" min="0" max="{max_quarters}" step="1" value="0">
         </div>
         <div class="button-container">
             <button id="play-button">Play</button>
@@ -487,9 +492,9 @@ def create_visualization():
                 await new Promise(resolve => setTimeout(resolve, 100));
             }}
 
-        const allQuartersData = {quarters_data_json};
+        const allQuartersData = {quarters_data};
         let currentQuarterIndex = 0;
-        const animationDuration = {args.transition_duration};
+        const animationDuration = {animation_duration};
         let isPlaying = false;
         let playInterval = null;
         
@@ -566,7 +571,7 @@ def create_visualization():
             Object.entries(regions).forEach(([region, color]) => {{
                 traces.push({{
                     type: 'scatter',
-                    x: [NaN],  // 使用NaN避免原点marker
+                    x: [NaN],
                     y: [NaN],
                     mode: 'markers',
                     marker: {{
@@ -576,7 +581,7 @@ def create_visualization():
                     name: region,
                     showlegend: true,
                     hoverinfo: 'skip',
-                    visible: 'legendonly'  // 只在图例中显示
+                    visible: 'legendonly'
                 }});
             }});
             
@@ -589,8 +594,8 @@ def create_visualization():
                     yanchor: 'top',
                     font: {{family: 'Monda', size: 24}}
                 }},
-                width: {args.width},
-                height: {args.height},
+                width: {width},
+                height: {height},
                 xaxis: {{
                     title: {{
                         text: "Revenue",
@@ -610,7 +615,7 @@ def create_visualization():
                         font: {{family: 'Monda', size: 16}}
                     }},
                     tickfont: {{family: 'Monda', size: 14}},
-                    tickmode: 'array',  // 防止动画中airline名字跳动
+                    tickmode: 'array',
                     ticktext: initialData.airlines,
                     tickvals: initialData.airlines
                 }},
@@ -627,8 +632,8 @@ def create_visualization():
                     orientation: "h",
                     yanchor: "top",
                     y: -0.15,
-                    xanchor: "left",  // 改为左对齐
-                    x: 0.1            // 放在左下角
+                    xanchor: "left",
+                    x: 0.1
                 }},
                 images: initialData.logos.map((logo, i) => 
                     logo ? {{
@@ -642,7 +647,7 @@ def create_visualization():
                         xanchor: "left",
                         yanchor: "middle",
                         sizing: "contain",
-                        opacity: 0.95  // 添加轻微透明度
+                        opacity: 0.95
                     }} : null
                 ).filter(img => img !== null)
             }};
@@ -650,157 +655,127 @@ def create_visualization():
             // Create the initial plot with all traces
             await Plotly.newPlot(chartDiv, traces, layout);
             
-            // 跟踪历史最大值
+            // Track historical maximum
             let historicalMaxRevenue = Math.max(...initialData.revenues);
-            
-            // Linear animation helper function
-            function linearEasing(t) {{
-                return t;  // 直接返回t，实现线性动画
-            }}
-            
-            function animate(fromData, toData) {{
-                return new Promise((resolve) => {{
-                    const startTime = performance.now();
-                    let lastFrameTime = 0;
-                    
-                    function step(currentTime) {{
-                        const elapsedTime = currentTime - startTime;
-                        const rawProgress = Math.min(elapsedTime / animationDuration, 1);
-                        const progress = linearEasing(rawProgress);  // 使用线性缓动
-                        
-                        // 限制帧率
-                        if (currentTime - lastFrameTime < 16) {{
-                            requestAnimationFrame(step);
-                            return;
-                        }}
-                        
-                        lastFrameTime = currentTime;
-                        
-                        // 插值计算
-                        const interpolatedRevenues = fromData.revenues.map((startVal, i) => {{
-                            return startVal + (toData.revenues[i] - startVal) * progress;
-                        }});
-                        
-                        // 计算当前最大值和历史最大值中的较大者
-                        const currentMaxRevenue = Math.max(...interpolatedRevenues);
-                        historicalMaxRevenue = Math.max(historicalMaxRevenue, currentMaxRevenue);
-                        const xAxisMax = historicalMaxRevenue * 1.5;  // 使用历史最大值来设置坐标轴范围
-                        
-                        try {{
-                            // 更新数据，保持bar宽度
-                            Plotly.restyle(chartDiv, {{
-                                'x': [interpolatedRevenues, interpolatedRevenues],
-                                'width': [0.8, 0.8]
-                            }}, [0, 1]);
-                            
-                            // 更新布局，包括logo和坐标轴范围
-                            Plotly.relayout(chartDiv, {{
-                                'xaxis.range': [0, xAxisMax],
-                                'images': toData.logos.map((logo, i) => {{
-                                    if (!logo) return null;
-                                    
-                                    return {{
-                                        source: logo,
-                                        xref: "x",
-                                        yref: "y",
-                                        x: interpolatedRevenues[i] * 1.05 + 1000,
-                                        y: toData.airlines[i],
-                                        sizex: interpolatedRevenues[i] * 0.1 * 3,
-                                        sizey: 0.3 * 3,
-                                        xanchor: "left",
-                                        yanchor: "middle",
-                                        sizing: "contain",
-                                        opacity: 0.95
-                                    }};
-                                }}).filter(img => img !== null)
-                            }});
-                        }} catch (e) {{
-                            console.error("Animation error:", e);
-                        }}
-                        
-                        if (progress < 1) {{
-                            requestAnimationFrame(step);
-                        }} else {{
-                            // 最终更新
-                            try {{
-                                Plotly.update(chartDiv, 
-                                    {{
-                                        'x': [toData.revenues, toData.revenues],
-                                        'y': [toData.airlines, toData.airlines],
-                                        'marker.color': [toData.colors, 'rgba(0,0,0,0)'],
-                                        'text': [[], toData.formatted_revenues],
-                                        'width': [0.8, 0.8]
-                                    }},
-                                    {{
-                                        'xaxis.range': [0, xAxisMax],
-                                        'yaxis.ticktext': toData.airlines,
-                                        'yaxis.tickvals': toData.airlines,
-                                        'images': toData.logos.map((logo, i) => {{
-                                            if (!logo) return null;
-                                            return {{
-                                                source: logo,
-                                                xref: "x",
-                                                yref: "y",
-                                                x: toData.revenues[i] * 1.05 + 1000,
-                                                y: toData.airlines[i],
-                                                sizex: toData.revenues[i] * 0.1 * 3,
-                                                sizey: 0.3 * 3,
-                                                xanchor: "left",
-                                                yanchor: "middle",
-                                                sizing: "contain",
-                                                opacity: 0.95
-                                            }};
-                                        }}).filter(img => img !== null)
-                                    }}
-                                );
-                            }} catch (e) {{
-                                console.error("Final update error:", e);
-                            }}
-                            
-                            setTimeout(resolve, 50);
-                        }}
-                    }}
-                    
-                    requestAnimationFrame(step);
-                }});
-            }}
-            
-            // Update chart function
-            async function updateChart(index) {{
-                const fromData = allQuartersData[currentQuarterIndex];
-                const toData = allQuartersData[index];
-                
-                currentQuarterDisplay.textContent = toData.quarter;
-                
-                // Animate transition
-                await animate(fromData, toData);
-                
-                // Update current index after animation completes
-                currentQuarterIndex = index;
-            }}
             
             // Play animation function
             async function playAnimation() {{
-            if (isPlaying) return;
-            isPlaying = true;
-            
-                async function playNext() {{
+                if (isPlaying) return;
+                isPlaying = true;
+                
+                let lastFrameTime = performance.now();
+                const frameDuration = 16;
+                const quarterDuration = 500;
+                let currentTime = 0;
+                
+                function animate() {{
                     if (!isPlaying) return;
                     
-                    const nextIndex = currentQuarterIndex + 1;
-                    if (nextIndex < allQuartersData.length) {{
-                        quarterSlider.value = nextIndex;
-                        await updateChart(nextIndex);
-                        playInterval = setTimeout(playNext, 100);
-                }} else {{
-                        // Reset to beginning if at the end
-                        quarterSlider.value = 0;
-                        await updateChart(0);
-                    isPlaying = false;
+                    const now = performance.now();
+                    const deltaTime = now - lastFrameTime;
+                    lastFrameTime = now;
+                    
+                    currentTime += deltaTime;
+                    const totalDuration = quarterDuration * (allQuartersData.length - 1);
+                    const normalizedTime = (currentTime % totalDuration) / totalDuration;
+                    
+                    const exactIndex = normalizedTime * (allQuartersData.length - 1);
+                    const currentIndex = Math.floor(exactIndex);
+                    const nextIndex = (currentIndex + 1) % allQuartersData.length;
+                    const progress = exactIndex - currentIndex;
+                    
+                    quarterSlider.value = currentIndex;
+                    
+                    const currentData = allQuartersData[currentIndex];
+                    const nextData = allQuartersData[nextIndex];
+                    
+                    const interpolatedData = currentData.revenues.map((startVal, i) => ({{
+                        airline: currentData.airlines[i],
+                        revenue: startVal + (nextData.revenues[i] - startVal) * progress,
+                        logo: currentData.logos[i],
+                        color: currentData.colors[i],
+                        formattedRevenue: formatRevenue(startVal + (nextData.revenues[i] - startVal) * progress)
+                    }}));
+                    
+                    interpolatedData.sort((a, b) => b.revenue - a.revenue);
+                    
+                    const airlinesSorted = interpolatedData.map(d => d.airline);
+                    const revenuesSorted = interpolatedData.map(d => d.revenue);
+                    const logosSorted = interpolatedData.map(d => d.logo);
+                    const colorsSorted = interpolatedData.map(d => d.color);
+                    const formattedRevenuesSorted = interpolatedData.map(d => d.formattedRevenue);
+                    
+                    const currentMaxRevenue = Math.max(...revenuesSorted);
+                    historicalMaxRevenue = Math.max(historicalMaxRevenue, currentMaxRevenue);
+                    const xAxisMax = historicalMaxRevenue * 1.5;
+                    
+                    try {{
+                        Plotly.update(chartDiv, {{
+                            'x': [revenuesSorted, revenuesSorted],
+                            'y': [airlinesSorted, airlinesSorted],
+                            'marker.color': [colorsSorted, Array(colorsSorted.length).fill('rgba(0,0,0,0)')],
+                            'text': [[], formattedRevenuesSorted],
+                            'width': [0.8, 0.8]
+                        }}, {{
+                            'yaxis.ticktext': airlinesSorted,
+                            'yaxis.tickvals': airlinesSorted,
+                            'yaxis.autorange': 'reversed',   // ✅✅✅ 加上这一行！！！
+
+                            'xaxis.range': [0, xAxisMax],
+                            'images': logosSorted.map((logo, i) => 
+                                logo ? {{
+                                    source: logo,
+                                    xref: "x",
+                                    yref: "y",
+                                    x: revenuesSorted[i] * 1.05,
+                                    y: airlinesSorted[i],
+                                    sizex: revenuesSorted[i] * 0.2 * 3,
+                                    sizey: 0.6 * 3,
+                                    xanchor: "left",
+                                    yanchor: "middle",
+                                    sizing: "contain",
+                                    opacity: 0.95
+                                }} : null
+                            ).filter(img => img !== null)
+                        }});
+                        
+                        const quarterText = interpolateQuarters(currentData.quarter, nextData.quarter, progress);
+                        currentQuarterDisplay.textContent = quarterText;
+                        
+                    }} catch (e) {{
+                        console.error("Animation error:", e);
                     }}
+                    
+                    requestAnimationFrame(animate);
                 }}
                 
-                await playNext();
+                requestAnimationFrame(animate);
+            }}
+            
+            function formatRevenue(value) {{
+                if (value >= 1000) {{
+                    return '$' + (value/1000).toFixed(1) + 'B';
+                }}
+                return '$' + Math.round(value) + 'M';
+            }}
+            
+            function interpolateQuarters(q1, q2, progress) {{
+                const [year1, quarter1] = q1.split("'").map(x => parseInt(x.replace('Q', '')));
+                let [year2, quarter2] = q2.split("'").map(x => parseInt(x.replace('Q', '')));
+                
+                if (year2 < year1) {{
+                    year2 = year1;
+                }}
+                
+                const yearDiff = year2 - year1;
+                const quarterDiff = quarter2 - quarter1;
+                const totalQuarters = yearDiff * 4 + quarterDiff;
+                const interpolatedQuarters = quarter1 + totalQuarters * progress;
+                
+                const interpolatedYear = Math.floor(year1 + (interpolatedQuarters - 1) / 4);
+                const interpolatedQuarter = Math.floor(((interpolatedQuarters - 1) % 4) + 1);
+                
+                return interpolatedYear + "'Q" + interpolatedQuarter;
             }}
             
         function pauseAnimation() {{
@@ -835,7 +810,16 @@ def create_visualization():
     </script>
 </body>
 </html>
-    """
+    """.format(
+        html_content=html_content,
+        initial_quarter=initial_data['quarter'],
+        max_quarters=len(quarters) - 1,
+        quarters_data=quarters_data_json,
+        animation_duration=args.transition_duration,
+        width=args.width,
+        height=args.height
+    )
+
     
     # Save HTML file
     with open(args.output, 'w') as f:
