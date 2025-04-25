@@ -69,15 +69,38 @@ def get_logo_path(airline, year, iata_code, month=6):
             {"start_year": 1999, "end_year": 2004, "file": "airline-bar-video/logos/klm-1999-now.png"},
             {"start_year": 2004, "end_year": 9999, "file": "airline-bar-video/logos/Air-France-KLM-Holding-Logo.png"}
         ],
-        "American Airlines": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/aa-logo.png"}],
-        "United Airlines": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/ua-logo.png"}],
-        "Delta Air Lines": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/delta-logo.png"}],
-        "Southwest Airlines": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/southwest-logo.png"}],
-        "Lufthansa": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/lufthansa-logo.png"}],
-        "British Airways": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/ba-logo.png"}],
-        "Air China": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/air-china-logo.png"}],
-        "China Southern": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/china-southern-logo.png"}],
-        "China Eastern": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/china-eastern-logo.png"}],
+        "American Airlines": [
+            {"start_year": 1999, "end_year": 2013, "file": "airline-bar-video/logos/american-airlines-1967-2013.jpg"},
+            {"start_year": 2013, "end_year": 9999, "file": "airline-bar-video/logos/american-airlines-2013-now.jpg"}
+        ],
+        "United Airlines": [
+            {"start_year": 1998, "end_year": 2010, "file": "airline-bar-video/logos/united-airlines-1998-2010.jpg"},
+            {"start_year": 2010, "end_year": 9999, "file": "airline-bar-video/logos/united-airlines-2010-now.jpg"}
+        ],
+        "Delta Air Lines": [
+            {"start_year": 2000, "end_year": 2007, "file": "airline-bar-video/logos/delta-air-lines-2000-2007.png"},
+            {"start_year": 2007, "end_year": 9999, "file": "airline-bar-video/logos/delta-air-lines-2007-now.jpg"}
+        ],
+        "Southwest Airlines": [
+            {"start_year": 1989, "end_year": 2014, "file": "airline-bar-video/logos/southwest-airlines-1989-2014.png"},
+            {"start_year": 2014, "end_year": 9999, "file": "airline-bar-video/logos/southwest-airlines-2014-now.png"}
+        ],
+        "Lufthansa": [
+            {"start_year": 1999, "end_year": 2018, "file": "airline-bar-video/logos/Deutsche Lufthansa-1999-2018.png"},
+            {"start_year": 2018, "end_year": 9999, "file": "airline-bar-video/logos/Deutsche Lufthansa-2018-now.jpg"}
+        ],
+        "Deutsche Lufthansa": [
+            {"start_year": 1999, "end_year": 2018, "file": "airline-bar-video/logos/Deutsche Lufthansa-1999-2018.png"},
+            {"start_year": 2018, "end_year": 9999, "file": "airline-bar-video/logos/Deutsche Lufthansa-2018-now.jpg"}
+        ],
+        "Air China": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/Air China-1999-now.png"}],
+        "China Southern": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/China Southern-1999-now.jpg"}],
+        "China Eastern": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/China Eastern-1999-now.jpg"}],
+        "Singapore Airlines": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/Singapore Airlines-1999-now.jpg"}],
+        "LATAM Airlines": [
+            {"start_year": 1999, "end_year": 2016, "file": "airline-bar-video/logos/LATAM Airlines-1999-2016.png"},
+            {"start_year": 2016, "end_year": 9999, "file": "airline-bar-video/logos/LATAM Airlines-2016-now.jpg"}
+        ],
         "Hainan Airlines": [
             {"start_year": 1999, "end_year": 2004, "file": "airline-bar-video/logos/Hainan Airlines-1999-2004.png"},
             {"start_year": 2004, "end_year": 9999, "file": "airline-bar-video/logos/Hainan Airlines-2004-now.jpg"}
@@ -91,7 +114,7 @@ def get_logo_path(airline, year, iata_code, month=6):
         "SkyWest": [
             {"start_year": 1972, "end_year": 2001, "file": "airline-bar-video/logos/skywest-1972-2001.png"},
             {"start_year": 2001, "end_year": 2008, "file": "airline-bar-video/logos/skywest-2001-2008.png"},
-            {"start_year": 2018, "end_year": 9999, "file": "airline-bar-video/logos/skywest-2018-now.jpg"}
+            {"start_year": 2008, "end_year": 9999, "file": "airline-bar-video/logos/skywest-2018-now.jpg"}
         ],
         "Northwest Airlines": [
             {"start_year": 1989, "end_year": 2003, "file": "airline-bar-video/logos/northwest-airlines-1989-2003.png"},
@@ -111,9 +134,22 @@ def get_logo_path(airline, year, iata_code, month=6):
         "Aeroflot": [
             {"start_year": 1999, "end_year": 2003, "file": "airline-bar-video/logos/Aeroflot-1999-2003.jpg"},
             {"start_year": 2003, "end_year": 9999, "file": "airline-bar-video/logos/Aeroflot-2003-now.jpg"}
-        ]
+        ],
+        "Cathay Pacific": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/Cathay Pacific-1999-now.png"}],
+        "Qantas Airways": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/Qantas Airways-1999-now.jpg"}],
+        "Finnair": [
+            {"start_year": 1999, "end_year": 2010, "file": "airline-bar-video/logos/Finnair-1999-2010.jpg"},
+            {"start_year": 2010, "end_year": 9999, "file": "airline-bar-video/logos/Finnair-2010-now.jpg"}
+        ],
+        "Alaska Air": [
+            {"start_year": 1972, "end_year": 2014, "file": "airline-bar-video/logos/alaska-air-1972-2014.png"},
+            {"start_year": 2014, "end_year": 2016, "file": "airline-bar-video/logos/alaska-air-2014-2016.png"},
+            {"start_year": 2016, "end_year": 9999, "file": "airline-bar-video/logos/alaska-air-2016-now.jpg"}
+        ],
+        "Norwegian": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/norwegian-logo.jpg"}]
     }
     
+    # 处理Norwegian特殊情况
     if iata_code == "DY":
         norwegian_logo = "airline-bar-video/logos/norwegian-logo.jpg"
         return norwegian_logo if os.path.exists(norwegian_logo) else None
@@ -124,6 +160,7 @@ def get_logo_path(airline, year, iata_code, month=6):
         
     logo_versions = logo_mapping[airline]
     
+    # 处理Air France-KLM特殊情况
     if airline == "Air France-KLM":
         if year < 2004 or (year == 2004 and month < 5):
             for version in logo_versions:
@@ -136,6 +173,7 @@ def get_logo_path(airline, year, iata_code, month=6):
                     logo_path = version["file"]
                     return logo_path if os.path.exists(logo_path) else None
     
+    # 标准处理方式
     for version in logo_versions:
         if version["start_year"] <= year <= version["end_year"]:
             logo_path = version["file"]
@@ -233,30 +271,34 @@ def create_visualization():
     # Create initial chart
     fig = go.Figure()
     
-    # Add single bar trace
+    # Add traces
     fig.add_trace(
             go.Bar(
                 x=initial_data['revenues'],
                 y=initial_data['airlines'],
                 orientation='h',
-                marker=dict(color=initial_data['colors']),
-                text=initial_data['formatted_revenues'],
-                textposition='outside',
-            hoverinfo='none',  # Remove hover text since we have values shown outside
-            textfont={"family": "Monda", "size": 14},
-            width=0.8,
-            showlegend=False
-        )
+                marker=dict(color=initial_data['colors'],
+                            line=dict(width=0, color='rgba(0,0,0,0)')),
+                hoverinfo='none',
+                width=0.8,
+                showlegend=False
+            )
     )
     
-    # Create a legend trace for each region without using bars
-    fig.update_layout(
-        showlegend=True,
-        legend=dict(
-            itemsizing='constant',
-            title=dict(text='Regions'),
-            tracegroupgap=0
-        )
+    # Add text layer with transparent bars
+    fig.add_trace(
+            go.Bar(
+                x=initial_data['revenues'],
+                y=initial_data['airlines'],
+                orientation='h',
+                marker=dict(color='rgba(0,0,0,0)',
+                            line=dict(width=0, color='rgba(0,0,0,0)')),
+                text=initial_data['formatted_revenues'],
+                textposition='outside',
+                hoverinfo='none',
+                width=0.8,
+                showlegend=False
+            )
     )
     
     # Add region colors to legend using scatter points
@@ -266,30 +308,34 @@ def create_visualization():
                 x=[None],
                 y=[None],
                 mode='markers',
-                marker=dict(size=10, color=color),
+                marker=dict(size=20, color=color),
                 name=region,
                 showlegend=True
             )
         )
-    
-    # Add logos
+
+    # 添加logo，大幅增加尺寸
     for i, (airline, revenue, logo) in enumerate(zip(initial_data['airlines'], initial_data['revenues'], initial_data['logos'])):
         if logo:
             fig.add_layout_image(
                 dict(
                     source=logo,
-                    xref="x",
-                    yref="y",
-                    x=revenue,
-                    y=airline,
-                    sizex=revenue * 0.05,
-                    sizey=0.6,
-                    xanchor="left",
+                    xref="x",        # 使用x轴坐标系统
+                    yref="y",        # y轴仍然使用数据坐标
+                    x=revenue * 1.05, # 放在每个条形图右侧
+                    y=airline,       # y位置对应航空公司名称
+                    sizex=revenue * 0.2 * 3, # 根据revenue动态调整大小
+                    sizey=0.6 * 3,       # 固定高度
+                    xanchor="left",  # 左侧对齐
                     yanchor="middle",
                     sizing="contain"
                 )
             )
-    
+
+    # 调整x轴以容纳logo
+    max_revenue = revenue_data.max().max()
+    x_axis_range = [0, max_revenue * 1.5]  # 确保图表有足够空间
+
     # Update layout
     fig.update_layout(
         title={
@@ -308,7 +354,7 @@ def create_visualization():
                 'font': {'family': 'Monda', 'size': 16}
             },
             tickformat="$,.0f",
-            range=[0, revenue_data.max().max() * 1.2],
+            range=x_axis_range,
             showgrid=True,
             gridcolor='lightgrey',
             gridwidth=1,
@@ -326,7 +372,19 @@ def create_visualization():
         paper_bgcolor='white',
         hovermode="closest",
         font=dict(family="Monda", size=14),
-        margin=dict(l=100, r=100, t=100, b=140)
+        margin=dict(l=100, r=150, t=100, b=140),  # 调整右侧边距
+        showlegend=True,
+        legend=dict(
+            itemsizing='constant',
+            title=dict(text='Regions'),
+            tracegroupgap=0,
+            orientation="h",  # 水平方向排列图例项
+            yanchor="top",    # 顶部对齐
+            y=-0.15,          # 放在图表下方
+            xanchor="center", # 水平居中
+            x=0.5             # 水平居中位置
+        ),
+        xaxis_range=x_axis_range
     )
     
     # Convert to HTML
@@ -432,14 +490,35 @@ def create_visualization():
             
             // Create traces array with the bar chart and region legends
             const traces = [
-                // Main bar chart
+                // Background bar layer (only shows bars)
                 {{
                     type: 'bar',
                     x: initialData.revenues,
                     y: initialData.airlines,
                     orientation: 'h',
                     marker: {{
-                        color: initialData.colors
+                        color: initialData.colors,
+                        line: {{
+                            width: 0,
+                            color: 'rgba(0,0,0,0)'
+                        }}
+                    }},
+                    hoverinfo: 'none',
+                    width: 0.8,
+                    showlegend: false
+                }},
+                // Foreground transparent layer (only shows text)
+                {{
+                    type: 'bar',
+                    x: initialData.revenues,
+                    y: initialData.airlines,
+                    orientation: 'h',
+                    marker: {{
+                        color: 'rgba(0,0,0,0)',
+                        line: {{
+                            width: 0,
+                            color: 'rgba(0,0,0,0)'
+                        }}
                     }},
                     text: initialData.formatted_revenues,
                     textposition: 'outside',
@@ -464,18 +543,20 @@ def create_visualization():
             Object.entries(regions).forEach(([region, color]) => {{
                 traces.push({{
                     type: 'scatter',
-                    x: [null],
-                    y: [null],
+                    x: [NaN],  // 使用NaN避免原点marker
+                    y: [NaN],
                     mode: 'markers',
                     marker: {{
-                        size: 10,
+                        size: 20,
                         color: color
                     }},
                     name: region,
-                    showlegend: true
+                    showlegend: true,
+                    hoverinfo: 'skip',
+                    visible: 'legendonly'  // 只在图例中显示
                 }});
             }});
-
+            
             const layout = {{
                 title: {{
                     text: "Airline Revenue Visualization",
@@ -493,7 +574,7 @@ def create_visualization():
                         font: {{family: 'Monda', size: 16}}
                     }},
                     tickformat: "$,.0f",
-                    range: [0, Math.max(...initialData.revenues) * 1.2],
+                    range: [0, Math.max(...initialData.revenues) * 1.5],
                     showgrid: true,
                     gridcolor: 'lightgrey',
                     gridwidth: 1,
@@ -505,115 +586,153 @@ def create_visualization():
                         text: "Airline",
                         font: {{family: 'Monda', size: 16}}
                     }},
-                    tickfont: {{family: 'Monda', size: 14}}
+                    tickfont: {{family: 'Monda', size: 14}},
+                    tickmode: 'array',  // 防止动画中airline名字跳动
+                    ticktext: initialData.airlines,
+                    tickvals: initialData.airlines
                 }},
                 plot_bgcolor: 'white',
                 paper_bgcolor: 'white',
                 hovermode: "closest",
                 font: {{family: "Monda", size: 14}},
-                margin: {{l: 100, r: 100, t: 100, b: 140}},
+                margin: {{l: 100, r: 150, t: 100, b: 140}},
                 showlegend: true,
                 legend: {{
                     itemsizing: 'constant',
                     title: {{text: 'Regions'}},
-                    tracegroupgap: 0
+                    tracegroupgap: 0,
+                    orientation: "h",
+                    yanchor: "top",
+                    y: -0.15,
+                    xanchor: "left",  // 改为左对齐
+                    x: 0.1            // 放在左下角
                 }},
                 images: initialData.logos.map((logo, i) => 
                     logo ? {{
                         source: logo,
                         xref: "x",
                         yref: "y",
-                        x: initialData.revenues[i],
+                        x: initialData.revenues[i] * 1.05,
                         y: initialData.airlines[i],
-                        sizex: initialData.revenues[i] * 0.05,
-                        sizey: 0.6,
+                        sizex: initialData.revenues[i] * 0.2 * 3,
+                        sizey: 0.6 * 3,
                         xanchor: "left",
                         yanchor: "middle",
-                        sizing: "contain"
+                        sizing: "contain",
+                        opacity: 0.95  // 添加轻微透明度
                     }} : null
                 ).filter(img => img !== null)
             }};
-
+            
             // Create the initial plot with all traces
             await Plotly.newPlot(chartDiv, traces, layout);
             
-            // Animation helper function
+            // Animation helper function with easing
+            function easeInOutCubic(t) {{
+                return t < 0.5
+                    ? 4 * t * t * t
+                    : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            }}
+            
             function animate(fromData, toData) {{
                 return new Promise((resolve) => {{
                     const startTime = performance.now();
+                    let lastFrameTime = 0;
                     
                     function step(currentTime) {{
                         const elapsedTime = currentTime - startTime;
-                        const progress = Math.min(elapsedTime / animationDuration, 1);
+                        const rawProgress = Math.min(elapsedTime / animationDuration, 1);
+                        const progress = easeInOutCubic(rawProgress);  // 使用缓动函数
                         
-                        // Interpolate revenue values
+                        // 限制帧率
+                        if (currentTime - lastFrameTime < 16) {{
+                            requestAnimationFrame(step);
+                            return;
+                        }}
+                        
+                        lastFrameTime = currentTime;
+                        
+                        // 插值计算
                         const interpolatedRevenues = fromData.revenues.map((startVal, i) => {{
                             return startVal + (toData.revenues[i] - startVal) * progress;
                         }});
                         
-                        // Calculate current max for axis scaling
                         const maxRevenue = Math.max(...interpolatedRevenues);
                         
-                        // Update bar chart with current values
-                        Plotly.update(chartDiv, 
-                            // Data update
-                            {{
-                                x: [interpolatedRevenues]
-                            }},
-                            // Layout update
-                            {{
-                                xaxis: {{
-                                    range: [0, maxRevenue * 1.2]
-                                }},
-                                images: toData.logos.map((logo, i) => 
-                                    logo ? {{
+                        try {{
+                            // 更新数据，保持bar宽度
+                            Plotly.restyle(chartDiv, {{
+                                'x': [interpolatedRevenues, interpolatedRevenues],
+                                'width': [0.8, 0.8]  // 明确设置宽度
+                            }}, [0, 1]);
+                            
+                            // 更新布局，包括logo
+                            Plotly.relayout(chartDiv, {{
+                                'xaxis.range': [0, maxRevenue * 1.5],
+                                'yaxis.ticktext': toData.airlines,
+                                'yaxis.tickvals': toData.airlines,
+                                'images': toData.logos.map((logo, i) => {{
+                                    if (!logo) return null;
+                                    
+                                    return {{
                                         source: logo,
                                         xref: "x",
                                         yref: "y",
-                                        x: interpolatedRevenues[i],
+                                        x: interpolatedRevenues[i] * 1.05 + 1000,  // 使用当前插值的revenue
                                         y: toData.airlines[i],
-                                        sizex: interpolatedRevenues[i] * 0.05,
-                                        sizey: 0.6,
+                                        sizex: interpolatedRevenues[i] * 0.1 * 3,  // 减小logo大小到一半
+                                        sizey: 0.3 * 3,  // 减小logo大小到一半
                                         xanchor: "left",
                                         yanchor: "middle",
-                                        sizing: "contain"
-                                    }} : null
-                                ).filter(img => img !== null)
-                            }}
-                        );
+                                        sizing: "contain",
+                                        opacity: 0.95
+                                    }};
+                                }}).filter(img => img !== null)
+                            }});
+                        }} catch (e) {{
+                            console.error("Animation error:", e);
+                        }}
                         
                         if (progress < 1) {{
                             requestAnimationFrame(step);
                         }} else {{
-                            // Final update with exact values
-                            Plotly.update(chartDiv,
-                                {{
-                                    x: [toData.revenues],
-                                    y: [toData.airlines],
-                                    'marker.color': [toData.colors],
-                                    text: [toData.formatted_revenues]
-                                }},
-                                {{
-                                    xaxis: {{
-                                        range: [0, Math.max(...toData.revenues) * 1.2]
+                            // 最终更新
+                            try {{
+                                Plotly.update(chartDiv, 
+                                    {{
+                                        'x': [toData.revenues, toData.revenues],
+                                        'y': [toData.airlines, toData.airlines],
+                                        'marker.color': [toData.colors, 'rgba(0,0,0,0)'],
+                                        'text': [[], toData.formatted_revenues],
+                                        'width': [0.8, 0.8]
                                     }},
-                                    images: toData.logos.map((logo, i) => 
-                                        logo ? {{
-                                            source: logo,
-                                            xref: "x",
-                                            yref: "y",
-                                            x: toData.revenues[i],
-                                            y: toData.airlines[i],
-                                            sizex: toData.revenues[i] * 0.05,
-                                            sizey: 0.6,
-                                            xanchor: "left",
-                                            yanchor: "middle",
-                                            sizing: "contain"
-                                        }} : null
-                                    ).filter(img => img !== null)
-                                }}
-                            );
-                            resolve();
+                                    {{
+                                        'xaxis.range': [0, Math.max(...toData.revenues) * 1.5],
+                                        'yaxis.ticktext': toData.airlines,
+                                        'yaxis.tickvals': toData.airlines,
+                                        'images': toData.logos.map((logo, i) => {{
+                                            if (!logo) return null;
+                                            return {{
+                                                source: logo,
+                                                xref: "x",
+                                                yref: "y",
+                                                x: toData.revenues[i] * 1.05 + 1000,
+                                                y: toData.airlines[i],
+                                                sizex: toData.revenues[i] * 0.1 * 3,  // 减小logo大小到一半
+                                                sizey: 0.3 * 3,  // 减小logo大小到一半
+                                                xanchor: "left",
+                                                yanchor: "middle",
+                                                sizing: "contain",
+                                                opacity: 0.95
+                                            }};
+                                        }}).filter(img => img !== null)
+                                    }}
+                                );
+                            }} catch (e) {{
+                                console.error("Final update error:", e);
+                            }}
+                            
+                            setTimeout(resolve, 50);
                         }}
                     }}
                     
@@ -637,9 +756,9 @@ def create_visualization():
             
             // Play animation function
             async function playAnimation() {{
-                if (isPlaying) return;
-                isPlaying = true;
-                
+            if (isPlaying) return;
+            isPlaying = true;
+            
                 async function playNext() {{
                     if (!isPlaying) return;
                     
@@ -648,43 +767,43 @@ def create_visualization():
                         quarterSlider.value = nextIndex;
                         await updateChart(nextIndex);
                         playInterval = setTimeout(playNext, 100);
-                    }} else {{
+                }} else {{
                         // Reset to beginning if at the end
                         quarterSlider.value = 0;
                         await updateChart(0);
-                        isPlaying = false;
+                    isPlaying = false;
                     }}
                 }}
                 
                 await playNext();
             }}
             
-            function pauseAnimation() {{
-                isPlaying = false;
-                if (playInterval) {{
-                    clearTimeout(playInterval);
-                    playInterval = null;
-                }}
+        function pauseAnimation() {{
+            isPlaying = false;
+            if (playInterval) {{
+                clearTimeout(playInterval);
+                playInterval = null;
             }}
-            
+        }}
+        
             async function resetAnimation() {{
-                pauseAnimation();
-                quarterSlider.value = 0;
+            pauseAnimation();
+            quarterSlider.value = 0;
                 await updateChart(0);
-            }}
-            
+        }}
+        
             quarterSlider.addEventListener('input', async function() {{
-                pauseAnimation();
+            pauseAnimation();
                 const newIndex = parseInt(this.value);
                 if (newIndex !== currentQuarterIndex) {{
                     await updateChart(newIndex);
                 }}
-            }});
-            
-            playButton.addEventListener('click', playAnimation);
-            pauseButton.addEventListener('click', pauseAnimation);
-            resetButton.addEventListener('click', resetAnimation);
-            
+        }});
+        
+        playButton.addEventListener('click', playAnimation);
+        pauseButton.addEventListener('click', pauseAnimation);
+        resetButton.addEventListener('click', resetAnimation);
+        
             // Start animation automatically after plot is created
             setTimeout(playAnimation, 1000);
         }});
