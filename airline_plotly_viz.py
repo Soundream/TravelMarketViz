@@ -323,30 +323,31 @@ def create_visualization():
             )
         )
 
-    # Add logos - Note: Using reversed indices
-    for i, (airline, revenue, logo) in enumerate(zip(
-            initial_data['airlines'][::-1],  # Reverse the order
-            initial_data['revenues'][::-1],  # Reverse the order
-            initial_data['logos'][::-1])):  # Reverse the order
+    # Add logos with consistent size
+    max_revenue = revenue_data.max().max()
+    global_x_offset = max_revenue * 1.05
+    fixed_logo_width = max_revenue * 0.2
+    
+    for i, (airline, revenue, logo) in enumerate(zip(initial_data['airlines'], initial_data['revenues'], initial_data['logos'])):
         if logo:
             fig.add_layout_image(
                 dict(
                     source=logo,
                     xref="x",
                     yref="y",
-                    x=revenue * 1.05,
+                    x=global_x_offset,
                     y=airline,
-                    sizex=revenue * 0.2 * 3,
-                    sizey=0.6 * 3,
+                    sizex=fixed_logo_width,
+                    sizey=1.5,
                     xanchor="left",
                     yanchor="middle",
-                    sizing="contain"
+                    sizing="contain",
+                    opacity=0.95
                 )
             )
 
     # 调整x轴以容纳logo
-    max_revenue = revenue_data.max().max()
-    x_axis_range = [0, max_revenue * 1.5]
+    x_axis_range = [0, max_revenue * 1.5]  # 确保图表有足够空间显示logo
 
     # Update layout with reversed yaxis
     fig.update_layout(
@@ -379,7 +380,7 @@ def create_visualization():
                 'font': {'family': 'Monda', 'size': 16}
             },
             tickfont={'family': 'Monda', 'size': 14},
-            fixedrange=True,  # 固定y轴范围
+            fixedrange=True,
             autorange='reversed'  # 反转y轴顺序
         ),
         plot_bgcolor='white',
@@ -485,32 +486,28 @@ def create_visualization():
     </div>
     
     <script>
-        // Wait for Plotly to load and initialize
         window.addEventListener('load', async function() {{
-            // Wait for Plotly to be available
             while (!window.Plotly) {{
                 await new Promise(resolve => setTimeout(resolve, 100));
             }}
 
-        const allQuartersData = {quarters_data};
-        let currentQuarterIndex = 0;
-        const animationDuration = {animation_duration};
-        let isPlaying = false;
-        let playInterval = null;
-        
+            const allQuartersData = {quarters_data};
+            let currentQuarterIndex = 0;
+            const animationDuration = {animation_duration};
+            let isPlaying = false;
+            let playInterval = null;
+            
             const chartDiv = document.getElementById('airline-chart');
-        const currentQuarterDisplay = document.getElementById('current-quarter');
-        const quarterSlider = document.getElementById('quarter-slider');
-        const playButton = document.getElementById('play-button');
-        const pauseButton = document.getElementById('pause-button');
-        const resetButton = document.getElementById('reset-button');
-        
-            // Initialize the plot with the first dataset
+            const currentQuarterDisplay = document.getElementById('current-quarter');
+            const quarterSlider = document.getElementById('quarter-slider');
+            const playButton = document.getElementById('play-button');
+            const pauseButton = document.getElementById('pause-button');
+            const resetButton = document.getElementById('reset-button');
+            
             const initialData = allQuartersData[0];
             
             // Create traces array with the bar chart and region legends
             const traces = [
-                // Background bar layer (only shows bars)
                 {{
                     type: 'bar',
                     x: initialData.revenues,
@@ -527,7 +524,6 @@ def create_visualization():
                     width: 0.8,
                     showlegend: false
                 }},
-                // Foreground transparent layer (only shows text)
                 {{
                     type: 'bar',
                     x: initialData.revenues,
@@ -556,7 +552,6 @@ def create_visualization():
                 }}
             ];
             
-            // Add region legends using scatter points
             const regions = {{
                 'North America': '#40E0D0',
                 'Europe': '#4169E1',
@@ -617,7 +612,8 @@ def create_visualization():
                     tickfont: {{family: 'Monda', size: 14}},
                     tickmode: 'array',
                     ticktext: initialData.airlines,
-                    tickvals: initialData.airlines
+                    tickvals: initialData.airlines,
+                    autorange: 'reversed'
                 }},
                 plot_bgcolor: 'white',
                 paper_bgcolor: 'white',
@@ -640,10 +636,10 @@ def create_visualization():
                         source: logo,
                         xref: "x",
                         yref: "y",
-                        x: initialData.revenues[i] * 1.05,
+                        x: initialData.revenues[0] * 1.05,
                         y: initialData.airlines[i],
-                        sizex: initialData.revenues[i] * 0.2 * 3,
-                        sizey: 0.6 * 3,
+                        sizex: initialData.revenues[0] * 0.2,
+                        sizey: 1.5,
                         xanchor: "left",
                         yanchor: "middle",
                         sizing: "contain",
@@ -652,13 +648,10 @@ def create_visualization():
                 ).filter(img => img !== null)
             }};
             
-            // Create the initial plot with all traces
             await Plotly.newPlot(chartDiv, traces, layout);
             
-            // Track historical maximum
             let historicalMaxRevenue = Math.max(...initialData.revenues);
             
-            // Play animation function
             async function playAnimation() {{
                 if (isPlaying) return;
                 isPlaying = true;
@@ -710,6 +703,9 @@ def create_visualization():
                     const xAxisMax = historicalMaxRevenue * 1.5;
                     
                     try {{
+                        const globalXOffset = historicalMaxRevenue * 1.05;
+                        const fixedLogoWidth = historicalMaxRevenue * 0.2;
+                        
                         Plotly.update(chartDiv, {{
                             'x': [revenuesSorted, revenuesSorted],
                             'y': [airlinesSorted, airlinesSorted],
@@ -719,18 +715,17 @@ def create_visualization():
                         }}, {{
                             'yaxis.ticktext': airlinesSorted,
                             'yaxis.tickvals': airlinesSorted,
-                            'yaxis.autorange': 'reversed',   // ✅✅✅ 加上这一行！！！
-
+                            'yaxis.autorange': 'reversed',
                             'xaxis.range': [0, xAxisMax],
                             'images': logosSorted.map((logo, i) => 
                                 logo ? {{
                                     source: logo,
                                     xref: "x",
                                     yref: "y",
-                                    x: revenuesSorted[i] * 1.05,
+                                    x: revenuesSorted[i]  + xAxisMax * 0.08,
                                     y: airlinesSorted[i],
-                                    sizex: revenuesSorted[i] * 0.2 * 3,
-                                    sizey: 0.6 * 3,
+                                    sizex: fixedLogoWidth * 0.7,
+                                    sizey: 1.5 * 0.7,
                                     xanchor: "left",
                                     yanchor: "middle",
                                     sizing: "contain",
@@ -778,33 +773,32 @@ def create_visualization():
                 return interpolatedYear + "'Q" + interpolatedQuarter;
             }}
             
-        function pauseAnimation() {{
-            isPlaying = false;
-            if (playInterval) {{
-                clearTimeout(playInterval);
-                playInterval = null;
+            function pauseAnimation() {{
+                isPlaying = false;
+                if (playInterval) {{
+                    clearTimeout(playInterval);
+                    playInterval = null;
+                }}
             }}
-        }}
-        
+            
             async function resetAnimation() {{
-            pauseAnimation();
-            quarterSlider.value = 0;
+                pauseAnimation();
+                quarterSlider.value = 0;
                 await updateChart(0);
-        }}
-        
+            }}
+            
             quarterSlider.addEventListener('input', async function() {{
-            pauseAnimation();
+                pauseAnimation();
                 const newIndex = parseInt(this.value);
                 if (newIndex !== currentQuarterIndex) {{
                     await updateChart(newIndex);
                 }}
-        }});
-        
-        playButton.addEventListener('click', playAnimation);
-        pauseButton.addEventListener('click', pauseAnimation);
-        resetButton.addEventListener('click', resetAnimation);
-        
-            // Start animation automatically after plot is created
+            }});
+            
+            playButton.addEventListener('click', playAnimation);
+            pauseButton.addEventListener('click', pauseAnimation);
+            resetButton.addEventListener('click', resetAnimation);
+            
             setTimeout(playAnimation, 1000);
         }});
     </script>
