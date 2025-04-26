@@ -21,8 +21,8 @@ parser.add_argument('--frames-per-year', type=int, default=4,
                     help='Number of frames to generate per year (default: 4 for quarterly)')
 parser.add_argument('--height', type=int, default=800, 
                     help='Height of the visualization in pixels (default: 800)')
-parser.add_argument('--width', type=int, default=1200, 
-                    help='Width of the visualization in pixels (default: 1200)')
+parser.add_argument('--width', type=int, default=1600, 
+                    help='Width of the visualization in pixels (default: 1600)')
 parser.add_argument('--max-airlines', type=int, default=15, 
                     help='Maximum number of airlines to display (default: 15)')
 parser.add_argument('--transition-duration', type=int, default=500, 
@@ -66,8 +66,8 @@ def get_logo_path(airline, year, iata_code, month=6):
         "easyJet": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/easyJet-1999-now.jpg"}],
         "Emirates": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/Emirates-logo.jpg"}],
         "Air France-KLM": [
-            {"start_year": 1999, "end_year": 2004, "file": "airline-bar-video/logos/klm-1999-now.png"},
-            {"start_year": 2004, "end_year": 9999, "file": "airline-bar-video/logos/Air-France-KLM-Holding-Logo.png"}
+            {"start_year": 1999, "end_year": 2004, "file": "airline-bar-video/logos/klm-1999-now.png", "iata": "KL"},
+            {"start_year": 2004, "end_year": 9999, "file": "airline-bar-video/logos/Air-France-KLM-Holding-Logo.png", "iata": "AF"}
         ],
         "American Airlines": [
             {"start_year": 1999, "end_year": 2013, "file": "airline-bar-video/logos/american-airlines-1967-2013.jpg"},
@@ -163,13 +163,15 @@ def get_logo_path(airline, year, iata_code, month=6):
     # 处理Air France-KLM特殊情况
     if airline == "Air France-KLM":
         if year < 2004 or (year == 2004 and month < 5):
+            # 在2004年5月之前使用KLM的logo
             for version in logo_versions:
-                if version["file"] == "airline-bar-video/logos/klm-1999-now.png":
+                if version["iata"] == "KL":
                     logo_path = version["file"]
                     return logo_path if os.path.exists(logo_path) else None
         else:
+            # 2004年5月之后使用Air France-KLM的logo
             for version in logo_versions:
-                if version["file"] == "airline-bar-video/logos/Air-France-KLM-Holding-Logo.png":
+                if version["iata"] == "AF":
                     logo_path = version["file"]
                     return logo_path if os.path.exists(logo_path) else None
     
@@ -230,14 +232,23 @@ def create_visualization():
         colors = []
         hover_texts = []
         logos = []
+        y_positions = []  # Add numerical y positions
         
         # Create lists for each airline's data
-        for airline, revenue in top_airlines.items():
+        for i, (airline, revenue) in enumerate(top_airlines.items()):
             if pd.notna(revenue) and revenue > 0:
                 region = metadata.loc['Region', airline]
                 color = region_colors.get(region, '#808080')
                 iata_code = metadata.loc['IATA Code', airline]
-                label = iata_code if pd.notna(iata_code) else airline[:3]
+                
+                # Special handling for Air France-KLM labels
+                if airline == "Air France-KLM":
+                    if year < 2004 or (year == 2004 and month < 5):
+                        label = "KL"  # Use KL before May 2004
+                    else:
+                        label = iata_code if pd.notna(iata_code) else airline[:3]
+                else:
+                    label = iata_code if pd.notna(iata_code) else airline[:3]
                 
                 # Get logo path and encode it
                 logo_path = get_logo_path(airline, year, iata_code, month)
@@ -247,6 +258,7 @@ def create_visualization():
                 revenues.append(revenue)
                 colors.append(color)
                 logos.append(encoded_logo)
+                y_positions.append(i)  # Use numerical position
                 
                 hover_text = f"<b>{airline}</b><br>"
                 hover_text += f"Revenue: {format_revenue(revenue)}<br>"
@@ -262,7 +274,8 @@ def create_visualization():
             'colors': colors,
             'hover_texts': hover_texts,
             'formatted_revenues': [format_revenue(rev) for rev in revenues],
-            'logos': logos
+            'logos': logos,
+            'y_positions': y_positions  # Add y_positions to the data
         }
         all_quarters_data.append(quarter_info)
     
@@ -272,13 +285,13 @@ def create_visualization():
     # Create initial chart
     fig = go.Figure()
     
-    # Add traces - Note: Reversing the order of airlines and revenues
+    # Add traces - Note: Using numerical y positions
     fig.add_trace(
             go.Bar(
-                x=initial_data['revenues'],  # Reverse the order
-                y=initial_data['airlines'],  # Reverse the order
+                x=initial_data['revenues'],
+                y=initial_data['y_positions'],
                 orientation='h',
-                marker=dict(color=initial_data['colors'][::-1],  # Reverse the order
+                marker=dict(color=initial_data['colors'][::-1],
                             line=dict(width=0, color='rgba(0,0,0,0)')),
                 hoverinfo='none',
                 width=0.8,
@@ -286,15 +299,15 @@ def create_visualization():
             )
     )
     
-    # Add text layer with transparent bars
+    # Add text layer with transparent bars - Add vertical offset
     fig.add_trace(
             go.Bar(
-                x=initial_data['revenues'][::-1],  # Reverse the order
-                y=initial_data['airlines'][::-1],  # Reverse the order
+                x=initial_data['revenues'][::-1],
+                y=[y - 0.05 for y in initial_data['y_positions'][::-1]],  # Add small offset for text
                 orientation='h',
                 marker=dict(color='rgba(0,0,0,0)',
                             line=dict(width=0, color='rgba(0,0,0,0)')),
-                text=initial_data['formatted_revenues'][::-1],  # Reverse the order
+                text=initial_data['formatted_revenues'][::-1],
                 textposition='outside',
                 textfont=dict(
                     family='Monda',
@@ -323,7 +336,7 @@ def create_visualization():
             )
         )
 
-    # Add logos with consistent size
+    # Add logos with consistent size and proper alignment
     max_revenue = revenue_data.max().max()
     global_x_offset = max_revenue * 1.05
     fixed_logo_width = max_revenue * 0.2
@@ -336,9 +349,9 @@ def create_visualization():
                     xref="x",
                     yref="y",
                     x=global_x_offset,
-                    y=airline,
+                    y=i - 0.05,  # Add small offset for logo
                     sizex=fixed_logo_width,
-                    sizey=1.5,
+                    sizey=0.8,
                     xanchor="left",
                     yanchor="middle",
                     sizing="contain",
@@ -349,7 +362,7 @@ def create_visualization():
     # 调整x轴以容纳logo
     x_axis_range = [0, max_revenue * 1.5]  # 确保图表有足够空间显示logo
 
-    # Update layout with reversed yaxis
+    # Update layout with numerical yaxis
     fig.update_layout(
         title={
             'text': "Airline Revenue Visualization",
@@ -379,9 +392,12 @@ def create_visualization():
                 'text': "Airline",
                 'font': {'family': 'Monda', 'size': 16}
             },
+            tickmode='array',
+            tickvals=initial_data['y_positions'],
+            ticktext=initial_data['airlines'],
             tickfont={'family': 'Monda', 'size': 14},
             fixedrange=True,
-            autorange='reversed'  # 反转y轴顺序
+            autorange='reversed'
         ),
         plot_bgcolor='white',
         paper_bgcolor='white',
@@ -420,7 +436,7 @@ def create_visualization():
     import json
     quarters_data_json = json.dumps(all_quarters_data)
     
-    # Create custom HTML
+    # Create custom HTML with updated JavaScript
     custom_html = """
 <!DOCTYPE html>
 <html>
@@ -511,7 +527,7 @@ def create_visualization():
                 {{
                     type: 'bar',
                     x: initialData.revenues,
-                    y: initialData.airlines,
+                    y: initialData.y_positions,
                     orientation: 'h',
                     marker: {{
                         color: initialData.colors,
@@ -527,7 +543,7 @@ def create_visualization():
                 {{
                     type: 'bar',
                     x: initialData.revenues,
-                    y: initialData.airlines,
+                    y: initialData.y_positions,
                     orientation: 'h',
                     marker: {{
                         color: 'rgba(0,0,0,0)',
@@ -609,10 +625,10 @@ def create_visualization():
                         text: "Airline",
                         font: {{family: 'Monda', size: 16}}
                     }},
-                    tickfont: {{family: 'Monda', size: 14}},
                     tickmode: 'array',
+                    tickvals: initialData.y_positions,
                     ticktext: initialData.airlines,
-                    tickvals: initialData.airlines,
+                    tickfont: {{family: 'Monda', size: 14}},
                     autorange: 'reversed'
                 }},
                 plot_bgcolor: 'white',
@@ -637,9 +653,9 @@ def create_visualization():
                         xref: "x",
                         yref: "y",
                         x: initialData.revenues[0] * 1.05,
-                        y: initialData.airlines[i],
+                        y: i,
                         sizex: initialData.revenues[0] * 0.2,
-                        sizey: 1.5,
+                        sizey: 0.8,
                         xanchor: "left",
                         yanchor: "middle",
                         sizing: "contain",
@@ -658,7 +674,7 @@ def create_visualization():
                 
                 let lastFrameTime = performance.now();
                 const frameDuration = 16;
-                const quarterDuration = 500;
+                const quarterDuration = 5000;
                 let currentTime = 0;
                 
                 function animate() {{
@@ -687,7 +703,8 @@ def create_visualization():
                         revenue: startVal + (nextData.revenues[i] - startVal) * progress,
                         logo: currentData.logos[i],
                         color: currentData.colors[i],
-                        formattedRevenue: formatRevenue(startVal + (nextData.revenues[i] - startVal) * progress)
+                        formattedRevenue: formatRevenue(startVal + (nextData.revenues[i] - startVal) * progress),
+                        y_position: i
                     }}));
                     
                     interpolatedData.sort((a, b) => b.revenue - a.revenue);
@@ -697,6 +714,7 @@ def create_visualization():
                     const logosSorted = interpolatedData.map(d => d.logo);
                     const colorsSorted = interpolatedData.map(d => d.color);
                     const formattedRevenuesSorted = interpolatedData.map(d => d.formattedRevenue);
+                    const yPositionsSorted = interpolatedData.map((d, i) => i);
                     
                     const currentMaxRevenue = Math.max(...revenuesSorted);
                     historicalMaxRevenue = Math.max(historicalMaxRevenue, currentMaxRevenue);
@@ -708,13 +726,13 @@ def create_visualization():
                         
                         Plotly.update(chartDiv, {{
                             'x': [revenuesSorted, revenuesSorted],
-                            'y': [airlinesSorted, airlinesSorted],
+                            'y': [yPositionsSorted, yPositionsSorted.map(y => y - 0.05)],  // Add offset for text
                             'marker.color': [colorsSorted, Array(colorsSorted.length).fill('rgba(0,0,0,0)')],
                             'text': [[], formattedRevenuesSorted],
                             'width': [0.8, 0.8]
                         }}, {{
                             'yaxis.ticktext': airlinesSorted,
-                            'yaxis.tickvals': airlinesSorted,
+                            'yaxis.tickvals': yPositionsSorted,
                             'yaxis.autorange': 'reversed',
                             'xaxis.range': [0, xAxisMax],
                             'images': logosSorted.map((logo, i) => 
@@ -722,10 +740,10 @@ def create_visualization():
                                     source: logo,
                                     xref: "x",
                                     yref: "y",
-                                    x: revenuesSorted[i]  + xAxisMax * 0.08,
-                                    y: airlinesSorted[i],
+                                    x: revenuesSorted[i] + xAxisMax * 0.08,
+                                    y: i - 0.05,  // Add offset for logo
                                     sizex: fixedLogoWidth * 0.7,
-                                    sizey: 1.5 * 0.7,
+                                    sizey: 0.8,
                                     xanchor: "left",
                                     yanchor: "middle",
                                     sizing: "contain",

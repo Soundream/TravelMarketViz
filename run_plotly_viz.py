@@ -18,9 +18,9 @@ def main():
     subprocess.run([
         'python3', 'airline_plotly_viz.py',
         '--output', output_path,
-        '--frames-per-year', '4',
+        '--frames-per-year', '0',
         '--height', '800',
-        '--width', '1200',
+        '--width', '1300',
         '--max-airlines', '15',
         '--transition-duration', '500'
     ])
