@@ -38,47 +38,19 @@ if output_dir and not os.path.exists(output_dir):
     os.makedirs(output_dir)
     print(f"Created directory: {output_dir}")
 
-# Update region colors
+# Create a color mapping for regions
 region_colors = {
-    'North America': '#778899',  # 灰蓝色
-    'Europe': '#778899',         # 灰蓝色
-    'Asia Pacific': '#778899',   # 灰蓝色
-    'Latin America': '#778899',  # 灰蓝色
-    'China': '#2577e3',          # 蓝色（与TCOM相同）
-    'Middle East': '#778899',    # 灰蓝色
-    'India': '#e74c3c',          # 红色（与印度公司相同）
-    'Australia': '#e74c3c'       # 红色（与Webjet相同）
+    'North America': '#778899',  # 浅灰色，对应原来的 Turquoise
+    'Europe': '#778899',         # 浅灰色，对应原来的 Royal Blue
+    'Asia Pacific': '#778899',   # 浅灰色，对应原来的 Red
+    'Latin America': '#778899',  # 浅灰色，对应原来的 Lime Green
+    'China': '#2577e3',          # 蓝色，对应 TCOM 的颜色
+    'Middle East': '#778899',    # 浅灰色，对应原来的 Burlywood
+    'India': '#e74c3c',          # 红色，对应 YTRA 和 MMYT 的颜色
+    'Australia': '#e74c3c'       # 红色，对应 WBJ 的颜色
 }
 
-# Company specific color configuration
-company_colors = {
-    'ABNB': '#778899',      # 灰蓝色
-    'BKNG': '#778899',      # 灰蓝色
-    'PCLN': '#778899',      # 灰蓝色
-    'DESP': '#778899',      # 灰蓝色
-    'EASEMYTRIP': '#00a0e2', # 浅蓝色
-    'EaseMyTrip': '#00a0e2', # 浅蓝色
-    'EDR': '#778899',       # 灰蓝色
-    'EXPE': '#778899',      # 灰蓝色
-    'LMN': '#778899',       # 灰蓝色
-    'MMYT': '#e74c3c',      # 红色
-    'OWW': '#778899',       # 灰蓝色
-    'SEERA': '#778899',     # 灰蓝色
-    'TCOM': '#2577e3',      # 蓝色
-    'TRIP': '#778899',      # 灰蓝色
-    'TRVG': '#778899',      # 灰蓝色
-    'WBJ': '#e74c3c',       # 红色
-    'Webjet': '#e74c3c',    # 红色
-    'YTRA': '#e74c3c',      # 红色
-    'Yatra': '#e74c3c',     # 红色
-    'IXIGO': '#e74c3c',     # 红色
-    'Ixigo': '#e74c3c',     # 红色
-    'FLT': '#e74c3c',       # 红色
-    'LONG': '#E60010',      # 红色 (RGB 230,0,16)
-    'TCEL': '#5B318F'       # 紫色 (RGB 91,49,143)
-}
-
-# Define ticker to company name mapping
+# Define ticker to company mapping
 ticker_to_company = {
     'ABNB': 'Airbnb',
     'BKNG': 'Booking Holdings',
@@ -98,8 +70,9 @@ ticker_to_company = {
     'YTRA': 'Yatra',
     'IXIGO': 'Ixigo',
     'FLT': 'Flight Centre',
-    'LONG': 'Elong',
-    'TCEL': 'TongCheng'
+    'LONG': 'eLong',  # 确保eLong使用LONG作为ticker
+    'TCEL': 'TongCheng',
+    'KYAK': 'KAYAK'  # 修正：CSV中是KYAK而不是KAYAK
 }
 
 # Define company to region mapping
@@ -138,7 +111,16 @@ company_to_region = {
     'Cleartrip ME & Flyin': 'Middle East',
     'Cleartrip Arabia': 'Middle East',
     'Webjet OTA': 'Australia',
-    'EDR': 'North America'
+    'EDR': 'North America',
+    'KYAK': 'North America'  # 修正：CSV中是KYAK而不是KAYAK
+}
+
+# 为特定公司添加颜色设置
+company_colors = {
+    'EASEMYTRIP': '#00a0e2',  # 蓝色
+    'LONG': '#E60010',        # 红色
+    'TCEL': '#4B0082',        # 深紫色 - 更新Tongcheng的颜色
+    'KYAK': '#808080'         # 修正：CSV中是KYAK而不是KAYAK，保持灰色
 }
 
 def parse_quarter(quarter_str):
@@ -187,6 +169,10 @@ def get_logo_path(company, year):
             return f'{logo_base_path}1TCOM_logo.png'
         else:
             return f'{logo_base_path}TCOM_logo.png'
+    elif company == 'Traveloka':
+            return f'{logo_base_path}Traveloka_logo.png'
+    elif company == 'Yatra':
+        return f'{logo_base_path}Yatra_logo.png'
     elif company == 'TRIP':
         if year < 2020.0:
             return f'{logo_base_path}1TRIP_logo.png'
@@ -213,12 +199,20 @@ def get_logo_path(company, year):
         return f'{logo_base_path}Elong_logo.png'
     elif company == 'FLT':
         return f'{logo_base_path}FlightCentre_logo.png'
-    elif company == 'WBJ' or company == 'Webjet':
+    elif company == 'WBJ' or company == 'Webjet' or company == 'Webjet OTA':
         return f'{logo_base_path}Webjet_logo.png'
     elif company == 'Webjet':
         return f'{logo_base_path}Webjet_logo.png'
     elif company == 'ABNB':
         return f'{logo_base_path}ABNB_logo.png'
+    elif company == 'KYAK' or company == 'KAYAK':  # 修正：CSV中是KYAK而不是KAYAK
+        # 使用现有的Kayak logo文件
+        if year < 2009.0:
+            return f'{logo_base_path}Kayak-Logo-2000-2009.png'
+        elif year < 2015.0:
+            return f'{logo_base_path}Kayak-Logo-2009-2015.png'
+        else:
+            return f'{logo_base_path}Kayak-Logo-2015-2018.png'
     else:
         # 检查是否有温度logo，如果有则优先使用
         temp_logo_path = f'{logo_base_path}{company}_temp_logo.png'
@@ -255,22 +249,12 @@ def get_encoded_image(logo_path):
         print(f"Error encoding image {logo_path}: {e}")
         return None
 
-def get_color(company):
-    """获取公司颜色，优先使用公司特定颜色，如果没有则使用区域颜色"""
-    # 首先检查公司特定颜色
-    if company in company_colors:
-        return company_colors[company]
-    
-    # 然后检查区域颜色
-    region = company_to_region.get(company, 'Other')
-    return region_colors.get(region, '#808080')
-
 def create_visualization():
     """Create interactive Plotly visualization for travel company revenue data"""
     print("Starting Plotly Travel Company Revenue Visualization.")
     
     # Load the data from CSV
-    data = pd.read_csv('bar-video/Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue1.csv')
+    data = pd.read_csv('bar-video/Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue2.csv')
     print(f"Loaded {len(data)} rows of data.")
     
     # Handle "Revenue" row
@@ -337,8 +321,12 @@ def create_visualization():
                 # Get company full name and region
                 company_name = ticker_to_company.get(company, company)
                 region = company_to_region.get(company, 'Other')
-                # 使用get_color函数获取颜色
-                color = get_color(company)
+                
+                # 为KYAK或特定公司指定颜色，其他公司根据区域设置颜色
+                if company in company_colors:
+                    color = company_colors[company]
+                else:
+                    color = region_colors.get(region, '#808080')
                 
                 # Get logo path and encode it
                 logo_path = get_logo_path(company, decimal_year)
@@ -399,7 +387,7 @@ def create_visualization():
                 marker=dict(color=initial_data['colors'],
                             line=dict(width=0, color='rgba(0,0,0,0)')),
                 hoverinfo='none',
-                width=0.7,
+                width=0.8,  # 增加柱状图宽度为0.8，与airline_plotly_viz相同
                 showlegend=False
             )
     )
@@ -423,7 +411,7 @@ def create_visualization():
                 textangle=0,
                 constraintext='none',
                 hoverinfo='none',
-                width=0.7,
+                width=0.8,  # 保持与上面柱状图相同的宽度
                 showlegend=False
             )
     )
@@ -431,7 +419,7 @@ def create_visualization():
     # Add logos with consistent size and proper alignment
     max_revenue = max([max([r for r in quarter_info['revenues'] if r > 0] or [1]) for quarter_info in all_quarters_data])
     
-    # 修改初始图表的logo显示位置，使其显示在revenue数字旁边，增大logo
+    # 修改初始图表的logo显示位置，使其显示在revenue数字旁边
     for i, (company, revenue, logo, formatted_revenue) in enumerate(zip(
         initial_data['companies'], 
         initial_data['revenues'], 
@@ -439,10 +427,10 @@ def create_visualization():
         initial_data['formatted_revenues']
     )):
         if logo and revenue > 0:
-            # 计算logo位置 - 放在revenue文本右侧，增加偏移量
-            logo_x = revenue + (max_revenue * 0.07)  # 增加偏移量，确保不覆盖文本
+            # 计算logo位置 - 放在revenue文本右侧，增加偏移量和尺寸
+            logo_x = revenue + (max_revenue * 0.07)  # 偏移量不变
             logo_y = i
-            logo_width = max_revenue * 0.15  # 增加logo大小
+            logo_width = max_revenue * 0.15  # 增大logo宽度
             
             fig.add_layout_image(
                 dict(
@@ -452,7 +440,7 @@ def create_visualization():
                     x=logo_x,
                     y=logo_y,
                     sizex=logo_width,
-                    sizey=1.0,  # 增加高度
+                    sizey=1.0,  # 增大logo高度
                     xanchor="left",
                     yanchor="middle",
                     sizing="contain",
@@ -511,7 +499,7 @@ def create_visualization():
         margin=dict(l=100, r=150, t=100, b=140),
         showlegend=False,
         xaxis_range=x_axis_range,
-        bargap=0.25,
+        bargap=0.15,  # 减小gap值为0.15，与airline_plotly_viz相同
         bargroupgap=0.1,
         uniformtext=dict(
             mode='hide',
@@ -626,7 +614,7 @@ def create_visualization():
                         }}
                     }},
                     hoverinfo: 'none',
-                    width: 0.8,
+                    width: 0.8,  // 增加柱状图宽度为0.8，与airline_plotly_viz相同
                     showlegend: false
                 }},
                 {{
@@ -652,7 +640,7 @@ def create_visualization():
                     textangle: 0,
                     constraintext: 'none',
                     hoverinfo: 'none',
-                    width: 0.8,
+                    width: 0.8,  // 保持与上面柱状图相同的宽度
                     showlegend: false
                 }}
             ];
@@ -706,14 +694,21 @@ def create_visualization():
                         yref: "y",
                         x: initialData.revenues[i] + (Math.max(...initialData.revenues) * 0.07),
                         y: i,
-                        sizex: Math.max(...initialData.revenues) * 0.15,  // 增大logo尺寸
-                        sizey: 1.0,  // 增加高度
+                        sizex: Math.max(...initialData.revenues) * 0.15,  // 增大logo宽度
+                        sizey: 1.0,                // 增大logo高度
                         xanchor: "left",
                         yanchor: "middle",
                         sizing: "contain",
                         opacity: 1.0
                     }} : null
-                ).filter(img => img !== null)
+                ).filter(img => img !== null),
+                bargap: 0.15,  // 减小gap值为0.15，与airline_plotly_viz相同
+                bargroupgap: 0.1,
+                uniformtext: {{
+                    mode: 'hide',
+                    minsize: 14
+                }},
+                barmode: 'group'
             }};
             
             // 初始化图表
@@ -754,7 +749,7 @@ def create_visualization():
                     const nextData = allQuartersData[nextIndex];
                     
                     // 构建插值数据
-                    const interpolatedData = currentData.revenues.map((startVal, i) => {{
+                    let interpolatedData = currentData.revenues.map((startVal, i) => {{
                         // 确保索引在两个数据集中都存在
                         if (i < nextData.revenues.length) {{
                             return {{
@@ -777,8 +772,65 @@ def create_visualization():
                         }}
                     }});
                     
+                    // 增加新公司处理逻辑
+                    // 检查下一季度是否有新的公司出现，如果有则逐渐显示它们
+                    const currentCompanies = new Set(currentData.companies);
+                    
+                    // 首先复制当前数据，后面我们只操作这份复制数据
+                    let tempInterpolatedData = [...interpolatedData];
+                    
+                    // 清除原数组，并按照下面的逻辑重新填充
+                    interpolatedData = [];
+                    
+                    // 处理现有公司
+                    let processedCompanies = new Set();
+                    tempInterpolatedData.forEach(item => {{
+                        if (item.company && item.revenue > 0) {{
+                            interpolatedData.push(item);
+                            processedCompanies.add(item.company);
+                        }}
+                    }});
+                    
+                    // 处理新公司 - 只添加尚未处理过的新公司
+                    nextData.companies.forEach((company, i) => {{
+                        // 只处理尚未添加且有效的公司
+                        if (!processedCompanies.has(company) && !currentCompanies.has(company) && nextData.revenues[i] > 0) {{
+                            // 基于progress添加这个公司，逐渐增加其收入
+                            const scaledRevenue = nextData.revenues[i] * progress;
+                            if (scaledRevenue > 0) {{
+                                interpolatedData.push({{
+                                    company: company,
+                                    revenue: scaledRevenue,
+                                    logo: nextData.logos[i],
+                                    color: nextData.colors[i],
+                                    formattedRevenue: formatRevenue(scaledRevenue),
+                                    y_position: interpolatedData.length // 放在末尾
+                                }});
+                                processedCompanies.add(company);
+                            }}
+                        }}
+                    }});
+                    
                     // 按收入排序
                     interpolatedData.sort((a, b) => b.revenue - a.revenue);
+                    
+                    // 确保始终有固定数量的柱状图 - 添加空白占位项
+                    const maxDisplayedCompanies = 15;
+                    while (interpolatedData.length < maxDisplayedCompanies) {{
+                        interpolatedData.push({{
+                            company: "",
+                            revenue: 0,
+                            logo: null,
+                            color: 'rgba(0,0,0,0)',
+                            formattedRevenue: '',
+                            y_position: interpolatedData.length
+                        }});
+                    }}
+                    
+                    // 如果数据超过了最大显示数量，截取前15个
+                    if (interpolatedData.length > maxDisplayedCompanies) {{
+                        interpolatedData = interpolatedData.slice(0, maxDisplayedCompanies);
+                    }}
                     
                     // 提取已排序的数据
                     const companiesSorted = interpolatedData.map(d => d.company);
@@ -811,8 +863,8 @@ def create_visualization():
                                     yref: "y",
                                     x: revenuesSorted[i] + (xAxisMax * 0.05),
                                     y: i,
-                                    sizex: historicalMaxRevenue * 0.15,  // 增加logo大小
-                                    sizey: 1.0,  // 增加高度
+                                    sizex: historicalMaxRevenue * 0.15,  // 增大logo宽度
+                                    sizey: 1.0,                          // 增大logo高度
                                     xanchor: "left",
                                     yanchor: "middle",
                                     sizing: "contain",
@@ -887,41 +939,85 @@ def create_visualization():
                 currentQuarterIndex = index;
                 
                 try {{
+                    // 准备数据 - 从当前季度提取有效公司数据
+                    let displayData = [];
+                    for (let i = 0; i < currentData.companies.length; i++) {{
+                        if (currentData.revenues[i] > 0) {{
+                            displayData.push({{
+                                company: currentData.companies[i],
+                                revenue: currentData.revenues[i],
+                                logo: currentData.logos[i],
+                                color: currentData.colors[i],
+                                formattedRevenue: currentData.formatted_revenues[i],
+                                y_position: i
+                            }});
+                        }}
+                    }}
+                    
+                    // 按收入排序
+                    displayData.sort((a, b) => b.revenue - a.revenue);
+                    
+                    // 限制最多显示15个公司
+                    const maxDisplayedCompanies = 15;
+                    
+                    // 如果数据超过了最大显示数量，截取前15个
+                    if (displayData.length > maxDisplayedCompanies) {{
+                        displayData = displayData.slice(0, maxDisplayedCompanies);
+                    }}
+                    
+                    // 确保始终有固定数量的柱状图 - 添加空白占位项
+                    while (displayData.length < maxDisplayedCompanies) {{
+                        displayData.push({{
+                            company: "",
+                            revenue: 0,
+                            logo: null,
+                            color: 'rgba(0,0,0,0)',
+                            formattedRevenue: '',
+                            y_position: displayData.length
+                        }});
+                    }}
+                    
+                    // 提取排序后的数据
+                    const companiesSorted = displayData.map(d => d.company);
+                    const revenuesSorted = displayData.map(d => d.revenue);
+                    const colorsSorted = displayData.map(d => d.color);
+                    const formattedRevenuesSorted = displayData.map(d => d.formattedRevenue);
+                    const logosSorted = displayData.map(d => d.logo);
+                    const yPositionsSorted = displayData.map((d, i) => i);
+                    
                     // 更新图表数据
                     Plotly.update(chartDiv, {{
-                        'x': [currentData.revenues, currentData.revenues],
-                        'y': [currentData.y_positions, currentData.y_positions.map(y => y - 0.05)],
-                        'marker.color': [currentData.colors, Array(currentData.colors.length).fill('rgba(0,0,0,0)')],
-                        'text': [[], currentData.formatted_revenues]
+                        'x': [revenuesSorted, revenuesSorted],
+                        'y': [yPositionsSorted, yPositionsSorted.map(y => y - 0.05)],
+                        'marker.color': [colorsSorted, Array(colorsSorted.length).fill('rgba(0,0,0,0)')],
+                        'text': [[], formattedRevenuesSorted]
                     }}, {{
-                        'yaxis.ticktext': currentData.companies,
-                        'yaxis.tickvals': currentData.y_positions,
-                        'xaxis.range': [0, Math.max(...currentData.revenues) * 1.5]
+                        'yaxis.ticktext': companiesSorted,
+                        'yaxis.tickvals': yPositionsSorted,
+                        'xaxis.range': [0, Math.max(...revenuesSorted.filter(r => r > 0)) * 1.5 || 100]
                     }});
                     
                     // 更新logo
-                    const actualCompanyCount = Math.min(currentData.companies.length, {args.max_companies});
-                    const revenues = currentData.revenues.slice(0, actualCompanyCount);
-                    const logos = currentData.logos.slice(0, actualCompanyCount);
-                    const maxRevenue = Math.max(...revenues);
+                    const logos = logosSorted.filter(l => l !== null);
+                    const maxRevenue = Math.max(...revenuesSorted.filter(r => r > 0)) || 100;
                     
                     // 只为有实际收入和logo的公司添加logo
                     const newImages = [];
-                    for (let i = 0; i < actualCompanyCount; i++) {{
-                        const logo = logos[i];
-                        const revenue = revenues[i];
-                        if (logo && revenue > 0) {{
+                    
+                    for (let i = 0; i < displayData.length; i++) {{
+                        const item = displayData[i];
+                        if (item.logo && item.revenue > 0) {{
                             // 计算logo位置 - 放在revenue文本右侧，增加偏移量
-                            const logoX = revenue + (maxRevenue * 0.07);
+                            const logoX = item.revenue + (maxRevenue * 0.07);
                             
                             newImages.push({{
-                                source: logo,
+                                source: item.logo,
                                 xref: "x",
                                 yref: "y",
                                 x: logoX,
                                 y: i,
-                                sizex: maxRevenue * 0.15,  // 增加logo大小
-                                sizey: 1.0,  // 增加高度
+                                sizex: maxRevenue * 0.15,  // 增大logo宽度
+                                sizey: 1.0,                // 增大logo高度
                                 xanchor: "left",
                                 yanchor: "middle",
                                 sizing: "contain",
