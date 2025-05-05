@@ -128,71 +128,100 @@ def format_revenue(value):
 
 def get_logo_path(company, year):
     """Get the appropriate logo path based on company name and year"""
-    # Handle company and logo variations based on the year
+    logo_base_path = 'bar-video/logos/'
+    
+    # 处理特殊公司和按年份变化的logo
     if company == 'BKNG' or company == 'PCLN':
         if year < 2014.25:
-            return 'logos/PCLN_logo.png'
+            return f'{logo_base_path}PCLN_logo.png'
         elif year < 2018.08:
-            return 'logos/1PCLN_logo.png'
+            return f'{logo_base_path}1PCLN_logo.png'
         else:
-            return 'logos/BKNG_logo.png'
+            return f'{logo_base_path}BKNG_logo.png'
     elif company == 'TRVG':
         if year < 2013.0:
-            return 'logos/Trivago1.jpg'
+            return f'{logo_base_path}Trivago1.jpg'
         elif year < 2023.0:
-            return 'logos/Trivago2.jpg'
+            return f'{logo_base_path}Trivago2.jpg'
         else:
-            return 'logos/TRVG_logo.png'
+            return f'{logo_base_path}TRVG_logo.png'
     elif company == 'EXPE':
         if year < 2010.0:
-            return 'logos/1_expedia.png'
+            return f'{logo_base_path}1_expedia.png'
         elif year < 2012.0:
-            return 'logos/EXPE_logo.png'
+            return f'{logo_base_path}Expedia2.jpg'
         else:
-            return 'logos/EXPE_logo.png'
+            return f'{logo_base_path}EXPE_logo.png'
     elif company == 'TCOM':
         if year < 2019.75:
-            return 'logos/1TCOM_logo.png'
+            return f'{logo_base_path}1TCOM_logo.png'
         else:
-            return 'logos/TCOM_logo.png'
+            return f'{logo_base_path}TCOM_logo.png'
     elif company == 'TRIP':
         if year < 2020.0:
-            return 'logos/1TRIP_logo.png'
+            return f'{logo_base_path}1TRIP_logo.png'
         else:
-            return 'logos/TRIP_logo.png'
+            return f'{logo_base_path}TRIP_logo.png'
     elif company == 'SEERA':
         if year < 2019.25:
-            return 'logos/1SEERA_logo.png'
+            return f'{logo_base_path}1SEERA_logo.png'
         else:
-            return 'logos/SEERA_logo.png'
+            return f'{logo_base_path}SEERA_logo.png'
     elif company == 'LMN':
         if year >= 2014.0 and year < 2015.42:
-            return 'logos/1LMN_logo.png'
+            return f'{logo_base_path}1LMN_logo.png'
         else:
-            return 'logos/LMN_logo.png'
+            return f'{logo_base_path}LMN_logo.png'
     elif company == 'Orbitz':
         if year < 2005.0:
-            return 'logos/Orbitz1.png'
+            return f'{logo_base_path}Orbitz1.png'
         else:
-            return 'logos/Orbitz_logo.png'
+            return f'{logo_base_path}Orbitz_logo.png'
     elif company == 'TCEL':
-        return 'logos/TongCheng_logo.png'
+        return f'{logo_base_path}TongCheng_logo.png'
     elif company == 'LONG':
-        return 'logos/Elong_logo.png'
+        return f'{logo_base_path}Elong_logo.png'
+    elif company == 'FLT':
+        return f'{logo_base_path}FlightCentre_logo.png'
+    elif company == 'WBJ':
+        return f'{logo_base_path}Webjet_logo.png'
+    elif company == 'ABNB':
+        return f'{logo_base_path}ABNB_logo.png'
     else:
-        # Default logo path pattern
-        return f'logos/{company}_logo.png'
+        # 检查是否有温度logo，如果有则优先使用
+        temp_logo_path = f'{logo_base_path}{company}_temp_logo.png'
+        if os.path.exists(temp_logo_path):
+            return temp_logo_path
+        
+        # 尝试匹配不同格式的logo文件
+        for file_extension in ['png', 'jpg', 'jpeg', 'svg']:
+            logo_path = f'{logo_base_path}{company}_logo.{file_extension}'
+            if os.path.exists(logo_path):
+                return logo_path
+    
+    print(f"Warning: Logo not found for {company}")
+    return None
 
 def get_encoded_image(logo_path):
-    """Convert image to base64 string for HTML embedding"""
+    """将logo转换为base64编码以便直接在Plotly中使用"""
+    if not logo_path or not os.path.exists(logo_path):
+        return None
+    
     try:
-        if logo_path and os.path.exists(logo_path):
-            with open(logo_path, "rb") as image_file:
-                encoded_string = base64.b64encode(image_file.read()).decode()
-                return f"data:image/png;base64,{encoded_string}"
+        with open(logo_path, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+            # 判断文件类型
+            if logo_path.lower().endswith('.png'):
+                return f'data:image/png;base64,{encoded_string}'
+            elif logo_path.lower().endswith(('.jpg', '.jpeg')):
+                return f'data:image/jpeg;base64,{encoded_string}'
+            elif logo_path.lower().endswith('.svg'):
+                return f'data:image/svg+xml;base64,{encoded_string}'
+            else:
+                return None
     except Exception as e:
         print(f"Error encoding image {logo_path}: {e}")
-    return None
+        return None
 
 def create_visualization():
     """Create interactive Plotly visualization for travel company revenue data"""
@@ -371,29 +400,38 @@ def create_visualization():
 
     # Add logos with consistent size and proper alignment
     max_revenue = max([max([r for r in quarter_info['revenues'] if r > 0] or [1]) for quarter_info in all_quarters_data])
-    global_x_offset = max_revenue * 1.05
-    fixed_logo_width = max_revenue * 0.2
     
-    for i, (company, revenue, logo) in enumerate(zip(initial_data['companies'], initial_data['revenues'], initial_data['logos'])):
+    # 修改初始图表的logo显示位置，使其显示在revenue数字旁边
+    for i, (company, revenue, logo, formatted_revenue) in enumerate(zip(
+        initial_data['companies'], 
+        initial_data['revenues'], 
+        initial_data['logos'], 
+        initial_data['formatted_revenues']
+    )):
         if logo and revenue > 0:
+            # 计算logo位置 - 放在revenue文本右侧，增加偏移量
+            logo_x = revenue + (max_revenue * 0.07)  # 增加偏移量，确保不覆盖文本
+            logo_y = i
+            logo_width = max_revenue * 0.09  # 增加logo大小
+            
             fig.add_layout_image(
                 dict(
                     source=logo,
                     xref="x",
                     yref="y",
-                    x=global_x_offset,
-                    y=i - 0.05,  # Add small offset for logo
-                    sizex=fixed_logo_width,
-                    sizey=0.7,
+                    x=logo_x,
+                    y=logo_y,
+                    sizex=logo_width,
+                    sizey=0.8,  # 增加高度
                     xanchor="left",
                     yanchor="middle",
                     sizing="contain",
-                    opacity=0.95
+                    opacity=1.0
                 )
             )
 
-    # 调整x轴以容纳logo
-    x_axis_range = [0, max_revenue * 1.5]  # 确保图表有足够空间显示logo
+    # 调整x轴以容纳logo和文本
+    x_axis_range = [0, max_revenue * 1.5]  # 进一步增加空间
     
     # 设置固定的y轴范围
     y_axis_range = [-0.5, fixed_bar_count - 0.5]
@@ -671,33 +709,35 @@ def create_visualization():
                 );
                 
                 // 只为有实际收入和logo的公司添加logo
-                const globalXOffset = historicalMaxRevenue * 1.05;
-                const fixedLogoWidth = historicalMaxRevenue * 0.2;
-                
                 const newImages = [];
                 for (let i = 0; i < actualCompanyCount; i++) {{
                     const logo = logos[i];
                     const revenue = revenues[i];
                     if (logo && revenue > 0) {{
+                        // 计算logo位置 - 放在revenue文本右侧，增加偏移量
+                        const logoX = revenue + (historicalMaxRevenue * 0.07);
+                        
                         newImages.push({{
                             source: logo,
                             xref: "x",
                             yref: "y",
-                            x: globalXOffset,
-                            y: i - 0.05,  // Add offset for logo
-                            sizex: fixedLogoWidth,
-                            sizey: 0.7,
+                            x: logoX,
+                            y: i,
+                            sizex: historicalMaxRevenue * 0.09,  // 增加logo大小
+                            sizey: 0.8,  // 增加高度
                             xanchor: "left",
                             yanchor: "middle",
                             sizing: "contain",
-                            opacity: 0.95
+                            opacity: 1.0
                         }});
                     }}
                 }}
                 
+                // 应用logo变更
                 if (newImages.length > 0) {{
                     Plotly.relayout(chartDiv, {{
-                        'images': newImages
+                        'images': newImages,
+                        'xaxis.range': [0, historicalMaxRevenue * 1.5]  // 增加显示空间
                     }});
                 }}
                 
