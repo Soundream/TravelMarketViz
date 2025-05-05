@@ -775,7 +775,7 @@ def create_visualization():
                 
                 let lastFrameTime = performance.now();
                 const frameDuration = 16;
-                const quarterDuration = 5000;
+                const quarterDuration = 2500;
                 let currentTime = 0;
                 
                 function animate() {{

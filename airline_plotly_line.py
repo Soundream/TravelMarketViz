@@ -146,10 +146,33 @@ top_airlines = revenue_data.loc[latest_quarter].sort_values(ascending=False).hea
 revenue_data = revenue_data[top_airlines]
 valid_airlines = top_airlines
 
+# 打印有效的航空公司名称，用于调试
+print("Valid airlines:", valid_airlines)
+
+# 创建航空公司名称映射表，解决名称不一致问题
+airline_name_mapping = {
+    "Norwegian Air Shuttle": "Norwegian",  # 修复Norwegian名称不匹配问题
+    "Deutsche Lufthansa": "Lufthansa"      # 修复Lufthansa名称不匹配问题
+}
+
+# 反向映射表，确保不会错误地显示映射的logo
+reverse_mapping = {v: k for k, v in airline_name_mapping.items()}
+
+# 根据映射表调整有效航空公司名称
+mapped_valid_airlines = set()
+for airline in valid_airlines:
+    mapped_valid_airlines.add(airline)
+    if airline in airline_name_mapping:
+        mapped_valid_airlines.add(airline_name_mapping[airline])
+
+# 打印所有有效的航空公司以及其映射名称
+print("Valid airlines:", valid_airlines)
+print("Mapped valid airlines:", mapped_valid_airlines)
+
 # 生成插值后的数值型x轴
 quarters = revenue_data.index.tolist()
 quarter_numeric = np.arange(len(quarters))
-interp_steps = 5  # 从10降低到5，减少总帧数，使动画更快
+interp_steps = 2  # 从10降低到5，减少总帧数，使动画更快
 interp_x = np.linspace(0, len(quarters)-1, num=(len(quarters)-1)*interp_steps+1)
 
 # 对每家公司的数据做线性插值（仅用于点）
@@ -165,110 +188,317 @@ for airline in valid_airlines:
     all_y_values.extend(interp_revenue[airline])
 global_ymin = min(all_y_values)
 global_ymax = max(all_y_values)
-global_ybuffer = (global_ymax - global_ymin) * 0.1
-global_yaxis_range = [global_ymin - global_ybuffer, global_ymax + global_ybuffer]
 
-# x轴tick设置
-x_tickvals = quarter_numeric
-x_ticktext = quarters
-
+# Logo设置
 fixed_x = 0.8  # 点固定在x轴80%位置
-num_frames = len(interp_x)
+logo_offset = 0.05  # logo在点右侧的x偏移
+logo_size = 0.08   # logo高度（y轴范围的比例）
 
-# 添加滑动窗口参数
-window_size = 10  # 滑动窗口大小
+# 缓存所有航空公司的logo数据，避免重复加载
+logo_cache = {}
+airline_to_logo_map = {}  # 用于跟踪每个airline使用的是哪个logo
 
-# 计算每帧的y轴范围（滑动窗口）
+for airline in valid_airlines:
+    # 检查是否需要映射航空公司名称
+    lookup_names = [airline]
+    if airline in airline_name_mapping:
+        lookup_names.append(airline_name_mapping[airline])
+    
+    for lookup_name in lookup_names:
+        for quarter_idx, quarter_str in enumerate(quarters):
+            year = int(quarter_str[:4])
+            iata_code = metadata.loc['IATA Code', airline] if 'IATA Code' in metadata.index else ''
+            logo_path = get_logo_path(lookup_name, year, iata_code)
+            if logo_path and logo_path not in logo_cache:
+                logo_data = get_encoded_image(logo_path)
+                if logo_data:
+                    logo_cache[logo_path] = logo_data
+                    # 记录airline与logo的对应关系
+                    if airline not in airline_to_logo_map:
+                        airline_to_logo_map[airline] = logo_path
+                    
+                    # 确保反向映射的航空公司不会错误地使用这个logo
+                    if lookup_name in reverse_mapping and reverse_mapping[lookup_name] != airline:
+                        print(f"ALERT: Prevented logo of {lookup_name} from being used by {reverse_mapping[lookup_name]}")
+
+# 打印每个有效航空公司使用的logo
+print("\nAirline to logo mapping:")
+for airline, logo in sorted(airline_to_logo_map.items()):
+    if airline in valid_airlines:
+        print(f"{airline}: {logo}")
+
+# 为每一帧计算y轴范围（根据当前帧的数据动态调整）
 all_frame_y_ranges = []
-for i in range(num_frames):
-    # 找出滑动窗口内的所有y值
-    window_start = max(0, i - window_size + 1)
-    window_y_vals = []
-    for j in range(window_start, i+1):
-        for airline in valid_airlines:
-            window_y_vals.append(interp_revenue[airline][j])
+for i in range(len(interp_x)):
+    current_y_values = [interp_revenue[airline][i] for airline in valid_airlines]
+    ymin = min(current_y_values)
+    ymax = max(current_y_values)
     
-    # 计算滑动窗口内的y轴范围
-    if window_y_vals:
-        ymin = min(window_y_vals)
-        ymax = max(window_y_vals)
-        ybuffer = (ymax - ymin) * 0.1 if ymax > ymin else 1
-        yaxis_range = [ymin - ybuffer, ymax + ybuffer]
-    else:
-        # 防止空窗口
-        yaxis_range = [0, 1]
+    # 添加少量缓冲，但保持轴范围紧凑
+    y_buffer = (ymax - ymin) * 0.05
     
-    all_frame_y_ranges.append(yaxis_range)
+    # 确保不同点之间有足够空间显示logo
+    # 计算最小间距
+    sorted_y = sorted(current_y_values)
+    min_gap = float('inf')
+    for j in range(1, len(sorted_y)):
+        gap = sorted_y[j] - sorted_y[j-1]
+        if gap < min_gap:
+            min_gap = gap
+    
+    # 如果点之间的最小间距太小，适当扩大y轴范围
+    if min_gap < (ymax - ymin) * 0.1 and len(current_y_values) > 5:
+        y_buffer = (ymax - ymin) * 0.15
+    
+    all_frame_y_ranges.append([ymin - y_buffer, ymax + y_buffer])
 
-# 生成动画帧，所有帧使用相同的全局y轴范围
+# 找出所有帧中的全局最小值，确保所有线条都可见
+global_min_value = float('inf')
+for i in range(len(interp_x)):
+    current_y_values = [interp_revenue[airline][i] for airline in valid_airlines]
+    frame_min = min(current_y_values)
+    if frame_min < global_min_value:
+        global_min_value = frame_min
+
+# 确保最小值有足够的下方空间
+min_y_buffer = abs(global_min_value) * 0.1 if global_min_value > 0 else abs(global_min_value) * 0.2
+global_min_with_buffer = global_min_value - min_y_buffer
+
+# 双速率"即时扩张 + 慢速收缩"生成动态范围
+decay = 0.05    # 收缩系数：越小收缩越慢
+dyn_high = all_frame_y_ranges[0][1]
+dyn_low = min(all_frame_y_ranges[0][0], global_min_with_buffer)  # 使用全局最小值或第一帧最小值的较小者
+dyn_ranges = [[dyn_low, dyn_high]]
+
+for low, high in all_frame_y_ranges[1:]:
+    # 如果new high > 现有dyn_high，就立刻扩张到new high；否则只慢慢收缩
+    dyn_high = high if high > dyn_high else dyn_high*(1-decay) + high*decay
+    
+    # 确保下限始终不高于全局最小值（带缓冲）
+    adjusted_low = min(low, global_min_with_buffer)
+    
+    # 对下限应用双速率规则：如果新下限低于当前下限，立即扩展；否则慢慢抬升
+    dyn_low = adjusted_low if adjusted_low < dyn_low else dyn_low*(1-decay) + adjusted_low*decay
+    
+    dyn_ranges.append([dyn_low, dyn_high])
+
+# 计算每家航空公司首次出现非零数据的帧
+first_data_frame = {}
+for airline in valid_airlines:
+    # 找到revenue_data中第一个非零、非NaN的值
+    mask = (revenue_data[airline] > 0) & (~pd.isna(revenue_data[airline]))
+    if mask.any():
+        first_q_idx = np.where(mask)[0][0]  # 获取第一个非零索引
+        first_q = quarters[first_q_idx]     # 获取对应的季度
+        # 计算对应的帧号
+        first_frame_idx = first_q_idx * interp_steps
+        first_data_frame[airline] = first_frame_idx
+    else:
+        first_data_frame[airline] = float('inf')  # 如果没有有效数据，设为无穷大（不会显示）
+
+# 打印每家航空公司首次出现数据的帧和季度，便于调试
+print("\nFirst data appearance by airline:")
+for airline in sorted(first_data_frame.keys()):
+    frame_idx = first_data_frame[airline]
+    if frame_idx < float('inf'):
+        q_idx = int(frame_idx / interp_steps)
+        quarter = quarters[q_idx] if q_idx < len(quarters) else "unknown"
+        print(f"{airline}: frame {frame_idx}, quarter {quarter}")
+    else:
+        print(f"{airline}: never appears")
+
+# 生成动画帧，每帧使用动态的y轴范围
 frames = []
-for i in range(num_frames):
+for i in range(len(interp_x)):
     frame_data = []
+    
+    # 获取当前帧的时间点
+    nearest_q_idx = min(int(round(interp_x[i])), len(quarters)-1)
+    current_quarter = quarters[nearest_q_idx]
+    current_year = int(current_quarter[:4])
+    
+    # 为每个航空公司生成线和点
     for airline in valid_airlines:
         # 线的x坐标：从0到fixed_x，y坐标为历史到当前
         x_hist = np.linspace(0, fixed_x, i+1)
         y_hist = interp_revenue[airline][:i+1]
         region = metadata.loc['Region', airline] if airline in metadata.columns else 'Unknown'
         color = region_colors.get(region, '#808080')
-        frame_data.append(go.Scatter(x=x_hist, y=y_hist, mode='lines', name=airline,
-                                    line=dict(color=color), hoverinfo='skip', showlegend=False))
+        
+        frame_data.append(go.Scatter(
+            x=x_hist, 
+            y=y_hist, 
+            mode='lines', 
+            name=airline,
+            line=dict(color=color), 
+            hoverinfo='skip', 
+            showlegend=False
+        ))
+        
         # 点固定在fixed_x，y为当前帧y
-        nearest_q_idx = int(round(interp_x[i]))
-        hovertext = quarters[nearest_q_idx] if 0 <= nearest_q_idx < len(quarters) else ''
-        frame_data.append(go.Scatter(x=[fixed_x], y=[interp_revenue[airline][i]], mode='markers', name=airline,
-                                    marker=dict(color=color, size=12), hoverinfo='text+y', text=[hovertext], showlegend=False))
+        current_y = interp_revenue[airline][i]
+        frame_data.append(go.Scatter(
+            x=[fixed_x], 
+            y=[current_y], 
+            mode='markers', 
+            name=airline,
+            marker=dict(color=color, size=12), 
+            hoverinfo='text+y', 
+            text=[current_quarter], 
+            showlegend=False
+        ))
     
-    # 所有帧使用相同的全局y轴范围
-    frames.append(go.Frame(data=frame_data, name=str(i)))
+    # 为当前帧生成logo images
+    images_i = []
+    for airline in valid_airlines:
+        # 只为已经有数据的航空公司显示logo（检查当前帧是否已经超过了首次出现数据的帧）
+        if i >= first_data_frame.get(airline, float('inf')):
+            # 获取当前帧对应的原始季度
+            raw_val = revenue_data.at[current_quarter, airline] if current_quarter in revenue_data.index else None
+            
+            # 如果这一季度没数据（NaN）或数值不正（<=0），就跳过
+            if pd.isna(raw_val) or raw_val <= 0:
+                continue
+                
+            # 取当前帧的y值
+            y_val = interp_revenue[airline][i]
+            
+            # 获取对应的logo
+            if airline in airline_to_logo_map:
+                logo_path = airline_to_logo_map[airline]
+                if logo_path in logo_cache:
+                    logo_data = logo_cache[logo_path]
+                    
+                    # 使用双速率动态范围
+                    y_range = dyn_ranges[i]
+                    y_range_size = y_range[1] - y_range[0]
+                    
+                    images_i.append(dict(
+                        source=logo_data,
+                        xref="x", yref="y",
+                        x=fixed_x + logo_offset, 
+                        y=y_val,  # 直接使用当前y值，让logo跟随点移动
+                        sizex=logo_offset, 
+                        sizey=logo_size * y_range_size,  # 相对于当前y轴范围的logo大小
+                        xanchor="left", 
+                        yanchor="middle",
+                        sizing="contain",
+                        opacity=1,
+                        layer="above"
+                    ))
+    
+    # 将当前帧的数据、images和双速率动态y轴范围打包到Frame中
+    frames.append(go.Frame(
+        data=frame_data, 
+        name=str(i),
+        layout=go.Layout(
+            images=images_i,
+            yaxis=dict(
+                range=dyn_ranges[i],  # 使用双速率动态范围
+                title='Revenue (Million USD)',
+                linecolor='gray', 
+                showgrid=True, 
+                gridcolor='lightgray', 
+                griddash='dash', 
+                zeroline=False
+            )
+        )
+    ))
 
-# 初始帧，使用相同的全局y轴范围
+# 初始帧数据
 initial_data = []
 for airline in valid_airlines:
     x_hist = np.linspace(0, fixed_x, 1)
     y_hist = interp_revenue[airline][:1]
     region = metadata.loc['Region', airline] if airline in metadata.columns else 'Unknown'
     color = region_colors.get(region, '#808080')
-    initial_data.append(go.Scatter(x=x_hist, y=y_hist, mode='lines', name=airline,
-                                line=dict(color=color), hoverinfo='skip', showlegend=False))
-    initial_data.append(go.Scatter(x=[fixed_x], y=[interp_revenue[airline][0]], mode='markers', name=airline,
-                                marker=dict(color=color, size=12), hoverinfo='text+y', text=[quarters[0]], showlegend=False))
+    
+    initial_data.append(go.Scatter(
+        x=x_hist, 
+        y=y_hist, 
+        mode='lines', 
+        name=airline,
+        line=dict(color=color), 
+        hoverinfo='skip', 
+        showlegend=False
+    ))
+    
+    initial_data.append(go.Scatter(
+        x=[fixed_x], 
+        y=[interp_revenue[airline][0]], 
+        mode='markers', 
+        name=airline,
+        marker=dict(color=color, size=12), 
+        hoverinfo='text+y', 
+        text=[quarters[0]], 
+        showlegend=False
+    ))
 
-logo_offset = 0.05  # logo在点右侧的x偏移
-logo_size = 0.08   # logo高度（y轴范围的比例）
-
-# 生成初始帧logo images
-images = []
+# 初始帧logo images
+initial_images = []
 for airline in valid_airlines:
-    # 取初始帧的y值
-    y_val = interp_revenue[airline][0]
-    # 取最新季度的年份和iata
-    quarter_str = quarters[0]
-    year = int(quarter_str[:4])
-    iata_code = metadata.loc['IATA Code', airline] if 'IATA Code' in metadata.index else ''
-    logo_path = get_logo_path(airline, year, iata_code)
-    logo_data = get_encoded_image(logo_path)
-    if logo_data:
-        images.append(dict(
-            source=logo_data,
-            xref="x", yref="y",
-            x=fixed_x+logo_offset, y=y_val+logo_size/2*(global_yaxis_range[1]-global_yaxis_range[0]),
-            sizex=logo_offset, sizey=logo_size*(global_yaxis_range[1]-global_yaxis_range[0]),
-            xanchor="left", yanchor="middle",
-            sizing="contain",
-            opacity=1,
-            layer="above"
-        ))
+    # 只为初始帧就有数据的航空公司显示logo
+    if 0 >= first_data_frame.get(airline, float('inf')):
+        # 获取初始帧对应的原始季度
+        initial_quarter = quarters[0]
+        raw_val = revenue_data.at[initial_quarter, airline] if initial_quarter in revenue_data.index else None
+        
+        # 如果这一季度没数据（NaN）或数值不正（<=0），就跳过
+        if pd.isna(raw_val) or raw_val <= 0:
+            continue
+            
+        # 取初始帧的y值
+        y_val = interp_revenue[airline][0]
+        
+        # 获取对应的logo
+        if airline in airline_to_logo_map:
+            logo_path = airline_to_logo_map[airline]
+            if logo_path in logo_cache:
+                logo_data = logo_cache[logo_path]
+                
+                # 使用初始帧的y轴范围
+                y_range = dyn_ranges[0]
+                y_range_size = y_range[1] - y_range[0]
+                
+                initial_images.append(dict(
+                    source=logo_data,
+                    xref="x", yref="y",
+                    x=fixed_x + logo_offset, 
+                    y=y_val,  # 直接使用y值，让logo跟随点
+                    sizex=logo_offset, 
+                    sizey=logo_size * y_range_size,
+                    xanchor="left", 
+                    yanchor="middle",
+                    sizing="contain",
+                    opacity=1,
+                    layer="above"
+                ))
 
 # Build figure
 fig = go.Figure(
     data=initial_data,
     layout=go.Layout(
         title='Airline Revenue Over Time',
-        xaxis=dict(title='', range=[0, 1], linecolor='gray', showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(title='Revenue (Million USD)', range=global_yaxis_range, linecolor='gray', showgrid=True, gridcolor='lightgray', griddash='dash', zeroline=False),
+        xaxis=dict(
+            title='', 
+            range=[0, 1], 
+            linecolor='gray', 
+            showgrid=False, 
+            zeroline=False, 
+            showticklabels=False
+        ),
+        yaxis=dict(
+            title='Revenue (Million USD)', 
+            range=dyn_ranges[0],  # 使用初始帧的双速率动态范围
+            linecolor='gray', 
+            showgrid=True, 
+            gridcolor='lightgray', 
+            griddash='dash', 
+            zeroline=False
+        ),
         plot_bgcolor='white',
         paper_bgcolor='white',
-        images=images,
+        images=initial_images,
         updatemenus=[dict(
             type="buttons",
             showactive=False,
@@ -279,13 +509,18 @@ fig = go.Figure(
             buttons=[
                 dict(label="Play",
                      method="animate",
-                     args=[None, {"frame": {"duration": 2, "redraw": True},  # 从10ms降到2ms
-                                  "fromcurrent": True, "transition": {"duration": 0}}]),
+                     args=[None, {
+                         "frame": {"duration": 100, "redraw": True},
+                         "fromcurrent": True, 
+                         "transition": {"duration": 0}  # 关闭布局过渡效果，消除振荡缩放
+                     }]),
                 dict(label="Pause",
                      method="animate",
-                     args=[[None], {"frame": {"duration": 0, "redraw": False},
-                                    "mode": "immediate",
-                                    "transition": {"duration": 0}}])
+                     args=[[None], {
+                         "frame": {"duration": 0, "redraw": False},
+                         "mode": "immediate",
+                         "transition": {"duration": 0}
+                     }])
             ]
         )],
         sliders=[]
@@ -296,4 +531,4 @@ fig = go.Figure(
 # Save HTML
 output_file = "output/airline_revenue_linechart.html"
 pio.write_html(fig, file=output_file, auto_open=True)
-output_file
+print(f"Animation saved to {output_file}")
