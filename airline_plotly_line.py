@@ -192,7 +192,7 @@ global_ymax = max(all_y_values)
 # Logo设置
 fixed_x = 0.8  # 点固定在x轴80%位置
 logo_offset = 0.05  # logo在点右侧的x偏移
-logo_size = 0.08   # logo高度（y轴范围的比例）
+logo_size = 0.05   # 减小logo高度（从0.08减小到0.05，约减少40%）
 
 # 缓存所有航空公司的logo数据，避免重复加载
 logo_cache = {}
@@ -348,44 +348,117 @@ for i in range(len(interp_x)):
             showlegend=False
         ))
     
-    # 为当前帧生成logo images
-    images_i = []
+    # 收集当前帧所有有效的y值和对应的航空公司
+    valid_y_values = []
+    valid_airlines_in_frame = []
+    
     for airline in valid_airlines:
-        # 只为已经有数据的航空公司显示logo（检查当前帧是否已经超过了首次出现数据的帧）
+        # 只考虑当前帧有效的航空公司
         if i >= first_data_frame.get(airline, float('inf')):
             # 获取当前帧对应的原始季度
             raw_val = revenue_data.at[current_quarter, airline] if current_quarter in revenue_data.index else None
             
-            # 如果这一季度没数据（NaN）或数值不正（<=0），就跳过
-            if pd.isna(raw_val) or raw_val <= 0:
-                continue
-                
-            # 取当前帧的y值
-            y_val = interp_revenue[airline][i]
+            # 如果这一季度有有效数据，记录这个航空公司和它的y值
+            if not pd.isna(raw_val) and raw_val > 0:
+                y_val = interp_revenue[airline][i]
+                valid_y_values.append(y_val)
+                valid_airlines_in_frame.append(airline)
+    
+    # 按y值对航空公司进行排序（从小到大）
+    sorted_indices = np.argsort(valid_y_values)
+    sorted_airlines = [valid_airlines_in_frame[idx] for idx in sorted_indices]
+    sorted_y_values = [valid_y_values[idx] for idx in sorted_indices]
+    
+    # 计算logo高度（基于当前y轴范围）
+    y_range = dyn_ranges[i]
+    y_range_size = y_range[1] - y_range[0]
+    logo_height = logo_size * y_range_size
+    
+    # 调整logo位置，避免重叠
+    adjusted_y_positions = list(sorted_y_values)  # 初始位置与数据点相同
+    
+    # 第一步：计算理想间距和每个点的影响范围
+    min_required_gap = logo_height * 1.05  # 减小最小所需间距（从1.1减到1.05）
+    logo_influences = []  # 存储每个logo的影响范围[下边界, 上边界]
+
+    for pos in adjusted_y_positions:
+        half_gap = min_required_gap / 2
+        logo_influences.append([pos - half_gap, pos + half_gap])
+
+    # 第二步：检测并修复重叠
+    has_overlap = True
+    max_iterations = 10  # 防止无限循环
+    iteration = 0
+
+    while has_overlap and iteration < max_iterations:
+        has_overlap = False
+        iteration += 1
+        
+        # 从第二个logo开始，向上检查重叠
+        for j in range(1, len(logo_influences)):
+            # 当前logo与上一个logo的重叠
+            curr_lower = logo_influences[j][0]
+            prev_upper = logo_influences[j-1][1]
             
-            # 获取对应的logo
-            if airline in airline_to_logo_map:
-                logo_path = airline_to_logo_map[airline]
-                if logo_path in logo_cache:
-                    logo_data = logo_cache[logo_path]
-                    
-                    # 使用双速率动态范围
-                    y_range = dyn_ranges[i]
-                    y_range_size = y_range[1] - y_range[0]
-                    
-                    images_i.append(dict(
-                        source=logo_data,
-                        xref="x", yref="y",
-                        x=fixed_x + logo_offset, 
-                        y=y_val,  # 直接使用当前y值，让logo跟随点移动
-                        sizex=logo_offset, 
-                        sizey=logo_size * y_range_size,  # 相对于当前y轴范围的logo大小
-                        xanchor="left", 
-                        yanchor="middle",
-                        sizing="contain",
-                        opacity=1,
-                        layer="above"
-                    ))
+            if curr_lower < prev_upper:  # 存在重叠
+                has_overlap = True
+                overlap_amount = prev_upper - curr_lower
+                
+                # 向上或向下移动以解决重叠
+                # 如果当前logo更接近顶部或前一个logo更接近底部，则向下移动前一个logo
+                # 否则向上移动当前logo
+                if j < len(logo_influences) / 2:  # 前半部分倾向于向下移动
+                    # 向下移动前一个logo
+                    shift = -overlap_amount - 0.01 * logo_height  # 额外一点空间
+                    logo_influences[j-1][0] += shift
+                    logo_influences[j-1][1] += shift
+                    adjusted_y_positions[j-1] += shift
+                else:  # 后半部分倾向于向上移动
+                    # 向上移动当前logo
+                    shift = overlap_amount + 0.01 * logo_height  # 额外一点空间
+                    logo_influences[j][0] += shift
+                    logo_influences[j][1] += shift
+                    adjusted_y_positions[j] += shift
+
+    # 第三步：确保所有logo都在视图范围内
+    # 获取当前y轴范围
+    y_min, y_max = dyn_ranges[i]
+    margin = logo_height / 2  # logo中心点到边缘的距离
+
+    # 检查所有logo是否在视图范围内
+    for j in range(len(adjusted_y_positions)):
+        if adjusted_y_positions[j] - margin < y_min:
+            # logo底部超出下边界
+            adjusted_y_positions[j] = y_min + margin + 0.01 * logo_height
+        elif adjusted_y_positions[j] + margin > y_max:
+            # logo顶部超出上边界
+            adjusted_y_positions[j] = y_max - margin - 0.01 * logo_height
+
+    # 为当前帧生成logo images
+    images_i = []
+    for idx, airline in enumerate(sorted_airlines):
+        # 获取对应的logo
+        if airline in airline_to_logo_map:
+            logo_path = airline_to_logo_map[airline]
+            if logo_path in logo_cache:
+                logo_data = logo_cache[logo_path]
+                
+                # 使用调整后的y位置
+                adjusted_y = adjusted_y_positions[idx]
+                
+                images_i.append(dict(
+                    source=logo_data,
+                    xref="x", yref="y",
+                    x=fixed_x + logo_offset, 
+                    y=adjusted_y,  # 使用调整后的位置，避免重叠
+                    sizex=logo_offset, 
+                    sizey=logo_height,
+                    xanchor="left", 
+                    yanchor="middle",
+                    sizing="contain",
+                    opacity=1,
+                    layer="above"
+                ))
     
     # 将当前帧的数据、images和双速率动态y轴范围打包到Frame中
     frames.append(go.Frame(
@@ -434,45 +507,116 @@ for airline in valid_airlines:
         showlegend=False
     ))
 
-# 初始帧logo images
-initial_images = []
+# 收集初始帧所有有效的y值和对应的航空公司
+valid_y_values_initial = []
+valid_airlines_in_initial_frame = []
+
 for airline in valid_airlines:
-    # 只为初始帧就有数据的航空公司显示logo
+    # 只考虑初始帧有效的航空公司
     if 0 >= first_data_frame.get(airline, float('inf')):
         # 获取初始帧对应的原始季度
         initial_quarter = quarters[0]
         raw_val = revenue_data.at[initial_quarter, airline] if initial_quarter in revenue_data.index else None
         
-        # 如果这一季度没数据（NaN）或数值不正（<=0），就跳过
-        if pd.isna(raw_val) or raw_val <= 0:
-            continue
-            
-        # 取初始帧的y值
-        y_val = interp_revenue[airline][0]
+        # 如果这一季度有有效数据，记录这个航空公司和它的y值
+        if not pd.isna(raw_val) and raw_val > 0:
+            y_val = interp_revenue[airline][0]
+            valid_y_values_initial.append(y_val)
+            valid_airlines_in_initial_frame.append(airline)
+
+# 按y值对初始帧的航空公司进行排序（从小到大）
+sorted_indices_initial = np.argsort(valid_y_values_initial)
+sorted_airlines_initial = [valid_airlines_in_initial_frame[idx] for idx in sorted_indices_initial]
+sorted_y_values_initial = [valid_y_values_initial[idx] for idx in sorted_indices_initial]
+
+# 计算初始帧logo高度
+initial_y_range = dyn_ranges[0]
+initial_y_range_size = initial_y_range[1] - initial_y_range[0]
+initial_logo_height = logo_size * initial_y_range_size
+
+# 调整初始帧logo位置，避免重叠
+adjusted_y_positions_initial = list(sorted_y_values_initial)
+
+# 第一步：计算理想间距和每个点的影响范围
+min_required_gap_initial = initial_logo_height * 1.05  # 减小最小所需间距
+logo_influences_initial = []  # 存储每个logo的影响范围[下边界, 上边界]
+
+for pos in adjusted_y_positions_initial:
+    half_gap = min_required_gap_initial / 2
+    logo_influences_initial.append([pos - half_gap, pos + half_gap])
+
+# 第二步：检测并修复重叠
+has_overlap = True
+max_iterations = 10  # 防止无限循环
+iteration = 0
+
+while has_overlap and iteration < max_iterations:
+    has_overlap = False
+    iteration += 1
+    
+    # 从第二个logo开始，检查重叠
+    for j in range(1, len(logo_influences_initial)):
+        # 当前logo与上一个logo的重叠
+        curr_lower = logo_influences_initial[j][0]
+        prev_upper = logo_influences_initial[j-1][1]
         
-        # 获取对应的logo
-        if airline in airline_to_logo_map:
-            logo_path = airline_to_logo_map[airline]
-            if logo_path in logo_cache:
-                logo_data = logo_cache[logo_path]
-                
-                # 使用初始帧的y轴范围
-                y_range = dyn_ranges[0]
-                y_range_size = y_range[1] - y_range[0]
-                
-                initial_images.append(dict(
-                    source=logo_data,
-                    xref="x", yref="y",
-                    x=fixed_x + logo_offset, 
-                    y=y_val,  # 直接使用y值，让logo跟随点
-                    sizex=logo_offset, 
-                    sizey=logo_size * y_range_size,
-                    xanchor="left", 
-                    yanchor="middle",
-                    sizing="contain",
-                    opacity=1,
-                    layer="above"
-                ))
+        if curr_lower < prev_upper:  # 存在重叠
+            has_overlap = True
+            overlap_amount = prev_upper - curr_lower
+            
+            # 向上或向下移动以解决重叠
+            if j < len(logo_influences_initial) / 2:  # 前半部分倾向于向下移动
+                # 向下移动前一个logo
+                shift = -overlap_amount - 0.01 * initial_logo_height
+                logo_influences_initial[j-1][0] += shift
+                logo_influences_initial[j-1][1] += shift
+                adjusted_y_positions_initial[j-1] += shift
+            else:  # 后半部分倾向于向上移动
+                # 向上移动当前logo
+                shift = overlap_amount + 0.01 * initial_logo_height
+                logo_influences_initial[j][0] += shift
+                logo_influences_initial[j][1] += shift
+                adjusted_y_positions_initial[j] += shift
+
+# 第三步：确保所有logo都在视图范围内
+# 获取初始帧y轴范围
+y_min_initial, y_max_initial = dyn_ranges[0]
+margin_initial = initial_logo_height / 2
+
+# 检查所有logo是否在视图范围内
+for j in range(len(adjusted_y_positions_initial)):
+    if adjusted_y_positions_initial[j] - margin_initial < y_min_initial:
+        # logo底部超出下边界
+        adjusted_y_positions_initial[j] = y_min_initial + margin_initial + 0.01 * initial_logo_height
+    elif adjusted_y_positions_initial[j] + margin_initial > y_max_initial:
+        # logo顶部超出上边界
+        adjusted_y_positions_initial[j] = y_max_initial - margin_initial - 0.01 * initial_logo_height
+
+# 初始帧logo images
+initial_images = []
+for idx, airline in enumerate(sorted_airlines_initial):
+    # 获取对应的logo
+    if airline in airline_to_logo_map:
+        logo_path = airline_to_logo_map[airline]
+        if logo_path in logo_cache:
+            logo_data = logo_cache[logo_path]
+            
+            # 使用调整后的y位置
+            adjusted_y = adjusted_y_positions_initial[idx]
+            
+            initial_images.append(dict(
+                source=logo_data,
+                xref="x", yref="y",
+                x=fixed_x + logo_offset, 
+                y=adjusted_y,  # 使用调整后的位置，避免重叠
+                sizex=logo_offset, 
+                sizey=initial_logo_height,
+                xanchor="left", 
+                yanchor="middle",
+                sizing="contain",
+                opacity=1,
+                layer="above"
+            ))
 
 # Build figure
 fig = go.Figure(
@@ -528,7 +672,34 @@ fig = go.Figure(
     frames=frames
 )
 
-# Save HTML
+# 设置全局默认的frame和transition参数，确保自动播放也能平滑进行
+# 修复：不能直接设置fig.layout.frame，需要使用animation_opts
+fig.update(
+    layout_updatemenus=[
+        {
+            "buttons": [
+                {
+                    "args": [None, {"frame": {"duration": 100, "redraw": True}, "transition": {"duration": 0}}],
+                    "label": "Play",
+                    "method": "animate"
+                },
+                {
+                    "args": [[None], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate", "transition": {"duration": 0}}],
+                    "label": "Pause",
+                    "method": "animate"
+                }
+            ],
+            "showactive": False,
+            "type": "buttons",
+            "x": 1.05,
+            "y": 1.15,
+            "xanchor": "right",
+            "yanchor": "top"
+        }
+    ]
+)
+
+# Save HTML with embedded plotly.js to ensure consistent playback
 output_file = "output/airline_revenue_linechart.html"
-pio.write_html(fig, file=output_file, auto_open=True)
+pio.write_html(fig, file=output_file, auto_open=True, include_plotlyjs='embed', auto_play=True)
 print(f"Animation saved to {output_file}")
