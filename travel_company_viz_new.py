@@ -75,6 +75,28 @@ ticker_to_company = {
     'KYAK': 'KAYAK'  # 修正：CSV中是KYAK而不是KAYAK
 }
 
+# 需要排除的公司列表（不在可视化中显示）
+excluded_companies = ['FLT', 'Skyscanner', 'Kiwi', 'Almosafer']
+
+# 扩展排除公司列表，包含CSV中实际的列名
+excluded_columns = excluded_companies + ['Flight Centre', 'Flight center']
+
+# 创建反向映射，用于将CSV中的原始列名映射回对应的ticker
+company_to_ticker = {}
+for ticker, company in ticker_to_company.items():
+    company_to_ticker[company.lower()] = ticker
+    # 也添加原始名称到ticker的映射
+    company_to_ticker[ticker.lower()] = ticker
+
+# 特定列名到ticker的直接映射
+special_column_to_ticker = {
+    'elong': 'LONG',
+    'tongcheng': 'TCEL',
+    'webjet': 'WBJ',
+    'webjet ota': 'WBJ',
+    'kyak': 'KYAK'
+}
+
 # Define company to region mapping
 company_to_region = {
     'ABNB': 'North America',
@@ -119,7 +141,7 @@ company_to_region = {
 company_colors = {
     'EASEMYTRIP': '#00a0e2',  # 蓝色
     'LONG': '#E60010',        # 红色
-    'TCEL': '#4B0082',        # 深紫色 - 更新Tongcheng的颜色
+    'TCEL': '#800080',        # 紫色
     'KYAK': '#808080'         # 修正：CSV中是KYAK而不是KAYAK，保持灰色
 }
 
@@ -138,11 +160,18 @@ def format_revenue(value):
         return f'${value/1000:.1f}B'
     return f'${value:.0f}M'
 
-def get_logo_path(company, year):
-    """Get the appropriate logo path based on company name and year"""
+def get_logo_path(identifier, year):
+    """Get the appropriate logo path based on company or ticker and year"""
     logo_base_path = 'bar-video/logos/'
     
     # 处理特殊公司和按年份变化的logo
+    # 统一使用ticker作为查找key
+    company = identifier
+    
+    # 如果输入是ticker，尝试转换为公司名来获取logo
+    if identifier in ticker_to_company:
+        company = identifier  # 保持原始ticker
+    
     if company == 'BKNG' or company == 'PCLN':
         if year < 2014.25:
             return f'{logo_base_path}PCLN_logo.png'
@@ -303,6 +332,45 @@ def create_visualization():
         
         # Drop NaN values and get top companies by revenue
         quarter_data = quarter_data.dropna()
+        
+        # 排除指定公司
+        companies_to_drop = []
+        for company_name in list(quarter_data.index):
+            # 直接检查公司名称是否在排除列表中
+            if company_name in excluded_columns:
+                companies_to_drop.append(company_name)
+                continue
+            
+            # 检查公司名称转为小写后是否匹配
+            company_lower = company_name.lower()
+            exclude_this = False
+            for excluded in excluded_columns:
+                if excluded.lower() == company_lower:
+                    companies_to_drop.append(company_name)
+                    exclude_this = True
+                    break
+            
+            if exclude_this:
+                continue
+                
+            # 如果是通过ticker排除，继续检查
+            if company_lower in company_to_ticker:
+                ticker = company_to_ticker[company_lower]
+                if ticker in excluded_companies:
+                    companies_to_drop.append(company_name)
+                    continue
+            
+            # 检查特殊映射
+            if company_lower in special_column_to_ticker:
+                ticker = special_column_to_ticker[company_lower]
+                if ticker in excluded_companies:
+                    companies_to_drop.append(company_name)
+                    continue
+        
+        # 批量删除需要排除的公司
+        if companies_to_drop:
+            quarter_data = quarter_data.drop(companies_to_drop)
+        
         top_companies = quarter_data.sort_values(ascending=False).head(fixed_bar_count)
         
         companies = []
@@ -318,21 +386,37 @@ def create_visualization():
         # Create lists for each company's data
         for i, (company, revenue) in enumerate(top_companies.items()):
             if pd.notna(revenue) and revenue > 0:
-                # Get company full name and region
-                company_name = ticker_to_company.get(company, company)
-                region = company_to_region.get(company, 'Other')
+                # 确定正确的ticker显示
+                ticker = None
+                company_lower = company.lower()
                 
-                # 为KYAK或特定公司指定颜色，其他公司根据区域设置颜色
-                if company in company_colors:
+                # 尝试从特殊映射中获取ticker
+                if company_lower in special_column_to_ticker:
+                    ticker = special_column_to_ticker[company_lower]
+                # 尝试从反向映射中获取ticker
+                elif company_lower in company_to_ticker:
+                    ticker = company_to_ticker[company_lower]
+                # 如果都没有匹配，使用原始公司名作为ticker
+                else:
+                    ticker = company
+                
+                # Get company full name and region
+                company_name = ticker_to_company.get(ticker, company)
+                region = company_to_region.get(ticker, company_to_region.get(company, 'Other'))
+                
+                # 为特定公司指定颜色，其他公司根据区域设置颜色
+                if ticker in company_colors:
+                    color = company_colors[ticker]
+                elif company in company_colors:
                     color = company_colors[company]
                 else:
                     color = region_colors.get(region, '#808080')
                 
                 # Get logo path and encode it
-                logo_path = get_logo_path(company, decimal_year)
+                logo_path = get_logo_path(ticker, decimal_year)
                 encoded_logo = get_encoded_image(logo_path) if logo_path else None
                 
-                companies.append(company)
+                companies.append(ticker)  # 使用ticker而不是company
                 revenues.append(revenue)
                 colors.append(color)
                 logos.append(encoded_logo)
@@ -341,7 +425,7 @@ def create_visualization():
                 hover_text = f"<b>{company_name}</b><br>"
                 hover_text += f"Revenue: {format_revenue(revenue)}<br>"
                 hover_text += f"Region: {region}<br>"
-                hover_text += f"Ticker: {company}"
+                hover_text += f"Ticker: {ticker}"
                 hover_texts.append(hover_text)
         
         # 添加虚拟空白bar来填满固定数量的位置
@@ -481,7 +565,7 @@ def create_visualization():
         ),
         yaxis=dict(
             title={
-                'text': "Company",
+                'text': "",
                 'font': {'family': 'Monda', 'size': 16}
             },
             tickmode='array',
@@ -671,7 +755,7 @@ def create_visualization():
                 }},
                 yaxis: {{
                     title: {{
-                        text: "Company",
+                        text: "",
                         font: {{family: 'Monda', size: 16}}
                     }},
                     tickmode: 'array',
@@ -699,7 +783,7 @@ def create_visualization():
                         xanchor: "left",
                         yanchor: "middle",
                         sizing: "contain",
-                        opacity: 1.0
+                        opacity: 1.0  // 总是完全不透明
                     }} : null
                 ).filter(img => img !== null),
                 bargap: 0.15,  // 减小gap值为0.15，与airline_plotly_viz相同
@@ -748,68 +832,81 @@ def create_visualization():
                     const currentData = allQuartersData[currentIndex];
                     const nextData = allQuartersData[nextIndex];
                     
-                    // 构建插值数据
-                    let interpolatedData = currentData.revenues.map((startVal, i) => {{
-                        // 确保索引在两个数据集中都存在
-                        if (i < nextData.revenues.length) {{
-                            return {{
-                                company: currentData.companies[i],
-                                revenue: startVal + (nextData.revenues[i] - startVal) * progress,
-                                logo: currentData.logos[i],
-                                color: currentData.colors[i],
-                                formattedRevenue: formatRevenue(startVal + (nextData.revenues[i] - startVal) * progress),
-                                y_position: i
-                            }};
-                        }} else {{
-                            return {{
-                                company: currentData.companies[i],
-                                revenue: startVal,
-                                logo: currentData.logos[i],
-                                color: currentData.colors[i],
-                                formattedRevenue: formatRevenue(startVal),
-                                y_position: i
-                            }};
-                        }}
-                    }});
-                    
                     // 增加新公司处理逻辑
-                    // 检查下一季度是否有新的公司出现，如果有则逐渐显示它们
+                    // 检查下一季度是否有新的公司出现，如果有则直接显示它们
                     const currentCompanies = new Set(currentData.companies);
+                    const nextCompanies = new Set(nextData.companies);
                     
-                    // 首先复制当前数据，后面我们只操作这份复制数据
-                    let tempInterpolatedData = [...interpolatedData];
+                    // 创建一个空的结果数组
+                    let interpolatedData = [];
                     
-                    // 清除原数组，并按照下面的逻辑重新填充
-                    interpolatedData = [];
+                    // 处理所有当前和下一帧中出现的公司
+                    const allCompanies = new Set([...currentData.companies, ...nextData.companies]);
                     
-                    // 处理现有公司
+                    // 跟踪已处理的公司
                     let processedCompanies = new Set();
-                    tempInterpolatedData.forEach(item => {{
-                        if (item.company && item.revenue > 0) {{
-                            interpolatedData.push(item);
-                            processedCompanies.add(item.company);
-                        }}
-                    }});
                     
-                    // 处理新公司 - 只添加尚未处理过的新公司
-                    nextData.companies.forEach((company, i) => {{
-                        // 只处理尚未添加且有效的公司
-                        if (!processedCompanies.has(company) && !currentCompanies.has(company) && nextData.revenues[i] > 0) {{
-                            // 基于progress添加这个公司，逐渐增加其收入
-                            const scaledRevenue = nextData.revenues[i] * progress;
-                            if (scaledRevenue > 0) {{
+                    // 第一步：处理当前帧中存在的公司
+                    for (let i = 0; i < currentData.companies.length; i++) {{
+                        const company = currentData.companies[i];
+                        const currentRevenue = currentData.revenues[i];
+                        
+                        // 跳过空公司名或零收入
+                        if (!company || currentRevenue <= 0) continue;
+                        
+                        // 检查公司是否会在下一帧消失
+                        const nextCompanyIndex = nextData.companies.indexOf(company);
+                        const willDisappear = nextCompanyIndex === -1;
+                        
+                        // 如果公司将要消失
+                        if (willDisappear) {{
+                            // 只在过渡开始时显示，超过阈值则完全消失
+                            if (progress <= 0.05) {{
                                 interpolatedData.push({{
                                     company: company,
-                                    revenue: scaledRevenue,
-                                    logo: nextData.logos[i],
-                                    color: nextData.colors[i],
-                                    formattedRevenue: formatRevenue(scaledRevenue),
-                                    y_position: interpolatedData.length // 放在末尾
+                                    revenue: currentRevenue,
+                                    logo: currentData.logos[i],
+                                    color: currentData.colors[i],
+                                    formattedRevenue: formatRevenue(currentRevenue),
+                                    y_position: interpolatedData.length
                                 }});
-                                processedCompanies.add(company);
                             }}
+                        }} else {{
+                            // 公司继续存在，进行正常插值
+                            const nextRevenue = nextData.revenues[nextCompanyIndex];
+                            interpolatedData.push({{
+                                company: company,
+                                revenue: currentRevenue + (nextRevenue - currentRevenue) * progress,
+                                logo: currentData.logos[i],
+                                color: currentData.colors[i],
+                                formattedRevenue: formatRevenue(currentRevenue + (nextRevenue - currentRevenue) * progress),
+                                y_position: interpolatedData.length
+                            }});
                         }}
-                    }});
+                        
+                        processedCompanies.add(company);
+                    }}
+                    
+                    // 第二步：处理下一帧中新出现的公司
+                    for (let i = 0; i < nextData.companies.length; i++) {{
+                        const company = nextData.companies[i];
+                        const nextRevenue = nextData.revenues[i];
+                        
+                        // 跳过空公司名、零收入或已处理的公司
+                        if (!company || nextRevenue <= 0 || processedCompanies.has(company)) continue;
+                        
+                        // 新出现的公司 - 当进度超过阈值时直接完整显示
+                        if (progress > 0.05) {{
+                            interpolatedData.push({{
+                                company: company,
+                                revenue: nextRevenue, // 直接使用完整值
+                                logo: nextData.logos[i],
+                                color: nextData.colors[i],
+                                formattedRevenue: formatRevenue(nextRevenue),
+                                y_position: interpolatedData.length
+                            }});
+                        }}
+                    }}
                     
                     // 按收入排序
                     interpolatedData.sort((a, b) => b.revenue - a.revenue);
@@ -855,22 +952,47 @@ def create_visualization():
                         }}, {{
                             'yaxis.ticktext': companiesSorted,
                             'yaxis.tickvals': yPositionsSorted,
-                            'xaxis.range': [0, xAxisMax],
-                            'images': logosSorted.map((logo, i) => 
-                                logo ? {{
-                                    source: logo,
-                                    xref: "x",
-                                    yref: "y",
-                                    x: revenuesSorted[i] + (xAxisMax * 0.05),
-                                    y: i,
-                                    sizex: historicalMaxRevenue * 0.15,  // 增大logo宽度
-                                    sizey: 1.0,                          // 增大logo高度
-                                    xanchor: "left",
-                                    yanchor: "middle",
-                                    sizing: "contain",
-                                    opacity: 1.0
-                                }} : null
-                            ).filter(img => img !== null)
+                            'xaxis.range': [0, xAxisMax]
+                        }});
+                        
+                        // 单独处理logo图像
+                        const logoImages = [];
+                        
+                        for (let i = 0; i < logosSorted.length; i++) {{
+                            const logo = logosSorted[i];
+                            if (!logo) continue;
+                            
+                            const company = companiesSorted[i];
+                            if (!company || revenuesSorted[i] <= 0) continue;
+                            
+                            // 确定是否是新出现的公司
+                            const isNewCompany = !currentCompanies.has(company);
+                            // 确定是否是即将消失的公司
+                            const willDisappear = !nextCompanies.has(company);
+                            
+                            // 新公司且进度未超过阈值，或者要消失的公司且进度超过阈值，则跳过
+                            if ((isNewCompany && progress <= 0.05) || (willDisappear && progress > 0.05)) {{
+                                continue;
+                            }}
+                            
+                            logoImages.push({{
+                                source: logo,
+                                xref: "x",
+                                yref: "y",
+                                x: revenuesSorted[i] + (xAxisMax * 0.05),
+                                y: i,
+                                sizex: historicalMaxRevenue * 0.15,
+                                sizey: 1.0,
+                                xanchor: "left",
+                                yanchor: "middle",
+                                sizing: "contain",
+                                opacity: 1.0  // 总是完全不透明
+                            }});
+                        }}
+                        
+                        // 更新logo图像
+                        Plotly.relayout(chartDiv, {{
+                            'images': logoImages
                         }});
                         
                         // 更新季度显示
