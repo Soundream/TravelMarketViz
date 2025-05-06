@@ -514,7 +514,19 @@ def create_visualization():
             # 计算logo位置 - 放在revenue文本右侧，增加偏移量和尺寸
             logo_x = revenue + (max_revenue * 0.07)  # 偏移量不变
             logo_y = i
-            logo_width = max_revenue * 0.15  # 增大logo宽度
+            
+            # 为特定公司设置不同的logo尺寸
+            logo_width = max_revenue * 0.15  # 默认logo宽度
+            logo_height = 1.0  # 默认logo高度
+            
+            # 根据公司调整logo尺寸
+            if company == 'Etraveli' or company == 'LONG' or company == 'eLong':
+                logo_width = max_revenue * 0.09  # 缩小40%
+                logo_height = 0.6  # 缩小40%
+            # 如果是Lastminute.com，设置更大的尺寸
+            elif company == 'LMN':
+                logo_width = max_revenue * 0.2  # 放大33%
+                logo_height = 1.35  # 放大35%
             
             fig.add_layout_image(
                 dict(
@@ -524,7 +536,7 @@ def create_visualization():
                     x=logo_x,
                     y=logo_y,
                     sizex=logo_width,
-                    sizey=1.0,  # 增大logo高度
+                    sizey=logo_height,
                     xanchor="left",
                     yanchor="middle",
                     sizing="contain",
@@ -537,6 +549,20 @@ def create_visualization():
     
     # 设置固定的y轴范围
     y_axis_range = [-0.5, fixed_bar_count - 0.5]
+    
+    # 添加左侧垂直线
+    vertical_line = {
+        'type': 'line',
+        'x0': 0,
+        'y0': y_axis_range[0],
+        'x1': 0,
+        'y1': y_axis_range[1],
+        'line': {
+            'color': 'lightgrey',
+            'width': 1,
+            'dash': 'dot'
+        }
+    }
     
     # Update layout with fixed yaxis range
     fig.update_layout(
@@ -561,6 +587,9 @@ def create_visualization():
             gridcolor='lightgrey',
             gridwidth=1,
             griddash='dot',
+            zeroline=True,
+            zerolinecolor='lightgrey',
+            zerolinewidth=1,
             tickfont={'family': 'Monda', 'size': 14}
         ),
         yaxis=dict(
@@ -585,6 +614,7 @@ def create_visualization():
         xaxis_range=x_axis_range,
         bargap=0.15,  # 减小gap值为0.15，与airline_plotly_viz相同
         bargroupgap=0.1,
+        shapes=[vertical_line],  # 添加垂直线
         uniformtext=dict(
             mode='hide',
             minsize=14
@@ -751,6 +781,9 @@ def create_visualization():
                     gridcolor: 'lightgrey',
                     gridwidth: 1,
                     griddash: 'dot',
+                    zeroline: true,
+                    zerolinecolor: 'lightgrey',
+                    zerolinewidth: 1,
                     tickfont: {{family: 'Monda', size: 14}}
                 }},
                 yaxis: {{
@@ -778,12 +811,19 @@ def create_visualization():
                         yref: "y",
                         x: initialData.revenues[i] + (Math.max(...initialData.revenues) * 0.07),
                         y: i,
-                        sizex: Math.max(...initialData.revenues) * 0.15,  // 增大logo宽度
-                        sizey: 1.0,                // 增大logo高度
+                        sizex: initialData.companies[i] === 'Etraveli' || initialData.companies[i] === 'LONG' || initialData.companies[i] === 'eLong' ? 
+                              Math.max(...initialData.revenues) * 0.09 : // Etraveli和eLong使用更小的logo
+                              initialData.companies[i] === 'LMN' ?
+                              Math.max(...initialData.revenues) * 0.2 : // Lastminute.com使用更大的logo
+                              Math.max(...initialData.revenues) * 0.15,  // 其他公司使用正常大小
+                        sizey: initialData.companies[i] === 'Etraveli' || initialData.companies[i] === 'LONG' || initialData.companies[i] === 'eLong' ? 
+                              0.6 : 
+                              initialData.companies[i] === 'LMN' ?
+                              1.35 : 1.0,               // 根据公司调整logo高度
                         xanchor: "left",
                         yanchor: "middle",
                         sizing: "contain",
-                        opacity: 1.0  // 总是完全不透明
+                        opacity: 1.0
                     }} : null
                 ).filter(img => img !== null),
                 bargap: 0.15,  // 减小gap值为0.15，与airline_plotly_viz相同
@@ -792,7 +832,21 @@ def create_visualization():
                     mode: 'hide',
                     minsize: 14
                 }},
-                barmode: 'group'
+                barmode: 'group',
+                shapes: [
+                    {{  // 添加左侧垂直线
+                        type: 'line',
+                        x0: 0,
+                        y0: -0.5,
+                        x1: 0,
+                        y1: 14.5,
+                        line: {{
+                            color: 'lightgrey',
+                            width: 1,
+                            dash: 'dot'
+                        }}
+                    }}
+                ]
             }};
             
             // 初始化图表
@@ -955,7 +1009,7 @@ def create_visualization():
                             'xaxis.range': [0, xAxisMax]
                         }});
                         
-                        // 单独处理logo图像
+                        // 单独处理logo图像和图表形状
                         const logoImages = [];
                         
                         for (let i = 0; i < logosSorted.length; i++) {{
@@ -975,14 +1029,29 @@ def create_visualization():
                                 continue;
                             }}
                             
+                            // 为特定公司设置不同的logo尺寸
+                            let logoSizeX = historicalMaxRevenue * 0.15;  // 默认logo宽度
+                            let logoSizeY = 1.0;  // 默认logo高度
+                            
+                            // 如果是Etraveli或eLong，设置更小的尺寸
+                            if (company === 'Etraveli' || company === 'LONG' || company === 'eLong') {{
+                                logoSizeX = historicalMaxRevenue * 0.09;  // 缩小40%
+                                logoSizeY = 0.6;  // 缩小40%
+                            }}
+                            // 如果是Lastminute.com，设置更大的尺寸
+                            else if (company === 'LMN') {{
+                                logoSizeX = historicalMaxRevenue * 0.2;  // 放大33%
+                                logoSizeY = 1.35;  // 放大35%
+                            }}
+                            
                             logoImages.push({{
                                 source: logo,
                                 xref: "x",
                                 yref: "y",
                                 x: revenuesSorted[i] + (xAxisMax * 0.05),
                                 y: i,
-                                sizex: historicalMaxRevenue * 0.15,
-                                sizey: 1.0,
+                                sizex: logoSizeX,
+                                sizey: logoSizeY,
                                 xanchor: "left",
                                 yanchor: "middle",
                                 sizing: "contain",
@@ -990,9 +1059,24 @@ def create_visualization():
                             }});
                         }}
                         
-                        // 更新logo图像
+                        // 定义左侧垂直线
+                        const verticalLine = {{
+                            type: 'line',
+                            x0: 0,
+                            y0: -0.5,
+                            x1: 0,
+                            y1: 14.5,
+                            line: {{
+                                color: 'lightgrey',
+                                width: 1,
+                                dash: 'dot'
+                            }}
+                        }};
+                        
+                        // 更新logo图像和形状
                         Plotly.relayout(chartDiv, {{
-                            'images': logoImages
+                            'images': logoImages,
+                            'shapes': [verticalLine]  // 确保垂直线一直显示
                         }});
                         
                         // 更新季度显示
