@@ -9,90 +9,90 @@ from PIL import Image
 
 def get_logo_path(airline, year, iata_code, month=6):
     logo_mapping = {
-        "easyJet": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/easyJet-1999-now.jpg"}],
-        "Emirates": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/Emirates-logo.jpg"}],
+        "easyJet": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/easyJet-1999-now.jpg"}],
+        "Emirates": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Emirates-logo.jpg"}],
         "Air France-KLM": [
-            {"start_year": 1999, "end_year": 2004, "file": "airline-bar-video/logos/klm-1999-now.png", "iata": "KL"},
-            {"start_year": 2004, "end_year": 9999, "file": "airline-bar-video/logos/Air-France-KLM-Holding-Logo.png", "iata": "AF"}
+            {"start_year": 1999, "end_year": 2004, "file": "99.utility/airline-bar-video/logos/klm-1999-now.png", "iata": "KL"},
+            {"start_year": 2004, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Air-France-KLM-Holding-Logo.png", "iata": "AF"}
         ],
         "American Airlines": [
-            {"start_year": 1999, "end_year": 2013, "file": "airline-bar-video/logos/american-airlines-1967-2013.jpg"},
-            {"start_year": 2013, "end_year": 9999, "file": "airline-bar-video/logos/american-airlines-2013-now.jpg"}
+            {"start_year": 1999, "end_year": 2013, "file": "99.utility/airline-bar-video/logos/american-airlines-1967-2013.jpg"},
+            {"start_year": 2013, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/american-airlines-2013-now.jpg"}
         ],
         "United Airlines": [
-            {"start_year": 1998, "end_year": 2010, "file": "airline-bar-video/logos/united-airlines-1998-2010.jpg"},
-            {"start_year": 2010, "end_year": 9999, "file": "airline-bar-video/logos/united-airlines-2010-now.jpg"}
+            {"start_year": 1998, "end_year": 2010, "file": "99.utility/airline-bar-video/logos/united-airlines-1998-2010.jpg"},
+            {"start_year": 2010, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/united-airlines-2010-now.jpg"}
         ],
         "Delta Air Lines": [
-            {"start_year": 2000, "end_year": 2007, "file": "airline-bar-video/logos/delta-air-lines-2000-2007.png"},
-            {"start_year": 2007, "end_year": 9999, "file": "airline-bar-video/logos/delta-air-lines-2007-now.jpg"}
+            {"start_year": 2000, "end_year": 2007, "file": "99.utility/airline-bar-video/logos/delta-air-lines-2000-2007.png"},
+            {"start_year": 2007, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/delta-air-lines-2007-now.jpg"}
         ],
         "Southwest Airlines": [
-            {"start_year": 1989, "end_year": 2014, "file": "airline-bar-video/logos/southwest-airlines-1989-2014.png"},
-            {"start_year": 2014, "end_year": 9999, "file": "airline-bar-video/logos/southwest-airlines-2014-now.png"}
+            {"start_year": 1989, "end_year": 2014, "file": "99.utility/airline-bar-video/logos/southwest-airlines-1989-2014.png"},
+            {"start_year": 2014, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/southwest-airlines-2014-now.png"}
         ],
         "Lufthansa": [
-            {"start_year": 1999, "end_year": 2018, "file": "airline-bar-video/logos/Deutsche Lufthansa-1999-2018.png"},
-            {"start_year": 2018, "end_year": 9999, "file": "airline-bar-video/logos/Deutsche Lufthansa-2018-now.jpg"}
+            {"start_year": 1999, "end_year": 2018, "file": "99.utility/airline-bar-video/logos/Deutsche Lufthansa-1999-2018.png"},
+            {"start_year": 2018, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Deutsche Lufthansa-2018-now.jpg"}
         ],
         "Deutsche Lufthansa": [
-            {"start_year": 1999, "end_year": 2018, "file": "airline-bar-video/logos/Deutsche Lufthansa-1999-2018.png"},
-            {"start_year": 2018, "end_year": 9999, "file": "airline-bar-video/logos/Deutsche Lufthansa-2018-now.jpg"}
+            {"start_year": 1999, "end_year": 2018, "file": "99.utility/airline-bar-video/logos/Deutsche Lufthansa-1999-2018.png"},
+            {"start_year": 2018, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Deutsche Lufthansa-2018-now.jpg"}
         ],
-        "Air China": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/Air China-1999-now.png"}],
-        "China Southern": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/China Southern-1999-now.jpg"}],
-        "China Eastern": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/China Eastern-1999-now.jpg"}],
-        "Singapore Airlines": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/Singapore Airlines-1999-now.jpg"}],
+        "Air China": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Air China-1999-now.png"}],
+        "China Southern": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/China Southern-1999-now.jpg"}],
+        "China Eastern": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/China Eastern-1999-now.jpg"}],
+        "Singapore Airlines": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Singapore Airlines-1999-now.jpg"}],
         "LATAM Airlines": [
-            {"start_year": 1999, "end_year": 2016, "file": "airline-bar-video/logos/LATAM Airlines-1999-2016.png"},
-            {"start_year": 2016, "end_year": 9999, "file": "airline-bar-video/logos/LATAM Airlines-2016-now.jpg"}
+            {"start_year": 1999, "end_year": 2016, "file": "99.utility/airline-bar-video/logos/LATAM Airlines-1999-2016.png"},
+            {"start_year": 2016, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/LATAM Airlines-2016-now.jpg"}
         ],
         "Hainan Airlines": [
-            {"start_year": 1999, "end_year": 2004, "file": "airline-bar-video/logos/Hainan Airlines-1999-2004.png"},
-            {"start_year": 2004, "end_year": 9999, "file": "airline-bar-video/logos/Hainan Airlines-2004-now.jpg"}
+            {"start_year": 1999, "end_year": 2004, "file": "99.utility/airline-bar-video/logos/Hainan Airlines-1999-2004.png"},
+            {"start_year": 2004, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Hainan Airlines-2004-now.jpg"}
         ],
-        "Qatar Airways": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/Qatar Airways-1999-now.jpg"}],
+        "Qatar Airways": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Qatar Airways-1999-now.jpg"}],
         "Turkish Airlines": [
-            {"start_year": 1999, "end_year": 2018, "file": "airline-bar-video/logos/Turkish Airlines-1999-2018.png"},
-            {"start_year": 2018, "end_year": 9999, "file": "airline-bar-video/logos/Turkish Airlines-2018-now.png"}
+            {"start_year": 1999, "end_year": 2018, "file": "99.utility/airline-bar-video/logos/Turkish Airlines-1999-2018.png"},
+            {"start_year": 2018, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Turkish Airlines-2018-now.png"}
         ],
-        "JetBlue": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/jetBlue-1999-now.jpg"}],
+        "JetBlue": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/jetBlue-1999-now.jpg"}],
         "SkyWest": [
-            {"start_year": 1972, "end_year": 2001, "file": "airline-bar-video/logos/skywest-1972-2001.png"},
-            {"start_year": 2001, "end_year": 2008, "file": "airline-bar-video/logos/skywest-2001-2008.png"},
-            {"start_year": 2008, "end_year": 9999, "file": "airline-bar-video/logos/skywest-2018-now.jpg"}
+            {"start_year": 1972, "end_year": 2001, "file": "99.utility/airline-bar-video/logos/skywest-1972-2001.png"},
+            {"start_year": 2001, "end_year": 2008, "file": "99.utility/airline-bar-video/logos/skywest-2001-2008.png"},
+            {"start_year": 2008, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/skywest-2018-now.jpg"}
         ],
         "Northwest Airlines": [
-            {"start_year": 1989, "end_year": 2003, "file": "airline-bar-video/logos/northwest-airlines-1989-2003.png"},
-            {"start_year": 2003, "end_year": 9999, "file": "airline-bar-video/logos/northwest-airlines-2003-now.jpg"}
+            {"start_year": 1989, "end_year": 2003, "file": "99.utility/airline-bar-video/logos/northwest-airlines-1989-2003.png"},
+            {"start_year": 2003, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/northwest-airlines-2003-now.jpg"}
         ],
-        "TWA": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/TWA-1999-now.png"}],
+        "TWA": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/TWA-1999-now.png"}],
         "Air Canada": [
-            {"start_year": 1995, "end_year": 2005, "file": "airline-bar-video/logos/air-canada-1995-2005.jpg"},
-            {"start_year": 2005, "end_year": 9999, "file": "airline-bar-video/logos/air-canada-2005-now.png"}
+            {"start_year": 1995, "end_year": 2005, "file": "99.utility/airline-bar-video/logos/air-canada-1995-2005.jpg"},
+            {"start_year": 2005, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/air-canada-2005-now.png"}
         ],
-        "IAG": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/IAG-1999-now.png"}],
+        "IAG": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/IAG-1999-now.png"}],
         "Ryanair": [
-            {"start_year": 1999, "end_year": 2001, "file": "airline-bar-video/logos/Ryanair-1999-2001.png"},
-            {"start_year": 2001, "end_year": 2013, "file": "airline-bar-video/logos/Ryanair-2001-2013.jpg"},
-            {"start_year": 2013, "end_year": 9999, "file": "airline-bar-video/logos/Ryanair-2013-now.jpg"}
+            {"start_year": 1999, "end_year": 2001, "file": "99.utility/airline-bar-video/logos/Ryanair-1999-2001.png"},
+            {"start_year": 2001, "end_year": 2013, "file": "99.utility/airline-bar-video/logos/Ryanair-2001-2013.jpg"},
+            {"start_year": 2013, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Ryanair-2013-now.jpg"}
         ],
         "Aeroflot": [
-            {"start_year": 1999, "end_year": 2003, "file": "airline-bar-video/logos/Aeroflot-1999-2003.jpg"},
-            {"start_year": 2003, "end_year": 9999, "file": "airline-bar-video/logos/Aeroflot-2003-now.jpg"}
+            {"start_year": 1999, "end_year": 2003, "file": "99.utility/airline-bar-video/logos/Aeroflot-1999-2003.jpg"},
+            {"start_year": 2003, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Aeroflot-2003-now.jpg"}
         ],
-        "Cathay Pacific": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/Cathay Pacific-1999-now.png"}],
-        "Qantas Airways": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/Qantas Airways-1999-now.jpg"}],
+        "Cathay Pacific": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Cathay Pacific-1999-now.png"}],
+        "Qantas Airways": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Qantas Airways-1999-now.jpg"}],
         "Finnair": [
-            {"start_year": 1999, "end_year": 2010, "file": "airline-bar-video/logos/Finnair-1999-2010.jpg"},
-            {"start_year": 2010, "end_year": 9999, "file": "airline-bar-video/logos/Finnair-2010-now.jpg"}
+            {"start_year": 1999, "end_year": 2010, "file": "99.utility/airline-bar-video/logos/Finnair-1999-2010.jpg"},
+            {"start_year": 2010, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Finnair-2010-now.jpg"}
         ],
         "Alaska Air": [
-            {"start_year": 1972, "end_year": 2014, "file": "airline-bar-video/logos/alaska-air-1972-2014.png"},
-            {"start_year": 2014, "end_year": 2016, "file": "airline-bar-video/logos/alaska-air-2014-2016.png"},
-            {"start_year": 2016, "end_year": 9999, "file": "airline-bar-video/logos/alaska-air-2016-now.jpg"}
+            {"start_year": 1972, "end_year": 2014, "file": "99.utility/airline-bar-video/logos/alaska-air-1972-2014.png"},
+            {"start_year": 2014, "end_year": 2016, "file": "99.utility/airline-bar-video/logos/alaska-air-2014-2016.png"},
+            {"start_year": 2016, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/alaska-air-2016-now.jpg"}
         ],
-        "Norwegian": [{"start_year": 1999, "end_year": 9999, "file": "airline-bar-video/logos/norwegian-logo.jpg"}]
+        "Norwegian": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/norwegian-logo.jpg"}]
     }
     if airline not in logo_mapping:
         return None
@@ -115,7 +115,7 @@ def get_encoded_image(logo_path):
     return None
 
 # Load uploaded CSV
-file_path = "./airline-bar-video/airlines_final.csv"
+file_path = "./99.utility/airline-bar-video/airlines_final.csv"
 df = pd.read_csv(file_path)
 
 # Prepare metadata and revenue data

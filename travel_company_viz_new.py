@@ -162,7 +162,7 @@ def format_revenue(value):
 
 def get_logo_path(identifier, year):
     """Get the appropriate logo path based on company or ticker and year"""
-    logo_base_path = 'bar-video/logos/'
+    logo_base_path = '99.utility/travel-company-bar-video/logos/'
     
     # 处理特殊公司和按年份变化的logo
     # 统一使用ticker作为查找key
@@ -283,7 +283,7 @@ def create_visualization():
     print("Starting Plotly Travel Company Revenue Visualization.")
     
     # Load the data from CSV
-    data = pd.read_csv('bar-video/Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue2.csv')
+    data = pd.read_csv('99.utility/travel-company-bar-video/Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue2.csv')
     print(f"Loaded {len(data)} rows of data.")
     
     # Handle "Revenue" row

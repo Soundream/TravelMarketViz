@@ -76,118 +76,118 @@ def get_logo_path(hotel, year, ticker):
     """Get the appropriate logo path based on hotel name, year and ticker"""
     logo_mapping = {
         "Marriott": [
-            {"start_year": 1989, "end_year": 2013, "file": "hospitality-bar-video/logos/Marriott-Logo-1989-2013.png"},
-            {"start_year": 2013, "end_year": 2025, "file": "hospitality-bar-video/logos/Marriott-logo-2025.jpg"}
+            {"start_year": 1989, "end_year": 2013, "file": "99.utility/hospitality-bar-video/logos/Marriott-Logo-1989-2013.png"},
+            {"start_year": 2013, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Marriott-logo-2025.jpg"}
         ],
         "Starwood": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Starwood-2025.jpeg"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Starwood-2025.jpeg"}
         ],
         "Hyatt": [
-            {"start_year": 1990, "end_year": 2013, "file": "hospitality-bar-video/logos/Hyatt-Logo-1990-2013.jpg"},
-            {"start_year": 2013, "end_year": 2025, "file": "hospitality-bar-video/logos/Hyatt-logo-2025.jpg"}
+            {"start_year": 1990, "end_year": 2013, "file": "99.utility/hospitality-bar-video/logos/Hyatt-Logo-1990-2013.jpg"},
+            {"start_year": 2013, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Hyatt-logo-2025.jpg"}
         ],
         "Hilton": [
-            {"start_year": 1999, "end_year": 2010, "file": "hospitality-bar-video/logos/Hilton-Logo-2010.jpg"},
-            {"start_year": 2010, "end_year": 2025, "file": "hospitality-bar-video/logos/Hilton-logo-2025.jpg"}
+            {"start_year": 1999, "end_year": 2010, "file": "99.utility/hospitality-bar-video/logos/Hilton-Logo-2010.jpg"},
+            {"start_year": 2010, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Hilton-logo-2025.jpg"}
         ],
         "Wyndham": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Wyndham-2025.jpeg"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Wyndham-2025.jpeg"}
         ],
         "Choice Hotels": [
-            {"start_year": 1999, "end_year": 2015, "file": "hospitality-bar-video/logos/Comfort-Inn-Logo-2015.jpg"},
-            {"start_year": 2015, "end_year": 2025, "file": "hospitality-bar-video/logos/Comfort-Inn-Logo-2025.jpg"}
+            {"start_year": 1999, "end_year": 2015, "file": "99.utility/hospitality-bar-video/logos/Comfort-Inn-Logo-2015.jpg"},
+            {"start_year": 2015, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Comfort-Inn-Logo-2025.jpg"}
         ],
         "La Quinta": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/La Quinta-2025.webp"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/La Quinta-2025.webp"}
         ],
         "Extended Stay America": [
-            {"start_year": 1995, "end_year": 2012, "file": "hospitality-bar-video/logos/Extended-Stay-America-Logo-1995-2012.jpg"},
-            {"start_year": 2012, "end_year": 2025, "file": "hospitality-bar-video/logos/Extended-Stay-America-Logo-2025.jpg"}
+            {"start_year": 1995, "end_year": 2012, "file": "99.utility/hospitality-bar-video/logos/Extended-Stay-America-Logo-1995-2012.jpg"},
+            {"start_year": 2012, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Extended-Stay-America-Logo-2025.jpg"}
         ],
         "Four Seasons": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Four-Seasons-Logo-2025.jpg"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Four-Seasons-Logo-2025.jpg"}
         ],
         "Fairmont": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Fairmont-Logo-2025.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Fairmont-Logo-2025.png"}
         ],
         "Four Seasons ": [  # Note the trailing space in the hotel name
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Four-Seasons-Logo-2025.jpg"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Four-Seasons-Logo-2025.jpg"}
         ],
         "Fairmont ": [  # Note the trailing space in the hotel name
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Fairmont-Logo-2025.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Fairmont-Logo-2025.png"}
         ],
         "IHG": [
-            {"start_year": 1999, "end_year": 2003, "file": "hospitality-bar-video/logos/IHG-Logo-2003-2017.png"},
-            {"start_year": 2003, "end_year": 2017, "file": "hospitality-bar-video/logos/IHG-Logo-2003-2017.png"},
-            {"start_year": 2017, "end_year": 2021, "file": "hospitality-bar-video/logos/IHG-Logo-2017-2021.png"},
-            {"start_year": 2021, "end_year": 2025, "file": "hospitality-bar-video/logos/IHG-Logo-2025.jpg"}
+            {"start_year": 1999, "end_year": 2003, "file": "99.utility/hospitality-bar-video/logos/IHG-Logo-2003-2017.png"},
+            {"start_year": 2003, "end_year": 2017, "file": "99.utility/hospitality-bar-video/logos/IHG-Logo-2003-2017.png"},
+            {"start_year": 2017, "end_year": 2021, "file": "99.utility/hospitality-bar-video/logos/IHG-Logo-2017-2021.png"},
+            {"start_year": 2021, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/IHG-Logo-2025.jpg"}
         ],
         "Millennium": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Millennium-2025.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Millennium-2025.png"}
         ],
         "Belmond": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Belmond-Logo-2025.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Belmond-Logo-2025.png"}
         ],
         "Accor": [
-            {"start_year": 1997, "end_year": 2007, "file": "hospitality-bar-video/logos/Accor-Logo-1997-2007.png"},
-            {"start_year": 2007, "end_year": 2010, "file": "hospitality-bar-video/logos/Accor-Logo-2007-2010.png"},
-            {"start_year": 2010, "end_year": 2015, "file": "hospitality-bar-video/logos/Accor-Logo-2010-2015.png"},
-            {"start_year": 2015, "end_year": 2019, "file": "hospitality-bar-video/logos/Accor-Logo-2015-2019.png"},
-            {"start_year": 2019, "end_year": 2025, "file": "hospitality-bar-video/logos/Accor-Logo-2025.jpg"}
+            {"start_year": 1997, "end_year": 2007, "file": "99.utility/hospitality-bar-video/logos/Accor-Logo-1997-2007.png"},
+            {"start_year": 2007, "end_year": 2010, "file": "99.utility/hospitality-bar-video/logos/Accor-Logo-2007-2010.png"},
+            {"start_year": 2010, "end_year": 2015, "file": "99.utility/hospitality-bar-video/logos/Accor-Logo-2010-2015.png"},
+            {"start_year": 2015, "end_year": 2019, "file": "99.utility/hospitality-bar-video/logos/Accor-Logo-2015-2019.png"},
+            {"start_year": 2019, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Accor-Logo-2025.jpg"}
         ],
         "Meliá": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Meliá-2025.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Meliá-2025.png"}
         ],
         "NH Hotels": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/NH Hotels-2025.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/NH Hotels-2025.png"}
         ],
         "Dalata": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/NH Hotels-2025.png"}  # Using similar logo since Dalata logo is missing
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/NH Hotels-2025.png"}  # Using similar logo since Dalata logo is missing
         ],
         "Scandic": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Scandic-2025.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Scandic-2025.png"}
         ],
         "H World": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/H World-Logo-2025.jpg"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/H World-Logo-2025.jpg"}
         ],
         "Jin Jiang": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Jin Jiang-2025.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Jin Jiang-2025.png"}
         ],
         "IHCL": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/IHCL-2025.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/IHCL-2025.png"}
         ],
         "EIH": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/EIH-Logo-2025.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/EIH-Logo-2025.png"}
         ],
         "Shangri-La Hotels (Malaysia) Berhad": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/hangri-La Hotels (Malaysia) Berhad.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/hangri-La Hotels (Malaysia) Berhad.png"}
         ],
         "Far East Orchard": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Far East Orchard-Logo-2025.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Far East Orchard-Logo-2025.png"}
         ],
         "Shangri-La Asia Limited": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Shangri-La Asia Limited-2025.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Shangri-La Asia Limited-2025.png"}
         ],
         "Shangri-La Asia Limited ": [  # Note the trailing space in the hotel name
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Shangri-La Asia Limited-2025.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Shangri-La Asia Limited-2025.png"}
         ],
         "Mandarin Oriental": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Mandarin Oriental-2025.jpg"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Mandarin Oriental-2025.jpg"}
         ],
         "Dusit Thani": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Dusit Thani-Logo-2025.jpg"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Dusit Thani-Logo-2025.jpg"}
         ],
         "Erawan Group": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Erawan Group-Logo-2025.jpeg"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Erawan Group-Logo-2025.jpeg"}
         ],
         "Minor International": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Minor International-2025.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Minor International-2025.png"}
         ],
         "Tsogo Sun Hotels (Southern Sun)": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Tsogo Sun Hotels (Southern Sun).png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Tsogo Sun Hotels (Southern Sun).png"}
         ],
         "Shilla Hotels & Resorts": [
-            {"start_year": 1999, "end_year": 2025, "file": "hospitality-bar-video/logos/Shilla Hotels & Resorts-2025.png"}
+            {"start_year": 1999, "end_year": 2025, "file": "99.utility/hospitality-bar-video/logos/Shilla Hotels & Resorts-2025.png"}
         ]
     }
     
@@ -223,7 +223,7 @@ def get_encoded_image(logo_path):
 def create_visualization():
     """Create interactive Plotly visualization for hotel revenue data"""
     # Load the data from CSV
-    df = pd.read_csv('hospitality-bar-video/hotel_final.csv')
+    df = pd.read_csv('99.utility/hospitality-bar-video/hotel_final.csv')
     
     # Process metadata
     metadata = df.iloc[:5].copy()

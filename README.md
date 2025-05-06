@@ -98,5 +98,5 @@ python3 airline_plotly_line.py --height 900 --width 1800 --transition-duration 3
 
 - 生成的HTML文件会自动在浏览器中打开
 - 所有可视化都包含播放、暂停和重置按钮，可以控制动画播放
-- 旅游公司数据来源于`bar-video/Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue2.csv`文件
+- 旅游公司数据来源于`99.utility/travel-company-bar-video/Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue2.csv`文件
 - 航空公司数据来源于相应的CSV文件 
