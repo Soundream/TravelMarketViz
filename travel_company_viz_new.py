@@ -400,6 +400,11 @@ def create_visualization():
                 else:
                     ticker = company
                 
+                # 特殊处理BKNG ticker - 在2018.08之前显示为PCLN
+                display_ticker = ticker
+                if ticker == 'BKNG' and decimal_year < 2018.08:
+                    display_ticker = 'PCLN'
+                
                 # Get company full name and region
                 company_name = ticker_to_company.get(ticker, company)
                 region = company_to_region.get(ticker, company_to_region.get(company, 'Other'))
@@ -416,7 +421,7 @@ def create_visualization():
                 logo_path = get_logo_path(ticker, decimal_year)
                 encoded_logo = get_encoded_image(logo_path) if logo_path else None
                 
-                companies.append(ticker)  # 使用ticker而不是company
+                companies.append(display_ticker)  # 使用处理后的ticker
                 revenues.append(revenue)
                 colors.append(color)
                 logos.append(encoded_logo)
@@ -425,7 +430,7 @@ def create_visualization():
                 hover_text = f"<b>{company_name}</b><br>"
                 hover_text += f"Revenue: {format_revenue(revenue)}<br>"
                 hover_text += f"Region: {region}<br>"
-                hover_text += f"Ticker: {ticker}"
+                hover_text += f"Ticker: {display_ticker}"
                 hover_texts.append(hover_text)
         
         # 添加虚拟空白bar来填满固定数量的位置
@@ -886,6 +891,12 @@ def create_visualization():
                     const currentData = allQuartersData[currentIndex];
                     const nextData = allQuartersData[nextIndex];
                     
+                    // 解析当前帧和下一帧的年份
+                    const currentYear = parseFloat(currentData.quarter.split("'")[0]) + 
+                                       (parseInt(currentData.quarter.split("'")[1].replace('Q', '')) - 1) / 4;
+                    const nextYear = parseFloat(nextData.quarter.split("'")[0]) + 
+                                    (parseInt(nextData.quarter.split("'")[1].replace('Q', '')) - 1) / 4;
+                    
                     // 增加新公司处理逻辑
                     // 检查下一季度是否有新的公司出现，如果有则直接显示它们
                     const currentCompanies = new Set(currentData.companies);
@@ -1145,6 +1156,10 @@ def create_visualization():
                 currentQuarterIndex = index;
                 
                 try {{
+                    // 解析当前季度的年份
+                    const currentYear = parseFloat(currentData.quarter.split("'")[0]) + 
+                                      (parseInt(currentData.quarter.split("'")[1].replace('Q', '')) - 1) / 4;
+                    
                     // 准备数据 - 从当前季度提取有效公司数据
                     let displayData = [];
                     for (let i = 0; i < currentData.companies.length; i++) {{

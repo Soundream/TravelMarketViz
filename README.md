@@ -1,88 +1,102 @@
-# 航空公司收入条形图动画生成器
+# Travel Company Revenue Visualization
 
-这个工具包含两个独立的脚本，用于生成航空公司收入的动态条形图竞赛动画。第一个脚本负责生成单独的图像帧，第二个脚本将这些帧合成为视频。通过分离这两个过程，可以避免同步问题并提高整体性能。
+这个项目创建了一个交互式的旅游公司收入可视化动画，展示了各大在线旅游公司的季度收入变化。
 
-## 依赖项
+## 运行说明
 
-确保已安装以下依赖项：
-
-```bash
-pip install pandas matplotlib numpy pillow tqdm
-```
-
-同时，视频合成需要安装 FFmpeg。
-
-## 使用方法
-
-### 步骤 1：生成图像帧
-
-使用 `airline_frame_generator.py` 脚本生成单独的图像帧：
+### 基本运行命令
 
 ```bash
-python airline_frame_generator.py [选项]
+python3 travel_company_viz_new.py
 ```
 
-选项：
-- `--frames-per-year`: 每年生成的帧数（默认：60，即每季度15帧）
-- `--quarters-only`: 仅生成季度帧，不进行插值
-- `--output-dir`: 输出目录（默认：frames）
-- `--dpi`: 输出帧的DPI（默认：108）
-- `--start-idx`: 起始帧索引
-- `--end-idx`: 结束帧索引
+这将使用默认参数生成可视化，并保存在`output/travel_revenue_plotly.html`文件中。
 
-示例：
-```bash
-# 生成全部插值帧
-python airline_frame_generator.py
+### 自定义参数
 
-# 仅生成季度帧（不插值）
-python airline_frame_generator.py --quarters-only
-
-# 生成指定范围的帧
-python airline_frame_generator.py --start-idx 10 --end-idx 20
-```
-
-### 步骤 2：合成视频
-
-使用 `airline_video_maker.py` 脚本将生成的帧合成为视频：
+脚本支持多个命令行参数来自定义可视化效果：
 
 ```bash
-python airline_video_maker.py [选项]
+python3 travel_company_viz_new.py --height 900 --width 1800 --transition-duration 3000 --output output/travel_company_viz_custom.html
 ```
 
-选项：
-- `--fps`: 帧率（默认：30）
-- `--input-dir`: 包含帧的输入目录（默认：frames）
-- `--output`: 输出视频文件路径（默认：output/airline_revenue.mp4）
-- `--quality`: 视频质量：high、medium 或 low（默认：high）
-- `--duration`: 目标视频时长（秒），覆盖 --fps 设置
+#### 参数说明
 
-示例：
+- `--output`: 输出HTML文件路径（默认：output/travel_revenue_plotly.html）
+- `--frames-per-year`: 每年生成的帧数（默认：4，代表季度数据）
+- `--height`: 可视化高度（像素，默认：800）
+- `--width`: 可视化宽度（像素，默认：1600）
+- `--max-companies`: 显示的最大公司数量（默认：15）
+- `--transition-duration`: 帧之间的过渡时间（毫秒，默认：500）
+
+### 关于动画时长
+
+动画的总时长取决于数据集中的季度数量和`transition-duration`参数值。以当前数据集为例：
+
+- 当`transition-duration`设置为3000（3秒）时，整个动画循环大约需要5分钟完成一次。
+- 当`transition-duration`设置为2000（2秒）时，整个动画循环大约需要3.5分钟完成一次。
+- 当`transition-duration`设置为1000（1秒）时，整个动画循环大约需要2分钟完成一次。
+
+### 示例：生成5分钟长的动画
+
 ```bash
-# 使用默认设置创建视频
-python airline_video_maker.py
-
-# 创建高品质、10fps的视频
-python airline_video_maker.py --fps 10 --quality high
-
-# 创建正好60秒长的视频（自动调整fps）
-python airline_video_maker.py --duration 60
+python3 travel_company_viz_new.py --height 900 --width 1800 --transition-duration 3000 --output output/travel_company_viz_5min_duration.html
 ```
 
-## 工作原理
+## 航空公司可视化工具
 
-1. `airline_frame_generator.py` 从 CSV 数据中读取航空公司收入数据，并为每个时间点创建一个条形图帧。
-   - 它支持季度之间的平滑插值
-   - 添加了公司标志和颜色编码
-   - 包含时间轴可视化
+本项目还包含两个航空公司数据可视化工具：`airline_plotly_viz`和`airline_plotly_line`。
 
-2. `airline_video_maker.py` 读取生成的帧并使用 FFmpeg 将它们合成为平滑的视频。
-   - 按照正确顺序处理帧
-   - 允许自定义视频质量和帧率
-   - 提供合理的默认值
+### airline_plotly_viz（航空公司柱状图可视化）
 
-## 疑难解答
+这个脚本生成航空公司收入的柱状图动画可视化。
 
-- 如果帧生成过程中出现内存错误，请尝试减少 `--dpi` 值或分批生成帧
-- 如果视频创建失败，请确保已安装 FFmpeg 并且可以从命令行访问
-- 对于大量帧，视频创建过程可能需要较长时间 
+#### 基本使用方法
+
+```bash
+python3 airline_plotly_viz.py
+```
+
+#### 自定义参数
+
+```bash
+python3 airline_plotly_viz.py --height 900 --width 1800 --transition-duration 3000 --output output/airline_revenue_viz.html
+```
+
+支持的参数与`travel_company_viz_new.py`类似：
+- `--output`: 输出HTML文件路径
+- `--height`: 可视化高度（像素）
+- `--width`: 可视化宽度（像素）
+- `--transition-duration`: 帧之间的过渡时间（毫秒）
+- `--max-companies`: 显示的最大航空公司数量
+
+### airline_plotly_line（航空公司折线图可视化）
+
+这个脚本生成航空公司收入的折线图动画可视化。
+
+#### 基本使用方法
+
+```bash
+python3 airline_plotly_line.py
+```
+
+#### 自定义参数
+
+```bash
+python3 airline_plotly_line.py --height 900 --width 1800 --transition-duration 3000 --output output/airline_revenue_line.html
+```
+
+支持的参数：
+- `--output`: 输出HTML文件路径
+- `--height`: 可视化高度（像素）
+- `--width`: 可视化宽度（像素）
+- `--transition-duration`: 帧之间的过渡时间（毫秒）
+- `--line-width`: 折线宽度（默认：2）
+- `--include-markers`: 在折线上显示数据点标记
+
+## 注意事项
+
+- 生成的HTML文件会自动在浏览器中打开
+- 所有可视化都包含播放、暂停和重置按钮，可以控制动画播放
+- 旅游公司数据来源于`bar-video/Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue2.csv`文件
+- 航空公司数据来源于相应的CSV文件 
