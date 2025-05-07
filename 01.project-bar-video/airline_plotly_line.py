@@ -9,90 +9,90 @@ from PIL import Image
 
 def get_logo_path(airline, year, iata_code, month=6):
     logo_mapping = {
-        "easyJet": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/easyJet-1999-now.jpg"}],
-        "Emirates": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Emirates-logo.jpg"}],
+        "easyJet": [{"start_year": 1999, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/easyJet-1999-now.jpg"}],
+        "Emirates": [{"start_year": 1999, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/Emirates-logo.jpg"}],
         "Air France-KLM": [
-            {"start_year": 1999, "end_year": 2004, "file": "99.utility/airline-bar-video/logos/klm-1999-now.png", "iata": "KL"},
-            {"start_year": 2004, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Air-France-KLM-Holding-Logo.png", "iata": "AF"}
+            {"start_year": 1999, "end_year": 2004, "file": "../99.utility/airline-bar-video/logos/klm-1999-now.png", "iata": "KL"},
+            {"start_year": 2004, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/Air-France-KLM-Holding-Logo.png", "iata": "AF"}
         ],
         "American Airlines": [
-            {"start_year": 1999, "end_year": 2013, "file": "99.utility/airline-bar-video/logos/american-airlines-1967-2013.jpg"},
-            {"start_year": 2013, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/american-airlines-2013-now.jpg"}
+            {"start_year": 1999, "end_year": 2013, "file": "../99.utility/airline-bar-video/logos/american-airlines-1967-2013.jpg"},
+            {"start_year": 2013, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/american-airlines-2013-now.jpg"}
         ],
         "United Airlines": [
-            {"start_year": 1998, "end_year": 2010, "file": "99.utility/airline-bar-video/logos/united-airlines-1998-2010.jpg"},
-            {"start_year": 2010, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/united-airlines-2010-now.jpg"}
+            {"start_year": 1998, "end_year": 2010, "file": "../99.utility/airline-bar-video/logos/united-airlines-1998-2010.jpg"},
+            {"start_year": 2010, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/united-airlines-2010-now.jpg"}
         ],
         "Delta Air Lines": [
-            {"start_year": 2000, "end_year": 2007, "file": "99.utility/airline-bar-video/logos/delta-air-lines-2000-2007.png"},
-            {"start_year": 2007, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/delta-air-lines-2007-now.jpg"}
+            {"start_year": 2000, "end_year": 2007, "file": "../99.utility/airline-bar-video/logos/delta-air-lines-2000-2007.png"},
+            {"start_year": 2007, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/delta-air-lines-2007-now.jpg"}
         ],
         "Southwest Airlines": [
-            {"start_year": 1989, "end_year": 2014, "file": "99.utility/airline-bar-video/logos/southwest-airlines-1989-2014.png"},
-            {"start_year": 2014, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/southwest-airlines-2014-now.png"}
+            {"start_year": 1989, "end_year": 2014, "file": "../99.utility/airline-bar-video/logos/southwest-airlines-1989-2014.png"},
+            {"start_year": 2014, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/southwest-airlines-2014-now.png"}
         ],
         "Lufthansa": [
-            {"start_year": 1999, "end_year": 2018, "file": "99.utility/airline-bar-video/logos/Deutsche Lufthansa-1999-2018.png"},
-            {"start_year": 2018, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Deutsche Lufthansa-2018-now.jpg"}
+            {"start_year": 1999, "end_year": 2018, "file": "../99.utility/airline-bar-video/logos/Deutsche Lufthansa-1999-2018.png"},
+            {"start_year": 2018, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/Deutsche Lufthansa-2018-now.jpg"}
         ],
         "Deutsche Lufthansa": [
-            {"start_year": 1999, "end_year": 2018, "file": "99.utility/airline-bar-video/logos/Deutsche Lufthansa-1999-2018.png"},
-            {"start_year": 2018, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Deutsche Lufthansa-2018-now.jpg"}
+            {"start_year": 1999, "end_year": 2018, "file": "../99.utility/airline-bar-video/logos/Deutsche Lufthansa-1999-2018.png"},
+            {"start_year": 2018, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/Deutsche Lufthansa-2018-now.jpg"}
         ],
-        "Air China": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Air China-1999-now.png"}],
-        "China Southern": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/China Southern-1999-now.jpg"}],
-        "China Eastern": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/China Eastern-1999-now.jpg"}],
-        "Singapore Airlines": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Singapore Airlines-1999-now.jpg"}],
+        "Air China": [{"start_year": 1999, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/Air China-1999-now.png"}],
+        "China Southern": [{"start_year": 1999, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/China Southern-1999-now.jpg"}],
+        "China Eastern": [{"start_year": 1999, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/China Eastern-1999-now.jpg"}],
+        "Singapore Airlines": [{"start_year": 1999, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/Singapore Airlines-1999-now.jpg"}],
         "LATAM Airlines": [
-            {"start_year": 1999, "end_year": 2016, "file": "99.utility/airline-bar-video/logos/LATAM Airlines-1999-2016.png"},
-            {"start_year": 2016, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/LATAM Airlines-2016-now.jpg"}
+            {"start_year": 1999, "end_year": 2016, "file": "../99.utility/airline-bar-video/logos/LATAM Airlines-1999-2016.png"},
+            {"start_year": 2016, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/LATAM Airlines-2016-now.jpg"}
         ],
         "Hainan Airlines": [
-            {"start_year": 1999, "end_year": 2004, "file": "99.utility/airline-bar-video/logos/Hainan Airlines-1999-2004.png"},
-            {"start_year": 2004, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Hainan Airlines-2004-now.jpg"}
+            {"start_year": 1999, "end_year": 2004, "file": "../99.utility/airline-bar-video/logos/Hainan Airlines-1999-2004.png"},
+            {"start_year": 2004, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/Hainan Airlines-2004-now.jpg"}
         ],
-        "Qatar Airways": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Qatar Airways-1999-now.jpg"}],
+        "Qatar Airways": [{"start_year": 1999, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/Qatar Airways-1999-now.jpg"}],
         "Turkish Airlines": [
-            {"start_year": 1999, "end_year": 2018, "file": "99.utility/airline-bar-video/logos/Turkish Airlines-1999-2018.png"},
-            {"start_year": 2018, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Turkish Airlines-2018-now.png"}
+            {"start_year": 1999, "end_year": 2018, "file": "../99.utility/airline-bar-video/logos/Turkish Airlines-1999-2018.png"},
+            {"start_year": 2018, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/Turkish Airlines-2018-now.png"}
         ],
-        "JetBlue": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/jetBlue-1999-now.jpg"}],
+        "JetBlue": [{"start_year": 1999, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/jetBlue-1999-now.jpg"}],
         "SkyWest": [
-            {"start_year": 1972, "end_year": 2001, "file": "99.utility/airline-bar-video/logos/skywest-1972-2001.png"},
-            {"start_year": 2001, "end_year": 2008, "file": "99.utility/airline-bar-video/logos/skywest-2001-2008.png"},
-            {"start_year": 2008, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/skywest-2018-now.jpg"}
+            {"start_year": 1972, "end_year": 2001, "file": "../99.utility/airline-bar-video/logos/skywest-1972-2001.png"},
+            {"start_year": 2001, "end_year": 2008, "file": "../99.utility/airline-bar-video/logos/skywest-2001-2008.png"},
+            {"start_year": 2008, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/skywest-2018-now.jpg"}
         ],
         "Northwest Airlines": [
-            {"start_year": 1989, "end_year": 2003, "file": "99.utility/airline-bar-video/logos/northwest-airlines-1989-2003.png"},
-            {"start_year": 2003, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/northwest-airlines-2003-now.jpg"}
+            {"start_year": 1989, "end_year": 2003, "file": "../99.utility/airline-bar-video/logos/northwest-airlines-1989-2003.png"},
+            {"start_year": 2003, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/northwest-airlines-2003-now.jpg"}
         ],
-        "TWA": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/TWA-1999-now.png"}],
+        "TWA": [{"start_year": 1999, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/TWA-1999-now.png"}],
         "Air Canada": [
-            {"start_year": 1995, "end_year": 2005, "file": "99.utility/airline-bar-video/logos/air-canada-1995-2005.jpg"},
-            {"start_year": 2005, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/air-canada-2005-now.png"}
+            {"start_year": 1995, "end_year": 2005, "file": "../99.utility/airline-bar-video/logos/air-canada-1995-2005.jpg"},
+            {"start_year": 2005, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/air-canada-2005-now.png"}
         ],
-        "IAG": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/IAG-1999-now.png"}],
+        "IAG": [{"start_year": 1999, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/IAG-1999-now.png"}],
         "Ryanair": [
-            {"start_year": 1999, "end_year": 2001, "file": "99.utility/airline-bar-video/logos/Ryanair-1999-2001.png"},
-            {"start_year": 2001, "end_year": 2013, "file": "99.utility/airline-bar-video/logos/Ryanair-2001-2013.jpg"},
-            {"start_year": 2013, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Ryanair-2013-now.jpg"}
+            {"start_year": 1999, "end_year": 2001, "file": "../99.utility/airline-bar-video/logos/Ryanair-1999-2001.png"},
+            {"start_year": 2001, "end_year": 2013, "file": "../99.utility/airline-bar-video/logos/Ryanair-2001-2013.jpg"},
+            {"start_year": 2013, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/Ryanair-2013-now.jpg"}
         ],
         "Aeroflot": [
-            {"start_year": 1999, "end_year": 2003, "file": "99.utility/airline-bar-video/logos/Aeroflot-1999-2003.jpg"},
-            {"start_year": 2003, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Aeroflot-2003-now.jpg"}
+            {"start_year": 1999, "end_year": 2003, "file": "../99.utility/airline-bar-video/logos/Aeroflot-1999-2003.jpg"},
+            {"start_year": 2003, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/Aeroflot-2003-now.jpg"}
         ],
-        "Cathay Pacific": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Cathay Pacific-1999-now.png"}],
-        "Qantas Airways": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Qantas Airways-1999-now.jpg"}],
+        "Cathay Pacific": [{"start_year": 1999, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/Cathay Pacific-1999-now.png"}],
+        "Qantas Airways": [{"start_year": 1999, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/Qantas Airways-1999-now.jpg"}],
         "Finnair": [
-            {"start_year": 1999, "end_year": 2010, "file": "99.utility/airline-bar-video/logos/Finnair-1999-2010.jpg"},
-            {"start_year": 2010, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Finnair-2010-now.jpg"}
+            {"start_year": 1999, "end_year": 2010, "file": "../99.utility/airline-bar-video/logos/Finnair-1999-2010.jpg"},
+            {"start_year": 2010, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/Finnair-2010-now.jpg"}
         ],
         "Alaska Air": [
-            {"start_year": 1972, "end_year": 2014, "file": "99.utility/airline-bar-video/logos/alaska-air-1972-2014.png"},
-            {"start_year": 2014, "end_year": 2016, "file": "99.utility/airline-bar-video/logos/alaska-air-2014-2016.png"},
-            {"start_year": 2016, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/alaska-air-2016-now.jpg"}
+            {"start_year": 1972, "end_year": 2014, "file": "../99.utility/airline-bar-video/logos/alaska-air-1972-2014.png"},
+            {"start_year": 2014, "end_year": 2016, "file": "../99.utility/airline-bar-video/logos/alaska-air-2014-2016.png"},
+            {"start_year": 2016, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/alaska-air-2016-now.jpg"}
         ],
-        "Norwegian": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/norwegian-logo.jpg"}]
+        "Norwegian": [{"start_year": 1999, "end_year": 9999, "file": "../99.utility/airline-bar-video/logos/norwegian-logo.jpg"}]
     }
     if airline not in logo_mapping:
         return None
@@ -115,7 +115,7 @@ def get_encoded_image(logo_path):
     return None
 
 # Load uploaded CSV
-file_path = "./99.utility/airline-bar-video/airlines_final.csv"
+file_path = "../99.utility/../99.utility/airline-bar-video/airlines_final.csv"
 df = pd.read_csv(file_path)
 
 # Prepare metadata and revenue data
@@ -227,32 +227,31 @@ for airline, logo in sorted(airline_to_logo_map.items()):
     if airline in valid_airlines:
         print(f"{airline}: {logo}")
 
-# 为每一帧计算y轴范围（根据当前帧的数据动态调整）
-all_frame_y_ranges = []
+# 为每一帧计算所有航空公司的最大值
+max_values_by_frame = []
 for i in range(len(interp_x)):
     current_y_values = [interp_revenue[airline][i] for airline in valid_airlines]
-    ymin = min(current_y_values)
-    ymax = max(current_y_values)
-    
-    # 添加少量缓冲，但保持轴范围紧凑
-    y_buffer = (ymax - ymin) * 0.05
-    
-    # 确保不同点之间有足够空间显示logo
-    # 计算最小间距
-    sorted_y = sorted(current_y_values)
-    min_gap = float('inf')
-    for j in range(1, len(sorted_y)):
-        gap = sorted_y[j] - sorted_y[j-1]
-        if gap < min_gap:
-            min_gap = gap
-    
-    # 如果点之间的最小间距太小，适当扩大y轴范围
-    if min_gap < (ymax - ymin) * 0.1 and len(current_y_values) > 5:
-        y_buffer = (ymax - ymin) * 0.15
-    
-    all_frame_y_ranges.append([ymin - y_buffer, ymax + y_buffer])
+    max_values_by_frame.append(max(current_y_values))
 
-# 找出所有帧中的全局最小值，确保所有线条都可见
+# 计算平滑的y轴上限
+window_size = 10  # 平滑窗口大小
+smoothed_max = []
+
+# 在最大值序列前后添加填充，用于处理边界情况
+padded_max = [max_values_by_frame[0]] * (window_size // 2) + max_values_by_frame + [max_values_by_frame[-1]] * (window_size // 2)
+
+# 计算平滑的移动平均窗口
+for i in range(len(max_values_by_frame)):
+    start_idx = i
+    end_idx = i + window_size
+    window_avg = np.mean(padded_max[start_idx:end_idx])
+    smoothed_max.append(window_avg)
+
+# 增加一些上下边距
+padding_factor = 0.1
+y_max_with_padding = [val * (1 + padding_factor) for val in smoothed_max]
+
+# 找出所有帧中的全局最小值
 global_min_value = float('inf')
 for i in range(len(interp_x)):
     current_y_values = [interp_revenue[airline][i] for airline in valid_airlines]
@@ -264,23 +263,8 @@ for i in range(len(interp_x)):
 min_y_buffer = abs(global_min_value) * 0.1 if global_min_value > 0 else abs(global_min_value) * 0.2
 global_min_with_buffer = global_min_value - min_y_buffer
 
-# 双速率"即时扩张 + 慢速收缩"生成动态范围
-decay = 0.05    # 收缩系数：越小收缩越慢
-dyn_high = all_frame_y_ranges[0][1]
-dyn_low = min(all_frame_y_ranges[0][0], global_min_with_buffer)  # 使用全局最小值或第一帧最小值的较小者
-dyn_ranges = [[dyn_low, dyn_high]]
-
-for low, high in all_frame_y_ranges[1:]:
-    # 如果new high > 现有dyn_high，就立刻扩张到new high；否则只慢慢收缩
-    dyn_high = high if high > dyn_high else dyn_high*(1-decay) + high*decay
-    
-    # 确保下限始终不高于全局最小值（带缓冲）
-    adjusted_low = min(low, global_min_with_buffer)
-    
-    # 对下限应用双速率规则：如果新下限低于当前下限，立即扩展；否则慢慢抬升
-    dyn_low = adjusted_low if adjusted_low < dyn_low else dyn_low*(1-decay) + adjusted_low*decay
-    
-    dyn_ranges.append([dyn_low, dyn_high])
+# 为所有帧使用统一的y轴下限，但使用平滑的上限
+y_axis_ranges = [[global_min_with_buffer, y_max_with_padding[i]] for i in range(len(interp_x))]
 
 # 计算每家航空公司首次出现非零数据的帧
 first_data_frame = {}
@@ -307,7 +291,133 @@ for airline in sorted(first_data_frame.keys()):
     else:
         print(f"{airline}: never appears")
 
-# 生成动画帧，每帧使用动态的y轴范围
+# 预计算每一帧每个航空公司的调整后位置
+# 这将使得相邻帧之间的位置变化更平滑
+adjusted_positions_by_frame = {}
+
+# 首先收集每一帧每个航空公司的原始位置
+original_positions = {}
+for i in range(len(interp_x)):
+    nearest_q_idx = min(int(round(interp_x[i])), len(quarters)-1)
+    current_quarter = quarters[nearest_q_idx]
+    
+    frame_positions = {}
+    for airline in valid_airlines:
+        if i >= first_data_frame.get(airline, float('inf')):
+            raw_val = revenue_data.at[current_quarter, airline] if current_quarter in revenue_data.index else None
+            if not pd.isna(raw_val) and raw_val > 0:
+                frame_positions[airline] = interp_revenue[airline][i]
+    
+    original_positions[i] = frame_positions
+
+# 对每个航空公司，对其位置应用平滑
+smoothed_positions = {}
+for airline in valid_airlines:
+    airline_positions = []
+    for i in range(len(interp_x)):
+        if airline in original_positions[i]:
+            airline_positions.append((i, original_positions[i][airline]))
+    
+    # 如果航空公司至少在两帧中有数据，进行平滑处理
+    if len(airline_positions) >= 2:
+        frames, values = zip(*airline_positions)
+        
+        # 为所有帧创建平滑的位置序列
+        all_frames = list(range(len(interp_x)))
+        # 使用cubic spline插值确保平滑过渡
+        from scipy.interpolate import CubicSpline
+        if len(frames) > 3:  # 需要至少4个点才能使用三次样条
+            cs = CubicSpline(frames, values)
+            smoothed_values = cs(all_frames)
+        else:  # 点太少，使用线性插值
+            smoothed_values = np.interp(all_frames, frames, values)
+        
+        # 存储每帧的平滑位置
+        for frame, value in zip(all_frames, smoothed_values):
+            if frame in original_positions and airline in original_positions[frame]:
+                if frame not in smoothed_positions:
+                    smoothed_positions[frame] = {}
+                smoothed_positions[frame][airline] = value
+
+# 现在处理每一帧的重叠
+for i in range(len(interp_x)):
+    if i not in smoothed_positions:
+        continue
+    
+    # 获取这一帧的所有航空公司和它们平滑后的位置
+    airlines_in_frame = list(smoothed_positions[i].keys())
+    y_values = [smoothed_positions[i][airline] for airline in airlines_in_frame]
+    
+    # 按y值排序
+    sorted_indices = np.argsort(y_values)
+    sorted_airlines = [airlines_in_frame[idx] for idx in sorted_indices]
+    sorted_y_values = [y_values[idx] for idx in sorted_indices]
+    
+    # 计算这一帧的logo高度
+    y_range = y_axis_ranges[i]
+    y_range_size = y_range[1] - y_range[0]
+    logo_height = logo_size * y_range_size
+    min_required_gap = logo_height * 1.05
+    
+    # 调整位置以避免重叠
+    adjusted_y_positions = list(sorted_y_values)
+    for j in range(1, len(adjusted_y_positions)):
+        curr_pos = adjusted_y_positions[j]
+        prev_pos = adjusted_y_positions[j-1]
+        
+        # 检查是否需要移动以避免重叠
+        min_gap_needed = min_required_gap
+        if curr_pos - prev_pos < min_gap_needed:
+            # 移动当前点，使其与前一个点保持最小间距
+            adjusted_y_positions[j] = prev_pos + min_gap_needed
+    
+    # 确保所有位置都在y轴范围内
+    y_min, y_max = y_axis_ranges[i]
+    margin = logo_height / 2
+    
+    for j in range(len(adjusted_y_positions)):
+        if adjusted_y_positions[j] - margin < y_min:
+            adjusted_y_positions[j] = y_min + margin
+        elif adjusted_y_positions[j] + margin > y_max:
+            adjusted_y_positions[j] = y_max - margin
+    
+    # 存储调整后的位置
+    adjusted_positions_by_frame[i] = {}
+    for idx, airline in enumerate(sorted_airlines):
+        adjusted_positions_by_frame[i][airline] = adjusted_y_positions[idx]
+
+# 再次平滑调整后的位置，确保帧间的平滑过渡
+final_positions = {}
+for airline in valid_airlines:
+    frames_with_airline = []
+    positions = []
+    
+    for i in range(len(interp_x)):
+        if i in adjusted_positions_by_frame and airline in adjusted_positions_by_frame[i]:
+            frames_with_airline.append(i)
+            positions.append(adjusted_positions_by_frame[i][airline])
+    
+    # 如果航空公司在多个帧中出现，平滑其位置
+    if len(frames_with_airline) > 1:
+        # 使用更小的窗口平滑
+        window_size = min(5, len(frames_with_airline))
+        if window_size > 1:
+            smoothed = np.convolve(positions, np.ones(window_size)/window_size, mode='valid')
+            padded_smoothed = [positions[0]] * (window_size//2) + list(smoothed) + [positions[-1]] * ((window_size-1)//2)
+            
+            # 存储最终平滑后的位置
+            for frame_idx, frame in enumerate(frames_with_airline):
+                if frame not in final_positions:
+                    final_positions[frame] = {}
+                final_positions[frame][airline] = padded_smoothed[frame_idx]
+        else:
+            # 如果窗口大小为1，直接使用原始位置
+            for frame_idx, frame in enumerate(frames_with_airline):
+                if frame not in final_positions:
+                    final_positions[frame] = {}
+                final_positions[frame][airline] = positions[frame_idx]
+
+# 生成动画帧，使用最终平滑的位置
 frames = []
 for i in range(len(interp_x)):
     frame_data = []
@@ -360,7 +470,11 @@ for i in range(len(interp_x)):
             
             # 如果这一季度有有效数据，记录这个航空公司和它的y值
             if not pd.isna(raw_val) and raw_val > 0:
-                y_val = interp_revenue[airline][i]
+                # 使用平滑调整后的位置
+                if i in final_positions and airline in final_positions[i]:
+                    y_val = final_positions[i][airline]
+                else:
+                    y_val = interp_revenue[airline][i]
                 valid_y_values.append(y_val)
                 valid_airlines_in_frame.append(airline)
     
@@ -370,70 +484,10 @@ for i in range(len(interp_x)):
     sorted_y_values = [valid_y_values[idx] for idx in sorted_indices]
     
     # 计算logo高度（基于当前y轴范围）
-    y_range = dyn_ranges[i]
+    y_range = y_axis_ranges[i]
     y_range_size = y_range[1] - y_range[0]
     logo_height = logo_size * y_range_size
     
-    # 调整logo位置，避免重叠
-    adjusted_y_positions = list(sorted_y_values)  # 初始位置与数据点相同
-    
-    # 第一步：计算理想间距和每个点的影响范围
-    min_required_gap = logo_height * 1.05  # 减小最小所需间距（从1.1减到1.05）
-    logo_influences = []  # 存储每个logo的影响范围[下边界, 上边界]
-
-    for pos in adjusted_y_positions:
-        half_gap = min_required_gap / 2
-        logo_influences.append([pos - half_gap, pos + half_gap])
-
-    # 第二步：检测并修复重叠
-    has_overlap = True
-    max_iterations = 10  # 防止无限循环
-    iteration = 0
-
-    while has_overlap and iteration < max_iterations:
-        has_overlap = False
-        iteration += 1
-        
-        # 从第二个logo开始，向上检查重叠
-        for j in range(1, len(logo_influences)):
-            # 当前logo与上一个logo的重叠
-            curr_lower = logo_influences[j][0]
-            prev_upper = logo_influences[j-1][1]
-            
-            if curr_lower < prev_upper:  # 存在重叠
-                has_overlap = True
-                overlap_amount = prev_upper - curr_lower
-                
-                # 向上或向下移动以解决重叠
-                # 如果当前logo更接近顶部或前一个logo更接近底部，则向下移动前一个logo
-                # 否则向上移动当前logo
-                if j < len(logo_influences) / 2:  # 前半部分倾向于向下移动
-                    # 向下移动前一个logo
-                    shift = -overlap_amount - 0.01 * logo_height  # 额外一点空间
-                    logo_influences[j-1][0] += shift
-                    logo_influences[j-1][1] += shift
-                    adjusted_y_positions[j-1] += shift
-                else:  # 后半部分倾向于向上移动
-                    # 向上移动当前logo
-                    shift = overlap_amount + 0.01 * logo_height  # 额外一点空间
-                    logo_influences[j][0] += shift
-                    logo_influences[j][1] += shift
-                    adjusted_y_positions[j] += shift
-
-    # 第三步：确保所有logo都在视图范围内
-    # 获取当前y轴范围
-    y_min, y_max = dyn_ranges[i]
-    margin = logo_height / 2  # logo中心点到边缘的距离
-
-    # 检查所有logo是否在视图范围内
-    for j in range(len(adjusted_y_positions)):
-        if adjusted_y_positions[j] - margin < y_min:
-            # logo底部超出下边界
-            adjusted_y_positions[j] = y_min + margin + 0.01 * logo_height
-        elif adjusted_y_positions[j] + margin > y_max:
-            # logo顶部超出上边界
-            adjusted_y_positions[j] = y_max - margin - 0.01 * logo_height
-
     # 为当前帧生成logo images
     images_i = []
     for idx, airline in enumerate(sorted_airlines):
@@ -443,14 +497,14 @@ for i in range(len(interp_x)):
             if logo_path in logo_cache:
                 logo_data = logo_cache[logo_path]
                 
-                # 使用调整后的y位置
-                adjusted_y = adjusted_y_positions[idx]
+                # 使用平滑调整后的位置
+                adjusted_y = sorted_y_values[idx]
                 
                 images_i.append(dict(
                     source=logo_data,
                     xref="x", yref="y",
                     x=fixed_x + logo_offset, 
-                    y=adjusted_y,  # 使用调整后的位置，避免重叠
+                    y=adjusted_y,
                     sizex=logo_offset, 
                     sizey=logo_height,
                     xanchor="left", 
@@ -460,14 +514,14 @@ for i in range(len(interp_x)):
                     layer="above"
                 ))
     
-    # 将当前帧的数据、images和双速率动态y轴范围打包到Frame中
+    # 将当前帧的数据、images和平滑的y轴范围打包到Frame中
     frames.append(go.Frame(
         data=frame_data, 
         name=str(i),
         layout=go.Layout(
             images=images_i,
             yaxis=dict(
-                range=dyn_ranges[i],  # 使用双速率动态范围
+                range=y_axis_ranges[i],  # 使用平滑的y轴范围
                 title='Revenue (Million USD)',
                 linecolor='gray', 
                 showgrid=True, 
@@ -520,7 +574,11 @@ for airline in valid_airlines:
         
         # 如果这一季度有有效数据，记录这个航空公司和它的y值
         if not pd.isna(raw_val) and raw_val > 0:
-            y_val = interp_revenue[airline][0]
+            # 使用平滑调整后的位置
+            if 0 in final_positions and airline in final_positions[0]:
+                y_val = final_positions[0][airline]
+            else:
+                y_val = interp_revenue[airline][0]
             valid_y_values_initial.append(y_val)
             valid_airlines_in_initial_frame.append(airline)
 
@@ -530,67 +588,9 @@ sorted_airlines_initial = [valid_airlines_in_initial_frame[idx] for idx in sorte
 sorted_y_values_initial = [valid_y_values_initial[idx] for idx in sorted_indices_initial]
 
 # 计算初始帧logo高度
-initial_y_range = dyn_ranges[0]
+initial_y_range = y_axis_ranges[0]
 initial_y_range_size = initial_y_range[1] - initial_y_range[0]
 initial_logo_height = logo_size * initial_y_range_size
-
-# 调整初始帧logo位置，避免重叠
-adjusted_y_positions_initial = list(sorted_y_values_initial)
-
-# 第一步：计算理想间距和每个点的影响范围
-min_required_gap_initial = initial_logo_height * 1.05  # 减小最小所需间距
-logo_influences_initial = []  # 存储每个logo的影响范围[下边界, 上边界]
-
-for pos in adjusted_y_positions_initial:
-    half_gap = min_required_gap_initial / 2
-    logo_influences_initial.append([pos - half_gap, pos + half_gap])
-
-# 第二步：检测并修复重叠
-has_overlap = True
-max_iterations = 10  # 防止无限循环
-iteration = 0
-
-while has_overlap and iteration < max_iterations:
-    has_overlap = False
-    iteration += 1
-    
-    # 从第二个logo开始，检查重叠
-    for j in range(1, len(logo_influences_initial)):
-        # 当前logo与上一个logo的重叠
-        curr_lower = logo_influences_initial[j][0]
-        prev_upper = logo_influences_initial[j-1][1]
-        
-        if curr_lower < prev_upper:  # 存在重叠
-            has_overlap = True
-            overlap_amount = prev_upper - curr_lower
-            
-            # 向上或向下移动以解决重叠
-            if j < len(logo_influences_initial) / 2:  # 前半部分倾向于向下移动
-                # 向下移动前一个logo
-                shift = -overlap_amount - 0.01 * initial_logo_height
-                logo_influences_initial[j-1][0] += shift
-                logo_influences_initial[j-1][1] += shift
-                adjusted_y_positions_initial[j-1] += shift
-            else:  # 后半部分倾向于向上移动
-                # 向上移动当前logo
-                shift = overlap_amount + 0.01 * initial_logo_height
-                logo_influences_initial[j][0] += shift
-                logo_influences_initial[j][1] += shift
-                adjusted_y_positions_initial[j] += shift
-
-# 第三步：确保所有logo都在视图范围内
-# 获取初始帧y轴范围
-y_min_initial, y_max_initial = dyn_ranges[0]
-margin_initial = initial_logo_height / 2
-
-# 检查所有logo是否在视图范围内
-for j in range(len(adjusted_y_positions_initial)):
-    if adjusted_y_positions_initial[j] - margin_initial < y_min_initial:
-        # logo底部超出下边界
-        adjusted_y_positions_initial[j] = y_min_initial + margin_initial + 0.01 * initial_logo_height
-    elif adjusted_y_positions_initial[j] + margin_initial > y_max_initial:
-        # logo顶部超出上边界
-        adjusted_y_positions_initial[j] = y_max_initial - margin_initial - 0.01 * initial_logo_height
 
 # 初始帧logo images
 initial_images = []
@@ -601,14 +601,14 @@ for idx, airline in enumerate(sorted_airlines_initial):
         if logo_path in logo_cache:
             logo_data = logo_cache[logo_path]
             
-            # 使用调整后的y位置
-            adjusted_y = adjusted_y_positions_initial[idx]
+            # 使用平滑调整后的位置
+            adjusted_y = sorted_y_values_initial[idx]
             
             initial_images.append(dict(
                 source=logo_data,
                 xref="x", yref="y",
                 x=fixed_x + logo_offset, 
-                y=adjusted_y,  # 使用调整后的位置，避免重叠
+                y=adjusted_y,
                 sizex=logo_offset, 
                 sizey=initial_logo_height,
                 xanchor="left", 
@@ -633,7 +633,7 @@ fig = go.Figure(
         ),
         yaxis=dict(
             title='Revenue (Million USD)', 
-            range=dyn_ranges[0],  # 使用初始帧的双速率动态范围
+            range=y_axis_ranges[0],  # 使用平滑后的y轴范围
             linecolor='gray', 
             showgrid=True, 
             gridcolor='lightgray', 
@@ -656,7 +656,7 @@ fig = go.Figure(
                      args=[None, {
                          "frame": {"duration": 100, "redraw": True},
                          "fromcurrent": True, 
-                         "transition": {"duration": 0}  # 关闭布局过渡效果，消除振荡缩放
+                         "transition": {"duration": 50}  # 增加过渡时间，让动画更平滑
                      }]),
                 dict(label="Pause",
                      method="animate",
@@ -673,13 +673,12 @@ fig = go.Figure(
 )
 
 # 设置全局默认的frame和transition参数，确保自动播放也能平滑进行
-# 修复：不能直接设置fig.layout.frame，需要使用animation_opts
 fig.update(
     layout_updatemenus=[
         {
             "buttons": [
                 {
-                    "args": [None, {"frame": {"duration": 100, "redraw": True}, "transition": {"duration": 0}}],
+                    "args": [None, {"frame": {"duration": 100, "redraw": True}, "transition": {"duration": 50}}],
                     "label": "Play",
                     "method": "animate"
                 },

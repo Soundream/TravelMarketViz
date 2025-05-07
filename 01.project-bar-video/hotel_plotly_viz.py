@@ -14,8 +14,8 @@ import base64
 warnings.filterwarnings('ignore')
 
 # Add argument parser
-parser = argparse.ArgumentParser(description='Generate airline revenue visualization using Plotly')
-parser.add_argument('--output', type=str, default='output/airline_revenue_plotly.html', 
+parser = argparse.ArgumentParser(description='Generate hotel revenue visualization using Plotly')
+parser.add_argument('--output', type=str, default='output/hotel_revenue_plotly.html', 
                     help='Output HTML file path')
 parser.add_argument('--frames-per-year', type=int, default=4, 
                     help='Number of frames to generate per year (default: 4 for quarterly)')
@@ -23,8 +23,8 @@ parser.add_argument('--height', type=int, default=800,
                     help='Height of the visualization in pixels (default: 800)')
 parser.add_argument('--width', type=int, default=1600, 
                     help='Width of the visualization in pixels (default: 1600)')
-parser.add_argument('--max-airlines', type=int, default=15, 
-                    help='Maximum number of airlines to display (default: 15)')
+parser.add_argument('--max-hotels', type=int, default=15, 
+                    help='Maximum number of hotels to display (default: 15)')
 parser.add_argument('--transition-duration', type=int, default=500, 
                     help='Transition duration between frames in ms (default: 500)')
 args = parser.parse_args()
@@ -37,14 +37,26 @@ if not os.path.exists(output_dir):
 
 # Create a color mapping for regions
 region_colors = {
-    'North America': '#40E0D0',  # Turquoise
-    'Europe': '#4169E1',         # Royal Blue
-    'Asia Pacific': '#FF4B4B',   # Red
-    'Latin America': '#32CD32',  # Lime Green
-    'China': '#FF4B4B',          # Red (same as Asia Pacific)
-    'Middle East': '#DEB887',    # Burlywood
-    'Russia': '#FF4B4B',         # Red (same as Asia Pacific)
-    'Turkey': '#DEB887'          # Burlywood (same as Middle East)
+    'US': '#40E0D0',        # Turquoise
+    'CA': '#40E0D0',        # Turquoise (same as US)
+    'GB': '#4169E1',        # Royal Blue
+    'BM': '#4169E1',        # Royal Blue (same as GB)
+    'FR': '#4169E1',        # Royal Blue (same as GB)
+    'ES': '#4169E1',        # Royal Blue (same as GB)
+    'IE': '#4169E1',        # Royal Blue (same as GB)
+    'SE': '#4169E1',        # Royal Blue (same as GB)
+    'CN': '#FF4B4B',        # Red
+    'HK': '#FF4B4B',        # Red (same as CN)
+    'MY': '#FF4B4B',        # Red (same as CN)
+    'SG': '#FF4B4B',        # Red (same as CN)
+    'TH': '#FF4B4B',        # Red (same as CN)
+    'JP': '#FF4B4B',        # Red (same as CN)
+    'KR': '#FF4B4B',        # Red (same as CN)
+    'IN': '#32CD32',        # Lime Green
+    'AU': '#9932CC',        # Dark Orchid
+    'ZA': '#DAA520',        # Goldenrod
+    'AE': '#DEB887',        # Burlywood
+    'MO': '#FF4B4B'         # Red (same as CN)
 }
 
 def parse_quarter(quarter_str):
@@ -60,122 +72,132 @@ def format_revenue(value):
         return f'${value/1000:.1f}B'
     return f'${value:.0f}M'
 
-def get_logo_path(airline, year, iata_code, month=6):
-    """Get the appropriate logo path based on airline name, year and month"""
+def get_logo_path(hotel, year, ticker):
+    """Get the appropriate logo path based on hotel name, year and ticker"""
     logo_mapping = {
-        "easyJet": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/easyJet-1999-now.jpg"}],
-        "Emirates": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Emirates-logo.jpg"}],
-        "Air France-KLM": [
-            {"start_year": 1999, "end_year": 2004, "file": "99.utility/airline-bar-video/logos/klm-1999-now.png", "iata": "KL"},
-            {"start_year": 2004, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Air-France-KLM-Holding-Logo.png", "iata": "AF"}
+        "Marriott": [
+            {"start_year": 1989, "end_year": 2013, "file": "../99.utility/hospitality-bar-video/logos/Marriott-Logo-1989-2013.png"},
+            {"start_year": 2013, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Marriott-logo-2025.jpg"}
         ],
-        "American Airlines": [
-            {"start_year": 1999, "end_year": 2013, "file": "99.utility/airline-bar-video/logos/american-airlines-1967-2013.jpg"},
-            {"start_year": 2013, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/american-airlines-2013-now.jpg"}
+        "Starwood": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Starwood-2025.jpeg"}
         ],
-        "United Airlines": [
-            {"start_year": 1998, "end_year": 2010, "file": "99.utility/airline-bar-video/logos/united-airlines-1998-2010.jpg"},
-            {"start_year": 2010, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/united-airlines-2010-now.jpg"}
+        "Hyatt": [
+            {"start_year": 1990, "end_year": 2013, "file": "../99.utility/hospitality-bar-video/logos/Hyatt-Logo-1990-2013.jpg"},
+            {"start_year": 2013, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Hyatt-logo-2025.jpg"}
         ],
-        "Delta Air Lines": [
-            {"start_year": 2000, "end_year": 2007, "file": "99.utility/airline-bar-video/logos/delta-air-lines-2000-2007.png"},
-            {"start_year": 2007, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/delta-air-lines-2007-now.jpg"}
+        "Hilton": [
+            {"start_year": 1999, "end_year": 2010, "file": "../99.utility/hospitality-bar-video/logos/Hilton-Logo-2010.jpg"},
+            {"start_year": 2010, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Hilton-logo-2025.jpg"}
         ],
-        "Southwest Airlines": [
-            {"start_year": 1989, "end_year": 2014, "file": "99.utility/airline-bar-video/logos/southwest-airlines-1989-2014.png"},
-            {"start_year": 2014, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/southwest-airlines-2014-now.png"}
+        "Wyndham": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Wyndham-2025.jpeg"}
         ],
-        "Lufthansa": [
-            {"start_year": 1999, "end_year": 2018, "file": "99.utility/airline-bar-video/logos/Deutsche Lufthansa-1999-2018.png"},
-            {"start_year": 2018, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Deutsche Lufthansa-2018-now.jpg"}
+        "Choice Hotels": [
+            {"start_year": 1999, "end_year": 2015, "file": "../99.utility/hospitality-bar-video/logos/Comfort-Inn-Logo-2015.jpg"},
+            {"start_year": 2015, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Comfort-Inn-Logo-2025.jpg"}
         ],
-        "Deutsche Lufthansa": [
-            {"start_year": 1999, "end_year": 2018, "file": "99.utility/airline-bar-video/logos/Deutsche Lufthansa-1999-2018.png"},
-            {"start_year": 2018, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Deutsche Lufthansa-2018-now.jpg"}
+        "La Quinta": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/La Quinta-2025.webp"}
         ],
-        "Air China": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Air China-1999-now.png"}],
-        "China Southern": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/China Southern-1999-now.jpg"}],
-        "China Eastern": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/China Eastern-1999-now.jpg"}],
-        "Singapore Airlines": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Singapore Airlines-1999-now.jpg"}],
-        "LATAM Airlines": [
-            {"start_year": 1999, "end_year": 2016, "file": "99.utility/airline-bar-video/logos/LATAM Airlines-1999-2016.png"},
-            {"start_year": 2016, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/LATAM Airlines-2016-now.jpg"}
+        "Extended Stay America": [
+            {"start_year": 1995, "end_year": 2012, "file": "../99.utility/hospitality-bar-video/logos/Extended-Stay-America-Logo-1995-2012.jpg"},
+            {"start_year": 2012, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Extended-Stay-America-Logo-2025.jpg"}
         ],
-        "Hainan Airlines": [
-            {"start_year": 1999, "end_year": 2004, "file": "99.utility/airline-bar-video/logos/Hainan Airlines-1999-2004.png"},
-            {"start_year": 2004, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Hainan Airlines-2004-now.jpg"}
+        "Four Seasons": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Four-Seasons-Logo-2025.jpg"}
         ],
-        "Qatar Airways": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Qatar Airways-1999-now.jpg"}],
-        "Turkish Airlines": [
-            {"start_year": 1999, "end_year": 2018, "file": "99.utility/airline-bar-video/logos/Turkish Airlines-1999-2018.png"},
-            {"start_year": 2018, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Turkish Airlines-2018-now.png"}
+        "Fairmont": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Fairmont-Logo-2025.png"}
         ],
-        "JetBlue": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/jetBlue-1999-now.jpg"}],
-        "SkyWest": [
-            {"start_year": 1972, "end_year": 2001, "file": "99.utility/airline-bar-video/logos/skywest-1972-2001.png"},
-            {"start_year": 2001, "end_year": 2008, "file": "99.utility/airline-bar-video/logos/skywest-2001-2008.png"},
-            {"start_year": 2008, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/skywest-2018-now.jpg"}
+        "Four Seasons ": [  # Note the trailing space in the hotel name
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Four-Seasons-Logo-2025.jpg"}
         ],
-        "Northwest Airlines": [
-            {"start_year": 1989, "end_year": 2003, "file": "99.utility/airline-bar-video/logos/northwest-airlines-1989-2003.png"},
-            {"start_year": 2003, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/northwest-airlines-2003-now.jpg"}
+        "Fairmont ": [  # Note the trailing space in the hotel name
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Fairmont-Logo-2025.png"}
         ],
-        "TWA": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/TWA-1999-now.png"}],
-        "Air Canada": [
-            {"start_year": 1995, "end_year": 2005, "file": "99.utility/airline-bar-video/logos/air-canada-1995-2005.jpg"},
-            {"start_year": 2005, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/air-canada-2005-now.png"}
+        "IHG": [
+            {"start_year": 1999, "end_year": 2003, "file": "../99.utility/hospitality-bar-video/logos/IHG-Logo-2003-2017.png"},
+            {"start_year": 2003, "end_year": 2017, "file": "../99.utility/hospitality-bar-video/logos/IHG-Logo-2003-2017.png"},
+            {"start_year": 2017, "end_year": 2021, "file": "../99.utility/hospitality-bar-video/logos/IHG-Logo-2017-2021.png"},
+            {"start_year": 2021, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/IHG-Logo-2025.jpg"}
         ],
-        "IAG": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/IAG-1999-now.png"}],
-        "Ryanair": [
-            {"start_year": 1999, "end_year": 2001, "file": "99.utility/airline-bar-video/logos/Ryanair-1999-2001.png"},
-            {"start_year": 2001, "end_year": 2013, "file": "99.utility/airline-bar-video/logos/Ryanair-2001-2013.jpg"},
-            {"start_year": 2013, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Ryanair-2013-now.jpg"}
+        "Millennium": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Millennium-2025.png"}
         ],
-        "Aeroflot": [
-            {"start_year": 1999, "end_year": 2003, "file": "99.utility/airline-bar-video/logos/Aeroflot-1999-2003.jpg"},
-            {"start_year": 2003, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Aeroflot-2003-now.jpg"}
+        "Belmond": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Belmond-Logo-2025.png"}
         ],
-        "Cathay Pacific": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Cathay Pacific-1999-now.png"}],
-        "Qantas Airways": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Qantas Airways-1999-now.jpg"}],
-        "Finnair": [
-            {"start_year": 1999, "end_year": 2010, "file": "99.utility/airline-bar-video/logos/Finnair-1999-2010.jpg"},
-            {"start_year": 2010, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/Finnair-2010-now.jpg"}
+        "Accor": [
+            {"start_year": 1997, "end_year": 2007, "file": "../99.utility/hospitality-bar-video/logos/Accor-Logo-1997-2007.png"},
+            {"start_year": 2007, "end_year": 2010, "file": "../99.utility/hospitality-bar-video/logos/Accor-Logo-2007-2010.png"},
+            {"start_year": 2010, "end_year": 2015, "file": "../99.utility/hospitality-bar-video/logos/Accor-Logo-2010-2015.png"},
+            {"start_year": 2015, "end_year": 2019, "file": "../99.utility/hospitality-bar-video/logos/Accor-Logo-2015-2019.png"},
+            {"start_year": 2019, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Accor-Logo-2025.jpg"}
         ],
-        "Alaska Air": [
-            {"start_year": 1972, "end_year": 2014, "file": "99.utility/airline-bar-video/logos/alaska-air-1972-2014.png"},
-            {"start_year": 2014, "end_year": 2016, "file": "99.utility/airline-bar-video/logos/alaska-air-2014-2016.png"},
-            {"start_year": 2016, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/alaska-air-2016-now.jpg"}
+        "Meliá": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Meliá-2025.png"}
         ],
-        "Norwegian": [{"start_year": 1999, "end_year": 9999, "file": "99.utility/airline-bar-video/logos/norwegian-logo.jpg"}]
+        "NH Hotels": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/NH Hotels-2025.png"}
+        ],
+        "Dalata": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/NH Hotels-2025.png"}  # Using similar logo since Dalata logo is missing
+        ],
+        "Scandic": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Scandic-2025.png"}
+        ],
+        "H World": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/H World-Logo-2025.jpg"}
+        ],
+        "Jin Jiang": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Jin Jiang-2025.png"}
+        ],
+        "IHCL": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/IHCL-2025.png"}
+        ],
+        "EIH": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/EIH-Logo-2025.png"}
+        ],
+        "Shangri-La Hotels (Malaysia) Berhad": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/hangri-La Hotels (Malaysia) Berhad.png"}
+        ],
+        "Far East Orchard": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Far East Orchard-Logo-2025.png"}
+        ],
+        "Shangri-La Asia Limited": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Shangri-La Asia Limited-2025.png"}
+        ],
+        "Shangri-La Asia Limited ": [  # Note the trailing space in the hotel name
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Shangri-La Asia Limited-2025.png"}
+        ],
+        "Mandarin Oriental": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Mandarin Oriental-2025.jpg"}
+        ],
+        "Dusit Thani": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Dusit Thani-Logo-2025.jpg"}
+        ],
+        "Erawan Group": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Erawan Group-Logo-2025.jpeg"}
+        ],
+        "Minor International": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Minor International-2025.png"}
+        ],
+        "Tsogo Sun Hotels (Southern Sun)": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Tsogo Sun Hotels (Southern Sun).png"}
+        ],
+        "Shilla Hotels & Resorts": [
+            {"start_year": 1999, "end_year": 2025, "file": "../99.utility/hospitality-bar-video/logos/Shilla Hotels & Resorts-2025.png"}
+        ]
     }
     
-    # 处理Norwegian特殊情况
-    if iata_code == "DY":
-        norwegian_logo = "99.utility/airline-bar-video/logos/norwegian-logo.jpg"
-        return norwegian_logo if os.path.exists(norwegian_logo) else None
-        
-    if airline not in logo_mapping:
-        print(f"Logo not found for {airline}")
+    if hotel not in logo_mapping:
+        print(f"Logo not found for {hotel}")
         return None
         
-    logo_versions = logo_mapping[airline]
+    logo_versions = logo_mapping[hotel]
     
-    # 处理Air France-KLM特殊情况
-    if airline == "Air France-KLM":
-        if year < 2004 or (year == 2004 and month < 5):
-            # 在2004年5月之前使用KLM的logo
-            for version in logo_versions:
-                if version["iata"] == "KL":
-                    logo_path = version["file"]
-                    return logo_path if os.path.exists(logo_path) else None
-        else:
-            # 2004年5月之后使用Air France-KLM的logo
-            for version in logo_versions:
-                if version["iata"] == "AF":
-                    logo_path = version["file"]
-                    return logo_path if os.path.exists(logo_path) else None
-    
-    # 标准处理方式
+    # Find the appropriate logo based on year
     for version in logo_versions:
         if version["start_year"] <= year <= version["end_year"]:
             logo_path = version["file"]
@@ -196,25 +218,35 @@ def get_encoded_image(logo_path):
                 return f"data:image/png;base64,{encoded_string}"
     except Exception as e:
         print(f"Error encoding image {logo_path}: {e}")
-    return None
+    return None 
 
 def create_visualization():
-    """Create interactive Plotly visualization for airline revenue data"""
+    """Create interactive Plotly visualization for hotel revenue data"""
     # Load the data from CSV
-    df = pd.read_csv('99.utility/airline-bar-video/airlines_final.csv')
+    df = pd.read_csv('../99.utility/hospitality-bar-video/hotel_final.csv')
     
     # Process metadata
-    metadata = df.iloc[:7].copy()
+    metadata = df.iloc[:5].copy()
     revenue_data = df.iloc[7:].copy()
     
     metadata.set_index(metadata.columns[0], inplace=True)
     
     # Convert revenue columns
     for col in revenue_data.columns[1:]:
-        revenue_data[col] = pd.to_numeric(revenue_data[col].str.replace(',', '').str.replace(' M', ''), errors='coerce')
+        # Check if the column contains string values before using str methods
+        if revenue_data[col].dtype == 'object':
+            # If it's a string column, use str methods to clean it
+            revenue_data[col] = pd.to_numeric(revenue_data[col].str.replace(',', '').str.replace(' M', ''), errors='coerce')
+        else:
+            # If it's already numeric, just ensure it's properly converted
+            revenue_data[col] = pd.to_numeric(revenue_data[col], errors='coerce')
     
+    # Set the index 
     revenue_data.set_index(revenue_data.columns[0], inplace=True)
-    quarters = revenue_data.index.tolist()
+    
+    # Get unique quarters and sort them
+    quarters = sorted(list(set([q for q in revenue_data.index.tolist() if isinstance(q, str) and "'" in q])))
+    print(f"Found {len(quarters)} unique quarters: {quarters[:5]}...")
     
     # 准备所有季度的数据
     all_quarters_data = []
@@ -224,52 +256,71 @@ def create_visualization():
         year, q = parse_quarter(quarter)
         month = q * 3
         
-        quarter_data = revenue_data.loc[quarter].dropna()
-        top_airlines = quarter_data.sort_values(ascending=False).head(args.max_airlines)
+        # Get all rows for this quarter and combine them 
+        # (in case there are multiple rows with the same quarter)
+        quarter_rows = revenue_data.loc[quarter]
         
-        airlines = []
+        # If we got a Series (single row), convert to DataFrame
+        if isinstance(quarter_rows, pd.Series):
+            quarter_rows = pd.DataFrame([quarter_rows])
+        
+        # Combine rows by taking the first non-NA value for each column
+        combined_data = {}
+        for col in quarter_rows.columns:
+            non_na_values = quarter_rows[col].dropna()
+            if len(non_na_values) > 0:
+                combined_data[col] = non_na_values.iloc[0]
+        
+        # Create Series from the combined data
+        quarter_data = pd.Series(combined_data)
+        quarter_data = quarter_data.dropna()
+        
+        hotels = []
         revenues = []
         colors = []
         hover_texts = []
         logos = []
         y_positions = []  # Add numerical y positions
         
-        # Create lists for each airline's data
-        for i, (airline, revenue) in enumerate(top_airlines.items()):
-            if pd.notna(revenue) and revenue > 0:
-                region = metadata.loc['Region', airline]
-                color = region_colors.get(region, '#808080')
-                iata_code = metadata.loc['IATA Code', airline]
-                
-                # Special handling for Air France-KLM labels
-                if airline == "Air France-KLM":
-                    if year < 2004 or (year == 2004 and month < 5):
-                        label = "KL"  # Use KL before May 2004
-                    else:
-                        label = iata_code if pd.notna(iata_code) else airline[:3]
-                else:
-                    label = iata_code if pd.notna(iata_code) else airline[:3]
-                
-                # Get logo path and encode it
-                logo_path = get_logo_path(airline, year, iata_code, month)
-                encoded_logo = get_encoded_image(logo_path) if logo_path else None
-                
-                airlines.append(label)
-                revenues.append(revenue)
-                colors.append(color)
-                logos.append(encoded_logo)
-                y_positions.append(i)  # Use numerical position
-                
-                hover_text = f"<b>{airline}</b><br>"
-                hover_text += f"Revenue: {format_revenue(revenue)}<br>"
-                hover_text += f"Region: {region}<br>"
-                hover_text += f"IATA Code: {iata_code}"
-                hover_texts.append(hover_text)
+        # Check if we have data after combining and cleaning
+        if len(quarter_data) > 0:
+            # Sort hotels by revenue
+            top_hotels = quarter_data.sort_values(ascending=False).head(args.max_hotels)
+            
+            # Create lists for each hotel's data
+            for i, (hotel, revenue) in enumerate(top_hotels.items()):
+                if pd.notna(revenue) and revenue > 0:
+                    region = metadata.loc['Region', hotel]
+                    ticker = metadata.loc['Ticker', hotel] if 'Ticker' in metadata.index else ""
+                    color = region_colors.get(region, '#808080')
+                    
+                    # Get logo path and encode it
+                    logo_path = get_logo_path(hotel, year, ticker)
+                    encoded_logo = get_encoded_image(logo_path) if logo_path else None
+                    
+                    # Use ticker as label if available, otherwise use the first 3 characters of hotel name
+                    hotel_label = ticker if ticker and pd.notna(ticker) and ticker.strip() != "" else hotel[:3]
+                    
+                    hotels.append(hotel_label)  # Use ticker as label
+                    revenues.append(revenue)
+                    colors.append(color)
+                    logos.append(encoded_logo)
+                    y_positions.append(i)  # Use numerical position
+                    
+                    hover_text = f"<b>{hotel}</b><br>"
+                    hover_text += f"Revenue: {format_revenue(revenue)}<br>"
+                    hover_text += f"Region: {region}<br>"
+                    hover_text += f"Ticker: {ticker}"
+                    hover_texts.append(hover_text)
         
-        # Store data (already sorted by revenue due to top_airlines being sorted)
+        # Skip quarters with no data
+        if not hotels:
+            continue
+            
+        # Store data (already sorted by revenue due to top_hotels being sorted)
         quarter_info = {
             'quarter': quarter,
-            'airlines': airlines,
+            'hotels': hotels,
             'revenues': revenues,
             'colors': colors,
             'hover_texts': hover_texts,
@@ -279,6 +330,11 @@ def create_visualization():
         }
         all_quarters_data.append(quarter_info)
     
+    # Return None if no quarters have data
+    if not all_quarters_data:
+        print("No quarters with data found. Check the CSV format and content.")
+        return None
+        
     # Get initial data
     initial_data = all_quarters_data[0]
     
@@ -341,7 +397,7 @@ def create_visualization():
     global_x_offset = max_revenue * 1.05
     fixed_logo_width = max_revenue * 0.2
     
-    for i, (airline, revenue, logo) in enumerate(zip(initial_data['airlines'], initial_data['revenues'], initial_data['logos'])):
+    for i, (hotel, revenue, logo) in enumerate(zip(initial_data['hotels'], initial_data['revenues'], initial_data['logos'])):
         if logo:
             fig.add_layout_image(
                 dict(
@@ -365,7 +421,7 @@ def create_visualization():
     # Update layout with numerical yaxis
     fig.update_layout(
         title={
-            'text': "Airline Revenue Visualization",
+            'text': "Hotel Revenue Visualization",
             'y':0.95,
             'x':0.5,
             'xanchor': 'center',
@@ -389,12 +445,12 @@ def create_visualization():
         ),
         yaxis=dict(
             title={
-                'text': "Airline",
+                'text': "Hotel",
                 'font': {'family': 'Monda', 'size': 16}
             },
             tickmode='array',
             tickvals=initial_data['y_positions'],
-            ticktext=initial_data['airlines'],
+            ticktext=initial_data['hotels'],
             tickfont={'family': 'Monda', 'size': 14},
             fixedrange=True,
             autorange='reversed'
@@ -421,7 +477,24 @@ def create_visualization():
         uniformtext=dict(
             mode='hide',
             minsize=14
-        )
+        ),
+        # Add timestamp annotation to the upper left corner
+        annotations=[
+            dict(
+                text=initial_data['quarter'],
+                x=0.02,
+                y=0.98,
+                xref="paper",
+                yref="paper",
+                showarrow=False,
+                font=dict(
+                    family="Monda",
+                    size=24,
+                    color="black"
+                ),
+                align="left"
+            )
+        ]
     )
     
     # Convert to HTML
@@ -429,7 +502,7 @@ def create_visualization():
         fig,
         include_plotlyjs=False,
         full_html=False,
-        div_id='airline-chart'
+        div_id='hotel-chart'
     )
     
     # Convert data to JSON for JavaScript
@@ -441,7 +514,7 @@ def create_visualization():
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Airline Revenue Visualization</title>
+    <title>Hotel Revenue Visualization</title>
     <style>
         body {{
             font-family: 'Monda', Arial, sans-serif;
@@ -513,7 +586,7 @@ def create_visualization():
             let isPlaying = false;
             let playInterval = null;
             
-            const chartDiv = document.getElementById('airline-chart');
+            const chartDiv = document.getElementById('hotel-chart');
             const currentQuarterDisplay = document.getElementById('current-quarter');
             const quarterSlider = document.getElementById('quarter-slider');
             const playButton = document.getElementById('play-button');
@@ -569,14 +642,26 @@ def create_visualization():
             ];
             
             const regions = {{
-                'North America': '#40E0D0',
-                'Europe': '#4169E1',
-                'Asia Pacific': '#FF4B4B',
-                'Latin America': '#32CD32',
-                'China': '#FF4B4B',
-                'Middle East': '#DEB887',
-                'Russia': '#FF4B4B',
-                'Turkey': '#DEB887'
+                'US': '#40E0D0',
+                'CA': '#40E0D0',
+                'GB': '#4169E1',
+                'BM': '#4169E1',
+                'FR': '#4169E1',
+                'ES': '#4169E1',
+                'IE': '#4169E1',
+                'SE': '#4169E1',
+                'CN': '#FF4B4B',
+                'HK': '#FF4B4B',
+                'MY': '#FF4B4B',
+                'SG': '#FF4B4B',
+                'TH': '#FF4B4B',
+                'JP': '#FF4B4B',
+                'KR': '#FF4B4B',
+                'IN': '#32CD32',
+                'AU': '#9932CC',
+                'ZA': '#DAA520',
+                'AE': '#DEB887',
+                'MO': '#FF4B4B'
             }};
             
             Object.entries(regions).forEach(([region, color]) => {{
@@ -598,7 +683,7 @@ def create_visualization():
             
             const layout = {{
                 title: {{
-                    text: "Airline Revenue Visualization",
+                    text: "Hotel Revenue Visualization",
                     y: 0.95,
                     x: 0.5,
                     xanchor: 'center',
@@ -622,12 +707,12 @@ def create_visualization():
                 }},
                 yaxis: {{
                     title: {{
-                        text: "Airline",
+                        text: "Hotel",
                         font: {{family: 'Monda', size: 16}}
                     }},
                     tickmode: 'array',
                     tickvals: initialData.y_positions,
-                    ticktext: initialData.airlines,
+                    ticktext: initialData.hotels,
                     tickfont: {{family: 'Monda', size: 14}},
                     autorange: 'reversed'
                 }},
@@ -661,7 +746,23 @@ def create_visualization():
                         sizing: "contain",
                         opacity: 0.95
                     }} : null
-                ).filter(img => img !== null)
+                ).filter(img => img !== null),
+                annotations: [
+                    {{
+                        text: initialData.quarter,
+                        x: 0.02,
+                        y: 0.98,
+                        xref: "paper",
+                        yref: "paper",
+                        showarrow: false,
+                        font: {{
+                            family: "Monda",
+                            size: 24,
+                            color: "black"
+                        }},
+                        align: "left"
+                    }}
+                ]
             }};
             
             await Plotly.newPlot(chartDiv, traces, layout);
@@ -674,7 +775,7 @@ def create_visualization():
                 
                 let lastFrameTime = performance.now();
                 const frameDuration = 16;
-                const quarterDuration = 5000;
+                const quarterDuration = 2500;
                 let currentTime = 0;
                 
                 function animate() {{
@@ -699,7 +800,7 @@ def create_visualization():
                     const nextData = allQuartersData[nextIndex];
                     
                     const interpolatedData = currentData.revenues.map((startVal, i) => ({{
-                        airline: currentData.airlines[i],
+                        hotel: currentData.hotels[i],
                         revenue: startVal + (nextData.revenues[i] - startVal) * progress,
                         logo: currentData.logos[i],
                         color: currentData.colors[i],
@@ -709,7 +810,7 @@ def create_visualization():
                     
                     interpolatedData.sort((a, b) => b.revenue - a.revenue);
                     
-                    const airlinesSorted = interpolatedData.map(d => d.airline);
+                    const hotelsSorted = interpolatedData.map(d => d.hotel);
                     const revenuesSorted = interpolatedData.map(d => d.revenue);
                     const logosSorted = interpolatedData.map(d => d.logo);
                     const colorsSorted = interpolatedData.map(d => d.color);
@@ -731,7 +832,7 @@ def create_visualization():
                             'text': [[], formattedRevenuesSorted],
                             'width': [0.8, 0.8]
                         }}, {{
-                            'yaxis.ticktext': airlinesSorted,
+                            'yaxis.ticktext': hotelsSorted,
                             'yaxis.tickvals': yPositionsSorted,
                             'yaxis.autorange': 'reversed',
                             'xaxis.range': [0, xAxisMax],
@@ -749,7 +850,23 @@ def create_visualization():
                                     sizing: "contain",
                                     opacity: 0.95
                                 }} : null
-                            ).filter(img => img !== null)
+                            ).filter(img => img !== null),
+                            'annotations': [
+                                {{
+                                    text: interpolateQuarters(currentData.quarter, nextData.quarter, progress),
+                                    x: 0.02,
+                                    y: 0.98,
+                                    xref: "paper",
+                                    yref: "paper",
+                                    showarrow: false,
+                                    font: {{
+                                        family: "Monda",
+                                        size: 24,
+                                        color: "black"
+                                    }},
+                                    align: "left"
+                                }}
+                            ]
                         }});
                         
                         const quarterText = interpolateQuarters(currentData.quarter, nextData.quarter, progress);
@@ -842,6 +959,6 @@ def create_visualization():
     return fig
 
 if __name__ == "__main__":
-    print("Starting Plotly Airline Revenue Visualization")
+    print("Starting Plotly Hotel Revenue Visualization")
     fig = create_visualization()
     print("Visualization complete!") 

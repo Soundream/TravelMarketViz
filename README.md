@@ -7,7 +7,7 @@
 ### 基本运行命令
 
 ```bash
-python3 travel_company_viz_new.py
+python3 01.project-bar-video/travel_company_viz_new.py
 ```
 
 这将使用默认参数生成可视化，并保存在`output/travel_revenue_plotly.html`文件中。
@@ -17,7 +17,7 @@ python3 travel_company_viz_new.py
 脚本支持多个命令行参数来自定义可视化效果：
 
 ```bash
-python3 travel_company_viz_new.py --height 900 --width 1800 --transition-duration 3000 --output output/travel_company_viz_custom.html
+python3 01.project-bar-video/travel_company_viz_new.py --height 900 --width 1800 --transition-duration 3000 --output output/travel_company_viz_custom.html
 ```
 
 #### 参数说明
@@ -40,7 +40,7 @@ python3 travel_company_viz_new.py --height 900 --width 1800 --transition-duratio
 ### 示例：生成5分钟长的动画
 
 ```bash
-python3 travel_company_viz_new.py --height 900 --width 1800 --transition-duration 3000 --output output/travel_company_viz_5min_duration.html
+python3 01.project-bar-video/travel_company_viz_new.py --height 900 --width 1800 --transition-duration 3000 --output output/travel_company_viz_5min_duration.html
 ```
 
 ## 航空公司可视化工具
@@ -54,13 +54,13 @@ python3 travel_company_viz_new.py --height 900 --width 1800 --transition-duratio
 #### 基本使用方法
 
 ```bash
-python3 airline_plotly_viz.py
+python3 01.project-bar-video/airline_plotly_viz.py
 ```
 
 #### 自定义参数
 
 ```bash
-python3 airline_plotly_viz.py --height 900 --width 1800 --transition-duration 3000 --output output/airline_revenue_viz.html
+python3 01.project-bar-video/airline_plotly_viz.py --height 900 --width 1800 --transition-duration 3000 --output output/airline_revenue_viz.html
 ```
 
 支持的参数与`travel_company_viz_new.py`类似：
@@ -77,13 +77,13 @@ python3 airline_plotly_viz.py --height 900 --width 1800 --transition-duration 30
 #### 基本使用方法
 
 ```bash
-python3 airline_plotly_line.py
+python3 01.project-bar-video/airline_plotly_line.py
 ```
 
 #### 自定义参数
 
 ```bash
-python3 airline_plotly_line.py --height 900 --width 1800 --transition-duration 3000 --output output/airline_revenue_line.html
+python3 01.project-bar-video/airline_plotly_line.py --height 900 --width 1800 --transition-duration 3000 --output output/airline_revenue_line.html
 ```
 
 支持的参数：
@@ -100,3 +100,15 @@ python3 airline_plotly_line.py --height 900 --width 1800 --transition-duration 3
 - 所有可视化都包含播放、暂停和重置按钮，可以控制动画播放
 - 旅游公司数据来源于`99.utility/travel-company-bar-video/Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue2.csv`文件
 - 航空公司数据来源于相应的CSV文件 
+
+#### 基本使用方法
+
+```bash
+python3 01.project-bar-video/hotel_plotly_viz.py
+```
+
+#### 自定义参数
+
+```bash
+python3 01.project-bar-video/hotel_plotly_viz.py --height 900 --width 1800 --transition-duration 3000 --output output/hotel_revenue_viz.html
+``` 

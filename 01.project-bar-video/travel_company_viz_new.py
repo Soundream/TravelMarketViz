@@ -75,11 +75,34 @@ ticker_to_company = {
     'KYAK': 'KAYAK'  # 修正：CSV中是KYAK而不是KAYAK
 }
 
+# Define IPO dates for companies (decimal year format)
+# Based on the provided event list
+ipo_dates = {
+    'PCLN': 1999.21,  # Mar 1999
+    'EXPE': 1999.84,  # Nov 1999
+    'LMN': 2000.21,   # Mar 2000
+    'WBJ': 2000.38,   # May 2000
+    'LONG': 2004.75,  # Oct 2004
+    'TCOM': 2003.92,  # Dec 2003 (Ctrip)
+    'OWW': 2003.92,   # Dec 2003 (Orbitz)
+    'KYAK': 2012.54,  # Jul 2012
+    'MMYT': 2010.63,  # Aug 2010
+    'TRIP': 2011.92,  # Dec 2011
+    'SEERA': 2012.29, # Apr 2012 (Al Tayyar Travel)
+    'TRVG': 2016.96,  # Dec 2016
+    'YTRA': 2016.75,  # Oct 2016
+    'TCEL': 2018.88,  # Nov 2018 (Tongcheng-eLong)
+    'ABNB': 2020.92,  # Dec 2020
+    'EASEMYTRIP': 2021.21, # Mar 2021
+    'DESP': 2017.71,  # Sep 2017
+    'IXIGO': 2024.42  # Jun 2024
+}
+
 # 需要排除的公司列表（不在可视化中显示）
-excluded_companies = ['FLT', 'Skyscanner', 'Kiwi', 'Almosafer']
+excluded_companies = ['FLT', 'Skyscanner', 'Kiwi', 'Almosafer', 'Traveloka', 'Etraveli', 'Travelocity', 'Webjet OTA']
 
 # 扩展排除公司列表，包含CSV中实际的列名
-excluded_columns = excluded_companies + ['Flight Centre', 'Flight center']
+excluded_columns = excluded_companies + ['Flight Centre', 'Flight center', "Travelocity"]
 
 # 创建反向映射，用于将CSV中的原始列名映射回对应的ticker
 company_to_ticker = {}
@@ -162,7 +185,7 @@ def format_revenue(value):
 
 def get_logo_path(identifier, year):
     """Get the appropriate logo path based on company or ticker and year"""
-    logo_base_path = '99.utility/travel-company-bar-video/logos/'
+    logo_base_path = '../99.utility/travel-company-bar-video/logos/'
     
     # 处理特殊公司和按年份变化的logo
     # 统一使用ticker作为查找key
@@ -179,6 +202,8 @@ def get_logo_path(identifier, year):
             return f'{logo_base_path}1PCLN_logo.png'
         else:
             return f'{logo_base_path}BKNG_logo.png'
+    elif company == 'Cleartrip':
+        return f'{logo_base_path}Cleartrip_logo.png'
     elif company == 'TRVG':
         if year < 2013.0:
             return f'{logo_base_path}Trivago1.jpg'
@@ -283,7 +308,7 @@ def create_visualization():
     print("Starting Plotly Travel Company Revenue Visualization.")
     
     # Load the data from CSV
-    data = pd.read_csv('99.utility/travel-company-bar-video/Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue2.csv')
+    data = pd.read_csv('../99.utility/travel-company-bar-video/Animated Bubble Chart_ Historic Financials Online Travel Industry - Revenue2.csv')
     print(f"Loaded {len(data)} rows of data.")
     
     # Handle "Revenue" row
@@ -364,6 +389,28 @@ def create_visualization():
             if company_lower in special_column_to_ticker:
                 ticker = special_column_to_ticker[company_lower]
                 if ticker in excluded_companies:
+                    companies_to_drop.append(company_name)
+                    continue
+                    
+            # 获取公司对应的ticker
+            ticker = None
+            if company_lower in special_column_to_ticker:
+                ticker = special_column_to_ticker[company_lower]
+            elif company_lower in company_to_ticker:
+                ticker = company_to_ticker[company_lower]
+            else:
+                ticker = company_name
+                
+            # 检查公司是否已经IPO
+            if ticker in ipo_dates and decimal_year < ipo_dates[ticker]:
+                # 特殊处理Booking Holdings (BKNG)，它在2018之前是Priceline (PCLN)
+                if ticker == 'BKNG':
+                    # 如果当前时间早于PCLN的IPO日期，则排除
+                    if decimal_year < ipo_dates['PCLN']:
+                        companies_to_drop.append(company_name)
+                        continue
+                    # 如果在PCLN IPO日期和BKNG改名日期之间，则不排除
+                else:
                     companies_to_drop.append(company_name)
                     continue
         
