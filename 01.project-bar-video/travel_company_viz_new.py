@@ -78,7 +78,7 @@ ticker_to_company = {
 # Define IPO dates for companies (decimal year format)
 # Based on the provided event list
 ipo_dates = {
-    'PCLN': 1999.21,  # Mar 1999
+    'PCLN': 1998.21,  # Mar 1999
     'EXPE': 1999.84,  # Nov 1999
     'LMN': 2000.21,   # Mar 2000
     'WBJ': 2000.38,   # May 2000
@@ -99,7 +99,7 @@ ipo_dates = {
 }
 
 # 需要排除的公司列表（不在可视化中显示）
-excluded_companies = ['FLT', 'Skyscanner', 'Kiwi', 'Almosafer', 'Traveloka', 'Etraveli', 'Travelocity', 'Webjet OTA']
+excluded_companies = ['FLT', 'Skyscanner', 'Kiwi', 'Almosafer', 'Traveloka', 'Etraveli', 'Travelocity', 'Webjet OTA', 'Wego']
 
 # 扩展排除公司列表，包含CSV中实际的列名
 excluded_columns = excluded_companies + ['Flight Centre', 'Flight center', "Travelocity"]
