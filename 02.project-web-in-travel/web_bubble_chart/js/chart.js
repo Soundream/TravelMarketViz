@@ -2,7 +2,7 @@
 let isPlaying = true;
 let playInterval;
 let currentYearIndex = 0;
-let years = Array.from({length: 26}, (_, i) => 2000 + i);
+let years = Array.from({length: 2025 - 1999 + 1}, (_, i) => 1999 + i);
 let timeline;
 
 // Function to create timeline
@@ -22,7 +22,7 @@ function createTimeline() {
 
     // Create scale
     const xScale = d3.scaleLinear()
-        .domain([2000, 2025])
+        .domain([1999, 2025])
         .range([0, width]);
 
     // Create axis
@@ -78,7 +78,7 @@ function init() {
         setTimeout(() => {
             isPlaying = true;
             let startTime = null;
-            const animationDuration = 323000; // 100 seconds for one complete cycle
+            const animationDuration = 335500; // Adjusted: 27 years, keep per-year speed same as before
             const frameInterval = 50; // Limit updates to every 50ms (20fps)
             let lastUpdateTime = 0;
             
