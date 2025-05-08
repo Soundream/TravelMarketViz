@@ -245,16 +245,50 @@ max_values_by_frame = [
     for i in range(len(interp_x))
 ]
 
-# 平滑上限
-window_size = 15
+# 检测并修正异常值（防止突然的峰值导致跳跃）
+def detect_and_fix_outliers(values, threshold=1.5):
+    """检测并平滑异常值，避免突然跳跃"""
+    smoothed = values.copy()
+    for i in range(2, len(values)-2):
+        # 计算当前点与前后点的变化率
+        prev_rate = values[i] / max(values[i-1], 0.001)  # 避免除零
+        next_rate = values[i+1] / max(values[i], 0.001)
+        
+        # 如果变化率超过阈值，且下一帧又恢复，则可能是孤立峰值
+        if (prev_rate > threshold and next_rate < 1/threshold) or \
+           (prev_rate < 1/threshold and next_rate > threshold):
+            # 使用前后点的中间值平滑
+            smoothed[i] = (values[i-1] + values[i+1]) / 2
+    return smoothed
+
+# 应用异常值检测和修正
+max_values_by_frame = detect_and_fix_outliers(max_values_by_frame)
+
+# 增强平滑强度 - 使用更大的窗口和更强的权重
+window_size = 25  # 增加窗口大小，让平滑更强
 padded_max = [max_values_by_frame[0]] * (window_size // 2) + max_values_by_frame + [max_values_by_frame[-1]] * (window_size // 2)
 
 smoothed_y_max = []
 for i in range(len(max_values_by_frame)):
     window = padded_max[i:i+window_size]
-    weights = np.exp(-0.5 * np.linspace(-2, 2, window_size)**2)
+    # 使用高斯权重，中心权重更强
+    weights = np.exp(-0.3 * np.linspace(-3, 3, window_size)**2)  # 更平坦的权重分布
     avg = np.sum(np.array(window) * weights) / np.sum(weights)
-    smoothed_y_max.append(avg * 1.1)  # 添加顶部 padding
+    smoothed_y_max.append(avg * 1.15)  # 增加顶部padding到15%，确保空间足够
+
+# 再次平滑处理，确保曲线绝对光滑
+double_smoothed_y_max = []
+window_size_2 = 15
+padded_smooth = [smoothed_y_max[0]] * (window_size_2 // 2) + smoothed_y_max + [smoothed_y_max[-1]] * (window_size_2 // 2)
+
+for i in range(len(smoothed_y_max)):
+    window = padded_smooth[i:i+window_size_2]
+    weights = np.exp(-0.5 * np.linspace(-2, 2, window_size_2)**2)
+    avg = np.sum(np.array(window) * weights) / np.sum(weights)
+    double_smoothed_y_max.append(avg)
+
+# 使用最终双重平滑后的结果
+smoothed_y_max = double_smoothed_y_max
 
 # 计算每家航空公司首次出现非零数据的帧
 first_data_frame = {}
@@ -729,18 +763,43 @@ fig.update(
         }
     ],
     layout={
-        "transition": {"duration": 0}  # 强制所有布局变化立即生效
+        "transition": {"duration": 0},  # 强制所有布局变化立即生效
+        "yaxis": {
+            "range": [global_min_with_buffer, smoothed_y_max[0]],  # 确保y轴范围初始化正确
+            "autorange": False   # 防止自动调整范围
+        }
     }
 )
 
 # 确保动画完全同步，使用特定的animate参数
 for i, frame in enumerate(frames):
     frame.layout.datarevision = i  # 给每一帧添加唯一的数据修订号
+    # 防止任何自动调整y轴范围
+    if "yaxis" in frame.layout:
+        frame.layout.yaxis.autorange = False
+
+# 预加载所有图片，减少logo闪烁
+all_logos = {}
+for i, frame in enumerate(frames):
+    if hasattr(frame.layout, "images") and frame.layout.images:
+        for img in frame.layout.images:
+            img_key = f"{img.source}_{img.x}_{img.y}"
+            all_logos[img_key] = img
 
 # Save HTML with embedded plotly.js to ensure consistent playback
 output_file = "output/airline_revenue_linechart.html"
 pio.write_html(fig, file=output_file, auto_open=True, include_plotlyjs='embed', auto_play=False, config={
     'responsive': True,
-    'showAxisDragHandles': False  # 禁用坐标轴拖动，避免用户交互影响动画
+    'showAxisDragHandles': False,  # 禁用坐标轴拖动，避免用户交互影响动画
+    'staticPlot': False,           # 动态图
+    'doubleClick': 'reset',        # 双击重置视图
+    'displayModeBar': False,       # 隐藏模式栏
+    'displaylogo': False,          # 不显示plotly logo
+    'toImageButtonOptions': {
+        'format': 'png',           # 保存为png
+        'width': 1200,
+        'height': 800,
+        'scale': 2                 # 高分辨率
+    }
 })
 print(f"Animation saved to {output_file}")
