@@ -227,31 +227,7 @@ for airline, logo in sorted(airline_to_logo_map.items()):
     if airline in valid_airlines:
         print(f"{airline}: {logo}")
 
-# 为每一帧计算所有航空公司的最大值
-max_values_by_frame = []
-for i in range(len(interp_x)):
-    current_y_values = [interp_revenue[airline][i] for airline in valid_airlines]
-    max_values_by_frame.append(max(current_y_values))
-
-# 计算平滑的y轴上限
-window_size = 10  # 平滑窗口大小
-smoothed_max = []
-
-# 在最大值序列前后添加填充，用于处理边界情况
-padded_max = [max_values_by_frame[0]] * (window_size // 2) + max_values_by_frame + [max_values_by_frame[-1]] * (window_size // 2)
-
-# 计算平滑的移动平均窗口
-for i in range(len(max_values_by_frame)):
-    start_idx = i
-    end_idx = i + window_size
-    window_avg = np.mean(padded_max[start_idx:end_idx])
-    smoothed_max.append(window_avg)
-
-# 增加一些上下边距
-padding_factor = 0.1
-y_max_with_padding = [val * (1 + padding_factor) for val in smoothed_max]
-
-# 找出所有帧中的全局最小值
+# 固定 y 轴下限（只计算一次）
 global_min_value = float('inf')
 for i in range(len(interp_x)):
     current_y_values = [interp_revenue[airline][i] for airline in valid_airlines]
@@ -263,8 +239,22 @@ for i in range(len(interp_x)):
 min_y_buffer = abs(global_min_value) * 0.1 if global_min_value > 0 else abs(global_min_value) * 0.2
 global_min_with_buffer = global_min_value - min_y_buffer
 
-# 为所有帧使用统一的y轴下限，但使用平滑的上限
-y_axis_ranges = [[global_min_with_buffer, y_max_with_padding[i]] for i in range(len(interp_x))]
+# 简化 y 轴上限平滑计算
+max_values_by_frame = [
+    max([interp_revenue[airline][i] for airline in valid_airlines])
+    for i in range(len(interp_x))
+]
+
+# 平滑上限
+window_size = 15
+padded_max = [max_values_by_frame[0]] * (window_size // 2) + max_values_by_frame + [max_values_by_frame[-1]] * (window_size // 2)
+
+smoothed_y_max = []
+for i in range(len(max_values_by_frame)):
+    window = padded_max[i:i+window_size]
+    weights = np.exp(-0.5 * np.linspace(-2, 2, window_size)**2)
+    avg = np.sum(np.array(window) * weights) / np.sum(weights)
+    smoothed_y_max.append(avg * 1.1)  # 添加顶部 padding
 
 # 计算每家航空公司首次出现非零数据的帧
 first_data_frame = {}
@@ -327,7 +317,8 @@ for airline in valid_airlines:
         # 使用cubic spline插值确保平滑过渡
         from scipy.interpolate import CubicSpline
         if len(frames) > 3:  # 需要至少4个点才能使用三次样条
-            cs = CubicSpline(frames, values)
+            # 使用自然样条边界条件确保更平滑的过渡
+            cs = CubicSpline(frames, values, bc_type='natural')
             smoothed_values = cs(all_frames)
         else:  # 点太少，使用线性插值
             smoothed_values = np.interp(all_frames, frames, values)
@@ -340,6 +331,7 @@ for airline in valid_airlines:
                 smoothed_positions[frame][airline] = value
 
 # 现在处理每一帧的重叠
+min_displacement_factor = 0.3  # 减少位移量，避免过度调整
 for i in range(len(interp_x)):
     if i not in smoothed_positions:
         continue
@@ -354,25 +346,28 @@ for i in range(len(interp_x)):
     sorted_y_values = [y_values[idx] for idx in sorted_indices]
     
     # 计算这一帧的logo高度
-    y_range = y_axis_ranges[i]
+    y_range = [global_min_with_buffer, smoothed_y_max[i]]  # 使用新的固定下限和动态上限
     y_range_size = y_range[1] - y_range[0]
     logo_height = logo_size * y_range_size
     min_required_gap = logo_height * 1.05
     
-    # 调整位置以避免重叠
+    # 调整位置以避免重叠，但减小调整幅度
     adjusted_y_positions = list(sorted_y_values)
     for j in range(1, len(adjusted_y_positions)):
         curr_pos = adjusted_y_positions[j]
         prev_pos = adjusted_y_positions[j-1]
         
         # 检查是否需要移动以避免重叠
-        min_gap_needed = min_required_gap
-        if curr_pos - prev_pos < min_gap_needed:
+        if curr_pos - prev_pos < min_required_gap:
+            # 计算需要移动的距离
+            move_distance = min_required_gap - (curr_pos - prev_pos)
+            # 使用较小的位移因子，使调整更平滑
+            adjusted_move = move_distance * min_displacement_factor
             # 移动当前点，使其与前一个点保持最小间距
-            adjusted_y_positions[j] = prev_pos + min_gap_needed
+            adjusted_y_positions[j] = prev_pos + min_required_gap - (min_required_gap - (curr_pos - prev_pos)) * (1 - min_displacement_factor)
     
     # 确保所有位置都在y轴范围内
-    y_min, y_max = y_axis_ranges[i]
+    y_min, y_max = y_range
     margin = logo_height / 2
     
     for j in range(len(adjusted_y_positions)):
@@ -384,10 +379,20 @@ for i in range(len(interp_x)):
     # 存储调整后的位置
     adjusted_positions_by_frame[i] = {}
     for idx, airline in enumerate(sorted_airlines):
-        adjusted_positions_by_frame[i][airline] = adjusted_y_positions[idx]
+        # 添加一个小的偏移量，使位置更平稳
+        original_pos = sorted_y_values[idx]
+        new_pos = adjusted_y_positions[idx]
+        
+        # 使用更渐进的调整（部分原始值，部分调整值）
+        blend_factor = 0.7  # 较大的blend_factor会使调整更加渐进
+        blended_pos = original_pos * blend_factor + new_pos * (1-blend_factor)
+        
+        adjusted_positions_by_frame[i][airline] = blended_pos
 
-# 再次平滑调整后的位置，确保帧间的平滑过渡
+# 为每个航空公司跨帧平滑位置变化
 final_positions = {}
+
+# 增加平滑窗口大小，使运动更连贯
 for airline in valid_airlines:
     frames_with_airline = []
     positions = []
@@ -399,17 +404,35 @@ for airline in valid_airlines:
     
     # 如果航空公司在多个帧中出现，平滑其位置
     if len(frames_with_airline) > 1:
-        # 使用更小的窗口平滑
-        window_size = min(5, len(frames_with_airline))
+        # 使用更大的窗口平滑，增加平滑效果
+        window_size = min(25, len(frames_with_airline))  # 增加窗口大小从15到25
         if window_size > 1:
-            smoothed = np.convolve(positions, np.ones(window_size)/window_size, mode='valid')
+            # 使用加权平均，中心点权重最高
+            weights = np.concatenate([
+                np.arange(1, window_size//2 + 1),
+                [window_size//2 + 1],
+                np.arange(window_size//2, 0, -1)
+            ])
+            weights = weights / np.sum(weights)
+            
+            # 对位置数据应用滑动加权平均
+            smoothed = np.convolve(positions, weights, mode='valid')
             padded_smoothed = [positions[0]] * (window_size//2) + list(smoothed) + [positions[-1]] * ((window_size-1)//2)
             
             # 存储最终平滑后的位置
             for frame_idx, frame in enumerate(frames_with_airline):
                 if frame not in final_positions:
                     final_positions[frame] = {}
-                final_positions[frame][airline] = padded_smoothed[frame_idx]
+                
+                # 混合原始位置和平滑位置
+                original_pos = positions[frame_idx]
+                smoothed_pos = padded_smoothed[frame_idx]
+                
+                # 使用更强的平滑，减少原始值的权重
+                blend_factor = 0.4  # 降低blend_factor，增加平滑效果
+                blended_pos = original_pos * blend_factor + smoothed_pos * (1-blend_factor)
+                
+                final_positions[frame][airline] = blended_pos
         else:
             # 如果窗口大小为1，直接使用原始位置
             for frame_idx, frame in enumerate(frames_with_airline):
@@ -417,7 +440,11 @@ for airline in valid_airlines:
                     final_positions[frame] = {}
                 final_positions[frame][airline] = positions[frame_idx]
 
-# 生成动画帧，使用最终平滑的位置
+# 设置每一帧的持续时间，让动画更平滑
+frame_duration = 70  # 进一步缩短每帧持续时间，让动画更流畅
+frame_transition = 0  # 将过渡时间设为0，强制立即更新所有元素
+
+# 重新创建帧，使用预计算的布局，确保y轴和数据点同步移动
 frames = []
 for i in range(len(interp_x)):
     frame_data = []
@@ -425,13 +452,27 @@ for i in range(len(interp_x)):
     # 获取当前帧的时间点
     nearest_q_idx = min(int(round(interp_x[i])), len(quarters)-1)
     current_quarter = quarters[nearest_q_idx]
-    current_year = int(current_quarter[:4])
+    
+    # 收集当前帧的所有logo位置，与数据点保持一致
+    frame_logos = []
+    logo_positions = {}
     
     # 为每个航空公司生成线和点
     for airline in valid_airlines:
-        # 线的x坐标：从0到fixed_x，y坐标为历史到当前
+        # 线的x坐标：从0到fixed_x
         x_hist = np.linspace(0, fixed_x, i+1)
-        y_hist = interp_revenue[airline][:i+1]
+        
+        # 为线创建y坐标，确保最后一个点与平滑后的marker位置一致
+        y_hist = list(interp_revenue[airline][:i])  # 前i个点使用原始插值
+        
+        # 获取当前点的y值，优先使用平滑后的位置以保持与marker同步
+        current_y = interp_revenue[airline][i]
+        if i in final_positions and airline in final_positions[i]:
+            current_y = final_positions[i][airline]
+            
+        # 将当前点添加到线的历史中，确保线与marker精确对齐
+        y_hist.append(current_y)
+        
         region = metadata.loc['Region', airline] if airline in metadata.columns else 'Unknown'
         color = region_colors.get(region, '#808080')
         
@@ -445,8 +486,11 @@ for i in range(len(interp_x)):
             showlegend=False
         ))
         
-        # 点固定在fixed_x，y为当前帧y
-        current_y = interp_revenue[airline][i]
+        # 使用平滑调整后的位置绘制点
+        if i in final_positions and airline in final_positions[i]:
+            # 保存当前航空公司的logo位置，与数据点保持一致
+            logo_positions[airline] = current_y
+            
         frame_data.append(go.Scatter(
             x=[fixed_x], 
             y=[current_y], 
@@ -458,85 +502,73 @@ for i in range(len(interp_x)):
             showlegend=False
         ))
     
-    # 收集当前帧所有有效的y值和对应的航空公司
-    valid_y_values = []
-    valid_airlines_in_frame = []
+    # 为当前帧直接使用数据点的位置生成logo
+    if logo_positions:
+        # 按y值排序
+        sorted_airlines = sorted(logo_positions.keys(), key=lambda a: logo_positions[a])
+        
+        # 计算logo高度
+        y_range = [global_min_with_buffer, smoothed_y_max[i]]  # 使用新的固定下限和动态上限
+        y_range_size = y_range[1] - y_range[0]
+        logo_height = logo_size * y_range_size
+        
+        # 生成logo images，直接使用数据点的位置
+        for airline in sorted_airlines:
+            if airline in airline_to_logo_map:
+                logo_path = airline_to_logo_map[airline]
+                if logo_path in logo_cache:
+                    logo_data = logo_cache[logo_path]
+                    y_val = logo_positions[airline]
+                    
+                    # 确保y值在有效范围内，避免logo闪烁
+                    y_val = max(global_min_with_buffer, min(y_val, smoothed_y_max[i]))
+                    
+                    frame_logos.append(dict(
+                        source=logo_data,
+                        xref="x", yref="y",
+                        x=fixed_x + logo_offset, 
+                        y=y_val,
+                        sizex=logo_offset, 
+                        sizey=logo_height,
+                        xanchor="left", 
+                        yanchor="middle",
+                        sizing="contain",
+                        opacity=1,
+                        layer="above"
+                    ))
     
-    for airline in valid_airlines:
-        # 只考虑当前帧有效的航空公司
-        if i >= first_data_frame.get(airline, float('inf')):
-            # 获取当前帧对应的原始季度
-            raw_val = revenue_data.at[current_quarter, airline] if current_quarter in revenue_data.index else None
-            
-            # 如果这一季度有有效数据，记录这个航空公司和它的y值
-            if not pd.isna(raw_val) and raw_val > 0:
-                # 使用平滑调整后的位置
-                if i in final_positions and airline in final_positions[i]:
-                    y_val = final_positions[i][airline]
-                else:
-                    y_val = interp_revenue[airline][i]
-                valid_y_values.append(y_val)
-                valid_airlines_in_frame.append(airline)
+    # 创建当前帧的自定义布局，使用固定下限和动态上限
+    custom_layout = go.Layout(
+        yaxis=dict(
+            range=[global_min_with_buffer, smoothed_y_max[i]],  # 下限固定，上限动态
+            title='Revenue (Million USD)',
+            linecolor='gray', 
+            showgrid=True, 
+            gridcolor='lightgray', 
+            griddash='dash', 
+            zeroline=False
+        ),
+        images=frame_logos
+    )
     
-    # 按y值对航空公司进行排序（从小到大）
-    sorted_indices = np.argsort(valid_y_values)
-    sorted_airlines = [valid_airlines_in_frame[idx] for idx in sorted_indices]
-    sorted_y_values = [valid_y_values[idx] for idx in sorted_indices]
-    
-    # 计算logo高度（基于当前y轴范围）
-    y_range = y_axis_ranges[i]
-    y_range_size = y_range[1] - y_range[0]
-    logo_height = logo_size * y_range_size
-    
-    # 为当前帧生成logo images
-    images_i = []
-    for idx, airline in enumerate(sorted_airlines):
-        # 获取对应的logo
-        if airline in airline_to_logo_map:
-            logo_path = airline_to_logo_map[airline]
-            if logo_path in logo_cache:
-                logo_data = logo_cache[logo_path]
-                
-                # 使用平滑调整后的位置
-                adjusted_y = sorted_y_values[idx]
-                
-                images_i.append(dict(
-                    source=logo_data,
-                    xref="x", yref="y",
-                    x=fixed_x + logo_offset, 
-                    y=adjusted_y,
-                    sizex=logo_offset, 
-                    sizey=logo_height,
-                    xanchor="left", 
-                    yanchor="middle",
-                    sizing="contain",
-                    opacity=1,
-                    layer="above"
-                ))
-    
-    # 将当前帧的数据、images和平滑的y轴范围打包到Frame中
+    # 将当前帧的数据和布局添加到frames
     frames.append(go.Frame(
         data=frame_data, 
         name=str(i),
-        layout=go.Layout(
-            images=images_i,
-            yaxis=dict(
-                range=y_axis_ranges[i],  # 使用平滑的y轴范围
-                title='Revenue (Million USD)',
-                linecolor='gray', 
-                showgrid=True, 
-                gridcolor='lightgray', 
-                griddash='dash', 
-                zeroline=False
-            )
-        )
+        layout=custom_layout
     ))
 
 # 初始帧数据
 initial_data = []
 for airline in valid_airlines:
     x_hist = np.linspace(0, fixed_x, 1)
-    y_hist = interp_revenue[airline][:1]
+    
+    # 获取初始位置，优先使用平滑后的值
+    initial_y = interp_revenue[airline][0]
+    if 0 in final_positions and airline in final_positions[0]:
+        initial_y = final_positions[0][airline]
+        
+    y_hist = [initial_y]  # 确保初始帧线与点同步
     region = metadata.loc['Region', airline] if airline in metadata.columns else 'Unknown'
     color = region_colors.get(region, '#808080')
     
@@ -552,7 +584,7 @@ for airline in valid_airlines:
     
     initial_data.append(go.Scatter(
         x=[fixed_x], 
-        y=[interp_revenue[airline][0]], 
+        y=[initial_y], 
         mode='markers', 
         name=airline,
         marker=dict(color=color, size=12), 
@@ -561,64 +593,58 @@ for airline in valid_airlines:
         showlegend=False
     ))
 
-# 收集初始帧所有有效的y值和对应的航空公司
-valid_y_values_initial = []
-valid_airlines_in_initial_frame = []
+# 初始帧logo images - 直接使用数据点的位置
+initial_images = []
+initial_logo_positions = {}
 
+# 收集初始帧的logo位置
 for airline in valid_airlines:
-    # 只考虑初始帧有效的航空公司
     if 0 >= first_data_frame.get(airline, float('inf')):
-        # 获取初始帧对应的原始季度
         initial_quarter = quarters[0]
         raw_val = revenue_data.at[initial_quarter, airline] if initial_quarter in revenue_data.index else None
         
-        # 如果这一季度有有效数据，记录这个航空公司和它的y值
         if not pd.isna(raw_val) and raw_val > 0:
-            # 使用平滑调整后的位置
+            # 使用与数据点完全相同的位置
             if 0 in final_positions and airline in final_positions[0]:
                 y_val = final_positions[0][airline]
             else:
                 y_val = interp_revenue[airline][0]
-            valid_y_values_initial.append(y_val)
-            valid_airlines_in_initial_frame.append(airline)
+            initial_logo_positions[airline] = y_val
 
-# 按y值对初始帧的航空公司进行排序（从小到大）
-sorted_indices_initial = np.argsort(valid_y_values_initial)
-sorted_airlines_initial = [valid_airlines_in_initial_frame[idx] for idx in sorted_indices_initial]
-sorted_y_values_initial = [valid_y_values_initial[idx] for idx in sorted_indices_initial]
+# 按y值排序
+if initial_logo_positions:
+    sorted_airlines = sorted(initial_logo_positions.keys(), key=lambda a: initial_logo_positions[a])
+    
+    # 计算logo高度，使用固定下限和动态上限
+    initial_y_range = [global_min_with_buffer, smoothed_y_max[0]]
+    initial_y_range_size = initial_y_range[1] - initial_y_range[0]
+    initial_logo_height = logo_size * initial_y_range_size
+    
+    # 生成logo images
+    for airline in sorted_airlines:
+        if airline in airline_to_logo_map:
+            logo_path = airline_to_logo_map[airline]
+            if logo_path in logo_cache:
+                logo_data = logo_cache[logo_path]
+                
+                # 使用与数据点完全相同的位置
+                y_val = initial_logo_positions[airline]
+                
+                initial_images.append(dict(
+                    source=logo_data,
+                    xref="x", yref="y",
+                    x=fixed_x + logo_offset, 
+                    y=y_val,
+                    sizex=logo_offset, 
+                    sizey=initial_logo_height,
+                    xanchor="left", 
+                    yanchor="middle",
+                    sizing="contain",
+                    opacity=1,
+                    layer="above"
+                ))
 
-# 计算初始帧logo高度
-initial_y_range = y_axis_ranges[0]
-initial_y_range_size = initial_y_range[1] - initial_y_range[0]
-initial_logo_height = logo_size * initial_y_range_size
-
-# 初始帧logo images
-initial_images = []
-for idx, airline in enumerate(sorted_airlines_initial):
-    # 获取对应的logo
-    if airline in airline_to_logo_map:
-        logo_path = airline_to_logo_map[airline]
-        if logo_path in logo_cache:
-            logo_data = logo_cache[logo_path]
-            
-            # 使用平滑调整后的位置
-            adjusted_y = sorted_y_values_initial[idx]
-            
-            initial_images.append(dict(
-                source=logo_data,
-                xref="x", yref="y",
-                x=fixed_x + logo_offset, 
-                y=adjusted_y,
-                sizex=logo_offset, 
-                sizey=initial_logo_height,
-                xanchor="left", 
-                yanchor="middle",
-                sizing="contain",
-                opacity=1,
-                layer="above"
-            ))
-
-# Build figure
+# Build figure，使用固定下限和动态上限
 fig = go.Figure(
     data=initial_data,
     layout=go.Layout(
@@ -633,7 +659,7 @@ fig = go.Figure(
         ),
         yaxis=dict(
             title='Revenue (Million USD)', 
-            range=y_axis_ranges[0],  # 使用平滑后的y轴范围
+            range=[global_min_with_buffer, smoothed_y_max[0]],  # 下限固定，上限动态
             linecolor='gray', 
             showgrid=True, 
             gridcolor='lightgray', 
@@ -654,9 +680,10 @@ fig = go.Figure(
                 dict(label="Play",
                      method="animate",
                      args=[None, {
-                         "frame": {"duration": 100, "redraw": True},
+                         "frame": {"duration": frame_duration, "redraw": True},
                          "fromcurrent": True, 
-                         "transition": {"duration": 50}  # 增加过渡时间，让动画更平滑
+                         "transition": {"duration": 0, "easing": "linear"},
+                         "mode": "immediate"
                      }]),
                 dict(label="Pause",
                      method="animate",
@@ -678,7 +705,12 @@ fig.update(
         {
             "buttons": [
                 {
-                    "args": [None, {"frame": {"duration": 100, "redraw": True}, "transition": {"duration": 50}}],
+                    "args": [None, {
+                        "frame": {"duration": frame_duration, "redraw": True}, 
+                        "transition": {"duration": 0, "easing": "linear"},
+                        "mode": "immediate",
+                        "fromcurrent": True
+                    }],
                     "label": "Play",
                     "method": "animate"
                 },
@@ -695,10 +727,20 @@ fig.update(
             "xanchor": "right",
             "yanchor": "top"
         }
-    ]
+    ],
+    layout={
+        "transition": {"duration": 0}  # 强制所有布局变化立即生效
+    }
 )
+
+# 确保动画完全同步，使用特定的animate参数
+for i, frame in enumerate(frames):
+    frame.layout.datarevision = i  # 给每一帧添加唯一的数据修订号
 
 # Save HTML with embedded plotly.js to ensure consistent playback
 output_file = "output/airline_revenue_linechart.html"
-pio.write_html(fig, file=output_file, auto_open=True, include_plotlyjs='embed', auto_play=True)
+pio.write_html(fig, file=output_file, auto_open=True, include_plotlyjs='embed', auto_play=False, config={
+    'responsive': True,
+    'showAxisDragHandles': False  # 禁用坐标轴拖动，避免用户交互影响动画
+})
 print(f"Animation saved to {output_file}")

@@ -78,12 +78,15 @@ ticker_to_company = {
 # Define IPO dates for companies (decimal year format)
 # Based on the provided event list
 ipo_dates = {
+    'EDR': 2014.5,
+    
+    'Orbitz': 2003.5,
     'PCLN': 1998.21,  # Mar 1999
     'EXPE': 1999.84,  # Nov 1999
     'LMN': 2000.21,   # Mar 2000
     'WBJ': 2000.38,   # May 2000
     'LONG': 2004.75,  # Oct 2004
-    'TCOM': 2003.92,  # Dec 2003 (Ctrip)
+    'TCOM': 2004,  # Dec 2003 (Ctrip)
     'OWW': 2003.92,   # Dec 2003 (Orbitz)
     'KYAK': 2012.54,  # Jul 2012
     'MMYT': 2010.63,  # Aug 2010
@@ -99,7 +102,7 @@ ipo_dates = {
 }
 
 # 需要排除的公司列表（不在可视化中显示）
-excluded_companies = ['FLT', 'Skyscanner', 'Kiwi', 'Almosafer', 'Traveloka', 'Etraveli', 'Travelocity', 'Webjet OTA', 'Wego']
+excluded_companies = ['FLT', 'Skyscanner', 'Kiwi', 'Almosafer', 'Traveloka', 'Etraveli', 'Travelocity', 'Webjet OTA', 'Wego', 'Cleartrip']
 
 # 扩展排除公司列表，包含CSV中实际的列名
 excluded_columns = excluded_companies + ['Flight Centre', 'Flight center', "Travelocity"]
@@ -117,7 +120,12 @@ special_column_to_ticker = {
     'tongcheng': 'TCEL',
     'webjet': 'WBJ',
     'webjet ota': 'WBJ',
-    'kyak': 'KYAK'
+    'kyak': 'KYAK',
+    'orbitz': 'Orbitz',  # 添加Orbitz的映射，确保其使用正确的ticker
+    'orbitz worldwide': 'OWW',  # 添加Orbitz Worldwide的映射
+    'ctrip': 'TCOM',     # 添加Ctrip到TCOM的映射
+    'trip.com': 'TCOM',  # 添加Trip.com到TCOM的映射
+    'trip.com group': 'TCOM'  # 添加完整名称映射
 }
 
 # Define company to region mapping
@@ -180,7 +188,7 @@ def format_revenue(value):
     if value <= 0:  # 对于零值或负值返回空字符串
         return ''
     elif value >= 1000:
-        return f'${value/1000:.1f}B'
+        return f'${value/1000:.2f}B'  # 显示两位小数
     return f'${value:.0f}M'
 
 def get_logo_path(identifier, year):
@@ -399,8 +407,13 @@ def create_visualization():
             elif company_lower in company_to_ticker:
                 ticker = company_to_ticker[company_lower]
             else:
-                ticker = company_name
-                
+                ticker = company
+
+            # 新增：2005.5到2015.5之间不要显示LMN
+            if ticker == 'LMN' and 2005.5 <= decimal_year <= 2014.5:
+                companies_to_drop.append(company_name)
+                continue
+            
             # 检查公司是否已经IPO
             if ticker in ipo_dates and decimal_year < ipo_dates[ticker]:
                 # 特殊处理Booking Holdings (BKNG)，它在2018之前是Priceline (PCLN)
@@ -579,6 +592,12 @@ def create_visualization():
             elif company == 'LMN':
                 logo_width = max_revenue * 0.2  # 放大33%
                 logo_height = 1.35  # 放大35%
+            # 处理Trip.com (TCOM) - 根据时间判断使用不同的尺寸
+            elif company == 'TCOM':
+                # 仅当是第二个logo时才特殊放大（2019.75之后）
+                if decimal_year >= 2019.75:
+                    logo_width = max_revenue * 0.3  # 放大到原来的两倍
+                    logo_height = 2.0  # 放大到原来的两倍
             
             fig.add_layout_image(
                 dict(
@@ -867,11 +886,19 @@ def create_visualization():
                               Math.max(...initialData.revenues) * 0.09 : // Etraveli和eLong使用更小的logo
                               initialData.companies[i] === 'LMN' ?
                               Math.max(...initialData.revenues) * 0.2 : // Lastminute.com使用更大的logo
+                              // 为Trip.com使用特殊尺寸 (只针对第二个logo)
+                              initialData.companies[i] === 'TCOM' && parseFloat(initialData.quarter.split("'")[0]) + 
+                                                   (parseInt(initialData.quarter.split("'")[1].replace('Q', '')) - 1) / 4 >= 2019.75 ? 
+                              Math.max(...initialData.revenues) * 0.3 : // TCOM第二个logo更大，放大到两倍
                               Math.max(...initialData.revenues) * 0.15,  // 其他公司使用正常大小
                         sizey: initialData.companies[i] === 'Etraveli' || initialData.companies[i] === 'LONG' || initialData.companies[i] === 'eLong' ? 
                               0.6 : 
                               initialData.companies[i] === 'LMN' ?
-                              1.35 : 1.0,               // 根据公司调整logo高度
+                              1.35 : 
+                              // 为Trip.com使用特殊高度 (只针对第二个logo)
+                              initialData.companies[i] === 'TCOM' && parseFloat(initialData.quarter.split("'")[0]) + 
+                                                   (parseInt(initialData.quarter.split("'")[1].replace('Q', '')) - 1) / 4 >= 2019.75 ?
+                              2.0 : 1.0,               // 根据公司调整logo高度
                         xanchor: "left",
                         yanchor: "middle",
                         sizing: "contain",
@@ -1101,6 +1128,17 @@ def create_visualization():
                                 logoSizeX = historicalMaxRevenue * 0.2;  // 放大33%
                                 logoSizeY = 1.35;  // 放大35%
                             }}
+                            // 处理Trip.com (TCOM) - 根据时间判断使用不同的尺寸
+                            else if (company === 'TCOM') {{
+                                // 获取当前季度的年份
+                                const currentYear = parseFloat(currentData.quarter.split("'")[0]) + 
+                                                   (parseInt(currentData.quarter.split("'")[1].replace('Q', '')) - 1) / 4;
+                                // 仅当是第二个logo时才特殊放大（2019.75之后）
+                                if (currentYear >= 2019.75) {{
+                                    logoSizeX = historicalMaxRevenue * 0.3;  // 放大到原来的两倍
+                                    logoSizeY = 2.0;  // 放大到原来的两倍
+                                }}
+                            }}
                             
                             logoImages.push({{
                                 source: logo,
@@ -1157,7 +1195,7 @@ def create_visualization():
                     return '';  // 零值或负值返回空字符串
                 }}
                 if (value >= 1000) {{
-                    return '$' + (value/1000).toFixed(1) + 'B';
+                    return '$' + (value/1000).toFixed(2) + 'B';
                 }}
                 return '$' + Math.round(value) + 'M';
             }}
