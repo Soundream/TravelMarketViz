@@ -175,6 +175,17 @@ quarter_numeric = np.arange(len(quarters))
 interp_steps = 2  # 从10降低到5，减少总帧数，使动画更快
 interp_x = np.linspace(0, len(quarters)-1, num=(len(quarters)-1)*interp_steps+1)
 
+# 计算帧数（以便于后面设置动画总时长）
+total_frames = len(interp_x)
+print(f"总帧数: {total_frames}")
+
+# 计算每帧持续时间（毫秒）以使动画总时长为1分钟
+target_duration_sec = 60  # 目标时长为60秒
+frame_duration = int(target_duration_sec * 1000 / total_frames)  # 转换为毫秒
+print(f"每帧持续时间: {frame_duration}毫秒")
+frame_transition = int(frame_duration * 0.5)  # 设置过渡时间为帧持续时间的一半，确保平滑过渡
+print(f"帧过渡时间: {frame_transition}毫秒")
+
 # 对每家公司的数据做线性插值（仅用于点）
 interp_revenue = {}
 for airline in valid_airlines:
@@ -227,6 +238,8 @@ for airline, logo in sorted(airline_to_logo_map.items()):
     if airline in valid_airlines:
         print(f"{airline}: {logo}")
 
+# 创建一个跟踪每帧显示的logo的缓存，确保连续性
+frame_logo_tracker = {}
 # 固定 y 轴下限（只计算一次）
 global_min_value = float('inf')
 for i in range(len(interp_x)):
@@ -245,50 +258,150 @@ max_values_by_frame = [
     for i in range(len(interp_x))
 ]
 
+# 设置持久化模式，防止元素重绘导致闪烁
+persistent_mode = True  # 启用元素持久化以防止闪烁
+
 # 检测并修正异常值（防止突然的峰值导致跳跃）
-def detect_and_fix_outliers(values, threshold=1.5):
+def detect_and_fix_outliers(values, threshold=1.2):
     """检测并平滑异常值，避免突然跳跃"""
     smoothed = values.copy()
-    for i in range(2, len(values)-2):
-        # 计算当前点与前后点的变化率
-        prev_rate = values[i] / max(values[i-1], 0.001)  # 避免除零
-        next_rate = values[i+1] / max(values[i], 0.001)
+    # 首先应用移动平均进行初步平滑
+    window = 5
+    for i in range(len(values)):
+        # 获取窗口内的值
+        start = max(0, i - window//2)
+        end = min(len(values), i + window//2 + 1)
+        window_vals = values[start:end]
+        # 计算窗口均值
+        smoothed[i] = sum(window_vals) / len(window_vals)
+    
+    # 然后检测和修正特别严重的异常
+    for i in range(2, len(smoothed)-2):
+        # 计算相邻差值
+        diff_prev = abs(smoothed[i] - smoothed[i-1])
+        diff_next = abs(smoothed[i] - smoothed[i+1])
         
-        # 如果变化率超过阈值，且下一帧又恢复，则可能是孤立峰值
-        if (prev_rate > threshold and next_rate < 1/threshold) or \
-           (prev_rate < 1/threshold and next_rate > threshold):
-            # 使用前后点的中间值平滑
-            smoothed[i] = (values[i-1] + values[i+1]) / 2
+        # 计算局部变化率
+        rate_prev = smoothed[i] / max(smoothed[i-1], 0.001)  # 避免除零
+        rate_next = smoothed[i+1] / max(smoothed[i], 0.001)
+        
+        # 使用多个条件来检测异常
+        is_outlier = False
+        
+        # 条件1: 与前后帧相比变化率超过阈值
+        if (rate_prev > threshold and rate_next < 1/threshold) or \
+           (rate_prev < 1/threshold and rate_next > threshold):
+            is_outlier = True
+        
+        # 条件2: 与前后帧差值显著大于局部平均差值
+        avg_diff = (diff_prev + diff_next) / 2
+        if diff_prev > avg_diff * 2 and diff_next > avg_diff * 2:
+            is_outlier = True
+            
+        # 条件3: 当前值远离相邻5个点的均值
+        neighbors = smoothed[max(0, i-2):i] + smoothed[i+1:min(len(smoothed), i+3)]
+        neighbor_mean = sum(neighbors) / len(neighbors)
+        if abs(smoothed[i] - neighbor_mean) > neighbor_mean * 0.3:  # 偏离30%以上
+            is_outlier = True
+            
+        # 修正异常值 - 使用更稳健的插值
+        if is_outlier:
+            # 使用更多点的加权平均来修正
+            weights = [0.1, 0.2, 0.4, 0.2, 0.1]  # 权重数组
+            indices = [i-2, i-1, i, i+1, i+2]
+            valid_weights = []
+            valid_values = []
+            
+            for idx, w in zip(indices, weights):
+                if 0 <= idx < len(smoothed) and idx != i:  # 排除当前点
+                    valid_weights.append(w)
+                    valid_values.append(smoothed[idx])
+            
+            # 重新归一化权重
+            weight_sum = sum(valid_weights)
+            valid_weights = [w/weight_sum for w in valid_weights]
+            
+            # 计算加权平均
+            smoothed[i] = sum(v*w for v, w in zip(valid_values, valid_weights))
+    
     return smoothed
 
 # 应用异常值检测和修正
-max_values_by_frame = detect_and_fix_outliers(max_values_by_frame)
+max_values_by_frame = detect_and_fix_outliers(max_values_by_frame, threshold=1.2)  # 进一步降低阈值以处理早期帧的异常
 
 # 增强平滑强度 - 使用更大的窗口和更强的权重
-window_size = 25  # 增加窗口大小，让平滑更强
-padded_max = [max_values_by_frame[0]] * (window_size // 2) + max_values_by_frame + [max_values_by_frame[-1]] * (window_size // 2)
+window_size = 41  # 增加窗口大小，让平滑更强
+padded_max = np.pad(max_values_by_frame, (window_size // 2, window_size // 2), mode='edge')
 
 smoothed_y_max = []
 for i in range(len(max_values_by_frame)):
     window = padded_max[i:i+window_size]
     # 使用高斯权重，中心权重更强
-    weights = np.exp(-0.3 * np.linspace(-3, 3, window_size)**2)  # 更平坦的权重分布
+    weights = np.exp(-0.15 * np.linspace(-3, 3, window_size)**2)  # 使用更平坦的权重分布
     avg = np.sum(np.array(window) * weights) / np.sum(weights)
-    smoothed_y_max.append(avg * 1.15)  # 增加顶部padding到15%，确保空间足够
+    # 对早期帧添加更多的余量防止闪烁
+    padding_factor = 1.2 if i < 30 else 1.15
+    smoothed_y_max.append(avg * padding_factor)  # 早期帧使用20%的padding而不是15%
 
-# 再次平滑处理，确保曲线绝对光滑
-double_smoothed_y_max = []
-window_size_2 = 15
-padded_smooth = [smoothed_y_max[0]] * (window_size_2 // 2) + smoothed_y_max + [smoothed_y_max[-1]] * (window_size_2 // 2)
+# 对平滑后的y轴范围应用缓动函数，确保过渡绝对平滑
+def ease_function(t):
+    """应用二次缓动函数，使变化更加自然"""
+    # 使用平滑的三次方缓动函数
+    if t < 0.5:
+        return 4 * t * t * t
+    else:
+        return 1 - pow(-2 * t + 2, 3) / 2
+
+# 再次处理y轴最大值，应用缓动进一步平滑过渡
+eased_y_max = []
+window_size_ease = 5  # 使用小窗口应用缓动
 
 for i in range(len(smoothed_y_max)):
-    window = padded_smooth[i:i+window_size_2]
-    weights = np.exp(-0.5 * np.linspace(-2, 2, window_size_2)**2)
-    avg = np.sum(np.array(window) * weights) / np.sum(weights)
-    double_smoothed_y_max.append(avg)
+    if i < window_size_ease or i >= len(smoothed_y_max) - window_size_ease:
+        # 对于边缘帧，直接使用当前值
+        eased_y_max.append(smoothed_y_max[i])
+    else:
+        # 对于中间帧，使用缓动函数应用平滑
+        values = smoothed_y_max[i-window_size_ease:i+window_size_ease+1]
+        weights = [ease_function((idx + 0.5) / (2 * window_size_ease + 1)) for idx in range(2 * window_size_ease + 1)]
+        
+        # 标准化权重
+        weights_sum = sum(weights)
+        weights = [w / weights_sum for w in weights]
+        
+        # 应用加权平均
+        eased_value = sum(v * w for v, w in zip(values, weights))
+        eased_y_max.append(eased_value)
 
-# 使用最终双重平滑后的结果
-smoothed_y_max = double_smoothed_y_max
+# 使用最终缓动后的y轴范围
+smoothed_y_max = eased_y_max
+
+# 对早期帧进行特殊处理，强制使用更加平缓的y轴范围变化
+# 这会确保前30帧有非常平滑的过渡
+early_frame_count = 30
+if len(smoothed_y_max) > early_frame_count:
+    # 找到第30帧的y轴上限值
+    target_value = smoothed_y_max[early_frame_count]
+    
+    # 计算起始值（第一帧）
+    start_value = smoothed_y_max[0]
+    
+    # 对前30帧应用更加线性的平滑过渡
+    for i in range(early_frame_count):
+        # 使用缓动函数进行过渡
+        progress = i / early_frame_count
+        # 使用更平滑的三次方缓动
+        eased_progress = progress * progress * (3 - 2 * progress)
+        
+        # 线性插值并略微提高上限，确保稳定性
+        smoothed_y_max[i] = start_value + (target_value - start_value) * eased_progress
+        # 添加额外的上方空间，确保早期帧不会有紧凑感
+        smoothed_y_max[i] *= 1.1
+
+# 确保动画的连续性 - 在结尾几帧保持y轴范围一致
+for i in range(max(0, len(smoothed_y_max) - 3), len(smoothed_y_max)):
+    if i > 0:
+        smoothed_y_max[i] = smoothed_y_max[i-1]
 
 # 计算每家航空公司首次出现非零数据的帧
 first_data_frame = {}
@@ -318,6 +431,44 @@ for airline in sorted(first_data_frame.keys()):
 # 预计算每一帧每个航空公司的调整后位置
 # 这将使得相邻帧之间的位置变化更平滑
 adjusted_positions_by_frame = {}
+
+# 预处理步骤：为每个航空公司建立存在的连续区间
+# 这有助于确保航空公司在短暂消失后能够保持位置的一致性
+airline_presence = {}
+
+for airline in valid_airlines:
+    # 查找每个航空公司在哪些帧中存在有效数据
+    present_frames = []
+    for i in range(len(interp_x)):
+        nearest_q_idx = min(int(round(interp_x[i])), len(quarters)-1)
+        current_quarter = quarters[nearest_q_idx]
+        
+        raw_val = revenue_data.at[current_quarter, airline] if current_quarter in revenue_data.index else None
+        if not pd.isna(raw_val) and raw_val > 0:
+            present_frames.append(i)
+    
+    # 如果航空公司有数据
+    if present_frames:
+        # 根据存在帧确定连续区间
+        intervals = []
+        start = present_frames[0]
+        prev = start
+        
+        for frame in present_frames[1:]:
+            # 如果与前一帧相隔超过5帧，认为是新区间
+            if frame > prev + 5:
+                intervals.append((start, prev))
+                start = frame
+            prev = frame
+        
+        # 添加最后一个区间
+        intervals.append((start, prev))
+        airline_presence[airline] = intervals
+
+# 打印每家航空公司的存在区间，便于调试
+print("\nAirline presence intervals:")
+for airline, intervals in sorted(airline_presence.items()):
+    print(f"{airline}: {intervals}")
 
 # 首先收集每一帧每个航空公司的原始位置
 original_positions = {}
@@ -474,14 +625,69 @@ for airline in valid_airlines:
                     final_positions[frame] = {}
                 final_positions[frame][airline] = positions[frame_idx]
 
-# 设置每一帧的持续时间，让动画更平滑
-frame_duration = 70  # 进一步缩短每帧持续时间，让动画更流畅
-frame_transition = 0  # 将过渡时间设为0，强制立即更新所有元素
-
 # 重新创建帧，使用预计算的布局，确保y轴和数据点同步移动
 frames = []
+# 创建字典记录每个航空公司上一帧的状态
+prev_frame_logos = {}
+
+# 创建一个包含所有航空公司的完整数据框架
+# 这样每一帧都有完全相同的数据结构，减少闪烁
+base_frame_data = []
+for airline in valid_airlines:
+    region = metadata.loc['Region', airline] if airline in metadata.columns else 'Unknown'
+    color = region_colors.get(region, '#808080')
+    
+    # 为每个航空公司添加两个基础图表元素（线和点）
+    # 线
+    base_frame_data.append(go.Scatter(
+        x=[], y=[], 
+        mode='lines', 
+        name=airline,
+        line=dict(color=color, width=2), 
+        hoverinfo='skip', 
+        showlegend=False,
+        uid=f"{airline}_line",  # 添加唯一ID确保一致性
+        # 添加持久化设置，防止元素闪烁
+        ids=[f"{airline}_line"] if persistent_mode else None
+    ))
+    
+    # 点
+    base_frame_data.append(go.Scatter(
+        x=[], y=[], 
+        mode='markers', 
+        name=airline,
+        marker=dict(color=color, size=12), 
+        hoverinfo='text+y', 
+        text=[], 
+        showlegend=False,
+        uid=f"{airline}_point",  # 添加唯一ID确保一致性
+        # 添加持久化设置，防止元素闪烁
+        ids=[f"{airline}_point"] if persistent_mode else None
+    ))
+
 for i in range(len(interp_x)):
+    # 复制基础数据结构，确保每帧结构一致
     frame_data = []
+    for base_trace in base_frame_data:
+        # 获取基础属性
+        line_props = {} if 'line' not in base_trace else base_trace['line']
+        marker_props = {} if 'marker' not in base_trace else base_trace['marker']
+        
+        # 创建新的trace，而不是尝试复制
+        new_trace = go.Scatter(
+            x=[], 
+            y=[], 
+            mode=base_trace['mode'] if 'mode' in base_trace else 'lines',
+            name=base_trace['name'] if 'name' in base_trace else '',
+            line=line_props,
+            marker=marker_props,
+            hoverinfo=base_trace['hoverinfo'] if 'hoverinfo' in base_trace else 'all',
+            showlegend=base_trace['showlegend'] if 'showlegend' in base_trace else False,
+            uid=base_trace['uid'] if 'uid' in base_trace else None,
+            # 添加持久化设置，防止元素闪烁
+            ids=[base_trace['uid']] if persistent_mode and 'uid' in base_trace else None
+        )
+        frame_data.append(new_trace)
     
     # 获取当前帧的时间点
     nearest_q_idx = min(int(round(interp_x[i])), len(quarters)-1)
@@ -492,7 +698,7 @@ for i in range(len(interp_x)):
     logo_positions = {}
     
     # 为每个航空公司生成线和点
-    for airline in valid_airlines:
+    for idx, airline in enumerate(valid_airlines):
         # 线的x坐标：从0到fixed_x
         x_hist = np.linspace(0, fixed_x, i+1)
         
@@ -510,31 +716,134 @@ for i in range(len(interp_x)):
         region = metadata.loc['Region', airline] if airline in metadata.columns else 'Unknown'
         color = region_colors.get(region, '#808080')
         
-        frame_data.append(go.Scatter(
-            x=x_hist, 
-            y=y_hist, 
-            mode='lines', 
-            name=airline,
-            line=dict(color=color), 
-            hoverinfo='skip', 
-            showlegend=False
-        ))
+        # 更新线的数据 - 找到对应的trace进行更新
+        line_trace_idx = idx * 2  # 每个航空公司有两个trace：线和点
+        point_trace_idx = idx * 2 + 1
+        
+        # 更新线的数据
+        if line_trace_idx < len(frame_data):
+            # 使用字典更新方式
+            frame_data[line_trace_idx]['x'] = x_hist
+            frame_data[line_trace_idx]['y'] = y_hist
+            if 'line' not in frame_data[line_trace_idx]:
+                frame_data[line_trace_idx]['line'] = {}
+            frame_data[line_trace_idx]['line']['color'] = color
+
+        # 更新点的数据
+        if point_trace_idx < len(frame_data):
+            frame_data[point_trace_idx]['x'] = [fixed_x]
+            frame_data[point_trace_idx]['y'] = [current_y]
+            frame_data[point_trace_idx]['text'] = [current_quarter]
+            if 'marker' not in frame_data[point_trace_idx]:
+                frame_data[point_trace_idx]['marker'] = {}
+            frame_data[point_trace_idx]['marker']['color'] = color
+            frame_data[point_trace_idx]['marker']['size'] = 12
         
         # 使用平滑调整后的位置绘制点
         if i in final_positions and airline in final_positions[i]:
             # 保存当前航空公司的logo位置，与数据点保持一致
             logo_positions[airline] = current_y
+    
+    # 处理logo显示的连续性问题
+    active_airlines_current = set(logo_positions.keys())
+
+    # 初始帧需要特殊处理 - 给前30帧增加特殊稳定性措施
+    is_early_frame = i < 30
+
+    # 检查当前帧是否在某个航空公司的存在区间之间（短暂消失期）
+    for airline in valid_airlines:
+        # 如果航空公司当前帧不存在但在airline_presence中有记录
+        if airline not in active_airlines_current and airline in airline_presence:
+            intervals = airline_presence[airline]
             
-        frame_data.append(go.Scatter(
-            x=[fixed_x], 
-            y=[current_y], 
-            mode='markers', 
-            name=airline,
-            marker=dict(color=color, size=12), 
-            hoverinfo='text+y', 
-            text=[current_quarter], 
-            showlegend=False
-        ))
+            # 如果是前30帧，对短暂消失的航空公司更加宽容
+            if is_early_frame:
+                # 查找最接近的存在区间
+                nearest_interval = None
+                min_distance = float('inf')
+                
+                for interval in intervals:
+                    start, end = interval
+                    if start <= i <= end:  # 在区间内
+                        nearest_interval = interval
+                        min_distance = 0
+                        break
+                    elif i < start:  # 在区间前
+                        distance = start - i
+                        if distance < min_distance:
+                            min_distance = distance
+                            nearest_interval = interval
+                    else:  # 在区间后
+                        distance = i - end
+                        if distance < min_distance:
+                            min_distance = distance
+                            nearest_interval = interval
+                
+                # 如果最近的区间距离小于10帧，平滑过渡
+                if nearest_interval and min_distance <= 15:  # 早期帧使用更大的容忍度
+                    start, end = nearest_interval
+                    if start > i:  # 即将出现的航空公司
+                        next_frame = start
+                        if next_frame in final_positions and airline in final_positions[next_frame]:
+                            next_y = final_positions[next_frame][airline]
+                            # 提前显示即将出现的航空公司，透明度降低
+                            progress = 1 - min_distance / 15
+                            interp_y = next_y
+                            logo_positions[airline] = interp_y
+                    elif end < i:  # 刚刚消失的航空公司
+                        prev_frame = end
+                        if prev_frame in final_positions and airline in final_positions[prev_frame]:
+                            prev_y = final_positions[prev_frame][airline]
+                            # 让刚刚消失的航空公司逐渐淡出
+                            progress = 1 - min_distance / 15
+                            logo_positions[airline] = prev_y
+            
+            # 检查当前帧是否在任意两个区间之间且间隔小于15帧（早期帧放宽标准）
+            max_gap = 15 if is_early_frame else 10
+            for idx in range(len(intervals) - 1):
+                interval_end = intervals[idx][1]
+                next_interval_start = intervals[idx + 1][0]
+                
+                # 如果当前帧在两个区间之间且间隔合理
+                if interval_end < i < next_interval_start and next_interval_start - interval_end < max_gap:
+                    # 找到前一个区间的最后位置和下一个区间的开始位置
+                    if interval_end in final_positions and airline in final_positions[interval_end] and \
+                       next_interval_start in final_positions and airline in final_positions[next_interval_start]:
+                        
+                        # 使用线性插值计算过渡期间的位置
+                        prev_y = final_positions[interval_end][airline]
+                        next_y = final_positions[next_interval_start][airline]
+                        progress = (i - interval_end) / (next_interval_start - interval_end)
+                        
+                        # 平滑的插值过渡
+                        interp_y = prev_y * (1 - progress) + next_y * progress
+                        
+                        # 添加到当前帧的logo位置
+                        logo_positions[airline] = interp_y
+
+    # 如果是第一帧之后的帧，检查上一帧有而这一帧没有的航空公司
+    if i > 0 and prev_frame_logos:
+        active_airlines_prev = set(prev_frame_logos.keys())
+        
+        # 找出上一帧有但当前帧没有的航空公司
+        missing_airlines = active_airlines_prev - active_airlines_current
+        
+        # 如果有突然消失的航空公司，保持其上一帧的logo，但渐变淡出
+        for airline in missing_airlines:
+            # 只有当该航空公司有合法的上一帧位置时才保留
+            if airline in prev_frame_logos and airline in airline_to_logo_map:
+                prev_y = prev_frame_logos[airline]
+                
+                # 检查此航空公司是否会在未来5帧内重新出现
+                will_reappear = False
+                for future_frame in range(i+1, min(i+5, len(interp_x))):
+                    if future_frame in final_positions and airline in final_positions[future_frame]:
+                        will_reappear = True
+                        break
+                
+                # 如果将要重新出现，则保留logo以避免闪烁
+                if will_reappear:
+                    logo_positions[airline] = prev_y
     
     # 为当前帧直接使用数据点的位置生成logo
     if logo_positions:
@@ -555,7 +864,25 @@ for i in range(len(interp_x)):
                     y_val = logo_positions[airline]
                     
                     # 确保y值在有效范围内，避免logo闪烁
-                    y_val = max(global_min_with_buffer, min(y_val, smoothed_y_max[i]))
+                    y_val = max(y_range[0] + logo_height/2, min(y_val, y_range[1] - logo_height/2))
+                    
+                    # 检查是否是即将出现或刚刚消失的航空公司
+                    opacity = 1.0
+                    
+                    # 对于早期帧，所有logo都使用完全不透明度，避免闪烁
+                    if i < 30:
+                        opacity = 1.0
+                    elif airline not in prev_frame_logos and i > 0:
+                        # 新出现的logo，渐变显示
+                        opacity = min(0.2 + 0.8 * (i % 5) / 5, 1.0)
+                    
+                    # 为早期帧的logo应用额外的稳定措施
+                    if i < 30 and i > 0 and airline in prev_frame_logos:
+                        # 对早期帧，通过与前一帧进行插值获得更平滑的轨迹
+                        prev_y = prev_frame_logos[airline]
+                        # 轻微地平滑早期帧移动，但允许足够的变化以反映实际数据
+                        smoothing = 0.4  # 40%的前一帧位置，60%的当前位置
+                        y_val = prev_y * smoothing + y_val * (1-smoothing)
                     
                     frame_logos.append(dict(
                         source=logo_data,
@@ -567,9 +894,12 @@ for i in range(len(interp_x)):
                         xanchor="left", 
                         yanchor="middle",
                         sizing="contain",
-                        opacity=1,
+                        opacity=opacity,
                         layer="above"
                     ))
+    
+    # 保存当前帧的logo位置，用于下一帧的连续性检查
+    prev_frame_logos = logo_positions.copy()
     
     # 创建当前帧的自定义布局，使用固定下限和动态上限
     custom_layout = go.Layout(
@@ -594,7 +924,7 @@ for i in range(len(interp_x)):
 
 # 初始帧数据
 initial_data = []
-for airline in valid_airlines:
+for idx, airline in enumerate(valid_airlines):
     x_hist = np.linspace(0, fixed_x, 1)
     
     # 获取初始位置，优先使用平滑后的值
@@ -606,6 +936,7 @@ for airline in valid_airlines:
     region = metadata.loc['Region', airline] if airline in metadata.columns else 'Unknown'
     color = region_colors.get(region, '#808080')
     
+    # 使用与帧数据相同的UID，确保一致性
     initial_data.append(go.Scatter(
         x=x_hist, 
         y=y_hist, 
@@ -613,7 +944,8 @@ for airline in valid_airlines:
         name=airline,
         line=dict(color=color), 
         hoverinfo='skip', 
-        showlegend=False
+        showlegend=False,
+        uid=f"{airline}_line"  # 添加相同的唯一ID确保一致性
     ))
     
     initial_data.append(go.Scatter(
@@ -624,7 +956,8 @@ for airline in valid_airlines:
         marker=dict(color=color, size=12), 
         hoverinfo='text+y', 
         text=[quarters[0]], 
-        showlegend=False
+        showlegend=False,
+        uid=f"{airline}_point"  # 添加相同的唯一ID确保一致性
     ))
 
 # 初始帧logo images - 直接使用数据点的位置
@@ -689,7 +1022,8 @@ fig = go.Figure(
             linecolor='gray', 
             showgrid=False, 
             zeroline=False, 
-            showticklabels=False
+            showticklabels=False,
+            fixedrange=True  # 锁定x轴范围，防止缩放导致的重绘
         ),
         yaxis=dict(
             title='Revenue (Million USD)', 
@@ -698,7 +1032,8 @@ fig = go.Figure(
             showgrid=True, 
             gridcolor='lightgray', 
             griddash='dash', 
-            zeroline=False
+            zeroline=False,
+            fixedrange=True  # 锁定y轴范围，防止缩放导致的重绘
         ),
         plot_bgcolor='white',
         paper_bgcolor='white',
@@ -711,15 +1046,15 @@ fig = go.Figure(
             xanchor="right",
             yanchor="top",
             buttons=[
-                dict(label="Play",
+                dict(label="播放",
                      method="animate",
                      args=[None, {
                          "frame": {"duration": frame_duration, "redraw": True},
                          "fromcurrent": True, 
-                         "transition": {"duration": 0, "easing": "linear"},
+                         "transition": {"duration": frame_transition, "easing": "cubic-in-out"},
                          "mode": "immediate"
                      }]),
-                dict(label="Pause",
+                dict(label="暂停",
                      method="animate",
                      args=[[None], {
                          "frame": {"duration": 0, "redraw": False},
@@ -728,10 +1063,22 @@ fig = go.Figure(
                      }])
             ]
         )],
-        sliders=[]
+        sliders=[],
+        uirevision='constant'  # 防止UI状态重置导致的闪烁
     ),
     frames=frames
 )
+
+# 确保动画完全同步，使用特定的animate参数
+for i, frame in enumerate(frames):
+    frame.layout.datarevision = i  # 给每一帧添加唯一的数据修订号
+    frame.layout.uirevision = 'constant'  # 保持UI状态一致，避免重绘
+    # 防止任何自动调整y轴范围
+    if "yaxis" in frame.layout:
+        frame.layout.yaxis.autorange = False
+        frame.layout.yaxis.fixedrange = True
+    if "xaxis" in frame.layout:
+        frame.layout.xaxis.fixedrange = True
 
 # 设置全局默认的frame和transition参数，确保自动播放也能平滑进行
 fig.update(
@@ -741,16 +1088,20 @@ fig.update(
                 {
                     "args": [None, {
                         "frame": {"duration": frame_duration, "redraw": True}, 
-                        "transition": {"duration": 0, "easing": "linear"},
-                        "mode": "immediate",
-                        "fromcurrent": True
+                        "fromcurrent": True,
+                        "transition": {"duration": frame_transition, "easing": "cubic-in-out"},
+                        "mode": "immediate"
                     }],
-                    "label": "Play",
+                    "label": "播放",
                     "method": "animate"
                 },
                 {
-                    "args": [[None], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate", "transition": {"duration": 0}}],
-                    "label": "Pause",
+                    "args": [[None], {
+                        "frame": {"duration": 0, "redraw": False}, 
+                        "mode": "immediate", 
+                        "transition": {"duration": 0}
+                    }],
+                    "label": "暂停",
                     "method": "animate"
                 }
             ],
@@ -763,20 +1114,13 @@ fig.update(
         }
     ],
     layout={
-        "transition": {"duration": 0},  # 强制所有布局变化立即生效
+        "transition": {"duration": frame_transition, "easing": "cubic-in-out"},  # 设置平滑过渡
         "yaxis": {
             "range": [global_min_with_buffer, smoothed_y_max[0]],  # 确保y轴范围初始化正确
             "autorange": False   # 防止自动调整范围
         }
     }
 )
-
-# 确保动画完全同步，使用特定的animate参数
-for i, frame in enumerate(frames):
-    frame.layout.datarevision = i  # 给每一帧添加唯一的数据修订号
-    # 防止任何自动调整y轴范围
-    if "yaxis" in frame.layout:
-        frame.layout.yaxis.autorange = False
 
 # 预加载所有图片，减少logo闪烁
 all_logos = {}
@@ -786,20 +1130,68 @@ for i, frame in enumerate(frames):
             img_key = f"{img.source}_{img.x}_{img.y}"
             all_logos[img_key] = img
 
+# 将所有图片预先添加到初始布局中，但设置为不可见，这样浏览器会预加载它们
+for logo_path, logo_data in logo_cache.items():
+    if logo_path in logo_cache:
+        # 添加一个不可见的图像到初始布局
+        fig.add_layout_image(
+            dict(
+                source=logo_data,
+                xref="paper", yref="paper",
+                x=0, y=0,
+                sizex=0.001, sizey=0.001,  # 极小尺寸
+                xanchor="left", yanchor="bottom",
+                sizing="contain",
+                opacity=0.01,  # 几乎不可见，但会被浏览器加载
+                layer="below"
+            )
+        )
+
+# 在最后再添加一个通用的图片预加载函数到布局中
+fig.update_layout(
+    annotations=[
+        dict(
+            x=0.5,
+            y=1.05,
+            xref="paper",
+            yref="paper",
+            text="Airline Revenue Trends",
+            showarrow=False,
+            font=dict(size=16)
+        )
+    ]
+)
+
 # Save HTML with embedded plotly.js to ensure consistent playback
 output_file = "output/airline_revenue_linechart.html"
-pio.write_html(fig, file=output_file, auto_open=True, include_plotlyjs='embed', auto_play=False, config={
-    'responsive': True,
-    'showAxisDragHandles': False,  # 禁用坐标轴拖动，避免用户交互影响动画
-    'staticPlot': False,           # 动态图
-    'doubleClick': 'reset',        # 双击重置视图
-    'displayModeBar': False,       # 隐藏模式栏
-    'displaylogo': False,          # 不显示plotly logo
-    'toImageButtonOptions': {
-        'format': 'png',           # 保存为png
-        'width': 1200,
-        'height': 800,
-        'scale': 2                 # 高分辨率
+pio.write_html(
+    fig, 
+    file=output_file, 
+    auto_open=True, 
+    include_plotlyjs='embed', 
+    auto_play=False,
+    full_html=True,  # 确保生成完整的HTML文件
+    animation_opts=dict(
+        frame=dict(duration=frame_duration, redraw=True),
+        transition=dict(duration=frame_transition, easing="cubic-in-out"),
+        mode="immediate"
+    ),
+    config={
+        'responsive': True,
+        'showAxisDragHandles': False,  # 禁用坐标轴拖动，避免用户交互影响动画
+        'staticPlot': False,           # 动态图
+        'doubleClick': 'reset',        # 双击重置视图
+        'displayModeBar': False,       # 隐藏模式栏
+        'displaylogo': False,          # 不显示plotly logo
+        'scrollZoom': False,           # 禁用滚轮缩放，避免意外的重绘
+        'doubleClick': False,          # 禁用双击缩放，避免意外的重绘
+        'toImageButtonOptions': {
+            'format': 'png',           # 保存为png
+            'width': 1200,
+            'height': 800,
+            'scale': 2                 # 高分辨率
+        }
     }
-})
-print(f"Animation saved to {output_file}")
+)
+print(f"动画保存至 {output_file}")
+print(f"动画总时长: {target_duration_sec}秒 ({total_frames}帧，每帧{frame_duration}毫秒)")
