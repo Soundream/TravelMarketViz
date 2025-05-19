@@ -6,6 +6,7 @@ from tqdm import tqdm
 import numpy as np
 import base64
 from PIL import Image
+import json
 
 def get_logo_path(airline, year, iata_code, month=6):
     logo_mapping = {
@@ -140,14 +141,14 @@ region_colors = {
     'Turkey': '#DEB887'
 }
 
-# 只显示最新季度收入前15的公司
+# 只显示最新季度收入前8的公司，而不是之前的15家
 latest_quarter = revenue_data.index[-1]
-top_airlines = revenue_data.loc[latest_quarter].sort_values(ascending=False).head(15).index.tolist()
+top_airlines = revenue_data.loc[latest_quarter].sort_values(ascending=False).head(8).index.tolist()
 revenue_data = revenue_data[top_airlines]
 valid_airlines = top_airlines
 
 # 打印有效的航空公司名称，用于调试
-print("Valid airlines:", valid_airlines)
+print("仅显示前8大航空公司:", valid_airlines)
 
 # 创建航空公司名称映射表，解决名称不一致问题
 airline_name_mapping = {
@@ -172,7 +173,7 @@ print("Mapped valid airlines:", mapped_valid_airlines)
 # 生成插值后的数值型x轴
 quarters = revenue_data.index.tolist()
 quarter_numeric = np.arange(len(quarters))
-interp_steps = 2  # 从10降低到5，减少总帧数，使动画更快
+interp_steps = 2  # 减少步数，我们会在前端用CSS实现更平滑的插值
 interp_x = np.linspace(0, len(quarters)-1, num=(len(quarters)-1)*interp_steps+1)
 
 # 计算帧数（以便于后面设置动画总时长）
@@ -183,8 +184,11 @@ print(f"总帧数: {total_frames}")
 target_duration_sec = 60  # 目标时长为60秒
 frame_duration = int(target_duration_sec * 1000 / total_frames)  # 转换为毫秒
 print(f"每帧持续时间: {frame_duration}毫秒")
-frame_transition = int(frame_duration * 0.5)  # 设置过渡时间为帧持续时间的一半，确保平滑过渡
-print(f"帧过渡时间: {frame_transition}毫秒")
+
+# 设置过渡时间（ms）- 设为0以避免过渡引起的闪烁
+frame_transition = 0  # 添加缺失的变量，设为0，避免过渡引起闪烁
+
+# 不再需要过渡时间，我们将使用CSS过渡
 
 # 对每家公司的数据做线性插值（仅用于点）
 interp_revenue = {}
@@ -260,6 +264,9 @@ max_values_by_frame = [
 
 # 设置持久化模式，防止元素重绘导致闪烁
 persistent_mode = True  # 启用元素持久化以防止闪烁
+
+# 设置补间动画模式为linear，确保匀速过渡
+easing_function = "linear"  # 改为linear，确保匀速平滑过渡
 
 # 检测并修正异常值（防止突然的峰值导致跳跃）
 def detect_and_fix_outliers(values, threshold=1.2):
@@ -643,12 +650,13 @@ for airline in valid_airlines:
         x=[], y=[], 
         mode='lines', 
         name=airline,
-        line=dict(color=color, width=2), 
+        line=dict(color=color, width=2, shape='spline', smoothing=1.3), 
         hoverinfo='skip', 
         showlegend=False,
         uid=f"{airline}_line",  # 添加唯一ID确保一致性
         # 添加持久化设置，防止元素闪烁
-        ids=[f"{airline}_line"] if persistent_mode else None
+        ids=[f"{airline}_line"] if persistent_mode else None,
+        customdata=[airline]  # 添加自定义数据，确保识别
     ))
     
     # 点
@@ -662,7 +670,8 @@ for airline in valid_airlines:
         showlegend=False,
         uid=f"{airline}_point",  # 添加唯一ID确保一致性
         # 添加持久化设置，防止元素闪烁
-        ids=[f"{airline}_point"] if persistent_mode else None
+        ids=[f"{airline}_point"] if persistent_mode else None,
+        customdata=[airline]  # 添加自定义数据，确保识别
     ))
 
 for i in range(len(interp_x)):
@@ -728,6 +737,9 @@ for i in range(len(interp_x)):
             if 'line' not in frame_data[line_trace_idx]:
                 frame_data[line_trace_idx]['line'] = {}
             frame_data[line_trace_idx]['line']['color'] = color
+            # 添加曲线插值，设置smoothing为1.3以获得最大平滑度
+            frame_data[line_trace_idx]['line']['shape'] = 'spline'
+            frame_data[line_trace_idx]['line']['smoothing'] = 1.3
 
         # 更新点的数据
         if point_trace_idx < len(frame_data):
@@ -743,7 +755,7 @@ for i in range(len(interp_x)):
         if i in final_positions and airline in final_positions[i]:
             # 保存当前航空公司的logo位置，与数据点保持一致
             logo_positions[airline] = current_y
-    
+            
     # 处理logo显示的连续性问题
     active_airlines_current = set(logo_positions.keys())
 
@@ -942,7 +954,7 @@ for idx, airline in enumerate(valid_airlines):
         y=y_hist, 
         mode='lines', 
         name=airline,
-        line=dict(color=color), 
+        line=dict(color=color, shape='spline', smoothing=1.3), 
         hoverinfo='skip', 
         showlegend=False,
         uid=f"{airline}_line"  # 添加相同的唯一ID确保一致性
@@ -1051,7 +1063,7 @@ fig = go.Figure(
                      args=[None, {
                          "frame": {"duration": frame_duration, "redraw": True},
                          "fromcurrent": True, 
-                         "transition": {"duration": frame_transition, "easing": "cubic-in-out"},
+                         "transition": {"duration": frame_transition, "easing": easing_function},
                          "mode": "immediate"
                      }]),
                 dict(label="暂停",
@@ -1064,7 +1076,8 @@ fig = go.Figure(
             ]
         )],
         sliders=[],
-        uirevision='constant'  # 防止UI状态重置导致的闪烁
+        uirevision='constant',  # 防止UI状态重置导致的闪烁
+        datarevision=1  # 一个固定的数据修订号，确保所有元素同步更新
     ),
     frames=frames
 )
@@ -1079,6 +1092,12 @@ for i, frame in enumerate(frames):
         frame.layout.yaxis.fixedrange = True
     if "xaxis" in frame.layout:
         frame.layout.xaxis.fixedrange = True
+    
+    # 确保每个帧内的所有元素都有相同的修订号，强制同步更新
+    if hasattr(frame, "data"):
+        for trace in frame.data:
+            if hasattr(trace, "uid"):
+                trace._datarevision = i
 
 # 设置全局默认的frame和transition参数，确保自动播放也能平滑进行
 fig.update(
@@ -1087,9 +1106,9 @@ fig.update(
             "buttons": [
                 {
                     "args": [None, {
-                        "frame": {"duration": frame_duration, "redraw": True}, 
+                        "frame": {"duration": frame_duration, "redraw": False}, 
                         "fromcurrent": True,
-                        "transition": {"duration": frame_transition, "easing": "cubic-in-out"},
+                        "transition": {"duration": frame_transition, "easing": easing_function},
                         "mode": "immediate"
                     }],
                     "label": "播放",
@@ -1114,7 +1133,7 @@ fig.update(
         }
     ],
     layout={
-        "transition": {"duration": frame_transition, "easing": "cubic-in-out"},  # 设置平滑过渡
+        "transition": {"duration": frame_transition, "easing": easing_function},  # 使用线性缓动确保匀速过渡
         "yaxis": {
             "range": [global_min_with_buffer, smoothed_y_max[0]],  # 确保y轴范围初始化正确
             "autorange": False   # 防止自动调整范围
@@ -1147,6 +1166,59 @@ for logo_path, logo_data in logo_cache.items():
             )
         )
 
+# 修改按钮动画设置，确保过渡更平滑
+for button in fig.layout.updatemenus[0].buttons:
+    if isinstance(button, dict) and "args" in button and len(button.args) > 1 and "transition" in button.args[1]:
+        # 播放按钮 - 使用接近帧持续时间的过渡持续时间
+        button.args[1]["transition"]["duration"] = frame_transition
+        button.args[1]["transition"]["easing"] = easing_function
+        
+        # 使过渡更加平滑
+        if "frame" in button.args[1]:
+            button.args[1]["frame"]["redraw"] = False  # 降低重绘频率，提高性能
+
+# 更新全局动画配置
+fig.update(
+    layout_updatemenus=[
+        {
+            "buttons": [
+                {
+                    "args": [None, {
+                        "frame": {"duration": frame_duration, "redraw": False}, 
+                        "fromcurrent": True,
+                        "transition": {"duration": frame_transition, "easing": easing_function},
+                        "mode": "immediate"
+                    }],
+                    "label": "播放",
+                    "method": "animate"
+                },
+                {
+                    "args": [[None], {
+                        "frame": {"duration": 0, "redraw": False}, 
+                        "mode": "immediate", 
+                        "transition": {"duration": 0}
+                    }],
+                    "label": "暂停",
+                    "method": "animate"
+                }
+            ],
+            "showactive": False,
+            "type": "buttons",
+            "x": 1.05,
+            "y": 1.15,
+            "xanchor": "right",
+            "yanchor": "top"
+        }
+    ],
+    layout={
+        "transition": {"duration": frame_transition, "easing": easing_function},  # 使用线性缓动确保匀速过渡
+        "yaxis": {
+            "range": [global_min_with_buffer, smoothed_y_max[0]],  # 确保y轴范围初始化正确
+            "autorange": False   # 防止自动调整范围
+        }
+    }
+)
+
 # 在最后再添加一个通用的图片预加载函数到布局中
 fig.update_layout(
     annotations=[
@@ -1162,36 +1234,1192 @@ fig.update_layout(
     ]
 )
 
+# 添加自定义CSS到HTML头部，确保平滑过渡
+custom_css = """
+<style>
+/* 应用于所有Plotly图形元素的过渡效果 */
+.plotly .lines, .plotly .points, .plotly .text, .plotly .images {
+  transition: all %dms linear !important;
+  animation-timing-function: linear !important;
+}
+
+/* 确保图像与图表元素同步移动 */
+.plotly .layer-above {
+  will-change: transform;
+  transform: translateZ(0);
+  transition: all %dms linear !important;
+}
+
+/* 减少重绘和闪烁 */
+.plotly {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* 强制使用硬件加速和线性动画 */
+.js-plotly-plot, .plotly {
+  -webkit-animation-timing-function: linear !important;
+  animation-timing-function: linear !important;
+  -webkit-transition-timing-function: linear !important;
+  transition-timing-function: linear !important;
+}
+
+/* 确保所有动画元素使用相同的transition属性 */
+.js-plotly-plot .scatterlayer .trace, .js-plotly-plot .imagelayer .layer-above {
+  transition: transform %dms linear, opacity %dms linear !important;
+}
+</style>
+""" % (frame_transition, frame_transition, frame_transition, frame_transition)
+
 # Save HTML with embedded plotly.js to ensure consistent playback
 output_file = "output/airline_revenue_linechart.html"
-pio.write_html(
+html_content = pio.to_html(
     fig, 
-    file=output_file, 
-    auto_open=True, 
     include_plotlyjs='embed', 
-    auto_play=False,
-    full_html=True,  # 确保生成完整的HTML文件
-    animation_opts=dict(
-        frame=dict(duration=frame_duration, redraw=True),
-        transition=dict(duration=frame_transition, easing="cubic-in-out"),
-        mode="immediate"
-    ),
+    full_html=True,
     config={
-        'responsive': True,
-        'showAxisDragHandles': False,  # 禁用坐标轴拖动，避免用户交互影响动画
-        'staticPlot': False,           # 动态图
-        'doubleClick': 'reset',        # 双击重置视图
-        'displayModeBar': False,       # 隐藏模式栏
-        'displaylogo': False,          # 不显示plotly logo
+    'responsive': True,
+    'showAxisDragHandles': False,  # 禁用坐标轴拖动，避免用户交互影响动画
+    'staticPlot': False,           # 动态图
+    'doubleClick': 'reset',        # 双击重置视图
+    'displayModeBar': False,       # 隐藏模式栏
+    'displaylogo': False,          # 不显示plotly logo
         'scrollZoom': False,           # 禁用滚轮缩放，避免意外的重绘
         'doubleClick': False,          # 禁用双击缩放，避免意外的重绘
-        'toImageButtonOptions': {
-            'format': 'png',           # 保存为png
-            'width': 1200,
-            'height': 800,
-            'scale': 2                 # 高分辨率
+    'toImageButtonOptions': {
+        'format': 'png',           # 保存为png
+        'width': 1200,
+        'height': 800,
+        'scale': 2                 # 高分辨率
+    }
+    },
+    animation_opts=dict(
+        frame=dict(duration=frame_duration, redraw=False),
+        transition=dict(duration=frame_transition, easing=easing_function),
+        mode="immediate"
+    )
+)
+
+# 在HTML的头部插入自定义CSS，确保平滑过渡
+html_content = html_content.replace('</head>', f'{custom_css}</head>')
+
+# 添加额外的JavaScript以确保平滑动画
+animation_js = """
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 确保动画平滑的配置
+    var config = {
+        // 设置全局的Plotly配置
+        displayModeBar: false,
+        staticPlot: false
+    };
+    
+    // 更新现有图表的配置
+    if (window.Plotly) {
+        var plots = document.querySelectorAll('.js-plotly-plot');
+        plots.forEach(function(plot) {
+            // 添加平滑处理
+            applySmoothing(plot);
+        });
+    }
+    
+    // 应用平滑处理到所有动画元素
+    function applySmoothing(container) {
+        setTimeout(function() {
+            // 获取所有图形元素和图像
+            var allElements = container.querySelectorAll('.scatter, .lines, .points, .layer-above, .imagelayer');
+            
+            // 应用高级平滑设置
+            allElements.forEach(function(el) {
+                // 设置CSS属性以启用硬件加速和平滑过渡
+                el.style.transition = 'all %dms linear';
+                el.style.webkitTransition = 'all %dms linear';
+                el.style.animationTimingFunction = 'linear';
+                el.style.webkitAnimationTimingFunction = 'linear';
+                el.style.transitionTimingFunction = 'linear';
+                el.style.webkitTransitionTimingFunction = 'linear';
+                el.style.willChange = 'transform, opacity';
+                el.style.transform = 'translateZ(0)';
+                
+                // 防止闪烁
+                el.style.backfaceVisibility = 'hidden';
+                el.style.webkitBackfaceVisibility = 'hidden';
+            });
+            
+            // 专门处理图像层，确保与数据点同步
+            var images = container.querySelectorAll('.layer-above');
+            var points = container.querySelectorAll('.points');
+            
+            // 尝试同步图像和点
+            if (images.length > 0 && points.length > 0) {
+                images.forEach(function(img) {
+                    img.style.transition = 'all %dms linear';
+                });
+                
+                points.forEach(function(point) {
+                    point.style.transition = 'all %dms linear';
+                });
+            }
+        }, 500); // 等待500ms确保图表完全加载
+    }
+});
+</script>
+""" % (frame_transition, frame_transition, frame_transition, frame_transition)
+
+# 在HTML的</body>标签前插入自定义JavaScript
+html_content = html_content.replace('</body>', f'{animation_js}</body>')
+
+# 写入最终的HTML文件
+with open(output_file, 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print(f"动画保存至 {output_file}")
+print(f"动画总时长: {target_duration_sec}秒 ({total_frames}帧，每帧{frame_duration}毫秒，过渡时间{frame_transition}毫秒)")
+
+# 通过多层平滑处理和一致性检查解决闪烁问题
+def ensure_frame_consistency(frames_data):
+    """确保所有帧的数据连续性，防止闪烁"""
+    if not frames_data or len(frames_data) <= 1:
+        return frames_data
+        
+    # 检测异常帧 - 与前后帧相比发生突变的帧
+    anomaly_frames = []
+    for i in range(1, len(frames_data)-1):
+        for trace_idx in range(len(frames_data[i].data)):
+            # 跳过空的trace
+            if not hasattr(frames_data[i].data[trace_idx], 'y') or not frames_data[i].data[trace_idx].y:
+                continue
+                
+            # 跳过非线条数据
+            if frames_data[i].data[trace_idx].mode != 'lines' and 'line' not in frames_data[i].data[trace_idx]:
+                continue
+                
+            # 检查当前帧与前后帧的y值差异
+            if hasattr(frames_data[i-1].data[trace_idx], 'y') and hasattr(frames_data[i+1].data[trace_idx], 'y'):
+                # 确保有数据可比较
+                if frames_data[i-1].data[trace_idx].y and frames_data[i+1].data[trace_idx].y and frames_data[i].data[trace_idx].y:
+                    # 获取最后一个点作为比较点
+                    y_prev = frames_data[i-1].data[trace_idx].y[-1] if frames_data[i-1].data[trace_idx].y else None
+                    y_curr = frames_data[i].data[trace_idx].y[-1] if frames_data[i].data[trace_idx].y else None
+                    y_next = frames_data[i+1].data[trace_idx].y[-1] if frames_data[i+1].data[trace_idx].y else None
+                    
+                    # 如果有数据可比较
+                    if y_prev is not None and y_curr is not None and y_next is not None:
+                        # 计算与前后帧的差异
+                        diff_prev = abs(y_curr - y_prev)
+                        diff_next = abs(y_next - y_curr)
+                        avg_diff = (abs(y_next - y_prev)) / 2
+                        
+                        # 如果当前帧与前后帧差异很大，标记为异常
+                        if diff_prev > 3 * avg_diff and diff_next > 3 * avg_diff:
+                            if i not in anomaly_frames:
+                                anomaly_frames.append(i)
+                                break
+    
+    # 修复异常帧 - 使用前后帧的平均值
+    print(f"检测到 {len(anomaly_frames)} 个异常帧，正在修复...")
+    for i in anomaly_frames:
+        for trace_idx in range(len(frames_data[i].data)):
+            # 只处理有y值的trace
+            if not hasattr(frames_data[i].data[trace_idx], 'y') or not frames_data[i].data[trace_idx].y:
+                continue
+                
+            # 检查前后帧是否有数据
+            if (hasattr(frames_data[i-1].data[trace_idx], 'y') and frames_data[i-1].data[trace_idx].y and
+                hasattr(frames_data[i+1].data[trace_idx], 'y') and frames_data[i+1].data[trace_idx].y):
+                
+                # 使用前后帧的线性插值
+                x_values = frames_data[i].data[trace_idx].x
+                if len(x_values) == 0:  # 修复：使用长度检查替代 not x_values
+                    continue
+                    
+                # 获取前后帧的对应y值
+                interp_y = []
+                for x_idx, x in enumerate(x_values):
+                    # 在前一帧找到最接近的x值
+                    prev_x = frames_data[i-1].data[trace_idx].x
+                    prev_y = frames_data[i-1].data[trace_idx].y
+                    next_x = frames_data[i+1].data[trace_idx].x
+                    next_y = frames_data[i+1].data[trace_idx].y
+                    
+                    # 如果前后帧没有足够多的点，跳过
+                    if len(prev_x) <= x_idx or len(prev_y) <= x_idx or len(next_x) <= x_idx or len(next_y) <= x_idx:
+                        if len(interp_y) > 0:
+                            interp_y.append(interp_y[-1])  # 使用上一个值
+                        else:
+                            interp_y.append(frames_data[i].data[trace_idx].y[x_idx])  # 保持原值
+                        continue
+                    
+                    # 使用线性插值
+                    interp_y.append((prev_y[x_idx] + next_y[x_idx]) / 2)
+                
+                # 更新异常帧的y值
+                frames_data[i].data[trace_idx].y = interp_y
+        
+        # 修复y轴范围 - 使用前后帧的平均值
+        if hasattr(frames_data[i].layout, 'yaxis') and hasattr(frames_data[i-1].layout, 'yaxis') and hasattr(frames_data[i+1].layout, 'yaxis'):
+            if hasattr(frames_data[i].layout.yaxis, 'range') and hasattr(frames_data[i-1].layout.yaxis, 'range') and hasattr(frames_data[i+1].layout.yaxis, 'range'):
+                prev_range = frames_data[i-1].layout.yaxis.range
+                next_range = frames_data[i+1].layout.yaxis.range
+                avg_range = [(prev_range[0] + next_range[0])/2, (prev_range[1] + next_range[1])/2]
+                frames_data[i].layout.yaxis.range = avg_range
+    
+    # 确保图像连续性 - 修复突然消失的图像
+    for i in range(1, len(frames_data)-1):
+        prev_images = []
+        next_images = []
+        
+        # 获取前后帧的图像
+        if hasattr(frames_data[i-1].layout, 'images') and frames_data[i-1].layout.images:
+            prev_images = frames_data[i-1].layout.images
+        if hasattr(frames_data[i+1].layout, 'images') and frames_data[i+1].layout.images:
+            next_images = frames_data[i+1].layout.images
+        
+        # 如果当前帧没有图像但前后帧有
+        if (not hasattr(frames_data[i].layout, 'images') or not frames_data[i].layout.images) and prev_images and next_images:
+            # 从前后帧合成图像
+            merged_images = []
+            
+            # 为每个在前后帧都存在的图像创建插值版本
+            prev_img_dict = {f"{img.x}_{img.y}": img for img in prev_images}
+            next_img_dict = {f"{img.x}_{img.y}": img for img in next_images}
+            
+            # 添加前后帧都有的图像
+            for key in prev_img_dict:
+                if key in next_img_dict:
+                    prev_img = prev_img_dict[key]
+                    next_img = next_img_dict[key]
+                    
+                    # 创建插值图像
+                    interp_img = dict(
+                        source=prev_img.source,  # 使用前一帧的图像源
+                        xref=prev_img.xref,
+                        yref=prev_img.yref,
+                        x=(prev_img.x + next_img.x) / 2,  # 位置插值
+                        y=(prev_img.y + next_img.y) / 2,
+                        sizex=prev_img.sizex,
+                        sizey=prev_img.sizey,
+                        xanchor=prev_img.xanchor,
+                        yanchor=prev_img.yanchor,
+                        sizing=prev_img.sizing,
+                        opacity=prev_img.opacity,
+                        layer=prev_img.layer
+                    )
+                    merged_images.append(interp_img)
+            
+            # 设置合成图像到当前帧
+            if merged_images:
+                frames_data[i].layout.images = merged_images
+    
+    return frames_data
+
+# ... existing code ...
+# 在最后的frames生成完成后，应用一致性检查
+frames = ensure_frame_consistency(frames)
+print(f"已完成 {len(frames)} 帧动画数据的一致性检查")
+
+# 添加持久化保障机制
+for i, frame in enumerate(frames):
+    # 确保每个帧都有相同的数据元素数量
+    if i > 0 and len(frame.data) != len(frames[0].data):
+        # 如果当前帧的元素数量与第一帧不一致，从上一帧复制
+        frame.data = frames[i-1].data
+    
+    # 确保所有图像元素都存在
+    if hasattr(frames[0].layout, 'images') and frames[0].layout.images:
+        if not hasattr(frame.layout, 'images') or not frame.layout.images:
+            # 如果此帧没有图像但第一帧有，从上一帧复制
+            if i > 0 and hasattr(frames[i-1].layout, 'images') and frames[i-1].layout.images:
+                frame.layout.images = frames[i-1].layout.images
+
+# 强制固定渲染元素数量
+for i in range(len(frames)):
+    if hasattr(frames[i], 'data'):
+        # 确保所有trace都有配置
+        for trace in frames[i].data:
+            # 线条特性设置
+            if 'line' not in trace and trace.mode == 'lines':
+                trace.line = dict(shape='spline', smoothing=1.3)
+            elif 'line' in trace and trace.mode == 'lines':
+                trace.line.shape = 'spline'
+                trace.line.smoothing = 1.3
+
+# ... existing code ...
+# 在生成HTML时添加额外的稳定性配置
+custom_css = """
+<style>
+/* 全局设置 */
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Plotly容器设置 */
+.js-plotly-plot {
+  position: relative;
+}
+
+/* 防止闪烁的关键设置 */
+.js-plotly-plot:not([data-unformatted]) .plotly .main-svg {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+  contain: strict;
+}
+
+/* 图像层渲染稳定性设置 */
+.js-plotly-plot .infolayer .images {
+  contain: size layout paint;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* 线条和点渲染特殊处理 */
+.js-plotly-plot .scatterlayer .trace {
+  contain: strict;
+  will-change: transform;
+  transform-style: preserve-3d;
+}
+
+/* 曲线光滑渲染 */
+.js-plotly-plot .scatterlayer .js-line {
+  shape-rendering: geometricPrecision;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* SVG特定设置 */
+svg path.lines, svg .point, svg circle, svg .layer-above image {
+  transition: all 120ms linear !important;
+  animation-timing-function: linear !important;
+  vector-effect: non-scaling-stroke;
+  shape-rendering: geometricPrecision;
+}
+
+/* 图像平滑设置 */
+.smooth-animate-img {
+  transition: y 100ms linear, opacity 100ms linear;
+  will-change: transform, opacity;
+  contain: strict;
+}
+
+/* 确保WebGL渲染器使用GPU加速 */
+.gl-container {
+  transform: translateZ(0);
+  will-change: transform;
+  contain: strict;
+}
+
+/* 动画控制按钮美化 */
+.animation-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+}
+
+.animation-controls button {
+  background: rgba(255,255,255,0.8);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px 15px;
+  margin: 0 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.animation-controls button:hover {
+  background: rgba(255,255,255,1);
+  border-color: #aaa;
+}
+
+/* 确保所有文本清晰 */
+text {
+  font-smooth: always;
+  -webkit-font-smoothing: antialiased;
+}
+</style>
+"""
+
+# ... existing code ...
+
+# 添加防闪烁的JavaScript脚本
+animation_js = """
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 全局配置
+    var config = {
+        displayModeBar: false,
+        staticPlot: false
+    };
+    
+    // 更新现有图表的配置
+    if (window.Plotly) {
+        var plots = document.querySelectorAll('.js-plotly-plot');
+        plots.forEach(function(plot) {
+            applyAntiFlickerMeasures(plot);
+        });
+    }
+    
+    // 应用防闪烁措施
+    function applyAntiFlickerMeasures(container) {
+        // 为图表元素添加contain属性，优化渲染性能
+        container.style.contain = 'strict';
+        
+        // 准备防闪烁对象
+        var antiFlicker = {
+            // 存储前一帧的状态，用于检测异常变化
+            previousFrameState: null,
+            // 缓存每个轨迹的状态
+            traceCache: {},
+            // 记录异常帧，便于调试
+            anomalyFrames: [],
+            // 监听帧变化的处理函数
+            handleFrameChange: function(frameIndex) {
+                // 获取当前帧的所有轨迹
+                var allTraces = container.querySelectorAll('.scatterlayer .trace');
+                var currentState = {};
+                
+                // 收集当前帧状态
+                allTraces.forEach(function(trace, idx) {
+                    var points = trace.querySelectorAll('.point');
+                    var lines = trace.querySelectorAll('.js-line');
+                    
+                    // 存储位置信息
+                    currentState[idx] = {
+                        points: Array.from(points).map(function(p) {
+                            return { 
+                                transform: p.getAttribute('transform'),
+                                visible: p.style.visibility !== 'hidden'
+                            };
+                        }),
+                        lines: Array.from(lines).map(function(l) {
+                            return { 
+                                d: l.getAttribute('d'),
+                                visible: l.style.visibility !== 'hidden'
+                            };
+                        })
+                    };
+                });
+                
+                // 检查与上一帧的差异
+                if (this.previousFrameState) {
+                    var hasAnomalyDetected = false;
+                    
+                    // 检查每个轨迹
+                    for (var idx in currentState) {
+                        if (!this.previousFrameState[idx]) continue;
+                        
+                        // 检查点的剧烈变化
+                        for (var i = 0; i < currentState[idx].points.length; i++) {
+                            if (i >= this.previousFrameState[idx].points.length) continue;
+                            
+                            // 如果上一帧可见但当前帧不可见，可能是闪烁
+                            if (this.previousFrameState[idx].points[i].visible && 
+                                !currentState[idx].points[i].visible) {
+                                // 记录异常并修复
+                                if (!hasAnomalyDetected) {
+                                    console.log('检测到异常帧: ' + frameIndex);
+                                    this.anomalyFrames.push(frameIndex);
+                                    hasAnomalyDetected = true;
+                                }
+                                
+                                // 使用缓存状态修复
+                                if (this.traceCache[idx] && this.traceCache[idx].points[i]) {
+                                    var point = points[i];
+                                    // 将点恢复为上一个已知的好状态
+                                    point.setAttribute('transform', this.traceCache[idx].points[i].transform);
+                                    point.style.visibility = 'visible';
+                                    point.style.opacity = '1';
+                                }
+                            }
+                        }
+                        
+                        // 检查线的剧烈变化
+                        for (var i = 0; i < currentState[idx].lines.length; i++) {
+                            if (i >= this.previousFrameState[idx].lines.length) continue;
+                            
+                            // 如果线段发生剧烈变化或消失
+                            if (this.previousFrameState[idx].lines[i].visible && 
+                                !currentState[idx].lines[i].visible) {
+                                // 记录异常并修复
+                                if (!hasAnomalyDetected) {
+                                    console.log('检测到线条异常: ' + frameIndex);
+                                    this.anomalyFrames.push(frameIndex);
+                                    hasAnomalyDetected = true;
+                                }
+                                
+                                // 使用缓存状态修复
+                                if (this.traceCache[idx] && this.traceCache[idx].lines[i]) {
+                                    var line = lines[i];
+                                    // 将线恢复为上一个已知的好状态
+                                    line.setAttribute('d', this.traceCache[idx].lines[i].d);
+                                    line.style.visibility = 'visible';
+                                    line.style.opacity = '1';
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 检查图像层
+                    var images = container.querySelectorAll('.layer-above image');
+                    var previousImages = this.previousFrameState.images || [];
+                    
+                    // 如果前一帧有图像但当前帧没有，可能是闪烁
+                    if (previousImages.length > 0 && images.length === 0) {
+                        // 使用缓存恢复图像
+                        if (this.traceCache.images && this.traceCache.images.length > 0) {
+                            var imageContainer = container.querySelector('.layer-above');
+                            this.traceCache.images.forEach(function(imgData) {
+                                var img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+                                for (var attr in imgData) {
+                                    img.setAttribute(attr, imgData[attr]);
+                                }
+                                imageContainer.appendChild(img);
+                            });
+                        }
+                    }
+                }
+                
+                // 只有在没有检测到异常时更新缓存
+                if (!hasAnomalyDetected) {
+                    // 更新缓存状态
+                    for (var idx in currentState) {
+                        this.traceCache[idx] = JSON.parse(JSON.stringify(currentState[idx]));
+                    }
+                    
+                    // 缓存图像状态
+                    var images = container.querySelectorAll('.layer-above image');
+                    if (images.length > 0) {
+                        this.traceCache.images = Array.from(images).map(function(img) {
+                            var attributes = {};
+                            Array.from(img.attributes).forEach(function(attr) {
+                                attributes[attr.name] = attr.value;
+                            });
+                            return attributes;
+                        });
+                    }
+                    
+                    // 更新状态
+                    currentState.images = images.length;
+                    this.previousFrameState = currentState;
+                }
+            }
+        };
+        
+        // 存储防闪烁对象到容器
+        container._antiFlicker = antiFlicker;
+        
+        // 为滑块添加事件监听
+        var slider = document.getElementById('timeline-slider');
+        if (slider) {
+            slider.addEventListener('input', function(e) {
+                var frameIndex = parseInt(e.target.value);
+                container._antiFlicker.handleFrameChange(frameIndex);
+            });
+        }
+        
+        // 拦截animate方法，处理帧变化
+        var originalAnimate = container.animate;
+        if (originalAnimate) {
+            container.animate = function() {
+                var result = originalAnimate.apply(this, arguments);
+                // 跟踪当前帧
+                if (this._fullLayout && this._fullLayout._currentFrame) {
+                    var frameIndex = parseInt(this._fullLayout._currentFrame.name);
+                    this._antiFlicker.handleFrameChange(frameIndex);
+                }
+                return result;
+            };
+        }
+        
+        // 设置重要的CSS属性
+        setTimeout(function() {
+            var svgElements = container.querySelectorAll('svg');
+            svgElements.forEach(function(svg) {
+                svg.style.shapeRendering = 'geometricPrecision';
+                svg.style.textRendering = 'geometricPrecision';
+            });
+            
+            // 线条元素
+            var lineElements = container.querySelectorAll('.scatterlayer .js-line');
+            lineElements.forEach(function(el) {
+                el.setAttribute('shape-rendering', 'geometricPrecision');
+                el.setAttribute('stroke-linejoin', 'round');
+                el.setAttribute('stroke-linecap', 'round');
+                el.setAttribute('vector-effect', 'non-scaling-stroke');
+            });
+            
+            // 点元素
+            var pointElements = container.querySelectorAll('.scatterlayer .point');
+            pointElements.forEach(function(el) {
+                el.setAttribute('shape-rendering', 'geometricPrecision');
+            });
+            
+            // 图像层元素
+            var imageElements = container.querySelectorAll('.layer-above image');
+            imageElements.forEach(function(el) {
+                el.style.transform = 'translateZ(0)';
+                el.style.willChange = 'transform';
+            });
+        }, 100);
+    }
+});
+</script>
+"""
+
+# 在HTML的</body>标签前插入自定义JavaScript
+html_content = html_content.replace('</body>', f'{animation_js}</body>')
+
+# ... existing code ...
+
+# 将动画帧间过渡时间增加，使动画更平滑
+frame_transition = 100  # 增加过渡时间使动画更平滑，从0ms改为100ms
+
+# 创建全局固定的y轴范围，防止突然变化
+global_y_min = global_min_with_buffer
+global_y_max = max(smoothed_y_max) * 1.1  # 使用所有帧最大值的110%，提供安全边界
+
+print(f"锁定y轴范围: {global_y_min:.2f} 到 {global_y_max:.2f}")
+
+# 对每个帧使用固定的y轴范围，确保稳定性
+for i in range(len(frames)):
+    if hasattr(frames[i].layout, 'yaxis') and hasattr(frames[i].layout.yaxis, 'range'):
+        frames[i].layout.yaxis.range = [global_y_min, global_y_max]
+        frames[i].layout.yaxis.autorange = False  # 禁用自动范围调整
+        frames[i].layout.yaxis.fixedrange = True  # 禁止用户修改范围
+
+# 确保初始布局也使用相同的固定范围
+fig.update_layout(
+    yaxis=dict(
+        range=[global_y_min, global_y_max],
+        autorange=False,
+        fixedrange=True,
+        title='Revenue (Million USD)'
+    )
+)
+
+# 提高平滑度设置
+for i in range(len(frames)):
+    if hasattr(frames[i], 'data'):
+        for trace in frames[i].data:
+            if 'line' in trace and trace.mode and 'lines' in trace.mode:
+                trace.line.shape = 'spline'
+                trace.line.smoothing = 1.3  # 最大平滑度
+                trace.line.simplify = False  # 禁用简化，保留所有点
+                if 'width' in trace.line:
+                    trace.line.width = max(2, trace.line.width)  # 确保线条足够粗
+
+# 改进动画设置
+animation_opts = dict(
+    frame=dict(
+        duration=frame_duration, 
+        redraw=False  # 减少重绘次数
+    ),
+    transition=dict(
+        duration=frame_transition,  
+        easing='linear'  # 线性缓动确保平滑过渡
+    ),
+    mode="immediate"
+)
+
+# 更新全局动画配置
+fig.update(
+    frames=frames,  # 确保所有帧都被正确应用
+    layout_updatemenus=[
+        {
+            "buttons": [
+                {
+                    "args": [None, {
+                        "frame": {"duration": frame_duration, "redraw": False}, 
+                        "fromcurrent": True,
+                        "transition": {"duration": frame_transition, "easing": 'linear'},
+                        "mode": "immediate"
+                    }],
+                    "label": "播放",
+                    "method": "animate"
+                },
+                {
+                    "args": [[None], {
+                        "frame": {"duration": 0, "redraw": False}, 
+                        "mode": "immediate", 
+                        "transition": {"duration": 0}
+                    }],
+                    "label": "暂停",
+                    "method": "animate"
+                }
+            ],
+            "showactive": False,
+            "type": "buttons",
+            "x": 1.05,
+            "y": 1.15,
+            "xanchor": "right",
+            "yanchor": "top"
+        }
+    ]
+)
+
+# 改进HTML和CSS动画设置
+custom_css = """
+<style>
+/* 全局设置 */
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Plotly容器设置 */
+.js-plotly-plot {
+  position: relative;
+  transform: translateZ(0);
+  will-change: transform;
+  contain: layout style size;
+}
+
+/* 防止闪烁的关键设置 */
+.js-plotly-plot .plotly .main-svg {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+  contain: strict;
+  transform-style: preserve-3d;
+}
+
+/* 图像层渲染稳定性设置 */
+.js-plotly-plot .layer-above, .js-plotly-plot .imagelayer {
+  contain: size layout paint style;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  transition: all 100ms linear !important;
+}
+
+/* 线条和点渲染特殊处理 */
+.js-plotly-plot .scatterlayer .trace {
+  contain: strict;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* 曲线光滑渲染 */
+.js-plotly-plot .scatterlayer .js-line {
+  shape-rendering: geometricPrecision;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  transition: d 100ms linear !important;
+}
+
+/* 确保平滑动画过渡 */
+.js-plotly-plot .scatterlayer path, 
+.js-plotly-plot .imagelayer image,
+.js-plotly-plot .trace,
+.js-plotly-plot .point,
+.js-plotly-plot .scatterlayer .points path {
+  transition: all 100ms linear !important;
+  animation-timing-function: linear !important;
+  animation-duration: 100ms !important;
+}
+
+/* 强制平滑过渡效果 */
+@keyframes smooth-fade {
+  0% { opacity: 0.95; }
+  100% { opacity: 1; }
+}
+
+.js-plotly-plot .scatterlayer .trace {
+  animation: smooth-fade 100ms linear forwards;
+}
+
+/* 图层管理 - 确保图像始终在顶层 */
+.js-plotly-plot .layer-above {
+  z-index: 999 !important;
+  pointer-events: none;
+}
+
+/* 确保Y轴稳定 */
+.js-plotly-plot .yaxislayer-above {
+  z-index: 0;
+  transition: none !important;
+  animation: none !important;
+}
+
+/* 动画平滑性增强 */
+* {
+  -webkit-transition-timing-function: linear !important;
+  transition-timing-function: linear !important;
+}
+</style>
+"""
+
+# 增强JavaScript运行时防闪烁
+animation_js = """
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 使用RequestAnimationFrame确保平滑动画
+    let lastRender = 0;
+    let isPaused = false;
+    let plotDiv = document.querySelector('.js-plotly-plot');
+    
+    // 增强动画平滑性，将动画帧率最大化
+    function optimizeAnimation() {
+        // 强制固定y轴范围，防止自动调整
+        const yaxisRange = [""" + str(global_y_min) + """, """ + str(global_y_max) + """];
+        
+        if (window.Plotly && plotDiv) {
+            // 提供一个更平滑的动画控制器
+            plotDiv._smoothAnimation = {
+                frameNumber: 0,
+                totalFrames: """ + str(len(frames)) + """,
+                playing: false,
+                
+                // 平滑播放方法
+                play: function() {
+                    this.playing = true;
+                    this.animate();
+                },
+                
+                // 暂停方法
+                pause: function() {
+                    this.playing = false;
+                },
+                
+                // 动画核心循环
+                animate: function() {
+                    if (!this.playing) return;
+                    
+                    // 使用动画帧实现更平滑的过渡
+                    requestAnimationFrame(() => {
+                        // 计算下一帧
+                        this.frameNumber = (this.frameNumber + 1) % this.totalFrames;
+                        
+                        try {
+                            // 强制y轴保持固定，避免突变
+                            Plotly.relayout(plotDiv, {
+                                'yaxis.range': yaxisRange,
+                                'yaxis.autorange': false
+                            });
+                            
+                            // 应用帧动画但保持y轴固定
+                            Plotly.animate(plotDiv, [this.frameNumber.toString()], {
+                                transition: {
+                                    duration: """ + str(frame_transition) + """,
+                                    easing: 'linear'
+                                },
+                                frame: {
+                                    duration: """ + str(frame_duration) + """,
+                                    redraw: false
+                                }
+                            }).then(() => {
+                                // 确保图像层始终可见
+                                const imageLayer = plotDiv.querySelector('.layer-above');
+                                if (imageLayer) {
+                                    imageLayer.style.opacity = '1';
+                                    imageLayer.style.display = 'block';
+                                }
+                                
+                                // 启动下一帧动画
+                                if (this.playing) {
+                                    this.animate();
+                                }
+                            });
+                        } catch (e) {
+                            console.error('Animation error:', e);
+                            // 出错时仍然继续动画
+                            if (this.playing) {
+                                setTimeout(() => this.animate(), 10);
+                            }
+                        }
+                    });
+                }
+            };
+            
+            // 监听原始播放按钮
+            const playButton = document.querySelector('a[data-attr="play"]');
+            const pauseButton = document.querySelector('a[data-attr="pause"]');
+            
+            if (playButton) {
+                playButton.addEventListener('click', function() {
+                    plotDiv._smoothAnimation.play();
+                });
+            }
+            
+            if (pauseButton) {
+                pauseButton.addEventListener('click', function() {
+                    plotDiv._smoothAnimation.pause();
+                });
+            }
+            
+            // 应用高级渲染优化
+            applyRenderOptimizations();
         }
     }
-)
+    
+    // 渲染优化函数
+    function applyRenderOptimizations() {
+        if (!plotDiv) return;
+        
+        // 强制启用图层合成
+        plotDiv.style.transform = 'translateZ(0)';
+        plotDiv.style.backfaceVisibility = 'hidden';
+        plotDiv.style.perspective = '1000px';
+        
+        // 对图像层应用特殊处理
+        const imageLayers = plotDiv.querySelectorAll('.layer-above, .imagelayer');
+        imageLayers.forEach(layer => {
+            layer.style.transform = 'translateZ(0)';
+            layer.style.backfaceVisibility = 'hidden';
+            layer.style.willChange = 'transform';
+            layer.style.contain = 'strict';
+            
+            // 确保图像始终显示
+            const images = layer.querySelectorAll('image');
+            images.forEach(img => {
+                img.style.transform = 'translateZ(0)';
+                img.style.willChange = 'transform';
+                img.style.transition = 'all 100ms linear';
+            });
+        });
+        
+        // 优化线条渲染
+        const lines = plotDiv.querySelectorAll('.scatterlayer .js-line');
+        lines.forEach(line => {
+            line.style.shapeRendering = 'geometricPrecision';
+            line.style.vectorEffect = 'non-scaling-stroke';
+            line.setAttribute('stroke-linejoin', 'round');
+            line.setAttribute('stroke-linecap', 'round');
+        });
+        
+        // 添加高性能模式
+        plotDiv.setAttribute('data-high-performance', 'true');
+        document.body.classList.add('high-performance-animations');
+    }
+    
+    // 强制实施稳定的Y轴范围
+    function enforceStableYAxis() {
+        if (!plotDiv) return;
+        
+        const yaxisRange = [""" + str(global_y_min) + """, """ + str(global_y_max) + """];
+        
+        // 强制锁定y轴范围
+        Plotly.relayout(plotDiv, {
+            'yaxis.range': yaxisRange,
+            'yaxis.autorange': false,
+            'yaxis.fixedrange': true
+        });
+        
+        // 监听和拦截任何y轴变化尝试
+        const observer = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                if (mutation.attributeName === 'transform' && 
+                    mutation.target.closest('.yaxislayer-above')) {
+                    Plotly.relayout(plotDiv, {
+                        'yaxis.range': yaxisRange,
+                        'yaxis.autorange': false,
+                        'yaxis.fixedrange': true
+                    });
+                }
+            });
+        });
+        
+        // 观察y轴DOM变化
+        const yaxisLayer = plotDiv.querySelector('.yaxislayer-above');
+        if (yaxisLayer) {
+            observer.observe(yaxisLayer, { attributes: true, subtree: true });
+        }
+    }
+    
+    // 等待页面加载完成后应用所有优化
+    setTimeout(() => {
+        optimizeAnimation();
+        enforceStableYAxis();
+        
+        // 自动播放
+        setTimeout(() => {
+            if (plotDiv && plotDiv._smoothAnimation) {
+                plotDiv._smoothAnimation.play();
+            }
+        }, 500);
+    }, 300);
+});
+</script>
+"""
+
+# 在HTML的</body>标签前插入自定义JavaScript
+html_content = html_content.replace('</body>', f'{animation_js}</body>')
+
+# 在HTML的头部插入自定义CSS
+html_content = html_content.replace('</head>', f'{custom_css}</head>')
+
+# 保存最终的HTML文件
+output_file = "output/airline_revenue_linechart.html"
+with open(output_file, 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
 print(f"动画保存至 {output_file}")
-print(f"动画总时长: {target_duration_sec}秒 ({total_frames}帧，每帧{frame_duration}毫秒)")
+print(f"动画总时长: {target_duration_sec}秒 ({total_frames}帧，每帧{frame_duration}毫秒，过渡时间{frame_transition}毫秒)")
+
+# ... existing code ...
+
+# 将动画帧间过渡时间减少，优化性能
+frame_transition = 20  # 从100ms减少到20ms，减轻浏览器负担
+
+# 减少动画控制器复杂度
+animation_js = """
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 精简版动画控制器
+    const plotDiv = document.querySelector('.js-plotly-plot');
+    if (!plotDiv) return;
+    
+    // 基本优化 - 减少重绘
+    const yaxisRange = [""" + str(global_y_min) + """, """ + str(global_y_max) + """];
+    
+    // 强制锁定y轴范围
+    Plotly.relayout(plotDiv, {
+        'yaxis.range': yaxisRange,
+        'yaxis.autorange': false,
+        'yaxis.fixedrange': true
+    });
+    
+    // 简化的动画设置
+    const buttons = plotDiv.querySelectorAll('a[data-attr="play"], button.modebar-btn[data-val="play"]');
+    buttons.forEach(button => {
+        if (button.getAttribute('data-already-setup') === 'true') return;
+        
+        const originalOnClick = button.onclick;
+        button.onclick = function(e) {
+            // 在原始点击处理前锁定y轴
+            Plotly.relayout(plotDiv, {
+                'yaxis.range': yaxisRange,
+                'yaxis.autorange': false
+            });
+            
+            // 调用原始处理
+            if (originalOnClick) originalOnClick.call(this, e);
+            
+            // 确保不会重复设置
+            button.setAttribute('data-already-setup', 'true');
+        };
+    });
+    
+    // 移除可能导致性能问题的动画特效
+    document.querySelectorAll('.plotly-notifier, .svg-container').forEach(el => {
+        el.style.willChange = 'auto';
+        el.style.transform = 'none';
+    });
+    
+    // 移除不必要的性能监控
+    if (window.performance && window.performance.mark) {
+        const originalMark = window.performance.mark;
+        window.performance.mark = function() {};
+    }
+    
+    // 移除复杂动画
+    document.querySelectorAll('.scatterlayer path, .imagelayer image').forEach(el => {
+        el.style.transition = 'none';
+        el.style.animation = 'none';
+    });
+});
+</script>
+"""
+
+# 简化CSS，移除可能导致性能问题的样式
+custom_css = """
+<style>
+/* 简化全局设置 */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* 移除可能导致性能问题的CSS属性 */
+.js-plotly-plot, .plotly .main-svg, .layer-above, .imagelayer, .scatterlayer {
+  transform: none !important;
+  will-change: auto !important;
+  transition: none !important;
+  animation: none !important;
+  backface-visibility: visible !important;
+  perspective: none !important;
+  contain: none !important;
+}
+
+/* 基本样式 */
+.js-plotly-plot {
+  position: relative;
+}
+
+/* 简化动画控制按钮 */
+.animation-controls button {
+  background: rgba(255,255,255,0.8);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px 15px;
+  margin: 0 5px;
+  cursor: pointer;
+}
+</style>
+"""
+
+# 创建更高效的HTML输出选项
+optimized_config = {
+    'responsive': True,
+    'staticPlot': False,  # 不使用静态图，但后面会手动限制交互
+    'displayModeBar': False,  # 隐藏模式栏
+    'displaylogo': False,  # 不显示Plotly logo
+    'showAxisDragHandles': False,  # 禁用轴拖拽
+    'showTips': False,  # 不显示提示
+    'doubleClick': False,  # 禁用双击
+    'scrollZoom': False,  # 禁用滚轮缩放
+    'showLink': False,     # 不显示链接
+    'sendData': False,     # 不发送数据到Plotly
+    'linkText': '',        # 空链接文本
+    'showSources': False,  # 不显示源码
+    'modeBarButtonsToRemove': ['zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 
+                              'autoScale2d', 'resetScale2d', 'toggleSpikelines', 
+                              'hoverCompareCartesian', 'hoverClosestCartesian']  # 移除不需要的按钮
+}
+
+# 简化动画选项
+animation_opts = dict(
+    frame=dict(
+        duration=frame_duration, 
+        redraw=False  # 减少重绘次数
+    ),
+    transition=dict(
+        duration=frame_transition,  
+        easing='linear'  # 线性缓动确保平滑过渡
+    ),
+    mode="immediate"
+)
+
+# 生成更简化的HTML
+html_content = pio.to_html(
+    fig, 
+    include_plotlyjs='cdn',  # 使用CDN版本减小文件大小
+    full_html=True,
+    config=optimized_config,
+    animation_opts=animation_opts,
+    validate=False,  # 跳过验证以加快生成
+    auto_play=False  # 默认不自动播放，让用户手动控制
+)
+
+# 插入简化的CSS和JS
+html_content = html_content.replace('</head>', f'{custom_css}</head>')
+html_content = html_content.replace('</body>', f'{animation_js}</body>')
+
+# 保存最终的HTML文件
+output_file = "output/airline_revenue_linechart.html"
+with open(output_file, 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print(f"已优化动画性能，保存至 {output_file}")
+print(f"优化后的动画: 总时长{target_duration_sec}秒 ({total_frames}帧，过渡时间{frame_transition}毫秒)")
+
+# 移除其他不必要的HTML文件生成代码
+# ... existing code ...
