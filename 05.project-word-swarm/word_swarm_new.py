@@ -97,6 +97,14 @@ FILTERED_WORDS = {
     'developed', 'developing', 'launch', 'launches', 'launched', 'launching',
     'implement', 'implements', 'implemented', 'implementing', 'introduce', 'introduces',
     'introduced', 'introducing', 'bring', 'brings', 'bringing', 'brought',
+    # 添加新的过滤词
+    'phocuswire', 'phocuswright', 'subscribe', 'subscribed', 'subscription',
+    'click', 'clicks', 'read', 'reads', 'reading', 'view', 'views', 'viewing',
+    'follow', 'follows', 'following', 'followed', 'join', 'joins', 'joining', 'joined',
+    'sign', 'signs', 'signing', 'signed', 'register', 'registers', 'registering', 'registered',
+    'newsletter', 'newsletters', 'email', 'emails', 'contact', 'contacts', 'contacting',
+    'news', 'article', 'articles', 'story', 'stories', 'post', 'posts', 'posting',
+    'content', 'contents', 'page', 'pages', 'site', 'sites', 'website', 'websites'
 }
 
 class WordObj:
@@ -256,18 +264,28 @@ class WordSwarm:
                          reverse=True)[:top_n]
             all_words.update([w[0] for w in words])
             
-        # 创建单词对象（初始布局）
-        radius = 15.0
-        angle_step = 2 * math.pi / len(all_words)
+        # 创建单词对象（使用螺旋布局）
+        word_count = len(all_words)
+        
+        # 螺旋参数
+        a = 1.0  # 控制螺旋间距
+        b = 1.0  # 控制螺旋展开速度
         
         for i, word in enumerate(all_words):
-            angle = angle_step * i
-            init_x = self.center_x + radius * math.cos(angle)
-            init_y = self.center_y + radius * math.sin(angle)
+            # 使用螺旋方程计算初始位置
+            t = i * 2 * math.pi / (word_count / 4)  # 调整分母可以控制螺旋密度
+            r = a + b * t  # 阿基米德螺旋线方程
+            init_x = r * math.cos(t)
+            init_y = r * math.sin(t)
+            
+            # 随机扰动，避免完美对称
+            init_x += uniform(-0.5, 0.5)
+            init_y += uniform(-0.5, 0.5)
             
             word_obj = WordObj(word)
             self.word_objects.append(word_obj)
             
+            # 创建物理体
             body = self.world.CreateDynamicBody(
                 position=(init_x, init_y),
                 linearDamping=0.8,
@@ -281,6 +299,8 @@ class WordSwarm:
             )
             self.bodies.append(body)
             
+            # 创建到中心点的弹簧关节，根据位置调整长度
+            dist_to_center = math.sqrt(init_x * init_x + init_y * init_y)
             joint = self.world.CreateDistanceJoint(
                 bodyA=self.center_body,
                 bodyB=body,
@@ -288,10 +308,10 @@ class WordSwarm:
                 anchorB=body.position,
                 frequencyHz=self.frequency,
                 dampingRatio=self.damping,
-                length=radius
+                length=dist_to_center * 0.8  # 稍微收缩一点，让词语更集中
             )
             self.joints.append(joint)
-            
+        
         # 动画循环
         frame_count = 0
         total_frames = (len(self.dates) - 1) * self.transition_frames
