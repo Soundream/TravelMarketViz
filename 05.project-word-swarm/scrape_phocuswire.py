@@ -256,8 +256,8 @@ if __name__ == "__main__":
     
     # 使用更多的并行处理, 减少延迟
     scraper = PhocusWireScraper(
-        start_page=1, 
-        end_page=300, 
+        start_page=600, 
+        end_page=1000, 
         output_dir=output_dir,
         max_workers=8,        # 增加并行数量
         delay_min=0.3,        # 减少最小延迟

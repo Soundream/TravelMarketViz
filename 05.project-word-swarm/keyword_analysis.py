@@ -40,7 +40,7 @@ ENGLISH_STOP_WORDS = {
     'even', 'first', 'last', 'still', 'going', 'however', 'including', 'according',
     'inc', 'ltd', 'co', 'com', 'org', 'net', 'www', 'that', 'well', 'still',
     'said', 'say', 'says', 'like', 'good', 'able', 'just', 'made', 'making',
-    'let', 'know', 'take', 'going', 'put', 'set', 'thing', 'things'
+    'let', 'know', 'take', 'going', 'put', 'set', 'thing', 'things','million','based', 'years', 'companies'
 }
 
 def simple_tokenize(text):
