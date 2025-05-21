@@ -107,10 +107,55 @@ FILTERED_WORDS = {
     'content', 'contents', 'page', 'pages', 'site', 'sites', 'website', 'websites'
 }
 
+# 添加双词短语的过滤集合
+IMPORTANT_BIGRAMS = {
+    'artificial intelligence', 'machine learning', 'deep learning',
+    'travel industry', 'business travel', 'online travel',
+    'travel management', 'digital transformation', 'customer experience',
+    'mobile app', 'real time', 'artificial intelligence',
+    'revenue management', 'data analytics', 'business model',
+    'travel technology', 'booking platform', 'travel platform',
+    'travel agency', 'travel agencies', 'corporate travel',
+    'travel demand', 'travel market', 'travel sector',
+    'travel tech', 'travel trends', 'travel distribution',
+    'travel startup', 'travel startups', 'travel ecosystem',
+    'travel payments', 'travel recovery', 'travel restrictions',
+    'virtual reality', 'augmented reality', 'blockchain technology',
+    'big data', 'cloud computing', 'internet things',
+    'user experience', 'supply chain', 'market share',
+}
+
+# 添加要过滤的双词短语
+FILTERED_BIGRAMS = {
+    'last year', 'next year', 'last month', 'next month',
+    'last week', 'next week', 'per cent', 'press release',
+    'chief executive', 'vice president', 'executive officer',
+    'read more', 'find out', 'learn more', 'click here',
+    'full story', 'full article', 'more information',
+}
+
 class WordObj:
     def __init__(self, text, color=None):
         self.text = text
-        self.color = color or (randint(0, 255), randint(0, 255), randint(0, 255))
+        # 生成深色以确保在白色背景上可见
+        if color is None:
+            # 确保RGB值不会太高（避免太浅的颜色）
+            r = randint(0, 180)
+            g = randint(0, 180)
+            b = randint(0, 180)
+            # 确保至少有一个通道的颜色足够深
+            min_darkness = 50
+            if builtins.max(r, g, b) > min_darkness:
+                darkest_channel = randint(0, 2)
+                if darkest_channel == 0:
+                    r = randint(0, min_darkness)
+                elif darkest_channel == 1:
+                    g = randint(0, min_darkness)
+                else:
+                    b = randint(0, min_darkness)
+            self.color = (r, g, b)
+        else:
+            self.color = color
         self.font = None
         self.surface = None
         self.size = 1.0
@@ -151,7 +196,7 @@ class WordSwarm:
         self.damping = 1.0   # 减小阻尼使运动更流畅
         self.max_size = 3.0  # 调整最大尺寸
         self.min_size = 0.5  # 调整最小尺寸
-        self.transition_frames = 30  # 过渡帧数
+        self.transition_frames = 144  # 设置过渡帧数以实现5分钟视频（144帧/过渡 * 50时间点 ÷ 24fps ≈ 300秒）
         
         # 中心点坐标（屏幕中心）
         self.center_x = 0
@@ -267,9 +312,9 @@ class WordSwarm:
         # 创建单词对象（使用螺旋布局）
         word_count = len(all_words)
         
-        # 螺旋参数
-        a = 1.0  # 控制螺旋间距
-        b = 1.0  # 控制螺旋展开速度
+        # 螺旋参数 - 调整以适应更长的词组
+        a = 1.2  # 增加螺旋间距
+        b = 1.2  # 增加螺旋展开速度
         
         for i, word in enumerate(all_words):
             # 使用螺旋方程计算初始位置
@@ -333,8 +378,8 @@ class WordSwarm:
             # 计算插值后的大小
             interpolated_sizes = self.interpolate_sizes(current_freqs, next_freqs, progress)
             
-            # 清屏
-            self.screen.fill((0, 0, 0))
+            # 清屏（改为白色背景）
+            self.screen.fill((255, 255, 255))
             
             # 更新物理世界
             self.world.Step(1.0/60.0, 8, 3)
@@ -381,12 +426,12 @@ class WordSwarm:
                 
                 self.screen.blit(word_obj.surface, screen_pos)
             
-            # 绘制日期（使用插值）
+            # 绘制日期（使用深色文字）
             font = pygame.font.Font(None, 48)
             date_text = current_date
             if progress > 0:
                 date_text = f"{current_date} → {next_date}"
-            date_surface = font.render(date_text, True, (255, 255, 255))
+            date_surface = font.render(date_text, True, (50, 50, 50))  # 深灰色文字
             date_rect = date_surface.get_rect()
             date_rect.topright = (self.screen.get_width() - 50, 50)
             self.screen.blit(date_surface, date_rect)
@@ -427,22 +472,45 @@ class WordSwarm:
             return None
     
     def preprocess_text(self, text):
-        """预处理文本"""
+        """预处理文本，支持单词和双词短语"""
         if not text:
             return []
             
-        # 移除非字母字符
+        # 移除非字母字符，但保留空格
         text = re.sub(r'[^a-zA-Z\s]', ' ', text.lower())
         
         # 分词
         words = [word.strip() for word in text.split() if word.strip()]
         
-        # 移除停用词、短词和特定过滤词
-        words = [word for word in words if word not in ENGLISH_STOP_WORDS 
-                and word not in FILTERED_WORDS 
-                and len(word) > 2]
+        # 提取单词和双词短语
+        processed_terms = []
         
-        return words
+        # 处理双词短语
+        for i in range(len(words) - 1):
+            bigram = f"{words[i]} {words[i+1]}"
+            # 如果是重要的双词短语，添加到结果中
+            if bigram in IMPORTANT_BIGRAMS and bigram not in FILTERED_BIGRAMS:
+                processed_terms.append(bigram)
+        
+        # 处理单个词
+        # 只处理那些不是双词短语一部分的单词
+        for i, word in enumerate(words):
+            # 检查这个词是否是任何重要双词短语的一部分
+            is_part_of_bigram = False
+            if i < len(words) - 1:
+                current_bigram = f"{word} {words[i+1]}"
+                if current_bigram in IMPORTANT_BIGRAMS:
+                    is_part_of_bigram = True
+            if i > 0:
+                previous_bigram = f"{words[i-1]} {word}"
+                if previous_bigram in IMPORTANT_BIGRAMS:
+                    is_part_of_bigram = True
+            
+            # 如果不是双词短语的一部分，且符合其他条件，则添加这个单词
+            if not is_part_of_bigram and word not in ENGLISH_STOP_WORDS and word not in FILTERED_WORDS and len(word) > 2:
+                processed_terms.append(word)
+        
+        return processed_terms
 
 if __name__ == "__main__":
     # 创建WordSwarm实例

@@ -2,7 +2,7 @@
 let isPlaying = true;
 let playInterval;
 let currentYearIndex = 0;
-let years = Array.from({length: 2025 - 1999 + 1}, (_, i) => 1999 + i);
+let years = Array.from({length: 2025 - 2010 + 1}, (_, i) => 2010 + i);
 let timeline;
 
 // Function to create timeline
@@ -22,7 +22,7 @@ function createTimeline() {
 
     // Create scale
     const xScale = d3.scaleLinear()
-        .domain([1999, 2025])
+        .domain([2010, 2025])
         .range([0, width]);
 
     // Create axis

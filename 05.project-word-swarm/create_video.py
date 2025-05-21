@@ -3,14 +3,14 @@ import subprocess
 from pathlib import Path
 import argparse
 
-def create_video(frames_dir, output_path, fps=30, crf=18, preset='slow', bitrate='20M'):
+def create_video(frames_dir, output_path, fps=24, crf=18, preset='slow', bitrate='20M'):
     """
     将图片帧合成为高质量视频
     
     参数:
     frames_dir: 包含帧图片的目录
     output_path: 输出视频的路径
-    fps: 帧率
+    fps: 帧率（降低帧率可以延长视频时长，比如24fps）
     crf: 视频质量（0-51，越小质量越好，18是视觉无损）
     preset: 编码预设（slower/slow/medium/fast/faster）
     bitrate: 视频比特率
