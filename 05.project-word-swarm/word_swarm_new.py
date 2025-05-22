@@ -17,6 +17,7844 @@ import Box2D
 from Box2D import *
 from Box2D.b2 import *
 
+group_mapping = {
+  "2010-06": {
+    "Travel": [
+      "travel"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers",
+      "traveler",
+      "travellers."
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Business": [
+      "business"
+    ],
+    "Company": [
+      "company"
+    ],
+    "Airline Industry": [
+      "American",
+      "United",
+      "Airlines"
+    ],
+    "Destinations": [
+      "China",
+      "India"
+    ],
+    "Reviews": [
+      "reviews",
+      "TripAdvisor"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Global Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Study": [
+      "report",
+      "study",
+      "research"
+    ],
+    "Sites": [
+      "site",
+      "websites",
+      "sites"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "First": [
+      "first"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Grow": [
+      "growth"
+    ],
+    "October": [
+      "October"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Award": [
+      "award"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "History": [
+      "history"
+    ],
+    "Emerging": [
+      "emerging"
+    ],
+    "Tours & Activities": [
+      "activities",
+      "tourism"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments & M&A": [
+      "investment"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ],
+    "Photography": [
+      "photo"
+    ]
+  },
+  "2010-07": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers",
+      "travelers."
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "American",
+      "Airlines"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Search Engines": [
+      "Google",
+      "Yahoo"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Content Marketing": [
+      "content marketing"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovations": [
+      "innovation",
+      "innovations"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Social Networks": [
+      "network",
+      "networks"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Stories": [
+      "story",
+      "stories"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynotes": [
+      "keynote",
+      "keynotes"
+    ]
+  },
+  "2010-08": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers",
+      "traveler"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor",
+      "Priceline"
+    ],
+    "Search Engines": [
+      "Google",
+      "Bing"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2010-09": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2010-10": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers",
+      "traveler"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Microsoft"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2010-11": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers",
+      "traveler"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor",
+      "travelocity"
+    ],
+    "Tech Companies": [
+      "Google",
+      "IBM"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2010-12": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers",
+      "traveler"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "SAP"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2011-01": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers",
+      "traveler"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Microsoft"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2011-02": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers",
+      "traveler"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Facebook"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2011-03": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers",
+      "traveler"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "IBM"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2011-04": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers",
+      "traveler"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "IBM"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2011-05": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers",
+      "traveler"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor",
+      "airbnb"
+    ],
+    "Tech Companies": [
+      "Google",
+      "SAP"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2011-06": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers",
+      "traveler"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "IBM"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2011-07": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Microsoft"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2011-08": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor",
+      "Priceline"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2011-09": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2011-10": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Microsoft"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2011-11": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2011-12": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Facebook"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2012-01": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2012-02": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2012-03": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2012-04": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Facebook"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2012-05": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2012-06": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Facebook"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2012-07": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2012-08": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor",
+      "Orbitz"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2012-09": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2012-10": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Facebook"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2012-11": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor",
+      "TripIt"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Samsung"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2012-12": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Facebook"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2013-01": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2013-02": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2013-03": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2013-04": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Yahoo"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2013-05": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2013-06": {
+    "Travel": [
+      "travel"
+    ],
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Data": [
+      "data"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Booking": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Sites": [
+      "site",
+      "sites",
+      "websites"
+    ],
+    "Product": [
+      "product",
+      "products"
+    ],
+    "Social Network": [
+      "Facebook",
+      "Twitter"
+    ],
+    "First": [
+      "first"
+    ],
+    "Airline Industry": [
+      "Airlines",
+      "Airways"
+    ],
+    "Travel Companies": [
+      "Expedia",
+      "TripAdvisor"
+    ],
+    "Tech Companies": [
+      "Google",
+      "Apple"
+    ],
+    "Study": [
+      "report",
+      "study"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Trip Planning": [
+      "trip",
+      "planning"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Loyalty": [
+      "loyalty"
+    ],
+    "Innovation": [
+      "innovation"
+    ],
+    "Apps": [
+      "app",
+      "apps"
+    ],
+    "Management": [
+      "management"
+    ],
+    "World": [
+      "world"
+    ],
+    "International": [
+      "international"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Communication": [
+      "communication"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Systems": [
+      "system",
+      "platform"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Community": [
+      "community"
+    ],
+    "Rate": [
+      "rate"
+    ],
+    "Awards": [
+      "award",
+      "awards"
+    ],
+    "Events": [
+      "event",
+      "events"
+    ],
+    "Story": [
+      "story"
+    ],
+    "Interviews": [
+      "interview",
+      "interviews"
+    ],
+    "New Ideas": [
+      "ideas",
+      "new"
+    ],
+    "Funding": [
+      "funding"
+    ],
+    "Investments": [
+      "investment",
+      "investments"
+    ],
+    "Acquisitions": [
+      "acquisition",
+      "acquisitions"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Keynote": [
+      "keynote"
+    ]
+  },
+  "2013-07": {
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Data": [
+      "data",
+      "information"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Rates": [
+      "booking",
+      "price",
+      "help",
+      "want",
+      "book",
+      "then",
+      "available",
+      "don't",
+      "going",
+      "good",
+      "back",
+      "rate",
+      "offer",
+      "does",
+      "sales",
+      "right",
+      "create",
+      "rates",
+      "go",
+      "lot",
+      "able",
+      "provide",
+      "offering",
+      "sharing",
+      "access",
+      "cost",
+      "amount",
+      "inventory",
+      "getting",
+      "find",
+      "looking",
+      "bookings",
+      "less",
+      "things"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Websites": [
+      "website",
+      "brand",
+      "site",
+      "websites",
+      "brands",
+      "sites"
+    ],
+    "Apps": [
+      "app",
+      "DEVICES",
+      "apps",
+      "internet"
+    ],
+    "Consumers": [
+      "consumers",
+      "travellers",
+      "travelers",
+      "consumer"
+    ],
+    "Experiences": [
+      "experience",
+      "experiences"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Product": [
+      "product"
+    ],
+    "Flight": [
+      "flight"
+    ],
+    "Content": [
+      "content"
+    ],
+    "July": [
+      "July",
+      "July 2013",
+      "launched"
+    ],
+    "First": [
+      "first"
+    ],
+    "Tech Companies": [
+      "google"
+    ],
+    "Own": [
+      "own"
+    ],
+    "Online Travel": [
+      "TripAdvisor",
+      "com",
+      "expedia",
+      "reviews"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Tnooz": [
+      "Tnooz",
+      "read",
+      "story"
+    ],
+    "Social Media #2": [
+      "facebook"
+    ],
+    "Take": [
+      "take"
+    ],
+    "Startups": [
+      "startup",
+      "funding",
+      "startups"
+    ],
+    "System": [
+      "system",
+      "platform"
+    ],
+    "Between": [
+      "between"
+    ],
+    "World": [
+      "world"
+    ],
+    "Tourism": [
+      "tourism"
+    ],
+    "Revenue": [
+      "revenue"
+    ],
+    "Share": [
+      "share"
+    ],
+    "Model": [
+      "model"
+    ],
+    "Full": [
+      "full"
+    ],
+    "Group": [
+      "group"
+    ],
+    "Tour": [
+      "tour"
+    ],
+    "Top": [
+      "top"
+    ],
+    "Based": [
+      "based",
+      "specific"
+    ],
+    "Every": [
+      "every"
+    ],
+    "Around": [
+      "around"
+    ],
+    "Trip": [
+      "trip"
+    ],
+    "Research": [
+      "research",
+      "study"
+    ],
+    "Work": [
+      "work"
+    ],
+    "Products": [
+      "products"
+    ],
+    "Results": [
+      "results"
+    ],
+    "Design": [
+      "design"
+    ],
+    "Strategy": [
+      "strategy"
+    ],
+    "Across": [
+      "across",
+      "various"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Another": [
+      "another"
+    ],
+    "Point": [
+      "point",
+      "look"
+    ],
+    "Currently": [
+      "currently",
+      "already"
+    ],
+    "My": [
+      "my"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "News": [
+      "news"
+    ],
+    "Number": [
+      "number"
+    ],
+    "Options": [
+      "options"
+    ],
+    "Including": [
+      "including"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Without": [
+      "without"
+    ],
+    "Best": [
+      "best"
+    ],
+    "Digital": [
+      "digital"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Direct": [
+      "direct",
+      "channels"
+    ],
+    "View": [
+      "view"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Management": [
+      "management"
+    ],
+    "Team": [
+      "team"
+    ],
+    "Before": [
+      "before"
+    ],
+    "Part": [
+      "part"
+    ],
+    "Idea": [
+      "idea",
+      "did"
+    ],
+    "Important": [
+      "important"
+    ],
+    "Agency": [
+      "agency"
+    ],
+    "Rental": [
+      "rental"
+    ],
+    "Within": [
+      "within"
+    ],
+    "Project": [
+      "project"
+    ],
+    "Destinations": [
+      "destinations"
+    ],
+    "Process": [
+      "process"
+    ],
+    "Example": [
+      "example"
+    ],
+    "Similar": [
+      "similar"
+    ]
+  },
+  "2013-08": {
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media",
+      "network",
+      "networks"
+    ],
+    "Data": [
+      "data",
+      "information"
+    ],
+    "Users": [
+      "users",
+      "trip",
+      "friends"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Bookings": [
+      "booking",
+      "help",
+      "bookings",
+      "tour",
+      "direct",
+      "OTAs",
+      "agencies",
+      "book",
+      "then",
+      "channel",
+      "going",
+      "agency",
+      "access",
+      "agents",
+      "needs",
+      "available",
+      "offer",
+      "rates",
+      "inventory",
+      "rate",
+      "channels",
+      "focus",
+      "tours",
+      "operators",
+      "suppliers",
+      "businesses",
+      "offers",
+      "directly",
+      "able",
+      "find",
+      "create",
+      "go"
+    ],
+    "Search": [
+      "search",
+      "metasearch"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Online Travel": [
+      "expedia",
+      "com",
+      "TripAdvisor",
+      "Travelocity",
+      "reviews"
+    ],
+    "Product": [
+      "product"
+    ],
+    "First": [
+      "first"
+    ],
+    "App": [
+      "app"
+    ],
+    "SYSTEMS": [
+      "platform",
+      "system",
+      "SYSTEMS"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "World": [
+      "world"
+    ],
+    "Around": [
+      "around"
+    ],
+    "Consumers": [
+      "consumers",
+      "travelers",
+      "travellers",
+      "consumer"
+    ],
+    "Tech Companies": [
+      "Google"
+    ],
+    "Results": [
+      "results"
+    ],
+    "Traffic": [
+      "traffic"
+    ],
+    "Full Story": [
+      "Tnooz",
+      "full",
+      "story",
+      "read",
+      "full story",
+      "Read the full"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Sites": [
+      "sites",
+      "brand",
+      "website",
+      "site",
+      "brands",
+      "websites"
+    ],
+    "Distribution": [
+      "distribution",
+      "global"
+    ],
+    "Experiences": [
+      "experience",
+      "experiences"
+    ],
+    "Revenue": [
+      "revenue"
+    ],
+    "Management": [
+      "management"
+    ],
+    "Across": [
+      "across"
+    ],
+    "Startups": [
+      "startup",
+      "startups"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Vacation": [
+      "vacation",
+      "car",
+      "rental"
+    ],
+    "Between": [
+      "between"
+    ],
+    "Digital": [
+      "digital"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Growth": [
+      "growth",
+      "significant"
+    ],
+    "Top": [
+      "top"
+    ],
+    "CEO": [
+      "CEO",
+      "co-founder"
+    ],
+    "Best": [
+      "best"
+    ],
+    "Take": [
+      "take"
+    ],
+    "Strategy": [
+      "strategy"
+    ],
+    "Important": [
+      "important"
+    ],
+    "Share": [
+      "share"
+    ],
+    "August": [
+      "August",
+      "week",
+      "August 2013",
+      "launched",
+      "July"
+    ],
+    "Number": [
+      "number"
+    ],
+    "Model": [
+      "model"
+    ],
+    "Another": [
+      "another"
+    ],
+    "American": [
+      "American"
+    ],
+    "Yet": [
+      "yet"
+    ],
+    "Deal": [
+      "deal"
+    ],
+    "Made": [
+      "made"
+    ],
+    "According": [
+      "according",
+      "study"
+    ],
+    "Products": [
+      "products"
+    ],
+    "Program": [
+      "program"
+    ],
+    "Including": [
+      "including"
+    ],
+    "Based": [
+      "based"
+    ],
+    "Does": [
+      "does",
+      "don't"
+    ],
+    "Example": [
+      "example"
+    ],
+    "Four": [
+      "four"
+    ],
+    "Own": [
+      "own"
+    ],
+    "Work": [
+      "work"
+    ],
+    "Become": [
+      "become"
+    ],
+    "DURING": [
+      "DURING"
+    ],
+    "Every": [
+      "every"
+    ],
+    "Tourism": [
+      "tourism"
+    ],
+    "News": [
+      "news"
+    ],
+    "Day": [
+      "day"
+    ],
+    "Free": [
+      "free"
+    ],
+    "Part": [
+      "part"
+    ],
+    "Used": [
+      "used"
+    ],
+    "Right": [
+      "right"
+    ],
+    "Without": [
+      "without"
+    ],
+    "Quality": [
+      "quality"
+    ],
+    "Idea": [
+      "idea"
+    ],
+    "Already": [
+      "already"
+    ],
+    "My": [
+      "my"
+    ]
+  },
+  "2013-09": {
+    "Hotels": [
+      "hotel",
+      "hotels"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media",
+      "network",
+      "networks"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Bookings": [
+      "booking",
+      "help",
+      "bookings",
+      "access",
+      "go",
+      "then",
+      "want",
+      "provide",
+      "available",
+      "book",
+      "find",
+      "right",
+      "able",
+      "offer",
+      "create",
+      "offering",
+      "looking",
+      "going"
+    ],
+    "Data": [
+      "data",
+      "information"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Apps": [
+      "app",
+      "apps",
+      "devices",
+      "internet"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline",
+      "air"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "Product": [
+      "product"
+    ],
+    "Travelers": [
+      "travelers",
+      "travellers",
+      "consumers",
+      "guests",
+      "traveler"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "First": [
+      "first"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Social Media #2": [
+      "Facebook",
+      "twitter"
+    ],
+    "Tech Companies": [
+      "Google"
+    ],
+    "Around": [
+      "around"
+    ],
+    "Reviews": [
+      "reviews",
+      "review"
+    ],
+    "Wifi": [
+      "wifi",
+      "airport",
+      "free",
+      "passengers"
+    ],
+    "Trip": [
+      "trip",
+      "planning"
+    ],
+    "Brands": [
+      "brands",
+      "brand",
+      "websites",
+      "website",
+      "sites",
+      "site"
+    ],
+    "Online Travel": [
+      "com",
+      "Expedia"
+    ],
+    "Revenue": [
+      "revenue"
+    ],
+    "World": [
+      "world"
+    ],
+    "Destination": [
+      "destination"
+    ],
+    "Own": [
+      "own"
+    ],
+    "Share": [
+      "share"
+    ],
+    "Tnooz": [
+      "Tnooz"
+    ],
+    "Products": [
+      "products"
+    ],
+    "Group": [
+      "group"
+    ],
+    "Systems": [
+      "system",
+      "platform",
+      "systems"
+    ],
+    "Become": [
+      "become"
+    ],
+    "Part": [
+      "part"
+    ],
+    "Take": [
+      "take"
+    ],
+    "Number": [
+      "number"
+    ],
+    "Model": [
+      "model"
+    ],
+    "September": [
+      "September",
+      "launched",
+      "news",
+      "September 2013",
+      "launches"
+    ],
+    "Another": [
+      "another"
+    ],
+    "Management": [
+      "management"
+    ],
+    "Including": [
+      "including"
+    ],
+    "Guest": [
+      "guest"
+    ],
+    "Strategy": [
+      "strategy"
+    ],
+    "CEO": [
+      "CEO"
+    ],
+    "Flight": [
+      "flight"
+    ],
+    "Team": [
+      "team"
+    ],
+    "Between": [
+      "between"
+    ],
+    "Digital": [
+      "digital"
+    ],
+    "Global": [
+      "global"
+    ],
+    "My": [
+      "my"
+    ],
+    "Potential": [
+      "potential"
+    ],
+    "Loyalty": [
+      "loyalty",
+      "engagement"
+    ],
+    "Before": [
+      "before"
+    ],
+    "Hospitality": [
+      "hospitality"
+    ],
+    "Example": [
+      "example"
+    ],
+    "Based": [
+      "based"
+    ],
+    "Future": [
+      "future"
+    ],
+    "Agents": [
+      "agents"
+    ],
+    "Across": [
+      "across"
+    ],
+    "Best": [
+      "best"
+    ],
+    "Already": [
+      "already"
+    ],
+    "Tours": [
+      "tour",
+      "tours"
+    ],
+    "Today": [
+      "today",
+      "yet",
+      "too"
+    ],
+    "Destinations": [
+      "destinations"
+    ],
+    "Used": [
+      "used"
+    ],
+    "Process": [
+      "process"
+    ],
+    "Without": [
+      "without"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Page": [
+      "page"
+    ],
+    "OTAs": [
+      "OTAs"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Recent": [
+      "recent"
+    ],
+    "Car": [
+      "car",
+      "rental"
+    ],
+    "Growth": [
+      "growth"
+    ],
+    "Investments & M&A": [
+      "startup",
+      "funding"
+    ],
+    "Luxury": [
+      "luxury"
+    ],
+    "Average": [
+      "average",
+      "less"
+    ],
+    "Key": [
+      "key"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Comes": [
+      "comes"
+    ],
+    "Room": [
+      "room"
+    ],
+    "Given": [
+      "given"
+    ],
+    "Research": [
+      "research"
+    ],
+    "Work": [
+      "work"
+    ],
+    "Top": [
+      "top"
+    ],
+    "Full": [
+      "full"
+    ],
+    "Development": [
+      "development"
+    ],
+    "Good": [
+      "good"
+    ],
+    "Space": [
+      "space"
+    ],
+    "Campaign": [
+      "campaign"
+    ],
+    "Every": [
+      "every"
+    ]
+  },
+  "2013-10": {
+    "Hotels": [
+      "hotel",
+      "hotels",
+      "property"
+    ],
+    "Data": [
+      "data",
+      "information"
+    ],
+    "Mobile": [
+      "mobile"
+    ],
+    "Bookings": [
+      "booking",
+      "bookings",
+      "book"
+    ],
+    "Social Media": [
+      "social",
+      "media",
+      "social media"
+    ],
+    "Online": [
+      "online"
+    ],
+    "Marketing": [
+      "marketing"
+    ],
+    "Airlines": [
+      "airlines",
+      "airline",
+      "air"
+    ],
+    "Search": [
+      "search"
+    ],
+    "Content": [
+      "content"
+    ],
+    "Digital": [
+      "digital"
+    ],
+    "Tech Companies": [
+      "Google"
+    ],
+    "Technology": [
+      "technology"
+    ],
+    "Travelers": [
+      "travellers",
+      "travelers",
+      "consumers",
+      "trip",
+      "planning",
+      "trips",
+      "plan",
+      "traveler"
+    ],
+    "Users": [
+      "users"
+    ],
+    "Reviews": [
+      "TripAdvisor",
+      "reviews",
+      "review",
+      "com",
+      "expedia",
+      "OTAs",
+      "OTA"
+    ],
+    "Experience": [
+      "experience"
+    ],
+    "DISTRIBUTION": [
+      "DISTRIBUTION",
+      "global"
+    ],
+    "Report": [
+      "report",
+      "study",
+      "research"
+    ],
+    "Product": [
+      "product"
+    ],
+    "Sites": [
+      "sites",
+      "websites",
+      "site",
+      "brand",
+      "website",
+      "brands"
+    ],
+    "Social Media #2": [
+      "Facebook"
+    ],
+    "Revenue": [
+      "revenue"
+    ],
+    "Own": [
+      "own"
+    ],
+    "Points": [
+      "points",
+      "loyalty"
+    ],
+    "First": [
+      "first"
+    ],
+    "Across": [
+      "across"
+    ],
+    "Number": [
+      "number"
+    ],
+    "App": [
+      "app",
+      "internet",
+      "devices"
+    ],
+    "Read": [
+      "read"
+    ],
+    "Management": [
+      "management"
+    ],
+    "Local": [
+      "local"
+    ],
+    "Results": [
+      "results"
+    ],
+    "Top": [
+      "top"
+    ],
+    "Model": [
+      "model"
+    ],
+    "Around": [
+      "around"
+    ],
+    "World": [
+      "world"
+    ],
+    "Then": [
+      "then",
+      "want",
+      "help",
+      "work",
+      "especially",
+      "go",
+      "focus",
+      "going",
+      "likely",
+      "often",
+      "given",
+      "able",
+      "know",
+      "become",
+      "right",
+      "pay",
+      "come",
+      "looking",
+      "does",
+      "less",
+      "far",
+      "back",
+      "don't"
+    ],
+    "Take": [
+      "take"
+    ],
+    "Strategy": [
+      "strategy"
+    ],
+    "Made": [
+      "made"
+    ],
+    "Best": [
+      "best"
+    ],
+    "Activities": [
+      "activities"
+    ],
+    "Platform": [
+      "platform",
+      "system",
+      "tools",
+      "process"
+    ],
+    "Growth": [
+      "growth",
+      "traffic",
+      "spend",
+      "increase"
+    ],
+    "Destination": [
+      "destination"
+    ],
+    "Tnooz": [
+      "tnooz"
+    ],
+    "Team": [
+      "team"
+    ],
+    "Payment": [
+      "payment",
+      "card"
+    ],
+    "Used": [
+      "used"
+    ],
+    "Example": [
+      "example"
+    ],
+    "Day": [
+      "day"
+    ],
+    "Flight": [
+      "flight"
+    ],
+    "Another": [
+      "another"
+    ],
+    "Price": [
+      "price"
+    ],
+    "Key": [
+      "key"
+    ],
+    "Vacation": [
+      "vacation"
+    ],
+    "Tourism": [
+      "tourism"
+    ],
+    "Recent": [
+      "recent"
+    ],
+    "Said": [
+      "said"
+    ],
+    "Share": [
+      "share"
+    ],
+    "Today": [
+      "today"
+    ],
+    "TripConnect": [
+      "TripConnect"
+    ],
+    "Point": [
+      "point"
+    ],
+    "Space": [
+      "space"
+    ],
+    "Based": [
+      "based",
+      "specific"
+    ],
+    "Businesses": [
+      "businesses"
+    ],
+    "Having": [
+      "having"
+    ],
+    "Part": [
+      "part"
+    ],
+    "Agents": [
+      "agents"
+    ],
+    "Every": [
+      "every"
+    ],
+    "Available": [
+      "available"
+    ],
+    "Between": [
+      "between"
+    ],
+    "Channels": [
+      "channels",
+      "direct"
+    ],
+    "Among": [
+      "among"
+    ],
+    "Startup": [
+      "startup"
+    ],
+    "Web": [
+      "web"
+    ],
+    "Terms": [
+      "terms"
+    ],
+    "Including": [
+      "including"
+    ],
+    "Provide": [
+      "provide"
+    ],
+    "Destinations": [
+      "Asia"
+    ],
+    "Deal": [
+      "deal"
+    ],
+    "Group": [
+      "group"
+    ],
+    "Within": [
+      "within"
+    ],
+    "Products": [
+      "products"
+    ]
+  }
+}
+
+
 # 英文停用词列表
 ENGLISH_STOP_WORDS = {
     # 人称代词
@@ -211,6 +8049,21 @@ class WordSwarm:
         
         # 设置中心引力场
         self.setup_center_gravity()
+    def apply_repulsion_between_words(self, min_distance=1.5, strength=2.0):
+        """让所有词之间互相排斥，防止集中在中心堆叠"""
+        for i, body_a in enumerate(self.bodies):
+            for j, body_b in enumerate(self.bodies):
+                if i >= j:
+                    continue
+                delta = body_b.position - body_a.position
+                distance = delta.length
+                if distance < min_distance and distance > 0.01:
+                    # 标准化方向
+                    delta.Normalize()
+                    # 距离越近，力越强
+                    force = strength * (min_distance - distance)
+                    body_a.ApplyForce(-delta * force, body_a.worldCenter, True)
+                    body_b.ApplyForce(delta * force, body_b.worldCenter, True)
 
     def setup_center_gravity(self):
         """设置中心引力场"""
@@ -303,32 +8156,69 @@ class WordSwarm:
             
         # 获取所有时间点的前N个关键词
         all_words = set()
+        
+        
+          
+        reverse_mapping = {}
+        for date_map in group_mapping.values():
+            for group, aliases in date_map.items():
+                for alias in aliases:
+                    reverse_mapping[alias] = group
+        
         for date in self.dates:
             words = sorted(self.word_frequencies[date].items(), 
                          key=lambda x: x[1], 
                          reverse=True)[:top_n]
-            all_words.update([w[0] for w in words])
             
+            for word, _ in words:
+                mapped_word = reverse_mapping.get(word,word)
+                all_words.add(mapped_word)
         # 创建单词对象（使用螺旋布局）
         word_count = len(all_words)
         
         # 螺旋参数 - 调整以适应更长的词组
         a = 1.2  # 增加螺旋间距
         b = 1.2  # 增加螺旋展开速度
-        
+        positions = []  # 记录已经使用的位置，避免初始重叠
+
         for i, word in enumerate(all_words):
-            # 使用螺旋方程计算初始位置
-            t = i * 2 * math.pi / (word_count / 4)  # 调整分母可以控制螺旋密度
-            r = a + b * t  # 阿基米德螺旋线方程
-            init_x = r * math.cos(t)
-            init_y = r * math.sin(t)
-            
-            # 随机扰动，避免完美对称
-            init_x += uniform(-0.5, 0.5)
-            init_y += uniform(-0.5, 0.5)
-            
             word_obj = WordObj(word)
+            max_r = 30.0
+            # 生成不重叠的初始位置
+            max_attempts = 50
+            for attempt in range(max_attempts):
+                angle = uniform(0, 2 * math.pi)
+                radius = uniform(1.0, max_r)  # 增加最小半径，避免中心扎堆
+                init_x = radius * math.cos(angle) + uniform(-0.5, 0.5)
+                init_y = radius * math.sin(angle) + uniform(-0.5, 0.5)
+
+                # 检查是否与已有词重叠
+                min_dist = 2.5
+                too_close = False
+                for px, py in positions:
+                    dist = math.sqrt((init_x - px) ** 2 + (init_y - py) ** 2)
+                    if dist < min_dist:
+                        too_close = True
+                        break
+                if not too_close:
+                    break
+
+            positions.append((init_x, init_y))
             self.word_objects.append(word_obj)
+        # for i, word in enumerate(all_words):
+        #    # 随机极坐标分布：距离中心 0 到 max_r，角度 0 到 2π
+        #     max_r = 30.0  # 控制散布半径（单位为 Box2D 的世界坐标）
+        #     angle = uniform(0, 2 * math.pi)
+        #     radius = uniform(0, max_r)
+        #     init_x = radius * math.cos(angle)
+        #     init_y = radius * math.sin(angle)
+            
+        #     # 随机扰动，避免完美对称
+        #     init_x += uniform(-0.5, 0.5)
+        #     init_y += uniform(-0.5, 0.5)
+            
+        #     word_obj = WordObj(word)
+        #     self.word_objects.append(word_obj)
             
             # 创建物理体
             body = self.world.CreateDynamicBody(
@@ -342,8 +8232,13 @@ class WordSwarm:
                     restitution=0.1
                 )
             )
+            # 给每个 body 初始速度，避免静止状态被弹簧迅速拉向中心
+            initial_linear_velocity = b2Vec2(uniform(-1.5, 1.5), uniform(-1.5, 1.5))
+            body.linearVelocity = initial_linear_velocity
+
             self.bodies.append(body)
-            
+            self.apply_repulsion_between_words()
+
             # 创建到中心点的弹簧关节，根据位置调整长度
             dist_to_center = math.sqrt(init_x * init_x + init_y * init_y)
             joint = self.world.CreateDistanceJoint(
@@ -353,7 +8248,7 @@ class WordSwarm:
                 anchorB=body.position,
                 frequencyHz=self.frequency,
                 dampingRatio=self.damping,
-                length=dist_to_center * 0.8  # 稍微收缩一点，让词语更集中
+                length=dist_to_center * 1  # 稍微收缩一点，让词语更集中
             )
             self.joints.append(joint)
         
@@ -393,16 +8288,15 @@ class WordSwarm:
                 
                 # 更新物理体
                 body = self.bodies[i]
-                
                 # 添加向中心的力
                 center_force = b2Vec2(
                     self.center_x - body.position.x,
                     self.center_y - body.position.y
                 )
-                force_mag = target_size * 10.0  # 根据大小调整力度
+                force_mag = target_size * 1.0  # 根据大小调整力度
                 center_force.Normalize()
                 center_force *= force_mag
-                body.ApplyForceToCenter(center_force, True)
+                # body.ApplyForceToCenter(center_force, True)
                 
                 # 更新碰撞体大小
                 fixture = body.fixtures[0]
