@@ -121,7 +121,7 @@ special_column_to_ticker = {
     'webjet': 'WBJ',
     'webjet ota': 'WBJ',
     'kyak': 'KYAK',
-    'orbitz': 'Orbitz',  # 添加Orbitz的映射，确保其使用正确的ticker
+    'orbitz': 'ORBITZ',  # 修改为全大写，匹配company_colors中的键
     'orbitz worldwide': 'OWW',  # 添加Orbitz Worldwide的映射
     'ctrip': 'TCOM',     # 添加Ctrip到TCOM的映射
     'trip.com': 'TCOM',  # 添加Trip.com到TCOM的映射
@@ -150,6 +150,7 @@ company_to_region = {
     'LONG': 'China',
     'TCEL': 'China',
     'Orbitz': 'North America',
+    'ORBITZ': 'North America',
     'Travelocity': 'North America',
     'Webjet': 'Australia',
     'EaseMyTrip': 'India',
@@ -170,10 +171,36 @@ company_to_region = {
 
 # 为特定公司添加颜色设置
 company_colors = {
-    'EASEMYTRIP': '#00a0e2',  # 蓝色
-    'LONG': '#E60010',        # 红色
-    'TCEL': '#800080',        # 紫色
-    'KYAK': '#808080'         # 修正：CSV中是KYAK而不是KAYAK，保持灰色
+    'ABNB': '#ff5895',
+    'ALMOSAFER': '#bb5387',
+    'BKNG': '#003480',
+    'DESP': '#755bd8',
+    'EXPE': '#fbcc33',
+    'EASEMYTRIP': '#00a0e2',
+    'IXIGO': '#e74c3c',
+    'MMYT': '#e74c3c',
+    'TRIP': '#00af87',
+    'TRVG': '#e74c3c',
+    'WEGO': '#4e843d',
+    'YTRA': '#e74c3c',
+    'TCOM': '#2577e3',
+    'EDR': '#2577e3',
+    'LMN': '#fc03b1',
+    'WBJ': '#e74c3c',
+    'SEERA': '#750808',
+    'PCLN': '#003480',
+    'ORBITZ': '#8edbfa',
+    'OWW': '#8edbfa',  # Same as Orbitz
+    'TRAVELOCITY': '#1d3e5c',
+    'SKYSCANNER': '#0770e3',
+    'ETRAVELI': '#b2e9ff',
+    'KIWI': '#e5fdd4',
+    'CLEARTRIP': '#e74c3c',
+    'TRAVELOKA': '#38a0e2',
+    'FLT': '#d2b6a8',
+    'KYAK': '#0770e3',  # Using Skyscanner blue for KAYAK
+    'LONG': '#E60010',  # Keep existing color
+    'TCEL': '#800080'   # Keep existing color
 }
 
 def parse_quarter(quarter_str):
@@ -250,7 +277,7 @@ def get_logo_path(identifier, year):
             return f'{logo_base_path}1LMN_logo.png'
         else:
             return f'{logo_base_path}LMN_logo.png'
-    elif company == 'Orbitz':
+    elif company == 'Orbitz' or company == 'ORBITZ' or company == 'OWW':
         if year < 2005.0:
             return f'{logo_base_path}Orbitz1.png'
         else:
