@@ -221,25 +221,35 @@ def load_and_process_data(data_dir):
 
 def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     """创建词频可视化"""
-    # 加载和处理数据
     word_freq_by_date, dates = load_and_process_data(data_dir)
-    
     # 每个月top4
     top_words_by_date = []
     for date in dates:
         words = sorted(word_freq_by_date[date].items(), key=lambda x: x[1], reverse=True)
         top4 = [w for w, _ in words[:4]]
         top_words_by_date.append(top4)
-    
     # 动画帧
-    colors = ['#40E0D0', '#4169E1', '#FF4B4B', '#32CD32', '#DEB887', '#FF4B4B', '#FF4B4B', '#DEB887']
+    colors = ['#40E0D0', '#4169E1', '#FF4B4B', '#32CD32', '#DEB887', '#FF4B4B', '#FF4B4B', '#DEB887', '#8A2BE2', '#FFA500']
     frames = []
+    current_set = []  # 当前可视化的词集合，最多10个
     for i, date in enumerate(dates):
-        current_words = top_words_by_date[i]
+        # 先把top4新词加入集合
+        for word in top_words_by_date[i]:
+            if word not in current_set:
+                current_set.append(word)
+        # 如果超过10个，去掉最新月频率最低的，直到只剩10个
+        if len(current_set) > 10:
+            # 计算当前月所有词的频率
+            freq_list = [(w, word_freq_by_date[date].get(w, 0)) for w in current_set]
+            # 按频率升序排序，去掉最小的
+            freq_list.sort(key=lambda x: x[1])
+            # 只保留最大10个
+            current_set = [w for w, _ in freq_list[-10:]]
+        # 这一帧画集合里的所有词的历史线
         frame_data = []
-        for j, word in enumerate(current_words):
+        for j, word in enumerate(current_set):
             color = colors[j % len(colors)]
-            y = [word_freq_by_date[d].get(word, 0) if word in top_words_by_date[k] else None for k, d in enumerate(dates[:i+1])]
+            y = [word_freq_by_date[d].get(word, 0) if word in current_set else None for d in dates[:i+1]]
             frame_data.append(go.Scatter(
                 x=dates[:i+1],
                 y=y,
@@ -249,7 +259,6 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
                 showlegend=True
             ))
         frames.append(go.Frame(data=frame_data, name=str(i)))
-    
     # 初始帧
     initial_data = []
     for j, word in enumerate(top_words_by_date[0]):
@@ -263,18 +272,16 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
             line=dict(color=color, width=3, shape='spline', smoothing=1.3),
             showlegend=True
         ))
-    
     # 动画参数
     total_frames = len(dates)
     target_duration_sec = 60
     frame_duration = int(target_duration_sec * 1000 / total_frames)
     frame_transition = max(frame_duration - 10, 10)
-    
-    # 创建图表
+    # 图表
     fig = go.Figure(
         data=initial_data,
         layout=go.Layout(
-            title='Top 4 Word Frequencies Over Time',
+            title='Top 4 Word Frequencies Over Time (最多10条线)',
             xaxis=dict(
                 title='Date',
                 linecolor='gray',
@@ -326,11 +333,9 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
         ),
         frames=frames
     )
-    
     # 保存为HTML
     output_file = "output/word_freq_linechart.html"
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
-    
     html_content = pio.to_html(
         fig,
         include_plotlyjs='cdn',
@@ -345,8 +350,6 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
             'doubleClick': False
         }
     )
-    
-    # 添加自定义CSS
     custom_css = """
     <style>
     .js-plotly-plot {
@@ -363,12 +366,9 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     }
     </style>
     """
-    
     html_content = html_content.replace('</head>', f'{custom_css}</head>')
-    
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(html_content)
-    
     print(f"可视化已保存至 {output_file}")
     print(f"动画总时长: {target_duration_sec}秒 ({total_frames}帧，每帧{frame_duration}毫秒)")
 
