@@ -231,19 +231,31 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     # 动画帧
     colors = ['#40E0D0', '#4169E1', '#FF4B4B', '#32CD32', '#DEB887', '#FF4B4B', '#FF4B4B', '#DEB887', '#8A2BE2', '#FFA500']
     frames = []
-    current_set = []  # 当前可视化的词集合，最多10个
+    current_set = []  # 当前可视化的词集合，始终10个
+    # 初始化前10个词（用前几个月的top4补齐）
+    i0 = 0
+    while len(current_set) < 10 and i0 < len(top_words_by_date):
+        for w in top_words_by_date[i0]:
+            if w not in current_set:
+                current_set.append(w)
+            if len(current_set) == 10:
+                break
+        i0 += 1
     for i, date in enumerate(dates):
-        # 先把top4新词加入集合
+        # 先把top4新词和当前集合做对比
         for word in top_words_by_date[i]:
             if word not in current_set:
+                # 找到当前集合中最新月频率最低的词
+                freq_list = [(w, word_freq_by_date[date].get(w, 0)) for w in current_set]
+                freq_list.sort(key=lambda x: x[1])
+                to_remove = freq_list[0][0]
+                current_set.remove(to_remove)
                 current_set.append(word)
-        # 如果超过10个，去掉最新月频率最低的，直到只剩10个
+        # 保证集合始终10个
         if len(current_set) > 10:
-            # 计算当前月所有词的频率
+            # 理论上不会发生，但保险
             freq_list = [(w, word_freq_by_date[date].get(w, 0)) for w in current_set]
-            # 按频率升序排序，去掉最小的
             freq_list.sort(key=lambda x: x[1])
-            # 只保留最大10个
             current_set = [w for w, _ in freq_list[-10:]]
         # 这一帧画集合里的所有词的历史线
         frame_data = []
@@ -261,7 +273,7 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
         frames.append(go.Frame(data=frame_data, name=str(i)))
     # 初始帧
     initial_data = []
-    for j, word in enumerate(top_words_by_date[0]):
+    for j, word in enumerate(current_set):
         color = colors[j % len(colors)]
         y = [word_freq_by_date[dates[0]].get(word, 0)]
         initial_data.append(go.Scatter(
@@ -281,7 +293,7 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     fig = go.Figure(
         data=initial_data,
         layout=go.Layout(
-            title='Top 4 Word Frequencies Over Time (最多10条线)',
+            title='Top Word Frequencies Over Time (News from Phocuswire)',
             xaxis=dict(
                 title='Date',
                 linecolor='gray',
@@ -303,7 +315,7 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
             paper_bgcolor='white',
             font=dict(family='Monda'),
             height=600,
-            width=800,
+            width=1500,
             margin=dict(l=50, r=50, t=80, b=50),
             updatemenus=[dict(
                 type="buttons",
@@ -313,7 +325,7 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
                 xanchor="right",
                 yanchor="top",
                 buttons=[
-                    dict(label="播放",
+                    dict(label="Button 1",
                          method="animate",
                          args=[None, {
                              "frame": {"duration": frame_duration, "redraw": True},
@@ -321,7 +333,7 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
                              "transition": {"duration": frame_transition, "easing": "linear"},
                              "mode": "immediate"
                          }]),
-                    dict(label="暂停",
+                    dict(label="Button 2",
                          method="animate",
                          args=[[None], {
                              "frame": {"duration": 0, "redraw": False},
