@@ -81,7 +81,7 @@ FILTERED_WORDS = {
     'sign', 'signs', 'signing', 'signed', 'register', 'registers', 'registering', 'registered',
     'newsletter', 'newsletters', 'email', 'emails', 'contact', 'contacts', 'contacting',
     'news', 'article', 'articles', 'story', 'stories', 'post', 'posts', 'posting',
-    'content', 'contents', 'page', 'pages', 'site', 'sites', 'website', 'websites'
+    'content', 'contents', 'page', 'pages', 'site', 'sites', 'website', 'websites', 'via'
 }
 IMPORTANT_BIGRAMS = {
     'artificial intelligence', 'machine learning', 'deep learning',
@@ -229,16 +229,16 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
         top4 = [w for w, _ in words[:4]]
         top_words_by_date.append(top4)
     # 动画帧
-    colors = ['#40E0D0', '#4169E1', '#FF4B4B', '#32CD32', '#DEB887', '#FF4B4B', '#FF4B4B', '#DEB887', '#8A2BE2', '#FFA500']
+    colors = ['#40E0D0', '#4169E1', '#FF4B4B', '#32CD32', '#DEB887', '#8A2BE2', '#FFA500']
     frames = []
-    current_set = []  # 当前可视化的词集合，始终10个
-    # 初始化前10个词（用前几个月的top4补齐）
+    current_set = []  # 当前可视化的词集合，始终7个
+    # 初始化前7个词（用前几个月的top4补齐）
     i0 = 0
-    while len(current_set) < 10 and i0 < len(top_words_by_date):
+    while len(current_set) < 7 and i0 < len(top_words_by_date):
         for w in top_words_by_date[i0]:
             if w not in current_set:
                 current_set.append(w)
-            if len(current_set) == 10:
+            if len(current_set) == 7:
                 break
         i0 += 1
     for i, date in enumerate(dates):
@@ -251,12 +251,12 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
                 to_remove = freq_list[0][0]
                 current_set.remove(to_remove)
                 current_set.append(word)
-        # 保证集合始终10个
-        if len(current_set) > 10:
+        # 保证集合始终7个
+        if len(current_set) > 7:
             # 理论上不会发生，但保险
             freq_list = [(w, word_freq_by_date[date].get(w, 0)) for w in current_set]
             freq_list.sort(key=lambda x: x[1])
-            current_set = [w for w, _ in freq_list[-10:]]
+            current_set = [w for w, _ in freq_list[-7:]]
         # 这一帧画集合里的所有词的历史线
         frame_data = []
         for j, word in enumerate(current_set):
@@ -286,7 +286,7 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
         ))
     # 动画参数
     total_frames = len(dates)
-    target_duration_sec = 60
+    target_duration_sec = 3000  # 从1200秒改为3000秒（50分钟）
     frame_duration = int(target_duration_sec * 1000 / total_frames)
     frame_transition = max(frame_duration - 10, 10)
     # 图表
