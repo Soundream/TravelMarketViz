@@ -37,7 +37,7 @@ ENGLISH_STOP_WORDS = {
     "couldn't", "mustn't", "mightn't", "shan't", 'let', "let's", 'lets',
 }
 FILTERED_WORDS = {
-    'travel', 'hotel', 'hotels', 'company', 'companies', 'business', 'million', 'billion',
+    'travel', 'hotel', 'hotels', 'company', 'companies', 'business', 'million', 'billion', 'really', 'across', 'around'
     'market', 'markets', 'year', 'years', 'month', 'months', 'week', 'weeks', 'day', 'days',
     'time', 'times', 'report', 'reported', 'according', 'says', 'said', 'say', 'told',
     'announced', 'launched', 'based', 'include', 'includes', 'including', 'included',
@@ -222,73 +222,134 @@ def load_and_process_data(data_dir):
 def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     """创建词频可视化"""
     word_freq_by_date, dates = load_and_process_data(data_dir)
-    # 每个月top4
-    top_words_by_date = []
-    for date in dates:
-        words = sorted(word_freq_by_date[date].items(), key=lambda x: x[1], reverse=True)
-        top4 = [w for w, _ in words[:4]]
-        top_words_by_date.append(top4)
+    
+    # 将日期按年份分组
+    yearly_data = {}
+    for date, freq_dict in word_freq_by_date.items():
+        year = date.split('-')[0]
+        if year not in yearly_data:
+            yearly_data[year] = {}
+        yearly_data[year][date] = freq_dict
+    
+    # 获取所有年份并确保是字符串格式
+    years = sorted([str(year) for year in yearly_data.keys()])
+    print(f"处理年份范围: {years[0]} - {years[-1]}")
+    print(f"总年份数: {len(years)}")
+    print(f"所有年份: {years}")
+    
+    # 为每年选择top3词汇
+    yearly_top_words = {}
+    for year in years:
+        # 合并该年所有月份的词频
+        year_freq = {}
+        for date, freq_dict in yearly_data[year].items():
+            for word, freq in freq_dict.items():
+                year_freq[word] = year_freq.get(word, 0) + freq
+        
+        # 选择top3
+        top_words = sorted(year_freq.items(), key=lambda x: x[1], reverse=True)[:1]
+        yearly_top_words[year] = [word for word, _ in top_words]
+        print(f"{year}年top3词汇: {yearly_top_words[year]}")
+    
     # 动画帧
-    colors = ['#40E0D0', '#4169E1', '#FF4B4B', '#32CD32', '#DEB887', '#8A2BE2', '#FFA500']
-    frames = []
-    current_set = []  # 当前可视化的词集合，始终7个
-    # 初始化前7个词（用前几个月的top4补齐）
-    i0 = 0
-    while len(current_set) < 7 and i0 < len(top_words_by_date):
-        for w in top_words_by_date[i0]:
-            if w not in current_set:
-                current_set.append(w)
-            if len(current_set) == 7:
-                break
-        i0 += 1
-    for i, date in enumerate(dates):
-        # 先把top4新词和当前集合做对比
-        for word in top_words_by_date[i]:
-            if word not in current_set:
-                # 找到当前集合中最新月频率最低的词
-                freq_list = [(w, word_freq_by_date[date].get(w, 0)) for w in current_set]
-                freq_list.sort(key=lambda x: x[1])
-                to_remove = freq_list[0][0]
-                current_set.remove(to_remove)
-                current_set.append(word)
-        # 保证集合始终7个
-        if len(current_set) > 7:
-            # 理论上不会发生，但保险
-            freq_list = [(w, word_freq_by_date[date].get(w, 0)) for w in current_set]
-            freq_list.sort(key=lambda x: x[1])
-            current_set = [w for w, _ in freq_list[-7:]]
-        # 这一帧画集合里的所有词的历史线
-        frame_data = []
-        for j, word in enumerate(current_set):
-            color = colors[j % len(colors)]
-            y = [word_freq_by_date[d].get(word, 0) if word in current_set else None for d in dates[:i+1]]
-            frame_data.append(go.Scatter(
-                x=dates[:i+1],
-                y=y,
-                mode='lines',
-                name=word,
-                line=dict(color=color, width=3, shape='spline', smoothing=1.3),
-                showlegend=True
-            ))
-        frames.append(go.Frame(data=frame_data, name=str(i)))
-    # 初始帧
-    initial_data = []
-    for j, word in enumerate(current_set):
-        color = colors[j % len(colors)]
-        y = [word_freq_by_date[dates[0]].get(word, 0)]
-        initial_data.append(go.Scatter(
-            x=[dates[0]],
-            y=y,
+    colors = ['#40E0D0', '#4169E1', '#FF4B4B', '#32CD32', '#DEB887', '#8A2BE2', '#FFA500', '#20B2AA', '#FF69B4']
+    
+    # 计算所有词在所有时间点的最大频率
+    max_freq = 0
+    for date in dates:
+        for word, freq in word_freq_by_date[date].items():
+            max_freq = max(max_freq, freq)
+    
+    # 预计算所有可能需要的轨迹
+    max_traces = len(years) * 3 * 2  # 每年3个词，每个词有线条和标签
+    all_traces = []
+    for i in range(max_traces):
+        all_traces.append(go.Scatter(
+            x=[],
+            y=[],
             mode='lines',
-            name=word,
-            line=dict(color=color, width=3, shape='spline', smoothing=1.3),
-            showlegend=True
+            showlegend=False,
+            hoverinfo='skip'
         ))
+    
+    # 为每个年份创建帧
+    frames = []
+    for i, current_year in enumerate(years):
+        print(f"\n处理第{i+1}帧，当前年份: {current_year}")
+        # 复制基础轨迹
+        frame_data = [trace for trace in all_traces]
+        trace_index = 0
+        
+        # 处理之前所有年份的词
+        for year in years[:i+1]:
+            print(f"  处理{year}年的词")
+            # 获取该年的top3词汇
+            top_words = yearly_top_words[year]
+            
+            # 为每个词创建趋势线
+            for word in top_words:
+                color = colors[trace_index % len(colors)]
+                
+                # 计算该词在前后一年的趋势
+                start_year = str(int(year) - 1)
+                end_year = str(int(year) + 1)
+                
+                # 获取相关日期范围内的数据
+                word_data = []
+                for date in dates:
+                    date_year = date.split('-')[0]
+                    # 如果是当前年份，只显示到当前年份
+                    if year == current_year:
+                        if start_year <= date_year <= year:
+                            freq = word_freq_by_date[date].get(word, 0)
+                            word_data.append((date, freq))
+                    # 如果是之前的年份，显示完整的三年龄趋势
+                    else:
+                        if start_year <= date_year <= end_year:
+                            freq = word_freq_by_date[date].get(word, 0)
+                            word_data.append((date, freq))
+                
+                if word_data:
+                    x = [d for d, _ in word_data]
+                    y = [f for _, f in word_data]
+                    print(f"    添加词 '{word}' 的数据点: {len(x)}个")
+                    
+                    # 更新线条
+                    frame_data[trace_index] = go.Scatter(
+                        x=x,
+                        y=y,
+                        mode='lines',
+                        name=f"{word} ({year})",
+                        line=dict(color=color, width=3, shape='spline', smoothing=1.3),
+                        showlegend=False,
+                        hoverinfo='x+y+name'
+                    )
+                    
+                    # 更新标签
+                    frame_data[trace_index + 1] = go.Scatter(
+                        x=[x[-1]],
+                        y=[y[-1]],
+                        mode='text',
+                        text=[f"{word} ({year})"],
+                        textposition='middle right',
+                        textfont=dict(color=color, size=12),
+                        showlegend=False,
+                        hoverinfo='skip'
+                    )
+                
+                trace_index += 2
+        
+        frames.append(go.Frame(data=frame_data, name=str(i)))
+        print(f"完成第{i+1}帧，年份: {current_year}")
+    
+    # 初始帧使用第一帧的数据
+    initial_data = frames[0].data
+    
     # 动画参数
-    total_frames = len(dates)
-    target_duration_sec = 3000  # 从1200秒改为3000秒（50分钟）
+    total_frames = len(years)
+    target_duration_sec = 60  # 1分钟
     frame_duration = int(target_duration_sec * 1000 / total_frames)
-    frame_transition = max(frame_duration - 10, 10)
+    
     # 图表
     fig = go.Figure(
         data=initial_data,
@@ -300,7 +361,8 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
                 showgrid=True,
                 gridcolor='lightgray',
                 griddash='dash',
-                fixedrange=True
+                fixedrange=True,
+                range=[dates[0], dates[-1]]  # 固定x轴范围
             ),
             yaxis=dict(
                 title='Frequency',
@@ -309,14 +371,16 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
                 gridcolor='lightgray',
                 griddash='dash',
                 zeroline=False,
-                fixedrange=True
+                fixedrange=True,
+                range=[0, max_freq * 1.1]  # 设置y轴范围从0到最大值的1.1倍
             ),
             plot_bgcolor='white',
             paper_bgcolor='white',
             font=dict(family='Monda'),
             height=600,
             width=1500,
-            margin=dict(l=50, r=50, t=80, b=50),
+            margin=dict(l=50, r=150, t=80, b=50),  # 增加右边距以容纳标签
+            transition=dict(duration=frame_duration, easing='linear'),
             updatemenus=[dict(
                 type="buttons",
                 showactive=False,
@@ -325,26 +389,35 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
                 xanchor="right",
                 yanchor="top",
                 buttons=[
-                    dict(label="Button 1",
+                    dict(label="Play",
                          method="animate",
                          args=[None, {
                              "frame": {"duration": frame_duration, "redraw": True},
-                             "fromcurrent": True, 
-                             "transition": {"duration": frame_transition, "easing": "linear"},
+                             "fromcurrent": True,
+                             "transition": {"duration": frame_duration, "easing": "linear"},
                              "mode": "immediate"
                          }]),
-                    dict(label="Button 2",
+                    dict(label="Pause",
                          method="animate",
                          args=[[None], {
                              "frame": {"duration": 0, "redraw": False},
                              "mode": "immediate",
                              "transition": {"duration": 0}
+                         }]),
+                    dict(label="Restart",
+                         method="animate",
+                         args=[[0], {
+                             "frame": {"duration": frame_duration, "redraw": True},
+                             "fromcurrent": False,
+                             "transition": {"duration": frame_duration, "easing": "linear"},
+                             "mode": "immediate"
                          }])
                 ]
             )]
         ),
         frames=frames
     )
+    
     # 保存为HTML
     output_file = "output/word_freq_linechart.html"
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
@@ -366,9 +439,6 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     <style>
     .js-plotly-plot {
         position: relative;
-    }
-    .scatterlayer .trace {
-        transition: transform 20ms linear !important;
     }
     .js-plotly-plot .scatterlayer .js-line {
         shape-rendering: geometricPrecision;
