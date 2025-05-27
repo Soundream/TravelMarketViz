@@ -239,78 +239,59 @@ def load_and_process_data(data_dir):
 def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     """创建词频可视化"""
     word_freq_by_date, dates = load_and_process_data(data_dir)
-    # 每个月top4
-    top_words_by_date = []
-    for date in dates:
-        words = sorted(word_freq_by_date[date].items(), key=lambda x: x[1], reverse=True)
-        top4 = [w for w, _ in words[:4]]
-        top_words_by_date.append(top4)
+    
+    # 定义关键词显示时间范围
+    keyword_ranges = {
+        "market": {
+            "2021-05": "2021-10"
+        },
+        "visa": {
+            "2020-01": "2020-04",
+            "2022-08": "2022-10"
+        }
+    }
+    
     # 动画帧
     colors = ['#40E0D0', '#4169E1', '#FF4B4B', '#32CD32', '#DEB887']
     frames = []
-    current_set = []  # 当前可视化的词集合，始终5个
-    # 初始化前5个词（用前几个月的top4补齐）
-    i0 = 0
-    while len(current_set) < 5 and i0 < len(top_words_by_date):
-        for w in top_words_by_date[i0]:
-            if w not in current_set:
-                current_set.append(w)
-            if len(current_set) == 5:
-                break
-        i0 += 1
-
+    
     # 计算所有词在所有时间点的最大频率
     max_freq = 0
     for date in dates:
         for word, freq in word_freq_by_date[date].items():
             max_freq = max(max_freq, freq)
 
-    # 计算每个词的平均排名，用于决定是否替换
-    def calculate_word_ranks(current_words, dates_to_consider):
-        word_ranks = {}
-        for w in current_words:
-            ranks = []
-            for d in dates_to_consider:
-                if d in word_freq_by_date:
-                    words_sorted = sorted(word_freq_by_date[d].items(), key=lambda x: x[1], reverse=True)
-                    try:
-                        rank = next(idx for idx, (w2, _) in enumerate(words_sorted) if w2 == w)
-                        ranks.append(rank)
-                    except StopIteration:
-                        ranks.append(float('inf'))
-            word_ranks[w] = sum(ranks) / len(ranks) if ranks else float('inf')
-        return word_ranks
-
+    # 获取所有需要显示的关键词
+    all_keywords = set()
+    for word, ranges in keyword_ranges.items():
+        all_keywords.add(word)
+    
+    # 为每个时间点创建帧
     for i, date in enumerate(dates):
-        # 计算当前时间窗口（最近3个月）
-        window_start = max(0, i - 2)
-        window_dates = dates[window_start:i+1]
-        
-        # 计算当前词的排名
-        current_ranks = calculate_word_ranks(current_set, window_dates)
-        
-        # 检查是否需要替换词
-        for word in top_words_by_date[i]:
-            if word not in current_set:
-                # 计算新词在当前窗口的排名
-                new_word_rank = calculate_word_ranks([word], window_dates)[word]
-                
-                # 找到当前集合中排名最差的词
-                worst_word = max(current_ranks.items(), key=lambda x: x[1])[0]
-                worst_rank = current_ranks[worst_word]
-                
-                # 只有当新词排名明显好于最差词时才替换
-                if new_word_rank < worst_rank * 0.8:  # 新词排名至少比最差词好20%
-                    current_set.remove(worst_word)
-                    current_set.append(word)
-                    # 更新排名
-                    current_ranks = calculate_word_ranks(current_set, window_dates)
-        
-        # 这一帧画集合里的所有词的历史线
         frame_data = []
-        for j, word in enumerate(current_set):
-            color = colors[j % len(colors)]
-            y = [word_freq_by_date[d].get(word, 0) if word in current_set else None for d in dates[:i+1]]
+        color_index = 0
+        
+        # 对每个关键词创建线条
+        for word in all_keywords:
+            # 检查当前日期是否在关键词的显示范围内
+            should_show = False
+            for start_date, end_date in keyword_ranges[word].items():
+                if start_date <= date <= end_date:
+                    should_show = True
+                    break
+            
+            # 获取该词到当前日期的所有频率数据
+            y = []
+            for d in dates[:i+1]:
+                # 如果日期在显示范围内，显示实际频率，否则显示None
+                if should_show and d in word_freq_by_date and word in word_freq_by_date[d]:
+                    y.append(word_freq_by_date[d][word])
+                else:
+                    y.append(None)
+            
+            color = colors[color_index % len(colors)]
+            color_index += 1
+            
             # 添加线条
             frame_data.append(go.Scatter(
                 x=dates[:i+1],
@@ -321,17 +302,20 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
                 showlegend=False,
                 hoverinfo='x+y+name'
             ))
-            # 添加标签
-            frame_data.append(go.Scatter(
-                x=[dates[i]],
-                y=[y[-1]],
-                mode='text',
-                text=[word],
-                textposition='middle right',
-                textfont=dict(color=color, size=12),
-                showlegend=False,
-                hoverinfo='skip'
-            ))
+            
+            # 添加标签（只在显示范围内添加）
+            if should_show and y[-1] is not None:
+                frame_data.append(go.Scatter(
+                    x=[dates[i]],
+                    y=[y[-1]],
+                    mode='text',
+                    text=[word],
+                    textposition='middle right',
+                    textfont=dict(color=color, size=12),
+                    showlegend=False,
+                    hoverinfo='skip'
+                ))
+        
         frames.append(go.Frame(data=frame_data, name=str(i)))
     
     # 初始帧使用第一帧的数据
