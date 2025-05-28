@@ -240,19 +240,36 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     """创建词频可视化"""
     word_freq_by_date, dates = load_and_process_data(data_dir)
     
+    # 合并 covid 和 pandemic 的频率
+    for date in dates:
+        if date in word_freq_by_date:
+            covid_freq = word_freq_by_date[date].get('covid', 0)
+            pandemic_freq = word_freq_by_date[date].get('pandemic', 0)
+            word_freq_by_date[date]['pandemic'] = covid_freq + pandemic_freq
+            if 'covid' in word_freq_by_date[date]:
+                del word_freq_by_date[date]['covid']
+    
     # 定义关键词显示时间范围
     keyword_ranges = {
-        "market": {
-            "2021-05": "2021-10"
-        },
-        "visa": {
-            "2020-01": "2020-04",
-            "2022-08": "2022-10"
-        }
+        "mobile": { "2010-05": "2018-12" },
+        "social": { "2011-02": "2014-09", "2015-01": "2015-04" },
+        "american": { "2010-11": "2011-02" },
+        "airbnb": { "2016-09": "2020-12"},
+        "china": {  "2018-09": "2019-03" },
+        "pandemic": { "2020-03": "2022-10" },  # 合并后的时间范围
+        "google": { "2010-05": "2013-10", "2013-12": "2014-10" },
+        "sustainability": { "2020-01": "2020-01", "2022-10": "2022-10", "2022-12": "2022-12" },
+        "artificial intelligence": { "2024-10": "2025-04" },
+        "marketing": { "2011-04": "2018-12" },
+        "distribution": { "2015-09": "2015-12", "2019-08": "2019-11" },
+        "india": { "2019-07": "2019-07", "2022-05": "2022-05" },
+        "blockchain": { "2017-08": "2017-08", "2018-02": "2018-02", "2018-06": "2018-06" },
+        "expedia": { "2015-03": "2015-10" }
     }
     
     # 动画帧
-    colors = ['#40E0D0', '#4169E1', '#FF4B4B', '#32CD32', '#DEB887']
+    colors = ['#40E0D0', '#4169E1', '#FF4B4B', '#32CD32', '#DEB887', '#8A2BE2', '#FFA500', 
+              '#20B2AA', '#FF69B4', '#4B0082', '#FFD700', '#00CED1', '#FF4500', '#7B68EE', '#00FA9A']
     frames = []
     
     # 计算所有词在所有时间点的最大频率
@@ -261,18 +278,22 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
         for word, freq in word_freq_by_date[date].items():
             max_freq = max(max_freq, freq)
 
-    # 获取所有需要显示的关键词
-    all_keywords = set()
+    # 获取所有需要显示的关键词，并按照开始时间排序
+    all_keywords = []
     for word, ranges in keyword_ranges.items():
-        all_keywords.add(word)
+        start_dates = []
+        for start_date, _ in ranges.items():
+            start_dates.append(start_date)
+        all_keywords.append((word, min(start_dates)))
+    all_keywords.sort(key=lambda x: x[1])  # 按开始时间排序
+    all_keywords = [word for word, _ in all_keywords]
     
     # 为每个时间点创建帧
     for i, date in enumerate(dates):
         frame_data = []
-        color_index = 0
         
-        # 对每个关键词创建线条
-        for word in all_keywords:
+        # 对每个关键词创建线条（按固定顺序）
+        for j, word in enumerate(all_keywords):
             # 检查当前日期是否在关键词的显示范围内
             should_show = False
             for start_date, end_date in keyword_ranges[word].items():
@@ -283,14 +304,20 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
             # 获取该词到当前日期的所有频率数据
             y = []
             for d in dates[:i+1]:
-                # 如果日期在显示范围内，显示实际频率，否则显示None
-                if should_show and d in word_freq_by_date and word in word_freq_by_date[d]:
+                # 检查当前日期是否在任何显示范围内
+                in_range = False
+                for start_date, end_date in keyword_ranges[word].items():
+                    if start_date <= d <= end_date:
+                        in_range = True
+                        break
+                
+                # 只有在显示范围内才显示频率
+                if in_range and d in word_freq_by_date and word in word_freq_by_date[d]:
                     y.append(word_freq_by_date[d][word])
                 else:
                     y.append(None)
             
-            color = colors[color_index % len(colors)]
-            color_index += 1
+            color = colors[j % len(colors)]
             
             # 添加线条
             frame_data.append(go.Scatter(
