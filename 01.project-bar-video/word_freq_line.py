@@ -325,6 +325,27 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
         
         # 对每个关键词创建线条（按固定顺序）
         for j, word in enumerate(all_keywords):
+            color = colors[j % len(colors)]
+            y_values = keyword_freq_data[word][:i+1]
+            
+            # 强制填充 None 为 np.nan，避免 spline 绘制中断
+            y_fixed = [np.nan if v is None else v for v in y_values]
+            
+            # 添加 spline 曲线
+            frame_data.append(go.Scatter(
+                x=dates[:i+1],
+                y=y_fixed,
+                mode='lines',
+                name=word,
+                line=dict(color=color, width=3, shape='spline', smoothing=1.3),
+                showlegend=False,
+                hoverinfo='x+y+name',
+                connectgaps=False  # 避免 spline 误补全缺口
+            ))
+            
+            # 让每个词都有一个 text trace，但只对"当前帧需要显示的词"给出值
+            y = keyword_freq_data[word][i] if i < len(dates) else None
+            
             # 检查当前日期是否在关键词的显示范围内
             should_show = False
             for start_date, end_date in keyword_ranges[word].items():
@@ -332,33 +353,20 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
                     should_show = True
                     break
             
-            # 使用预先计算的频率数据
-            y = keyword_freq_data[word][:i+1]
-            color = colors[j % len(colors)]
+            text_value = word if (should_show and y is not None) else ''
+            x_value = dates[i] if (should_show and y is not None) else None
+            y_value = y if (should_show and y is not None) else None
             
-            # 添加线条
             frame_data.append(go.Scatter(
-                x=dates[:i+1],
-                y=y,
-                mode='lines',
-                name=word,
-                line=dict(color=color, width=3, shape='spline', smoothing=1.3),
+                x=[x_value],
+                y=[y_value],
+                mode='text',
+                text=[text_value],
+                textposition='middle right',
+                textfont=dict(color=color, size=12),
                 showlegend=False,
-                hoverinfo='x+y+name'
+                hoverinfo='skip'
             ))
-            
-            # 添加标签（只在显示范围内添加）
-            if should_show and y[-1] is not None:
-                frame_data.append(go.Scatter(
-                    x=[dates[i]],
-                    y=[y[-1]],
-                    mode='text',
-                    text=[word],
-                    textposition='middle right',
-                    textfont=dict(color=color, size=12),
-                    showlegend=False,
-                    hoverinfo='skip'
-                ))
         
         frames.append(go.Frame(data=frame_data, name=str(i)))
     
@@ -412,7 +420,7 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
                     dict(label="Play",
                          method="animate",
                          args=[None, {
-                             "frame": {"duration": frame_duration, "redraw": True},
+                             "frame": {"duration": frame_duration, "redraw": False},  # 改为False避免频繁刷新
                              "fromcurrent": True,
                              "transition": {"duration": frame_duration, "easing": "linear"},
                              "mode": "immediate"
@@ -427,7 +435,7 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
                     dict(label="Restart",
                          method="animate",
                          args=[[0], {
-                             "frame": {"duration": frame_duration, "redraw": True},
+                             "frame": {"duration": frame_duration, "redraw": False},  # 改为False避免频繁刷新
                              "fromcurrent": False,
                              "transition": {"duration": frame_duration, "easing": "linear"},
                              "mode": "immediate"
