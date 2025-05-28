@@ -318,29 +318,24 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
                 freq_data.append(None)
         
         keyword_freq_data[word] = freq_data
-    
     # 1. 生成插值后的时间轴和数据
-    interp_steps = 10  # 每个时间段插值帧数
-    
-    # 将日期字符串转换为datetime对象
+    interp_steps = 10  # 增加插值帧数
     date_objs = [datetime.strptime(d, "%Y-%m") for d in dates]
-    x_old = np.array([d.timestamp() for d in date_objs])  # 转换为时间戳
+    x_old = np.array([d.timestamp() for d in date_objs])
     interp_x = np.linspace(x_old[0], x_old[-1], num=(len(dates)-1)*interp_steps+1)
     total_frames = len(interp_x)
-    target_duration_sec = 120
+    target_duration_sec = 600
     frame_duration = int(target_duration_sec * 1000 / total_frames)
-    frame_transition = max(frame_duration - 10, 10)
+    frame_transition = int(frame_duration * 0.8)
 
     # 2. 对每个关键词做平滑插值
     interp_freq = {}
     for word in all_keywords:
         y = np.array([v if v is not None else 0 for v in keyword_freq_data[word]])
-        # 使用scipy的插值函数创建更平滑的曲线
         valid_mask = ~np.isnan(y)
-        if np.sum(valid_mask) > 1:  # 确保有足够的点进行插值
+        if np.sum(valid_mask) > 1:
             f = interp1d(x_old[valid_mask], y[valid_mask], kind='cubic', bounds_error=False, fill_value="extrapolate")
             interp_y = f(interp_x)
-            # 确保插值结果不会出现负值
             interp_y = np.maximum(interp_y, 0)
         else:
             interp_y = np.zeros_like(interp_x)
@@ -350,37 +345,42 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     y_min = 0
     y_max = max([np.max(v) for v in interp_freq.values()]) * 1.2
 
-    # 4. 生成初始trace（每个关键词一条线+一个点）
+    # 4. 生成初始trace
     initial_data = []
     for idx, word in enumerate(all_keywords):
         color = colors[idx % len(colors)]
-        # 线
         initial_data.append(go.Scatter(
-            x=[date_objs[0]], y=[0], mode='lines', name=word,
+            x=[], y=[], mode='lines', name=word,
             line=dict(color=color, width=3, shape='spline', smoothing=1.3),
             hoverinfo='skip', showlegend=False, uid=f'{word}_line'))
-        # 点
         initial_data.append(go.Scatter(
-            x=[date_objs[0]], y=[0], mode='markers', name=word,
+            x=[], y=[], mode='markers+text', name=word,
             marker=dict(color=color, size=10),
-            hoverinfo='text+y', text=[dates[0]], showlegend=False, uid=f'{word}_point'))
+            text=[],
+            textposition='middle right',
+            hoverinfo='text+y', showlegend=False, uid=f'{word}_point'))
 
     # 5. 生成帧
     frames = []
     for i in range(total_frames):
         frame_data = []
+        current_time = datetime.fromtimestamp(interp_x[i])
+        window_size = (date_objs[-1] - date_objs[0]).total_seconds() * 0.4
+        start_time = current_time - pd.Timedelta(seconds=window_size)
+        start_time = max(start_time, date_objs[0])
+
         for idx, word in enumerate(all_keywords):
             color = colors[idx % len(colors)]
             
-            # 使用插值后的数据点
-            interp_x_dt = [datetime.fromtimestamp(x) for x in interp_x[:i+1]]
-            y_hist = interp_freq[word][:i+1]
+            # 获取当前时间点之前的所有数据
+            mask = interp_x <= interp_x[i]
+            x_dt = [datetime.fromtimestamp(x) for x in interp_x[mask]]
+            y_hist = interp_freq[word][mask]
             
-            # 根据关键词的显示范围过滤数据点
+            # 过滤显示范围内的数据
             filtered_x = []
             filtered_y = []
-            for x, y in zip(interp_x_dt, y_hist):
-                # 检查当前日期是否在任何显示范围内
+            for x, y in zip(x_dt, y_hist):
                 in_range = False
                 for start_date, end_date in keyword_ranges[word].items():
                     start_dt = datetime.strptime(start_date, "%Y-%m")
@@ -392,37 +392,51 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
                     filtered_x.append(x)
                     filtered_y.append(y)
             
-            # 确保至少有一个数据点
             if len(filtered_x) == 0:
-                filtered_x = [date_objs[0]]
-                filtered_y = [0]
+                filtered_x = []
+                filtered_y = []
+                text = []
+            else:
+                text = [f"{word} ({filtered_x[-1].strftime('%Y-%m')})"]
             
-            # 线
             frame_data.append(go.Scatter(
                 x=filtered_x, y=filtered_y, mode='lines', name=word,
                 line=dict(color=color, width=3, shape='spline', smoothing=1.3),
                 hoverinfo='skip', showlegend=False, uid=f'{word}_line'))
-            # 点
             frame_data.append(go.Scatter(
-                x=[filtered_x[-1]], y=[filtered_y[-1]], mode='markers', name=word,
+                x=filtered_x[-1:] if filtered_x else [], y=filtered_y[-1:] if filtered_y else [], mode='markers+text', name=word,
                 marker=dict(color=color, size=10),
-                hoverinfo='text+y', text=[filtered_x[-1].strftime("%Y-%m")], showlegend=False, uid=f'{word}_point'))
-        # 固定y轴
-        custom_layout = go.Layout(
-            yaxis=dict(range=[y_min, y_max], title='Frequency', linecolor='gray', showgrid=True, gridcolor='lightgray', griddash='dash', zeroline=False, fixedrange=True, autorange=False),
-            xaxis=dict(
-                title='Date',
-                type='date',
-                tickformat='%Y-%m',
-                showgrid=True,
-                gridcolor='lightgray',
-                griddash='dash',
-                fixedrange=True,
-                autorange=False,
-                range=[date_objs[0], date_objs[-1]]
-            ),
-        )
-        frames.append(go.Frame(data=frame_data, name=str(i), layout=custom_layout))
+                text=text,
+                textposition='middle right',
+                hoverinfo='text+y', showlegend=False, uid=f'{word}_point'))
+        
+        frames.append(go.Frame(
+            data=frame_data,
+            name=str(i),
+            layout=go.Layout(
+                xaxis=dict(
+                    range=[start_time, current_time],
+                    type='date',
+                    tickformat='%Y-%m',
+                    showgrid=True,
+                    gridcolor='lightgray',
+                    griddash='dash',
+                    fixedrange=True,
+                    autorange=False
+                ),
+                yaxis=dict(
+                    range=[y_min, y_max],
+                    title='Frequency',
+                    linecolor='gray',
+                    showgrid=True,
+                    gridcolor='lightgray',
+                    griddash='dash',
+                    zeroline=False,
+                    fixedrange=True,
+                    autorange=False
+                )
+            )
+        ))
 
     # 6. 构建图表
     fig = go.Figure(
@@ -440,21 +454,57 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
                 autorange=False,
                 range=[date_objs[0], date_objs[-1]]
             ),
-            yaxis=dict(title='Frequency', linecolor='gray', showgrid=True, gridcolor='lightgray', griddash='dash', zeroline=False, fixedrange=True, autorange=False, range=[y_min, y_max]),
-            plot_bgcolor='white', paper_bgcolor='white', font=dict(family='Monda'),
-            height=600, width=1500, margin=dict(l=50, r=100, t=80, b=50),
+            yaxis=dict(
+                title='Frequency',
+                linecolor='gray',
+                showgrid=True,
+                gridcolor='lightgray',
+                griddash='dash',
+                zeroline=False,
+                fixedrange=True,
+                autorange=False,
+                range=[y_min, y_max]
+            ),
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            font=dict(family='Monda'),
+            height=600,
+            width=1500,
+            margin=dict(l=50, r=150, t=80, b=50),
             updatemenus=[dict(
-                type='buttons', showactive=False, y=1.15, x=1.05, xanchor='right', yanchor='top',
+                type='buttons',
+                showactive=False,
+                y=1.15,
+                x=1.05,
+                xanchor='right',
+                yanchor='top',
                 buttons=[
-                    dict(label='Play', method='animate', args=[None, {"frame": {"duration": frame_duration, "redraw": True}, "fromcurrent": True, "transition": {"duration": frame_transition, "easing": "linear"}, "mode": "immediate"}]),
-                    dict(label='Pause', method='animate', args=[[None], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate", "transition": {"duration": 0}}]),
+                    dict(
+                        label='Play',
+                        method='animate',
+                        args=[None, {
+                            "frame": {"duration": frame_duration, "redraw": True},
+                            "fromcurrent": True,
+                            "transition": {"duration": frame_transition, "easing": "linear"},
+                            "mode": "immediate"
+                        }]
+                    ),
+                    dict(
+                        label='Pause',
+                        method='animate',
+                        args=[[None], {
+                            "frame": {"duration": 0, "redraw": False},
+                            "mode": "immediate",
+                            "transition": {"duration": 0}
+                        }]
+                    )
                 ]
             )]
         ),
         frames=frames
     )
 
-    # 7. 输出HTML，添加CSS和JS
+    # 7. 输出HTML
     output_file = "output/word_freq_linechart.html"
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     html_content = pio.to_html(
@@ -471,36 +521,58 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
             'doubleClick': False
         },
         animation_opts=dict(
-            frame=dict(duration=frame_duration, redraw=False),
+            frame=dict(duration=frame_duration, redraw=True),
             transition=dict(duration=frame_transition, easing="linear"),
             mode="immediate"
         )
     )
+    
+    # 添加自定义CSS和JS
     custom_css = """
     <style>
     .js-plotly-plot { position: relative; }
     .scatterlayer .trace { transition: transform 20ms linear !important; }
-    .js-plotly-plot .scatterlayer .js-line { shape-rendering: geometricPrecision; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-    .js-plotly-plot .yaxislayer-above { transition: none !important; animation: none !important; }
+    .js-plotly-plot .scatterlayer .js-line { 
+        shape-rendering: geometricPrecision; 
+        stroke-linejoin: round; 
+        stroke-linecap: round; 
+        vector-effect: non-scaling-stroke; 
+    }
+    .js-plotly-plot .yaxislayer-above { 
+        transition: none !important; 
+        animation: none !important; 
+    }
     </style>
     """
-    axis_stabilizer_js = f"""
+    
+    animation_js = f"""
     <script>
-document.addEventListener('DOMContentLoaded', function() {{
-    const plotDiv = document.querySelector('.js-plotly-plot');
-    if (plotDiv) {{
-        const yAxisRange = [{y_min}, {y_max}];
-        function enforceAxisRange() {{
-            Plotly.relayout(plotDiv, {{'yaxis.range': yAxisRange, 'yaxis.autorange': false, 'yaxis.fixedrange': true}});
+    document.addEventListener('DOMContentLoaded', function() {{
+        const plotDiv = document.querySelector('.js-plotly-plot');
+        if (plotDiv) {{
+            const yAxisRange = [{y_min}, {y_max}];
+            
+            function enforceAxisRange() {{
+                Plotly.relayout(plotDiv, {{
+                    'yaxis.range': yAxisRange,
+                    'yaxis.autorange': false,
+                    'yaxis.fixedrange': true
+                }});
+            }}
+            
+            plotDiv.on('plotly_animatingframe', function() {{
+                enforceAxisRange();
+            }});
+            
+            enforceAxisRange();
         }}
-        enforceAxisRange();
-        plotDiv.on('plotly_animatingframe', function() {{ enforceAxisRange(); }});
-    }}
-}});
+    }});
     </script>
     """
+    
     html_content = html_content.replace('</head>', f'{custom_css}</head>')
-    html_content = html_content.replace('</body>', f'{axis_stabilizer_js}</body>')
+    html_content = html_content.replace('</body>', f'{animation_js}</body>')
+    
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(html_content)
     print(f"动画保存至 {output_file}")
