@@ -249,21 +249,28 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
             if 'covid' in word_freq_by_date[date]:
                 del word_freq_by_date[date]['covid']
     
+    # 合并 generative 和 artificial intelligence 的频率
+    for date in dates:
+        if date in word_freq_by_date:
+            generative_freq = word_freq_by_date[date].get('generative', 0)
+            ai_freq = word_freq_by_date[date].get('artificial intelligence', 0)
+            word_freq_by_date[date]['artificial intelligence'] = generative_freq + ai_freq
+            if 'generative' in word_freq_by_date[date]:
+                del word_freq_by_date[date]['generative']
+    
     # 定义关键词显示时间范围
     keyword_ranges = {
         "mobile": { "2010-05": "2018-12" },
-        "social": { "2011-02": "2014-09", "2015-01": "2015-04" },
         "american": { "2010-11": "2011-02" },
         "airbnb": { "2016-09": "2020-12"},
         "china": {  "2018-09": "2019-03" },
-        "pandemic": { "2020-03": "2022-10" },  # 合并后的时间范围
+        "pandemic": { "2020-03": "2024-01" },  # 合并后的时间范围
         "google": { "2010-05": "2013-10", "2013-12": "2014-10" },
-        "sustainability": { "2020-01": "2020-01", "2022-10": "2022-10", "2022-12": "2022-12" },
-        "artificial intelligence": { "2024-10": "2025-04" },
+        "sustainability": { "2020-01": "2022-12" },
+        "artificial intelligence": { "2024-01": "2025-04" },
         "marketing": { "2011-04": "2018-12" },
-        "distribution": { "2015-09": "2015-12", "2019-08": "2019-11" },
-        "india": { "2019-07": "2019-07", "2022-05": "2022-05" },
-        "blockchain": { "2017-08": "2017-08", "2018-02": "2018-02", "2018-06": "2018-06" },
+        "distribution": { "2015-09": "2019-12" },
+        "blockchain": { "2017-08": "2018-06"},
         "expedia": { "2015-03": "2015-10" }
     }
     
@@ -288,6 +295,30 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     all_keywords.sort(key=lambda x: x[1])  # 按开始时间排序
     all_keywords = [word for word, _ in all_keywords]
     
+    # 预先计算每个关键词的所有频率数据，保持连续性
+    keyword_freq_data = {}
+    for word in all_keywords:
+        freq_data = []
+        last_valid_value = None
+        
+        for date in dates:
+            # 检查当前日期是否在任何显示范围内
+            in_range = False
+            for start_date, end_date in keyword_ranges[word].items():
+                if start_date <= date <= end_date:
+                    in_range = True
+                    break
+            
+            # 在显示范围内且有数据时更新值
+            if in_range and date in word_freq_by_date and word in word_freq_by_date[date]:
+                last_valid_value = word_freq_by_date[date][word]
+                freq_data.append(last_valid_value)
+            else:
+                # 如果不在显示范围内，使用None
+                freq_data.append(None)
+        
+        keyword_freq_data[word] = freq_data
+    
     # 为每个时间点创建帧
     for i, date in enumerate(dates):
         frame_data = []
@@ -301,22 +332,8 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
                     should_show = True
                     break
             
-            # 获取该词到当前日期的所有频率数据
-            y = []
-            for d in dates[:i+1]:
-                # 检查当前日期是否在任何显示范围内
-                in_range = False
-                for start_date, end_date in keyword_ranges[word].items():
-                    if start_date <= d <= end_date:
-                        in_range = True
-                        break
-                
-                # 只有在显示范围内才显示频率
-                if in_range and d in word_freq_by_date and word in word_freq_by_date[d]:
-                    y.append(word_freq_by_date[d][word])
-                else:
-                    y.append(None)
-            
+            # 使用预先计算的频率数据
+            y = keyword_freq_data[word][:i+1]
             color = colors[j % len(colors)]
             
             # 添加线条
