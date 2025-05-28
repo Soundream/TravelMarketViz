@@ -391,8 +391,13 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
         start_time = current_time - pd.Timedelta(seconds=window_size)
         start_time = max(start_time, date_objs[0])
         
-        # 更新x轴范围
+        # 更新x轴范围和标签
         ax.set_xlim(start_time, current_time)
+        
+        # 设置x轴刻度
+        date_range = pd.date_range(start=start_time, end=current_time, periods=6)
+        ax.set_xticks(date_range)
+        ax.set_xticklabels([d.strftime('%Y-%m') for d in date_range], rotation=45)
         
         # 更新每个关键词的数据
         for word in all_keywords:
@@ -421,14 +426,10 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
             
             # 更新点和文本标签
             if len(filtered_x) > 0:
-                # 只在最后一帧显示最右侧点和标签
-                if frame == total_frames - 1:
-                    dots[word].set_data([filtered_x[-1]], [filtered_y[-1]])
-                    texts[word].set_position((filtered_x[-1], filtered_y[-1]))
-                    texts[word].set_text(f'{word} ({filtered_x[-1].strftime("%Y-%m")})')
-                else:
-                    dots[word].set_data([], [])
-                    texts[word].set_text('')
+                # 显示最右侧点和标签
+                dots[word].set_data([filtered_x[-1]], [filtered_y[-1]])
+                texts[word].set_position((filtered_x[-1], filtered_y[-1]))
+                texts[word].set_text(f'{word}')
             else:
                 dots[word].set_data([], [])
                 texts[word].set_text('')
