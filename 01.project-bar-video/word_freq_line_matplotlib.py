@@ -318,7 +318,7 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
         keyword_freq_data[word] = freq_data
     
     # 1. 生成插值后的时间轴和数据
-    interp_steps = 10  # 增加插值帧数
+    interp_steps = 20  # 增加插值帧数，使曲线更平滑
     date_objs = [datetime.strptime(d, "%Y-%m") for d in dates]
     x_old = np.array([d.timestamp() for d in date_objs])
     interp_x = np.linspace(x_old[0], x_old[-1], num=(len(dates)-1)*interp_steps+1)
@@ -339,7 +339,7 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     
     # 3. 创建图形和动画
     plt.style.use('seaborn-darkgrid')
-    fig, ax = plt.subplots(figsize=(15, 6))
+    fig, ax = plt.subplots(figsize=(12, 6))  # 减小图形宽度
     
     # 设置背景和边框
     fig.patch.set_facecolor('white')
@@ -353,7 +353,7 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     texts = {}
     for idx, word in enumerate(all_keywords):
         color = colors[idx % len(colors)]
-        lines[word], = ax.plot([], [], lw=2, color=color, label=word, alpha=0.8)
+        lines[word], = ax.plot([], [], lw=2, color=color, alpha=0.8)
         dots[word], = ax.plot([], [], 'o', color=color, markersize=6, alpha=0.8)
         texts[word] = ax.text(0, 0, '', color='white', fontweight='bold',
                             bbox=dict(facecolor=color, alpha=0.7, edgecolor='none', pad=3))
@@ -361,7 +361,7 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     # 设置坐标轴
     ax.set_xlim(date_objs[0], date_objs[-1])
     y_max = max([np.max(v) for v in interp_freq.values()]) * 1.2
-    ax.set_ylim(0, y_max)
+    ax.set_ylim(-y_max * 0.05, y_max)  # 调整y轴范围，让曲线完全可见
     
     # 设置标题和标签
     ax.set_title('Top Word Frequencies Over Time (News from Phocuswire)', 
@@ -377,12 +377,8 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     # 设置网格线
     ax.grid(True, linestyle='--', alpha=0.3)
     
-    # 添加图例
-    legend = ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1),
-                      frameon=False, fontsize=10)
-    
     # 调整布局
-    plt.subplots_adjust(bottom=0.2, right=0.85)
+    plt.subplots_adjust(bottom=0.2, right=0.92)  # 调整右侧边距
     
     def animate(frame):
         # 计算当前时间窗口
@@ -425,10 +421,13 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
             lines[word].set_data(filtered_x, filtered_y)
             
             # 更新点和文本标签
-            if len(filtered_x) > 0:
-                # 显示最右侧点和标签
-                dots[word].set_data([filtered_x[-1]], [filtered_y[-1]])
-                texts[word].set_position((filtered_x[-1], filtered_y[-1]))
+            if len(filtered_x) > 0 and filtered_x[-1] >= start_time:  # 只在曲线可见时显示点和标签
+                # 显示最右侧点和标签，稍微向左偏移以确保圆点完全可见
+                dot_x = filtered_x[-1] - (current_time - start_time) * 0.005  # 向左偏移当前窗口宽度的0.5%
+                dots[word].set_data([dot_x], [filtered_y[-1]])
+                # 计算标签位置，向右偏移
+                label_x = dot_x + (current_time - start_time) * 0.015  # 向右偏移当前窗口宽度的1%
+                texts[word].set_position((label_x, filtered_y[-1]))
                 texts[word].set_text(f'{word}')
             else:
                 dots[word].set_data([], [])
@@ -441,7 +440,7 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
         fig,
         animate,
         frames=total_frames,
-        interval=50,  # 50ms per frame
+        interval=90,  # 保持90ms的间隔
         blit=True,
         repeat=False
     )
@@ -449,7 +448,7 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     # 保存动画
     output_file = "output/word_freq_linechart.mp4"
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
-    anim.save(output_file, writer='ffmpeg', fps=30)
+    anim.save(output_file, writer='ffmpeg', fps=24)  # 提高fps到24，使动画更流畅
     print(f"动画保存至 {output_file}")
     
     plt.show()
