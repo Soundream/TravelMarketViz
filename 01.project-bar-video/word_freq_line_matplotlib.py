@@ -11,6 +11,12 @@ from collections import defaultdict
 import glob
 from tqdm import tqdm
 from scipy.interpolate import interp1d
+import matplotlib.font_manager as fm
+
+# 设置Monda字体
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.sans-serif'] = ['Monda']
+plt.rcParams['axes.unicode_minus'] = False
 
 # 复用原有的过滤词列表
 ENGLISH_STOP_WORDS = {
@@ -339,7 +345,7 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
     
     # 3. 创建图形和动画
     plt.style.use('seaborn-darkgrid')
-    fig, ax = plt.subplots(figsize=(12, 6))  # 减小图形宽度
+    fig, ax = plt.subplots(figsize=(12, 6))
     
     # 设置背景和边框
     fig.patch.set_facecolor('white')
@@ -356,29 +362,35 @@ def create_word_freq_visualization(data_dir="../05.project-word-swarm/output"):
         lines[word], = ax.plot([], [], lw=2, color=color, alpha=0.8)
         dots[word], = ax.plot([], [], 'o', color=color, markersize=6, alpha=0.8)
         texts[word] = ax.text(0, 0, '', color='white', fontweight='bold',
-                            bbox=dict(facecolor=color, alpha=0.7, edgecolor='none', pad=3))
+                            bbox=dict(facecolor=color, alpha=0.7, edgecolor='none', pad=3),
+                            fontfamily='Monda')
     
     # 设置坐标轴
     ax.set_xlim(date_objs[0], date_objs[-1])
     y_max = max([np.max(v) for v in interp_freq.values()]) * 1.2
-    ax.set_ylim(-y_max * 0.05, y_max)  # 调整y轴范围，让曲线完全可见
+    ax.set_ylim(-y_max * 0.05, y_max)
     
     # 设置标题和标签
     ax.set_title('Top Word Frequencies Over Time (News from Phocuswire)', 
-                 pad=15, fontsize=12, fontweight='bold')
-    ax.set_xlabel('Date', fontsize=10)
-    ax.set_ylabel('Frequency', fontsize=10)
+                 pad=15, fontsize=12, fontweight='bold', fontfamily='Monda')
+    ax.set_xlabel('Date', fontsize=10, fontfamily='Monda')
+    ax.set_ylabel('Frequency', fontsize=10, fontfamily='Monda')
     
     # 格式化日期
     date_formatter = DateFormatter('%Y-%m')
     ax.xaxis.set_major_formatter(date_formatter)
     plt.xticks(rotation=45)
     
+    # 设置刻度标签字体
+    ax.tick_params(axis='both', which='major', labelsize=9)
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontfamily('Monda')
+    
     # 设置网格线
     ax.grid(True, linestyle='--', alpha=0.3)
     
     # 调整布局
-    plt.subplots_adjust(bottom=0.2, right=0.92)  # 调整右侧边距
+    plt.subplots_adjust(bottom=0.2, right=0.92)
     
     def animate(frame):
         # 计算当前时间窗口
