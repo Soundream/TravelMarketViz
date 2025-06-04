@@ -8225,8 +8225,8 @@ class WordSwarm:
                 max_freq = 1
                 freq = 0
                 for date in self.dates:
-                    freq = max(freq, self.word_frequencies.get(date, {}).get(word_obj.text, 0))
-                    max_freq = max(max_freq, freq)
+                    freq = builtins.max(freq, self.word_frequencies.get(date, {}).get(word_obj.text, 0))
+                    max_freq = builtins.max(max_freq, freq)
                 # 取最大频率决定大小
                 target_size = self.min_size + (self.max_size - self.min_size) * (freq / max_freq)
                 word_obj.size = target_size
@@ -8338,4 +8338,4 @@ if __name__ == "__main__":
     swarm.process_articles()
     
     # 创建动画
-    swarm.create_animation(top_n=50) 
+    swarm.create_animation(custom_words=CUSTOM_WORDS) 
