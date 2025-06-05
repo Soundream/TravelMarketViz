@@ -20,10 +20,8 @@ def transcribe_audio(audio_path, model_name="base"):
 
 def process_video(video_path, output_dir):
     """Process a video file and generate JSON output"""
-    # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
-    # Generate paths
     video_name = os.path.splitext(os.path.basename(video_path))[0]
     audio_path = os.path.join(output_dir, f"{video_name}.wav")
     json_path = os.path.join(output_dir, f"{video_name}.json")
@@ -66,10 +64,9 @@ def process_directory(input_dir, output_dir):
 
 if __name__ == "__main__":
     # Example usage
-    input_dir = "input_videos"  # Directory containing MP4 files
+    input_dir = "input_videos"  
     output_dir = "output"       # Directory for JSON output
     
-    # Create directories if they don't exist
     os.makedirs(input_dir, exist_ok=True)
     os.makedirs(output_dir, exist_ok=True)
     
