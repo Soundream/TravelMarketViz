@@ -100,7 +100,8 @@ class Top200WordAnalyzer:
         print(f"总共加载了 {len(all_articles)} 篇文章")
         self.articles = all_articles
         return all_articles
-
+    # TODO: spliting：对于像marketing这样的词，我假设他通常是以marketing作为phrase当中的其中一个词，所以能不能对于某些特定的词作为输入（比如说marketing），然后根据这个词的前后词进行统计，
+    # TODO: 是在一个一个时间段之内对关键词进行统计，而不是对于一个历史范围内的关键词进行统计（或者说用另外一个方法，现在统计的是总共的出现次数，可以是一段时间内的（速度？））
     def preprocess_text(self, text):
         """预处理文本"""
         if not text:
