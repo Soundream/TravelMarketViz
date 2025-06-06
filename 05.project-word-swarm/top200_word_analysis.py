@@ -81,7 +81,7 @@ class Top200WordAnalyzer:
         # 创建输出目录
         self.output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "analysis_results")
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
-    
+    # TODO: use different data processing methods or
     def load_data(self):
         """从JSON文件加载文章数据"""
         json_files = glob.glob(os.path.join(self.data_dir, "phocuswire_page_*.json"))
