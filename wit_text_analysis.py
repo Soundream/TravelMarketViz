@@ -11,11 +11,18 @@ class TextAnalyzer:
     def __init__(self, input_dir):
         self.input_dir = input_dir
         
-        
+        # 基础中文停用词
+        self.stopwords = set([
+            '的', '了', '和', '是', '就', '都', '而', '及', '与', '着',
+            '之', '于', '去', '也', '但', '在', '向', '到', '这', '那',
+            '你', '我', '他', '它', '她', '们', '为', '以', '把', '将',
+            '给', '等', '却', '地', '得', '着', '说', '对', '能', '么',
+            '从', '或', '所', '如', '还', '比', '吧', '啊', '啦', '呢'
+        ])
         
         # 英文基础停用词
         self.stopwords.update({
-            'travel', 'people', 'podcasts',
+            'travel', 'podcasts', 'people', 'thank', 'us', 'go', 'talk', 'today',
             'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", 
             "you've", "you'll", "you'd", 'your', 'yours', 'yourself', 'yourselves', 
             'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers', 'herself', 
