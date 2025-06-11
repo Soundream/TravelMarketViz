@@ -40,6 +40,7 @@ class TextAnalyzer:
         })
         # 行业特定停用词
         self.stopwords.update({
+            'web', '28', '31', '30', '10', '20', 'years',
             'said', 'says', 'will', 'new', 'also', 'one', 'two', 'may', 'now', 'use',
             'using', 'used', 'can', 'could', 'would', 'should', 'get', 'many', 'much',
             'year', 'month', 'day', 'time', 'way', 'week', 'need', 'make', 'see', 'look',
@@ -103,12 +104,15 @@ class TextAnalyzer:
 
     def get_filtered_words(self, text):
         """获取过滤后的词列表"""
-        words = jieba.cut(text)
-        return [
-            word.strip().lower() for word in words 
-            if word.strip() and word.strip().lower() not in self.stopwords
-            and len(word.strip()) > 1  # 过滤掉长度小于等于1的词
-        ]
+        # 使用jieba分词
+        words = list(jieba.cut(text))
+        # 过滤并返回单词列表
+        filtered = []
+        for word in words:
+            word = word.strip().lower()
+            if word and word not in self.stopwords and len(word) > 1:
+                filtered.append(word)
+        return filtered
 
     def get_ngrams(self, words, n):
         """生成n-gram序列"""
@@ -148,13 +152,16 @@ class TextAnalyzer:
         # 选择要展示的n-gram类型
         if ngram_type == 'unigram':
             freq_data = self.word_freq
-            title = 'Top Single Words Frequency'
+            title = '单词频率统计 (Top {})'.format(top_n)
+            xlabel = '单词'
         elif ngram_type == 'bigram':
             freq_data = self.bigram_freq
-            title = 'Top Word Pairs (Bigrams) Frequency'
+            title = '双词组频率统计 (Top {})'.format(top_n)
+            xlabel = '词组'
         else:  # trigram
             freq_data = self.trigram_freq
-            title = 'Top Word Triplets (Trigrams) Frequency'
+            title = '三词组频率统计 (Top {})'.format(top_n)
+            xlabel = '词组'
             
         if not freq_data:
             print(f"No data to plot for {ngram_type}")
@@ -163,7 +170,7 @@ class TextAnalyzer:
         # 获取前N个高频词/词组
         if ngram_type == 'unigram':
             top_items = pd.DataFrame(
-                freq_data.most_common(top_n),
+                [(word, freq) for word, freq in freq_data.most_common(top_n)],
                 columns=['Word', 'Frequency']
             )
         else:
@@ -181,6 +188,8 @@ class TextAnalyzer:
         sns.barplot(data=top_items, x='Word', y='Frequency')
         plt.xticks(rotation=45, ha='right')
         plt.title(title)
+        plt.xlabel(xlabel)
+        plt.ylabel('频率')
         plt.tight_layout()
         
         # 保存图表
@@ -257,26 +266,106 @@ class TextAnalyzer:
         if not self.word_freq:
             self.word_freq, self.bigram_freq, self.trigram_freq = self.analyze_text()
             
-        if ngram_type in ['unigram', 'all']:
-            df_unigram = pd.DataFrame(
-                self.word_freq.most_common(),
-                columns=['Word', 'Frequency']
-            )
-            df_unigram.to_csv('word_frequency_unigram.csv', index=False, encoding='utf-8-sig')
+        # 创建一个包含所有结果的列表
+        all_results = []
+        
+        # 添加单词频率
+        for word, freq in self.word_freq.most_common():
+            all_results.append({
+                'Type': '单词',
+                'Word/Phrase': word,
+                'Frequency': freq
+            })
             
-        if ngram_type in ['bigram', 'all']:
-            df_bigram = pd.DataFrame(
-                [(' '.join(k), v) for k, v in self.bigram_freq.most_common()],
-                columns=['Word Pair', 'Frequency']
-            )
-            df_bigram.to_csv('word_frequency_bigram.csv', index=False, encoding='utf-8-sig')
+        # 添加双词组频率
+        for word_pair, freq in self.bigram_freq.most_common():
+            all_results.append({
+                'Type': '双词组',
+                'Word/Phrase': ' '.join(word_pair),
+                'Frequency': freq
+            })
             
-        if ngram_type in ['trigram', 'all']:
-            df_trigram = pd.DataFrame(
-                [(' '.join(k), v) for k, v in self.trigram_freq.most_common()],
-                columns=['Word Triplet', 'Frequency']
-            )
-            df_trigram.to_csv('word_frequency_trigram.csv', index=False, encoding='utf-8-sig')
+        # 添加三词组频率
+        for word_triplet, freq in self.trigram_freq.most_common():
+            all_results.append({
+                'Type': '三词组',
+                'Word/Phrase': ' '.join(word_triplet),
+                'Frequency': freq
+            })
+            
+        # 创建DataFrame并按频率排序
+        df_all = pd.DataFrame(all_results)
+        df_all = df_all.sort_values('Frequency', ascending=False)
+        
+        # 保存到CSV文件
+        df_all.to_csv('word_frequency_all.csv', index=False, encoding='utf-8-sig')
+        print("\n词频统计已保存到 word_frequency_all.csv")
+        
+        # 打印一些统计信息
+        print("\n词频统计摘要:")
+        print(f"单个词总数: {len(self.word_freq)}")
+        print(f"双词组总数: {len(self.bigram_freq)}")
+        print(f"三词组总数: {len(self.trigram_freq)}")
+        
+        # 打印前20个最常见的词/词组
+        print("\n最常见的20个词/词组:")
+        top_20 = df_all.head(20)
+        for _, row in top_20.iterrows():
+            print(f"{row['Type']} - {row['Word/Phrase']}: {row['Frequency']}")
+
+    def plot_combined_frequencies(self, top_n=20):
+        """绘制合并后的词频统计图"""
+        if not self.word_freq:
+            self.word_freq, self.bigram_freq, self.trigram_freq = self.analyze_text()
+            
+        # 准备数据
+        all_results = []
+        
+        # 添加单词频率
+        for word, freq in self.word_freq.most_common(top_n):
+            all_results.append({
+                'Type': '单词',
+                'Word/Phrase': word,
+                'Frequency': freq
+            })
+            
+        # 添加双词组频率
+        for word_pair, freq in self.bigram_freq.most_common(top_n):
+            all_results.append({
+                'Type': '双词组',
+                'Word/Phrase': ' '.join(word_pair),
+                'Frequency': freq
+            })
+            
+        # 添加三词组频率
+        for word_triplet, freq in self.trigram_freq.most_common(top_n):
+            all_results.append({
+                'Type': '三词组',
+                'Word/Phrase': ' '.join(word_triplet),
+                'Frequency': freq
+            })
+            
+        # 创建DataFrame并按频率排序
+        df_all = pd.DataFrame(all_results)
+        df_all = df_all.sort_values('Frequency', ascending=False)
+        
+        # 设置图表风格
+        plt.style.use('seaborn-v0_8')
+        plt.figure(figsize=(15, 10))
+        
+        # 创建柱状图
+        sns.barplot(data=df_all.head(top_n), x='Word/Phrase', y='Frequency', hue='Type')
+        plt.xticks(rotation=45, ha='right')
+        plt.title(f'词频统计 Top {top_n}')
+        plt.xlabel('词/词组')
+        plt.ylabel('频率')
+        plt.legend(title='类型')
+        plt.tight_layout()
+        
+        # 保存图表
+        plt.savefig('word_frequency_combined.png')
+        plt.close()
+        print(f"已保存合并词频统计图到 word_frequency_combined.png")
 
 def main():
     try:
@@ -288,50 +377,32 @@ def main():
         analyzer = TextAnalyzer(input_dir)
         
         # 分析文本
-        print("\nAnalyzing text...")
+        print("\n正在分析文本...")
         word_freq, bigram_freq, trigram_freq = analyzer.analyze_text()
         
         if not word_freq and not bigram_freq and not trigram_freq:
-            print("No valid text data found. Please check the input directory and file contents.")
+            print("未找到有效的文本数据。请检查输入目录和文件内容。")
             return
-            
-        # 输出单词频率
-        print("\nTop 20 most frequent single words:")
-        for word, freq in word_freq.most_common(20):
-            print(f"{word}: {freq}")
-            
-        # 输出二元组频率
-        print("\nTop 20 most frequent word pairs:")
-        for pair, freq in bigram_freq.most_common(20):
-            print(f"{' '.join(pair)}: {freq}")
-            
-        # 输出三元组频率
-        print("\nTop 20 most frequent word triplets:")
-        for triplet, freq in trigram_freq.most_common(20):
-            print(f"{' '.join(triplet)}: {freq}")
-        
-        # 生成可视化
-        print("\nGenerating visualizations...")
-        analyzer.plot_top_words(ngram_type='unigram')
-        analyzer.plot_top_words(ngram_type='bigram')
-        analyzer.plot_top_words(ngram_type='trigram')
-        analyzer.generate_wordcloud()
         
         # 保存词频统计结果
-        print("\nSaving word frequency to CSV...")
-        analyzer.save_word_frequency(ngram_type='all')
+        print("\n正在保存词频统计结果...")
+        analyzer.save_word_frequency()
         
-        print("\nAnalysis complete! Check the following files:")
-        print("- word_frequency_unigram.png (Single words bar chart)")
-        print("- word_frequency_bigram.png (Word pairs bar chart)")
-        print("- word_frequency_trigram.png (Word triplets bar chart)")
-        print("- word_frequency_unigram.csv (Single words frequency data)")
-        print("- word_frequency_bigram.csv (Word pairs frequency data)")
-        print("- word_frequency_trigram.csv (Word triplets frequency data)")
-        print("- wordcloud.png (Word cloud)")
+        # 生成合并的词频统计图
+        print("\n正在生成词频统计图...")
+        analyzer.plot_combined_frequencies()
+        
+        # 生成词云
+        print("\n正在生成词云...")
+        analyzer.generate_wordcloud()
+        
+        print("\n分析完成！请查看以下文件：")
+        print("- word_frequency_all.csv (词频统计数据)")
+        print("- word_frequency_combined.png (词频统计图)")
+        print("- wordcloud.png (词云图)")
         
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"发生错误: {e}")
         raise
 
 if __name__ == "__main__":
