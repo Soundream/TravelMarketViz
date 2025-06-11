@@ -199,10 +199,12 @@ def main():
     
     # 分析多个目标词
     target_words = ['marketing', 'digital', 'technology']
-    
+    input_word = input("Enter a word to analyze: ")
+    targe
     for target_word in target_words:
         analyzer.analyze_target_word(target_word, min_freq=3)
         print("\n" + "="*50 + "\n")
 
 if __name__ == "__main__":
     main() 
+    print("done.")

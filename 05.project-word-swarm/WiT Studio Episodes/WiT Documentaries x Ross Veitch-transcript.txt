@@ -1,0 +1,620 @@
+00:00.14
+siew hoon
+okay with the bit of the tree in the background the light yeah not too bad huh okay okay so you just start yes okay so you start off with first impressions of wit okay
+
+00:04.80
+Web In Travel Podcasts
+I think it looks nice. The light isn't disturbing too much. Yeah, yeah.
+
+00:10.74
+Ross Veitch
+You can fix it in post, Arvind.
+
+00:13.49
+Web In Travel Podcasts
+Yeah, fix it in post.
+
+00:19.07
+Ross Veitch
+Sure.
+
+00:22.23
+Ross Veitch
+Yes, I might, might. My very first impressions of WIT, I think, go back to 2005, which was the founding year for Wigan, which was also the founding year for WIT, I understand. So um we're both having our 20th anniversary this year.
+
+00:37.16
+Ross Veitch
+so quite a milestone for both of us. But my first impression was, um so I was coming into the the online travel industry from a broad tech background. i knew a little bit about travel, having built so travel stuff ah for Yahoo and having worked for Tourism Australia you know a lifetime ago.
+
+00:55.02
+Ross Veitch
+But a lot was new to me and I found ah WIT to be and incredibly, actually unusually open and sharing um a conference and group of attendees that really helped me to quickly get up the learning curve And yeah many of the people I ah met at those first couple WITs ah back in 2005, six, seven, you know still in touch with and still learning from and sharing with today.
+
+01:22.79
+Ross Veitch
+um So, you I mean, for me, for Wego, and I think for a lot of us in the online travel community, WIT has been a you know critical hub of community building um that has enabled us to not only build our businesses, but actually to build some long lasting friendships.
+
+01:42.13
+Ross Veitch
+So yeah, I have a lot to thank WIT for.
+
+01:47.57
+siew hoon
+Okay.
+
+01:49.80
+Ross Veitch
+Cool.
+
+01:50.80
+siew hoon
+Yeah. And then any moments, unforgettable moments? You can go one unforgettable moment.
+
+01:58.57
+Ross Veitch
+So I think the most unforgettable moment at WIT, for me at least, was being on stage. This is maybe... around 2010 or 2011, 2012.
+
+02:09.34
+Ross Veitch
+twenty eleven twenty twelve So Su Hoon had organized a heavy meta panel, not heavy metal, heavy meta, and she had managed to coerce more than 10 of us, I think it was 12 in total, metas from around the planet you onto the same stage to participate in what is probably the biggest panel ever that's ever assembled at a travel conference.
+
+02:33.37
+Ross Veitch
+There were so many people on stage, we didn't actually... we were reduced to, um, uh, we're given a paddle each to comment on the, uh, sort of like, yes, no, um, uh, for, for each of the questions. Um, and a lot of those matters don't, don't exist anymore, but, uh, it was definitely, uh, definitely memorable.
+
+02:55.50
+siew hoon
+Okay.
+
+02:55.83
+Ross Veitch
+Um, It's also been many, many, many memorable moments over the years at the conference, but also at the bar ah of an evening um where most of the networking actually takes place.
+
+03:10.00
+Ross Veitch
+um And, you know, a lot of the, a lot of the, a lot of the, you know, the friendships um are actually sort of ye cemented in and around the conference.
+
+03:23.71
+Ross Veitch
+um And actually, wit is unusual in that the there's ah there's a sense of you know camaraderie amongst the participants, which, um
+
+03:34.62
+Ross Veitch
+you know, a willingness to sort of like you hang out and sort of swap notes. um And that's sort of... It exceeds any other event that I go to. and yeah There's probably half a dozen travel tech-related things I go to regularly, but WIT's definitely at a different level in terms of yeah the the the community around it. and yeah a lot of that Actually, all of that is really a function of the yeah the yeah the efforts Yuhun's put into to building it and creating it.
+
+04:11.95
+Ross Veitch
+you know it doesn't happen by accident know it is curated um
+
+04:22.91
+Ross Veitch
+so so a few years into the uh into wego's journey we uh we did a pivot from southeast asia to the middle east and i think 2014 you know we uh yeah We helped bring um WIT to the Middle East for the first time, to the 2014 inaugural. And I think it was something of a shock to the ah the Middle East ah travel and tourism community.
+
+04:50.68
+Ross Veitch
+WIT is you know unusually well-trained. um moderated and curated and I think it was a shock to a lot of the ah people the first time is to actually have somebody on stage you're running the conference who actually knew exactly what they were talking about and could actually you know hold their own with the ah with the speakers and the panelists um so deaf yes you can definitely raise the bar in terms of ah yeah content and conferences in the Middle East and You know, it's a one day event that, you know, anybody who's doing anything in the online travel Middle East region, you know, I think, you looks forward to every year.
+
+05:33.96
+Ross Veitch
+And, you know, we are, I think this year, you know, the Friday before the Arabian travel market, I think excellent timing because everybody's in town anyway. And, you know, looking forward to it.
+
+05:48.68
+siew hoon
+Okay, so now let's talk about Wigos. Thank you, Ross, you know for saying such wonderful things about WID and myself. you know let's Let's talk about Wigos now. So you're 20 years in... Talk about the early days of what you were trying to build. Obviously, a meta-search in Southeast Asia, and then when when the turning point came to...
+
+06:13.65
+siew hoon
+to move to the Middle East. What was behind that decision? and And then your story onwards. Just ramble. Just tell your story.
+
+06:22.98
+Ross Veitch
+Huh.
+
+06:24.21
+siew hoon
+talk Talk about your near-death experiences too, if you want, because Bethan definitely shared a lot of that last night.
+
+06:27.81
+Ross Veitch
+Yeah, okay.
+
+06:32.06
+Ross Veitch
+All right. So, mean, in terms of Uyghur's journey, we started in 2005 and five and yeah we're inspired by um you know the Meta's getting set up in the US and in China. And we thought somebody should bring that to the rest of Asia. And yeah I'd been running um yeah product and engineering for Yahoo in Southeast Asia, yeah based in Singapore. and yeah I saw all the low cost carriers getting set up in the region and there was no way to sort of shop them all at once and it was kind of becoming annoying. So and there's as much scratching and itches pursuing a business opportunity when we decided to sort of focus on Southeast Asia initially.
+
+07:13.29
+Ross Veitch
+um We quickly really well. not that quickly, actually, it took us a few years to realize that the market really wasn't ready for it. You to make a meta model work, you need OTAs that know what they're doing, operating at scale.
+
+07:24.32
+Ross Veitch
+um And that really wasn't the case in Southeast Asia at the time. And so we sort of had a choice. um we We could either become an OTA in our own right, yeah or we could pivot and find a geography that was ready for our MetaSearch marketplace business model. And yeah we took the latter path.
+
+07:42.26
+Ross Veitch
+um I would note our friends at TravelOak in Indonesia, they got started around the same time and they sort of yeah also did a pivot from Meta, but they sort of pivoted the model to OTA early on for the same reasons.
+
+07:55.54
+Ross Veitch
+the same reason They didn't have enough people to to aggregate.
+
+07:56.20
+siew hoon
+Thank
+
+07:58.80
+Ross Veitch
+um So we pivoted to the Middle East after, i think four five years. And the the reason for that, we sort of realized you know after um ah localizing the platform, yeah we we saw the Middle East points of sale and the Arabic language um specifically, like really take off and we realized the market was basically wide open. There was some really, um really large suppliers who had their act together with e commerce. But apart from booking.com, there was no there was nobody else really in the region. So we sort of walked into our largely ah vacant space and you proceeded to connect everybody who was selling online.
+
+08:46.96
+Ross Veitch
+So another reason we pivoted, so we customer acquisition costs in the Middle East at the time are comparable to what we're seeing in Southeast Asia, but the LTV lifetime value was many, many times higher. It was a function of higher average basket values, higher frequencies, larger families.
+
+09:08.97
+Ross Veitch
+for put the two together, you know and it just made for a much better you know better market for for our model at the time.
+
+09:23.87
+Ross Veitch
+COVID was a bit of a near-death experience for Wego. we um yeah lot Like a lot of travel companies over the space of two weeks, we saw our revenues drop to almost nothing and flatline for about you know six months and then only very, very slowly come back.
+
+09:40.87
+Ross Veitch
+um we yeah we had to go and you know talk to some of the ah um some of the family officers and sort of high net worth individuals in the Gulf that know us well, who and we raised a quick round which enabled us to you keep the Wego team that we spent a decade assembling, keep it largely together.
+
+10:03.83
+Ross Veitch
+And rather than sort of decimating the team away, you know a lot of travel companies did during COVID and Hibernate, We put together a pretty aggressive product roadmap, put our heads down and sort of built stuff all the way through COVID.
+
+10:16.81
+Ross Veitch
+And yeah when travel resumed, we were able to launch a bunch of new stuff, which is
+
+10:23.55
+Ross Veitch
+yeah driving a lot of the and very high levels of growth we're seeing at the moment.
+
+10:29.90
+Ross Veitch
+The other thing we did during COVID, which was maybe a little bit different, we Well, like everybody else, we zeroed out the paid marketing budget, but we kept the foot yeah to the floor with the um the earned media. So we kept social media going flat out. We kept our content marketing going flat out.
+
+10:48.78
+Ross Veitch
+Pivoted a little bit from sort of inspirational you know destination focused content to practical, you know how do I navigate the world during COVID? um And we also kept the yeah know the PR machine going all the way through.
+
+11:02.26
+Ross Veitch
+um And as a result, when travelers were able to get back on on the plane again, our audience came back to us without us really having to spend a cent. So yeah we'd kept the brand yeah visible and it paid off quite nicely.
+
+11:22.60
+Ross Veitch
+So since since we first started, we've significantly diversified our our business model. yeah We started with a simple meta business. um We built a fairly sophisticated advertising and media business on top of that with tourism boards and airlines as our ah principal clients. and We obviously run ads on Uyghur, but we also follow them across YouTube and TikTok and Meta.
+
+11:44.53
+Ross Veitch
+We are a merchant in our own right for an increasing percentage of the GMV coming off the marketplace. um that That's a lot of the work we did during COVID, building the the stack for that.
+
+11:55.07
+Ross Veitch
+So everything from payments to supply to pricing, so your customer support. um We acquired a... ah ah corporate travel platform about 18 months ago, Travel Stop, we've integrated that into Wego, so we integrated our supply, mashed the platforms together, and we've rebranded it as Wego Pro, and that's growing extremely fast at the moment.
+
+12:21.24
+Ross Veitch
+um So basically taking the best ideas out of the next-gen business travel platforms like Nivan, Travel Perk, adding some of our own touches and sort of with you know Asia and the Middle East as the sort of the the target markets.
+
+12:37.75
+Ross Veitch
+oh And the the last new business that we're you know we're investing in is our bed bank. So we go beds. So yeah we're aiming to contract directly every hotel in the Middle East that's ah doing any significant volume with us.
+
+12:52.10
+Ross Veitch
+and And co-founder Craig is sort of running that and we're you a good way into that now. And we're in the process of connecting up our global demand partners who yeah want better supply in the Middle East.
+
+13:04.78
+Ross Veitch
+So
+
+13:07.02
+Ross Veitch
+from a relatively simple you know business. We've now so effectively got sort of five businesses running inside of the same group. All
+
+13:19.58
+Ross Veitch
+right. Anything else you'd like me to touch on?
+
+13:20.54
+siew hoon
+so So, yeah, yeah. So, so the dynamics of the Middle East market enabled you to build a full, almost OTA model, right? Which you couldn't do in Southeast Asia.
+
+13:33.76
+siew hoon
+Would that be right to say?
+
+13:35.91
+Ross Veitch
+No, I mean, we could have done it in Southeast Asia soon. um And Traveloka did it, right? So they pivoted from Meta to OTA. think at the time, we didn't really know enough about it to feel confident about weighing into that.
+
+13:52.72
+Ross Veitch
+I think with the benefit of hindsight, we would have figured it out and we probably should have done it.
+
+13:57.69
+Ross Veitch
+But you know we've built a pretty big successful business you know by pivoting geographically instead of pivoting the model initially.
+
+14:06.54
+siew hoon
+So what's left in Southeast Asia? How has the market evolved and where is we go in terms of ah in Southeast Asia now?
+
+14:15.66
+Ross Veitch
+um I mean, so Southeast Asia for us is a few different things. So it's, you know, we've got yeah large teams in Singapore, in Kuala Lumpur, in Jakarta, in Ho Chi Minh City, in Hanoi.
+
+14:32.72
+Ross Veitch
+So there's there's a lot of talented people, you know, across Southeast Asia sort of working on Wego and sort of Singapore is our, know, one of our dual headquarters and it's sort of where we have our, you product engineering, data science leadership.
+
+14:48.99
+Ross Veitch
+And, you know, the other teams across Southeast Asia sort of, you know, integrated into that. So it's ah it's ah it's a pool of talent that we tap into. um Southeast Asia is markets.
+
+15:02.19
+Ross Veitch
+So for our corporate business, it's quite important. Like we've signed up a lot of the lot of the tech companies, you know startups all the way to scale-ups across Southeast Asia who are using WeGoPron now.
+
+15:15.56
+Ross Veitch
+um in In terms of markets for the B2C business, um Malaysia and Indonesia are both significant for us. And it's partially because of the connectivity back to the Middle East.
+
+15:27.48
+Ross Veitch
+um So we see it we're sending a lot of people in both directions and often working with tourism boards on both sides to send travelers in both directions.
+
+15:38.18
+Ross Veitch
+We would like to be bigger in Southeast Asia. And some you know so as um as we prioritize new markets, you know there's there's a couple that we're sort of chipping away at each year.
+
+15:51.04
+siew hoon
+All right, so ah coming from the product engineering background from Yahoo to travel now in for 20 years, right? what is What is exciting about the online travel story right now?
+
+16:06.86
+Ross Veitch
+So what's exciting about the online travel story right now, or actually technology generally, um is sort of the sort of the AI wave that's sort of sweeping through um ah sweeping through the world generally. so esing yeah there's yeah it's an incredibly powerful new set of tooling we've got to build stuff um that you know didn't exist or wasn't easily accessible just yeah to two and a half years ago.
+
+16:35.96
+siew hoon
+Thank you.
+
+16:38.10
+Ross Veitch
+so um yeah know The product and engineering engineering teams at Wego are extremely excited about the ah yeah the uses we can put it to and you know the stuff that you we're now capable were able to build and the speed with which we're able to build it, frankly. So we've seen so significant um yeah productivity boosts, and particularly across engineering, just through the AI-assisted coding features that just getting better and better on an almost weekly basis at the moment.
+
+17:10.04
+Ross Veitch
+So giving our engineers superpowers.
+
+17:10.08
+siew hoon
+Thank you.
+
+17:15.54
+Ross Veitch
+Spending a lot of time automating a lot of the manual customer service ah work at the month. the objective by the end of this year is to have at least 80% of um ah user queries handled automatically and with high degrees of satisfaction from users.
+
+17:33.32
+Ross Veitch
+and youre at the And AI gives us the capability to do that. And then more generally, there's you know it's the year of efficiency at Wego and we're sort of automating everything we can across all of the departments, all of the teams.
+
+17:47.50
+Ross Veitch
+Some of that we're doing with good old fashioned process automation, but a lot of it through some of the you know AI capabilities that are now possible. And then there's the yeah the the sort of AI and you know the extra layer of intelligence we wanna add across all of the surfaces, yeah across all of our products.
+
+18:09.80
+Ross Veitch
+So some of that's yeah still very much cooking, but yeah we got some ah pretty exciting ideas for stuff we wanna do in that.
+
+18:17.42
+siew hoon
+Right. So Ross, are you doing all this because it's fun? You're a project engineer, you're a product geek, or are you doing this because customers actually want it and you're seeing some changes in customer behavior that says, okay, Wego needs to be ahead of this to you know to anticipate or to meet customer de demand.
+
+18:36.44
+siew hoon
+I mean, how how is traveler behavior changing because of this AI wave?
+
+18:43.56
+Ross Veitch
+Yeah, that's a good question. Look, i think um I think people are expecting their applications to just be smarter. So to yeah read between the lines a bit more clearly, if you like, than you know they did a few years ago to be less fragile, to be able to like fill in the blanks, to you know interject intelligently when they can offer something that might be useful.
+
+19:15.97
+Ross Veitch
+you know save you some of the manual work that you would have to previously do yourself and you know this can take lots of different shapes and forms and we haven't figured out you know all you know exactly how all this should work from a ui perspective yet you know playing around with a few different ideas um and yeah and some of the new you user interface user interaction paradigms are still being defined and you know
+
+19:34.48
+siew hoon
+Thank you.
+
+19:43.08
+Ross Veitch
+it probably won't be, you know the travel category, which defines them, it'll be the more frequent uses use cases. And I think some of the, um yeah the yeah l om how app you you know, they're evolving pretty rapidly, and I think sort of studying what they're doing in terms of user interface, and then trying to figure out how to retrofit some of these things into our own apps, our own website.
+
+20:10.12
+Ross Veitch
+But, you know, that's I think people are like expectations for um how smart an application should be a a sort of like ratcheting up relatively quickly. You know, we aim to be ah you know ahead of the pack yeah with respect to that.
+
+20:30.89
+siew hoon
+So Ross, there are some people who would um argue that the travel industry or OTAs like yourself, whether it's booking, Expedia and all that, all you all you want to do when you say the connected trip is you just want to sell stuff.
+
+20:45.05
+siew hoon
+You just want to sell hotels, and want to sell airlines, want to sell tours and activities, but you're not thinking of it from the customer perspective as to what is the customer journey. you know And so we're just building and selling stuff instead of really thinking about what could the next 20 years, what could the travel customer journey look like and how could we build that customer journey? So how do you think about the next 20?
+
+21:13.23
+Ross Veitch
+Yeah, I mean, look we want to sell more stuff as customers, as travelers. yeah We want to buy stuff, but we want to do it with there' less yeah as little friction as possible.
+
+21:24.96
+Ross Veitch
+you know It's got to be as easy as possible. It's got to be as relevant. you know We want it as timely as possible.
+
+21:35.83
+Ross Veitch
+yeah And sort of like figuring out the intersection of those two, all those things, I think is sort of where the magic happens, right? So think there's nothing wrong with you know ah merchandising you know additional travel products you know if it's something the user actually wants, right? And you make it easy.
+
+21:57.77
+Ross Veitch
+So if you're yeah you're you're you're flying to Penang and yeah the The day before your trip, we you offer you one you know send you a push with a transfer preloaded with a price. Would you like somebody to pick you up, take you to the airport, pick you up at the airport Penang, take you to your home.
+
+22:17.56
+Ross Veitch
+We can make that very, very easy for you.
+
+22:21.46
+Ross Veitch
+or you arrive in Hong Kong, yeah while you're sitting in the lounge in Singapore waiting to depart, you know we sell you your Hong Kong Express you know ticket into town, some discount to what you're going have to have if you go and stand in the queue and waste 10 minutes. So stuff like that.
+
+22:37.22
+siew hoon
+Okay. So, Rose, how would you describe the last 20? If you could have a few words to describe the last 20, and then how would you describe the next 20? twenty
+
+22:55.92
+Ross Veitch
+I mean, for the industry generally, I think the last 20 years have been largely about, you know, I sort of think of it as sort of like yeah yeah wood chopping, right? So doing a lot of the the the basics and putting in place the, they doing the hard work to, you know integrate all of the supply,
+
+23:18.13
+Ross Veitch
+and figuring out all the different payment mechanisms, figuring out the, um yeah rewards, mechanics,
+
+23:29.12
+Ross Veitch
+price. I think the next 20 is going to be a lot more about lot more personalized, a lot more about the user, a lot more yeah applying and extra layers of intelligence
+
+23:55.57
+Ross Veitch
+just the right moment um to, ah you know, assist, you know, assist travelers, know, through their, know, through, through their, through their journey.
+
+24:12.39
+siew hoon
+Okay. And then I know you read, you read a lot of science fiction and all that.
+
+24:13.81
+Ross Veitch
+yeah
+
+24:17.06
+siew hoon
+So, uh, visualize travel 2045. What movie
+
+24:25.68
+siew hoon
+what movie movie would it look like?
+
+24:29.94
+siew hoon
+And who would play you?
+
+24:36.55
+Ross Veitch
+yes good question
+
+24:40.46
+Ross Veitch
+So last night I i spent, you I was in Riyadh, I left the city about four o'clock to get a flight at eight. yeah It's Thursday, so it's the end of the weekend. There was like a massive traffic jam to get to the airport.
+
+24:53.50
+Ross Veitch
+yeah The airport was relatively crowded. took two hours to you get to Dubai and then it took another half an hour to get out of DXB and had to queue up for taxis to get into town.
+
+25:07.89
+Ross Veitch
+And I reckon the whole thing took about seven hours. So about 2045, there should be high speed rail right around the Gulf you from Oman up to UAE, across the ua connecting you know Bahrain and Kuwait and Qatar across the desert to Riyadh.
+
+25:26.39
+Ross Veitch
+And the whole journey should shouldn't take more than about you know an hour or two hours max.
+
+25:28.08
+siew hoon
+Thank you.
+
+25:32.04
+Ross Veitch
+So exactly what's happened in and Japan the the original bullet trains and the you the next generation of sort of like 500, 600 kilometer an hour maglev trains, you the Gulf,
+
+25:48.23
+Ross Veitch
+desperately needs those. And I think people underestimate how much it's gonna revolutionize life here, just like taking the drudgery out of getting from um city to city. So I see that as a key part of the ah and travel in the future.
+
+26:02.33
+Ross Veitch
+um I think we're all gonna have ah very personalized agents that help us out with different aspects of our life. that'll have all of your payment credentials in the cloud, it'll have all of your travel preferences, um it'll have access to your schedule.
+
+26:21.51
+Ross Veitch
+And I think it's going to be a ah relatively, like working with a very, very good assistant to book your travel and plan your travel.
+
+26:42.01
+Ross Veitch
+So instead of always having to qualify exactly what you want, a lot of it will be, yeah a lot lot of the preferences and choices will be remembered or implied.
+
+26:53.40
+Ross Veitch
+And if there's any just you know anything that's ambiguous, they'll be quickly qualified.
+
+27:03.08
+Ross Veitch
+You'll be able to access it by multiple modes. If you want to talk to it, have it talk to you, that'll be that'll be fine. If you want to talk to it, use a use your phone or tablet to take advantage of a you rich interface, that'll be fine. And you'll be able to sort of mix and match them.
+
+27:19.35
+Ross Veitch
+Like at at the moment, you it's all very very mono. so you want to chat, you're limited to a you know sort of a text-based interface, which is actually subtracting value from the you know the rich interfaces we've all spent time building. So I think they'll come together relatively quickly. And we're doing a lot of work on that.
+
+27:40.52
+Ross Veitch
+I think 2045, most borders will be relatively friction-free.
+
+27:40.94
+siew hoon
+Great.
+
+27:44.91
+Ross Veitch
+Like leaving Riyadh last night, yeah Autogates just magically worked for the first time without me even having to register. you know So I think more things like that.
+
+27:55.89
+Ross Veitch
+I noticed when I leave Singapore these days, I don't even need a passport. yeah It's all biometrics based. So I think that's a sign of things to come. So yeah you your face will be your um your identity or the link to your identity.
+
+28:20.12
+Ross Veitch
+but seems like a long way away
+
+28:26.31
+Ross Veitch
+what else will change?
+
+28:27.64
+siew hoon
+but but you know
+
+28:27.81
+Ross Veitch
+i think we'll have one.
+
+28:29.34
+siew hoon
+But you know it's not, right?
+
+28:29.53
+Ross Veitch
+Yeah.
+
+28:30.46
+siew hoon
+Because when you started your business in 2005, I bet you never thought about 2025. Like if somebody had said, what will travel 2025 look like? And here we are, right? We're already quarter of a century into the Asian countries, supposedly, right?
+
+28:42.22
+Ross Veitch
+I think by 2045, we'll
+
+28:44.38
+siew hoon
+So it's it' faster than we think. It just sounds very far away. Yeah.
+
+28:51.82
+Ross Veitch
+think twenty by twenty forty five will definitely have... um yeah point-to-point rocket
+
+29:00.59
+Ross Veitch
+um like SpaceX or ah somebody else doing point-to-point transportation for for passengers. So you know Dubai to Los Angeles in minutes.
+
+29:15.28
+Ross Veitch
+think the
+
+29:21.31
+Ross Veitch
+i think the think because of the amount of um area required, you know the the space ports are gonna have to either be significantly far away from the city or yeah know off the coast. So there'll be a fair bit of time and extra time it'll take to actually get to your launch pads.
+
+29:42.13
+Ross Veitch
+So it won't be as convenient as high-speed rail that drops you from the so one city hub to the next city hub, but they're gonna obviously save you a hell of a lot of time in between.
+
+29:53.85
+Ross Veitch
+Hopefully by 2045, we've got a che cure for jet lag. you know If within 45 minutes, you're 12 time zones apart, you gotta suffer unless somebody figures out how to do it.
+
+30:14.59
+Ross Veitch
+I think by 2045,
+
+30:14.99
+siew hoon
+will we be Will we be traveling physically, Ross?
+
+30:15.69
+Ross Veitch
+i
+
+30:17.71
+siew hoon
+Will we be traveling physically? Or will we be just sitting home and, you know, tactile experiences?
+
+30:26.57
+Ross Veitch
+think we're always going to want to physically um yeah visit new places, interact in person with people. i don't think that's going to change. i think technology are always sort of augments.
+
+30:39.36
+Ross Veitch
+you I don't think ah yeah and it may. i think like the Internet generally, you know the Internet has opened up the world for people and it sort of certainly hasn't.
+
+30:52.16
+Ross Veitch
+I think it's only enhance their desire to go out and actually interact and see the see the world. It's opened their eyes, you know, it's fueled their travel hunger.
+
+31:06.05
+siew hoon
+That's great. Ross, this is the kind of speech you should...
+
+31:07.33
+Ross Veitch
+Agree, disagree?
+
+31:08.94
+siew hoon
+Agree, agree. I think this is the kind of speech you should be making. I
+
+31:16.54
+siew hoon
+i have... um Yeah, so our theme for October is the next 20. That's why I'm priming you with all this now because I'm just kind of building up content for ah the conference, you know? So yeah, it's great. ah I think we got a lot of material here.
+
+31:34.48
+siew hoon
+Excellent.
+
+31:34.87
+Ross Veitch
+I think Arvind's got a lot of work to fix in post, but you know feel free to dub and make that more intelligible, Arvind.
+
+31:38.51
+siew hoon
+now
+
+31:42.23
+siew hoon
+stopp okay
+
+31:42.79
+Web In Travel Podcasts
+yeah, yeah, sci-fi the whole thing.
+
+31:43.85
+siew hoon
+Why don't we put like a face of, you know, Blade Runner meets Minority Report or something like that as talking about as see he's talking about this high speed trains and, you know, going
+
+31:49.81
+Ross Veitch
+think
+

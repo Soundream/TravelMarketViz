@@ -1,0 +1,632 @@
+00:00.96
+Web In Travel Podcasts
+Okay, um so we can start by talking about the early days because we're doing the 20, you know, the 20 years of, we're tying that to the 20 years of online travel.
+
+00:09.38
+Timothy O'Neil-Dunne
+right
+
+00:10.74
+Web In Travel Podcasts
+So, um you know, looking back like a couple of decades ago, you know, the early days of online travel, what was that like? And tie that to your personal experiences if you have anecdotes um and sort of your um your your, through your lens of how you saw the world of online travel um back then.
+
+00:31.90
+Timothy O'Neil-Dunne
+So the world of online travel at the start, well, The interesting thing about travel as it existed in those days was that everybody knew that we needed to do something to create a connection electronically.
+
+00:49.25
+Timothy O'Neil-Dunne
+And I had developed several of the early infrastructure pieces on which early parts of the online travel system sat. And in doing so, i had a lot more experience than many people about how the mechanics could work as opposed to how they were going to work in the future.
+
+01:10.47
+Timothy O'Neil-Dunne
+So I knew that there was things that could be done that other people probably would not have considered. So I had a ringside seat is the ultimate piece here of how you made these things work and also how you had to survive in the things that didn't work, which was kind of fun.
+
+01:29.33
+Timothy O'Neil-Dunne
+So having come from a ah GDS background, because I worked at WorldSpan, now Travelport, I knew intimately how the data passed backwards and forwards.
+
+01:41.07
+Timothy O'Neil-Dunne
+But ultimately, like many people who were early on in those days, I was obsessed with how could we get the customer engaged and the benefit that we brought to the marketplace because travel became a pioneer, not just online travel for travel, selling of travel, but it was also a pioneer for all of e-commerce.
+
+02:04.19
+Timothy O'Neil-Dunne
+and it was one of the early marquee products that would actually come out over the web. So I can remember that we would have things like, what was the browser like?
+
+02:15.07
+Timothy O'Neil-Dunne
+Oh gosh, we were using Netscape, or we were using Microsoft Explorer, ah or we were using things like for search, we used AltaVista.
+
+02:26.79
+Timothy O'Neil-Dunne
+Well, these are names that have disappeared now. But travel was different because travel is by definition a very personal thing. It's also very complex.
+
+02:37.72
+Timothy O'Neil-Dunne
+And we didn't have any of the great tools that you have today. So we had to make do how to deliver something that was relatively simple and easily understood.
+
+02:50.88
+Timothy O'Neil-Dunne
+I can give one anecdote, which was... When we started at Expedia and we had the first customers on board, the ah we'd hired these really expensive and very professional travel agents to be able to answer the phone calls.
+
+03:08.66
+Timothy O'Neil-Dunne
+And when the calls started to come in, almost 100% on the first day of every single transaction we took in over the web, somebody called up to say, did you get my reservation?
+
+03:22.64
+Timothy O'Neil-Dunne
+So you think, hey, really? People did it? Yes, because they didn't know how to trust. They didn't know how to do that. And that was one of the funny things that that existed was that people had not learned how to trust.
+
+03:35.97
+Timothy O'Neil-Dunne
+And so they did something that they did normally, which was, hey, pick up the phone and call. So very quickly, we learned that one of the first things that you needed to do was to actually give somebody not just one, but multiple instances of saying, yes, we've got your reservation.
+
+03:52.23
+Timothy O'Neil-Dunne
+And in fact, that still happens today is that when you get a booking, you complete your transaction and you see you get your confirmation number. Okay, that should be proof enough. But no, no, we send you an email saying, yeah, you actually really did get it. In some cases, you even get more than one said, you really, really did get the booking.
+
+04:10.04
+Timothy O'Neil-Dunne
+So these are the sort of things that we had to contend with. A lot of them were human factors, which is fascinating.
+
+04:16.93
+Web In Travel Podcasts
+Right. And what about the What about some key defining moments from there? know, like what happened um in those two decades that was expected? What happened that was unexpected?
+
+04:29.27
+Web In Travel Podcasts
+And also tie that into your own journey in this in this industry and in this scene.
+
+04:36.69
+Timothy O'Neil-Dunne
+Gosh, my journey. My journey is is long, varied and complicated, just like online travel, if you like. the The things that we learned in the first 20 years twenty years was how to move beyond the restrictions that the mainframe PSS systems and GDS systems operated in, not just with a layer on top, but how we got closer to the customer, how we were able to address the customer, how we were able to answer his questions or in fact, preempt the questions.
+
+05:05.24
+Web In Travel Podcasts
+Thank you.
+
+05:16.73
+Timothy O'Neil-Dunne
+And I think one of the early learnings that we came up with was it's a bit like um give a guy a fish and he'll eat.
+
+05:27.51
+Timothy O'Neil-Dunne
+Give the guy a fishing rod and he'll learn to feed himself. And that analogy works very well in online travel because we were dealing with people who'd come to expect a certain level of service.
+
+05:41.20
+Timothy O'Neil-Dunne
+But commensurate with the growth of online was actually the growth of the low-cost carriers, the LCC movement. And they didn't want to provide support. So they restricted and brought in the the products and made the product a lot simpler.
+
+05:58.37
+Timothy O'Neil-Dunne
+Whereas the full service carriers persisted in making that product really simple really complicated. And what they wanted to do was to say, I'll do anything I can because my brand is so wonderful.
+
+06:09.49
+Timothy O'Neil-Dunne
+My product's going to be so wonderful.
+
+06:10.98
+Web In Travel Podcasts
+Thank you.
+
+06:12.54
+Timothy O'Neil-Dunne
+And very quickly it became obvious that the low-cost carriers had got it right and they knew how to interact with online. And the full-service carriers really had to learn.
+
+06:23.72
+Timothy O'Neil-Dunne
+And that was very hard for them. There was a certain degree of arrogance, if you like, that said to them, hey, look, look at ah look how wonderful our plane is. Look at look at the plane.
+
+06:34.61
+Timothy O'Neil-Dunne
+Don't look at this, you know, this online thing. No, no, no, look at the plane. The plane is way more important. And of course it wasn't. What is important is servicing the customer. And those are the changes that I think have ultimately come back to everybody.
+
+06:48.56
+Timothy O'Neil-Dunne
+And you look at the the extent of the world today, um I can remember that when online started in the the late 90s, you probably would expect, at least in the US market, that more transactions were went through travel agencies, traditional bricks and mortar.
+
+07:09.28
+Timothy O'Neil-Dunne
+Today, the amount of business that goes through a traditional travel agency, which is largely the bricks and mortar have gone, and it's mostly corporate travel agencies. They're doing less than 50% of all the online, of all the transactions, nevermind online.
+
+07:24.85
+Timothy O'Neil-Dunne
+And the vast majority of those transactions at least have some of the time being online. So online is now everything. There is no, there is no dividing line.
+
+07:36.44
+Timothy O'Neil-Dunne
+And it's funny to see the progression, which was online sitting parallel to the offline, when then online becoming more important, and then moving to mobile.
+
+07:49.28
+Timothy O'Neil-Dunne
+And now it's multi-channel where you don't care. You should not have to care. I should have an omni-channel capability of me as a customer being able to see my vendor, my choices, my travel at all times through whichever channel I choose.
+
+08:09.03
+Timothy O'Neil-Dunne
+and the differentiation and how that works, that should be at the behest of the customer. And that focus was something that was very difficult for many old line people.
+
+08:21.99
+Timothy O'Neil-Dunne
+i mean, look at me, look at my gray hair, right? I've been around for a long time. And there were a lot of people who could could not make that transition. So I think one of the learnings was how to be able to accommodate the change.
+
+08:36.46
+Timothy O'Neil-Dunne
+And you looked at the baby boomers of which I'm one and how difficult it was because those are the people in command. And for the longest time, they were the people who were the vast majority of travelers, but they died out fairly quickly.
+
+08:50.77
+Timothy O'Neil-Dunne
+And who's replaced them? Millennials are now, I believe, even the biggest cohort is is likely to be Gen Z. if If not already, it's going to be very soon.
+
+09:01.12
+Web In Travel Podcasts
+Right. At what point do you think everyone realized, yourself included on a very personal level, right? At what point did you realize that online travel as a whole was going to change everything? Because we talk about stuff like the internet and we talk about stuff like AI.
+
+09:18.33
+Web In Travel Podcasts
+um When did you know like this is not a ah ah passing phase or that this is going to fundamentally change the way the industry worked?
+
+09:29.22
+Timothy O'Neil-Dunne
+That's a great question. When did I realize it was going to be it? um I'm going to sound a little strange and say, I always believed that that would happen. Even when I first came into the travel distribution marketplace, which was, Lord help me in the 1980s, I believe that there was a progression.
+
+09:51.59
+Timothy O'Neil-Dunne
+I believed that we would move away from dumb terminals to smart machines and that would ultimately we would be able to to be able to do things.
+
+10:03.44
+Timothy O'Neil-Dunne
+And so online to me was always an inevitability. But I think we've even moved beyond that. So where we where we spent so much time was to get as much as we possibly could online.
+
+10:19.41
+Timothy O'Neil-Dunne
+But the infrastructure is still very fragile. And that's why the moves to things like offer an order and in the NDC are so important because that must form the framework upon which the next generation exists.
+
+10:34.19
+Timothy O'Neil-Dunne
+and And I think this is a way to look at the the future. So for me personally, going back and looking at those days, I remember the first time I stood in front of, because i actually I had to stand, I had no chair.
+
+10:47.30
+Timothy O'Neil-Dunne
+I stood in front of a system that was actually not even a screen.
+
+10:50.48
+Web In Travel Podcasts
+Thank
+
+10:51.01
+Timothy O'Neil-Dunne
+It was a printer. It was a teletype printer. And I looked at it and up came an availability display with these numbers and letters and codes that I had no clue what they were.
+
+11:02.42
+Timothy O'Neil-Dunne
+And once I saw that, I'm going, that's it. This is how it works. I just had to figure out how to take that idea and bring that to the consumer so that a consumer could understand it.
+
+11:15.88
+Timothy O'Neil-Dunne
+And I'm not a trained computer guy. I'm not. That's not where I came from. I came from strategy and marketing and research. So to be able to see this thing just opened my eyes. And that was in the early 80s when I could actually see this. And then to see it on a screen.
+
+11:33.79
+Timothy O'Neil-Dunne
+Wow, that was amazing. And then to move it into, oh my gosh, we've got colors instead of monochrome. And you you you keep on watching the progression. um and And I think when you you said the word AI, um how does AI fit into this?
+
+11:50.84
+Timothy O'Neil-Dunne
+um There's good and bad. So let me start with the good. The good is ai is a generational change. We're moving away from human commanded.
+
+12:05.63
+Timothy O'Neil-Dunne
+Think of it as lean forward or lean back. And today we have to do so much stuff that is explicit. And I've used this term a lot, um even at WIT I've used the term, the move from explicit to implicit.
+
+12:14.22
+Web In Travel Podcasts
+Thank you.
+
+12:22.21
+Timothy O'Neil-Dunne
+And AI is part of that change. So as you see things going through this change, you realize that some of the compromises that were made early on, and I'm just as guilty as anybody else of having made some of those compromises,
+
+12:38.70
+Timothy O'Neil-Dunne
+that's gonna hurt us now because we're now constrained. So now we're looking very hard at the infrastructure, the ecosystem of particularly air because air tends to lead ah is changing and it needs to change.
+
+12:53.95
+Timothy O'Neil-Dunne
+But the industry is going to have to pay a lot of money to do that. And that money is not necessarily easily found. So it's going to be a struggle for the industry to change its back end, if you like, so that the back end can accommodate these massive amounts of smart agents who are going to be searching and doing that contextual search for you as a customer, where I can just say, I'll lean into it.
+
+13:07.09
+Web In Travel Podcasts
+Thank you.
+
+13:20.28
+Timothy O'Neil-Dunne
+I'll just let it happen. And I think if you look at the way people deal with you know the the various Gen AI tools today, ChatGBT or DeepSeq or whatever it might be, ah you ask a question and it just takes its time. As you watch the screen, it's kind of funny to watch it.
+
+13:38.44
+Timothy O'Neil-Dunne
+It doesn't come back and say, here it is. It actually tracks and you watch it as it tracks, which is to me so familiar because in the early days of when I was using what was known as a Bell 103A modem, the speed, which was 75 bod a minute, was so slow that the screen actually painted in exactly the way that Gen AI is painting today.
+
+14:05.18
+Timothy O'Neil-Dunne
+And I think, oh my gosh, I feel like I'm back in the 40 years ago. But this this need to change is is coming closer and closer to the vision I think many of us had who were at the forefront of some of this stuff.
+
+14:23.62
+Timothy O'Neil-Dunne
+in the 80s and 90s, we imagined a world that you would almost think of it by, if you know Star Trek, you know, it's like, you know, Kirk de Bridge, it's all Kirk to computer, hey, tell me what's the best way to do it.
+
+14:40.05
+Timothy O'Neil-Dunne
+And it just does it for you. But we're still not there yet. And we've got to go through some of these changes. And what I love about our industry is While there are people who understand how that works, there are many people who don't.
+
+14:54.95
+Timothy O'Neil-Dunne
+And that that's kind of the joy that I get from this today is that I can be the old guy in the back of the room going, yeah, but you can't do it that way because but I don't want to be the guy who says no, i want to be, but here's what we can do.
+
+15:09.11
+Timothy O'Neil-Dunne
+And that really gets me excited because I think that is where the changes will occur, guiding people to the right thing so that instead of having some of these strange, and I'm sure everybody's appreciated, the hallucinations that come out from some of these Gen AI things, oh my gosh, they're just silly, right? You know that they're silly.
+
+15:29.28
+Timothy O'Neil-Dunne
+your Your intuition should tell you it's silly. but we've got to be able to feed it correctly and train it properly. It's going to take a little time to do that.
+
+15:39.03
+Web In Travel Podcasts
+Right, right. Where do we stand now, you think, like quarter of a century into the 21st century or the Asian century, as it's being called? What are the interesting stories to be told? Where are the opportunities?
+
+15:53.24
+Web In Travel Podcasts
+um And what needs to be fixed? What needs to be fixed at this point in time?
+
+15:57.72
+Timothy O'Neil-Dunne
+how long do we have? We could talk about this all day as what needs to be fixed. um There are many things that need to be fixed, but but let's talk about the... the the urgency, right?
+
+16:11.09
+Timothy O'Neil-Dunne
+There's a lot of talk about offer and order and moving to ah more retail model. I always think that when I hear airlines talk about, oh, yes, we're into airline retailing, I think, li a liar, liar, pants on fire, you don't know what retailing is.
+
+16:22.75
+Web In Travel Podcasts
+Thank you.
+
+16:27.55
+Timothy O'Neil-Dunne
+You know, have you not seen Timu or Shein or AliExpress or even Amazon? No, that's retailing. This stuff that we do, ah that's not retailing. That's fake stuff.
+
+16:40.39
+Timothy O'Neil-Dunne
+So how do we get to that ah space? So I think the challenge is the the literally the removal of the explicit interface into I want to have an answer and I want to get there.
+
+16:54.52
+Timothy O'Neil-Dunne
+um I remember in the late 90s and early aughts, there were some companies who tried to build a an automated reservation system that interfaced with your calendar and your email.
+
+17:09.05
+Timothy O'Neil-Dunne
+So you'd get an email that says, you know, I'd like to have a meeting on this day. You go to your scheduling and it would go book it for you in corporate world. And people tried to do it. But what is the interesting thing is humans got in the way.
+
+17:22.07
+Timothy O'Neil-Dunne
+It's not that it wasn't possible to do it. Yeah, it was a little ropey, but it could be done. But humans didn't trust it. And i think the challenge that we have is there is the technology challenge. Everybody knows that, and that's going to take her for a fair while to get done.
+
+17:39.00
+Timothy O'Neil-Dunne
+People are saying that NDC has got another 10 years before you get to to pure offer and order, and we get rid of the things like the P&R. But I worry more about trust.
+
+17:51.41
+Timothy O'Neil-Dunne
+I worry about that ability for the consumer to say, am I getting what I need to get? And if you look at consumer behavior, They look at it. Somebody says, here you go. Here's this great product.
+
+18:04.34
+Timothy O'Neil-Dunne
+And you say, OK, I can fly from, you know, Singapore to Bangkok for $99.
+
+18:04.90
+Web In Travel Podcasts
+Thank you.
+
+18:11.33
+Timothy O'Neil-Dunne
+Yeah, good luck finding that fare. Right. And you know that it's it's kind of a come on. And oh, by the oh, so you want a seat with that? Oh, no, that's extra. Oh, ah oh you want to take a bag with it? That's extra.
+
+18:23.27
+Timothy O'Neil-Dunne
+What I fear, and this is a genuine fear, is that we have so made it difficult for a consumer to actually buy travel with all these add-ons and ancillaries that the consumer has lost faith and trust in brands.
+
+18:43.41
+Timothy O'Neil-Dunne
+And I feel that the agent may become, the by agent I mean an automated agent, an AI-based agent, is likely to engender more trust from the consumer than branded product, whether that's Metasearch or it's an OTA or it's the the product seller themselves.
+
+19:05.31
+Timothy O'Neil-Dunne
+And I think that that's going to be a steep hill for many to climb. You know, how do I get into the funnel? How do I now approach the funnel? And what's my trust in this?
+
+19:16.85
+Timothy O'Neil-Dunne
+What are the agents going to do? Will the agents be actually, as I'm predicting, will they become more trustworthy than the the original brands?
+
+19:28.98
+Timothy O'Neil-Dunne
+Do the brands survive? That's an interesting proposition.
+
+19:33.57
+Web In Travel Podcasts
+Right. How do you imagine the future to be like the next 20 years? You know, and and you touched on this a bit, but what do we have to do to get to a better future?
+
+19:45.33
+Timothy O'Neil-Dunne
+Well, I'm going to be dead by then. So um why do I care? Right. So ah the the next 20 years.
+
+19:50.39
+Web In Travel Podcasts
+Don't say that.
+
+19:53.78
+Timothy O'Neil-Dunne
+Oh, OK. I think our journey to explicit. Sorry, excuse me. Our journey to implicit away from explicit is is a fairly lengthy one.
+
+20:08.08
+Timothy O'Neil-Dunne
+our ability to trust things will be the restraining factor.
+
+20:08.14
+Web In Travel Podcasts
+Thank you.
+
+20:13.51
+Timothy O'Neil-Dunne
+Do I feel that this offer that I'm seeing in front of me, is it like an Amazon offer that I can say, I want that one? And as soon as I sort of point to it and say, that's the one, all this other mechanics that occurs at the back,
+
+20:28.82
+Timothy O'Neil-Dunne
+just get handled. And if you if you look at, you know as I said, Shein or Timo or or Amazon, and when you see something, there is ah very clear set of, this is the product, I can choose it.
+
+20:39.00
+Web In Travel Podcasts
+Thank you.
+
+20:44.08
+Timothy O'Neil-Dunne
+And once I've made my decision about how I got there and the searching of all the different products, different types, yeah, I can choose it. And then once I see it, I move to a different area, which is payment and then delivery.
+
+20:57.06
+Timothy O'Neil-Dunne
+Why can't travel be like that? And I think that's going to be the change is that when we move to real retailing as opposed to the fake retailing I think we're at now, it's going to take some time.
+
+21:09.94
+Web In Travel Podcasts
+Thank you.
+
+21:10.21
+Timothy O'Neil-Dunne
+But I believe that we will ah start to see people ah companies emerging from traditional retail, where by traditional, I mean, those people who've been online retailing like Ocado and um Amazon and Alibaba and all those guys, that they will move faster, because they've got experience in what I would call real e commerce and retailing.
+
+21:38.68
+Timothy O'Neil-Dunne
+that merchandising and that product. And I see, i think what is interesting, you used term earlier about the Asian century. I think that there is a lot more to be learned, particularly from China and how China engages with its consumers, how brands engage with their consumers.
+
+21:48.18
+Web In Travel Podcasts
+Thank you.
+
+21:57.94
+Timothy O'Neil-Dunne
+ah However, unlike Chinese brands, we don't have a holistic ecosystem. that embraces everything from chat to payment to e-commerce all wrapped up in one. We don't have those super apps.
+
+22:16.45
+Timothy O'Neil-Dunne
+I know there are many people who think they're going to create a super app, and there's a lot of people trying. And I keep on telling them, don't do it because that ship has sailed. But there will be some learnings that come from it.
+
+22:29.61
+Timothy O'Neil-Dunne
+And that learning, I think, will get better and better over time. But what has to underpin it on, I'm sorry if I'm going to sound like I'm flogging a dead horse, but to me, the element of trust is critical to this.
+
+22:42.79
+Timothy O'Neil-Dunne
+If the consumer trusts you, and if the and if you deliver on your promise to the consumer, it will be okay. I think part of the challenge is today that we're at such high levels of occupancy, call it load factor or or hotel occupancy,
+
+23:01.86
+Timothy O'Neil-Dunne
+that the suppliers, the people who own the product, the airlines and the hotel jeans, and the hotel properties themselves, they become somewhat arrogant about saying, why should I care?
+
+23:14.69
+Timothy O'Neil-Dunne
+Because I only need to worry about my last 5%. So really, if you have a problem, go somewhere else and good luck getting that seat or good luck getting that hotel room.
+
+23:26.22
+Timothy O'Neil-Dunne
+And so I think we've got some learning and perhaps some sobering thoughts to come to the fore. Today, particularly, here we are in April of 2025, there's the uncertainty caused by the shenanigans going on in the United States, which is absolutely destroying trust.
+
+23:50.48
+Timothy O'Neil-Dunne
+And you're seeing that. You're seeing now the impact. So the the the shoe is kind of on the other foot because the consumer will now have more choice.
+
+24:01.20
+Timothy O'Neil-Dunne
+We're moving from a supply-sided marketplace to a demand-sided marketplace in many places like you know Canada to the USA, the transatlantic and other markets.
+
+24:12.18
+Timothy O'Neil-Dunne
+You've already seen it across the Pacific because China was not able to come outside of its marketplace and its carriers, but now they're slowly creeping back. Now that there's going to be a cutback on the American led travelers, China has ah has a better chance.
+
+24:30.40
+Timothy O'Neil-Dunne
+So, you know, we talk about globalism and travel has always been a globalist marketplace. And I think it's it's high time that we consider looking beyond our parapet, beyond our horizon,
+
+24:44.08
+Timothy O'Neil-Dunne
+But the critical thing has to be, how can I deliver what the customer wants and what he expects? And today, I think we fail at that.
+
+24:54.37
+Web In Travel Podcasts
+Right. Before we get to the last question, are the big guys still kings of the travel industry in 20 years, the Expedias, the bookings?
+
+25:05.54
+Web In Travel Podcasts
+um And if they are not, who's taking their spot?
+
+25:10.02
+Timothy O'Neil-Dunne
+Ooh, in 20 years, who will be the kings and queens? That's a really good question. So I can point to analogies. Every year, um think it's First Brands does it. They put out a list of the top 100 global brands.
+
+25:27.87
+Timothy O'Neil-Dunne
+And what's fascinating to look at it is two characteristics. The first one is there is not one travel brand in that list. There are brands which play in travel like American Express and Disney.
+
+25:41.21
+Timothy O'Neil-Dunne
+But is there one dedicated travel brand? Is there a passenger airline? The answer is no. And there hasn't been for the past 30 years. So think about that is that travel has not done a great job with their brands to stay in the front.
+
+25:56.76
+Timothy O'Neil-Dunne
+And therefore, I think that's a lesson. It's a very chastening lesson. that while there may be these big players, both the direct supply, like um the the real global companies, such as IAG, which owns British Airways and a bunch of other brands, the Air France KLM conglomerate, American Airlines, United Airlines, Delta, I think those brands are going to struggle because they have come from a position of, I would call it artificial strength
+
+26:30.05
+Timothy O'Neil-Dunne
+And as the consumer levels the playing field with their ability to get what they need, I think what you're going to see is it will become harder for those brands to sit and rest on their laurels.
+
+26:31.72
+Web In Travel Podcasts
+Thank you.
+
+26:44.58
+Timothy O'Neil-Dunne
+The same applies to the intermediary brands. Look what's happened. You're seeing still some consolidation. You're still seeing Expedia and Booking buying into other companies because they can do that.
+
+26:56.37
+Timothy O'Neil-Dunne
+You're looking at the you know the disruption that Airbnb brought in the accommodation sector. Could they build out their brand? And will these guys, you know, will they do better?
+
+27:08.44
+Timothy O'Neil-Dunne
+Will Kayak and Skyscanner, will those guys survive in this new world order where it's the agent doing the search, not a human doing ah an explicit search like that?
+
+27:10.35
+Web In Travel Podcasts
+Thank you.
+
+27:22.38
+Timothy O'Neil-Dunne
+So I think we're going to go through ah a ah period of turmoil. I call this a generational change. And I think that that is occurring now. For the future, do I think these brands will still survive?
+
+27:36.75
+Timothy O'Neil-Dunne
+i think one or two of them will. I think there's a strong possibility of the big guys will. I think a better question is when will we see a disruptive force come in and where will it come from?
+
+27:49.43
+Timothy O'Neil-Dunne
+That's something I've always got my eye open. And I think that will come from another area of e-commerce. ah And I don't think that travel, the existing players should be resting on their laurels because they You know, it's an absolute guarantee that there will be pressure from some of these players who are better at retailing than travel companies are.
+
+28:17.24
+Web In Travel Podcasts
+Right. So if you had to visualize um travel in 2045, like what does it look like? What does it feel like? Like, paint us a picture of the the situation.
+
+28:29.06
+Timothy O'Neil-Dunne
+Oh, wow. Travel in 2045. Like I said, I will be dead by then. um But what would is what will it look like?
+
+28:42.15
+Timothy O'Neil-Dunne
+I think you will see blurring. i think what I predicted last year at Wood Singapore 2024, that the iPhone wouldn't go past or much past iPhone 20.
+
+28:59.08
+Timothy O'Neil-Dunne
+because I believe that this device that we've we've come to rely upon so heavily, it doesn't have a place because we're we're spending too much time through a very small aperture looking at something.
+
+29:15.21
+Timothy O'Neil-Dunne
+So the first thing that I think will be, um I prefer MR for mixed reality. our ability to mix those things. And I'm very interested to see how AR, which is augmented reality, and VR, virtual reality, how those things have progressed, but they haven't really caught on with the the world as a whole.
+
+29:38.10
+Timothy O'Neil-Dunne
+So I think we're going to see more of this mixed reality as kind of an aid. And I would encourage people to read William Gibson, who's a science fiction writer.
+
+29:51.11
+Timothy O'Neil-Dunne
+If you anybody's written, Neuromancer is a great book. And he he accurately predicts not just the fact that there is going to be certain things that will happen in our near future, like in 2045, but also how it's not all perfect.
+
+30:08.14
+Timothy O'Neil-Dunne
+And I think that that's going to be one of those critical things is there's going to be a lot of things that aren't perfect. Here we are, you know, this is now, if you use 1995 as the date when travel first went on online in a big way.
+
+30:27.78
+Timothy O'Neil-Dunne
+So here we are 30 years later. Have we really done anything that's really super spectacular?
+
+30:32.96
+Web In Travel Podcasts
+Thank you.
+
+30:35.81
+Timothy O'Neil-Dunne
+It's still pretty ropey, right? As far as the customer experience goes and as far as all the challenges we've got to fix things that need to be fixed. So in 2045, which further 20 years time, which is a further twenty years time I think we will have fixed a lot of those things, but it's not going to be perfect because nothing ever is.
+
+30:54.29
+Timothy O'Neil-Dunne
+And we're gonna go through this iteration. I think there will be big brands. I think we'll be able to see some things that will be fabulous. Do I think we're gonna have a George Jetson view of little people flying around in cars?
+
+31:07.88
+Timothy O'Neil-Dunne
+yeah Sorry, I'm not ah not a fan. But do I think that we will have some things which are good? and And here's something to consider. um the The aircraft that are flying today, the Airbus and Boeing, and even COMAC, the Chinese provider, those planes, they're taking orders for 15 to 20 years in the future.
+
+31:33.52
+Timothy O'Neil-Dunne
+That's when the aircraft will be delivered. So there isn't going to be such a fundamental change in the way that we can travel. And that's something that we should consider.
+
+31:46.25
+Timothy O'Neil-Dunne
+That's kind of fixed. So for the next 20 years, we're going to be traveling in the same way as we travel today. And I think a lot of people don't kind of bear that in mind when they're thinking about what the future looks like.
+
+32:00.35
+Timothy O'Neil-Dunne
+Yes, I think our our ability to buy and search, well, have our agents search for us will improve. ah Yes, we're the the desire for travel will still be there. Oh my God, yes, we want to travel, but there will be a lot more of this ah mixed reality.
+
+32:19.15
+Timothy O'Neil-Dunne
+And unfortunately, there'll be places where we can't travel because we've run out of people to that we should be allowing. There's, for example, in in in Italy, there's the five villages, Cinque Terre, where the already you need a visa to get in to see them.
+
+32:39.33
+Timothy O'Neil-Dunne
+You just can't just walk in You can't take a train journey. And it's beautiful. But can you get there? No. Look at the restrictions on things like in Paris, the Eiffel Tower.
+
+32:49.97
+Timothy O'Neil-Dunne
+Getting into Venice, you need to have a visa and a pass to get in. So you're going to see a lot more of these restrictions. And there's one thing I always used to talk to Sihoon about, which is, I think that one of the things people will crave as we more urbanize is silent travel, slow travel.
+
+33:12.57
+Timothy O'Neil-Dunne
+I look for those things to be, and maybe it's because I'm getting old that I want to appreciate things that way. But I still, I'm fascinated by travel. I'm fascinated by all the work that we do. And i'm I'm very hopeful about um our business, but hope is not a strategy.
+
+33:27.81
+Timothy O'Neil-Dunne
+And I think we have to constantly work at this. This is a full-time job for a lot of people.
+
+33:36.95
+Web In Travel Podcasts
+Awesome. That was really awesome. Like insightful as always.
+
+33:41.82
+Timothy O'Neil-Dunne
+um I'm glad you liked it. i mean It's kind of funny to think about this. And to be able to take a balanced approach is really tough.
+
+33:52.97
+Timothy O'Neil-Dunne
+Because there are a lot of people now who are brimming with ideas and they're going, look what we can do. The word between can, could, and will and achieve that that progression is going to be hard.
+
+34:09.61
+Timothy O'Neil-Dunne
+So tricky, tricky, tricky, tricky.
+
+34:14.22
+Web In Travel Podcasts
+trick Tricky, tricky, tricky. You mind if I leave that last part in as well?
+
+34:19.48
+Timothy O'Neil-Dunne
+No, no, you can do it. You can use it as you see fit.
+
+34:22.07
+Web In Travel Podcasts
+Cool, cool. Okay, let me stop the recording.
+
