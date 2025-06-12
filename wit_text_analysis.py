@@ -13,11 +13,13 @@ import csv
 class TextAnalyzer:
     def __init__(self, input_dir):
         self.input_dir = input_dir
+        self.visulization_word = set({})
         
         # Basic Chinese stopwords
         self.stopwords = set({
             
         })
+        
         # Basic English stopwords
         self.stopwords.update({
             'days', 'started', 'move', 'little', 'away',
@@ -267,7 +269,8 @@ class TextAnalyzer:
         # Check if either word is in meaningless patterns
         if word1.lower() in meaningless_patterns or word2.lower() in meaningless_patterns:
             return True
-            
+        # TODO: filter the keep? and then utilizing the filter to do the annalysis again
+        # TODO: create a better visualization using the filtering the words
         # Check for combinations that start with common verbs or prepositions
         common_starters = ['is', 'are', 'was', 'were', 'be', 'been', 'being',
                          'have', 'has', 'had', 'having', 'do', 'does', 'did',
@@ -301,32 +304,22 @@ class TextAnalyzer:
             # Convert to lowercase for consistency
             ngram_words = [w.lower() for w in ngram_words]
             
-            # Skip if any word in the n-gram is a stopword
-            if any(word in self.stopwords for word in ngram_words):
-                continue
+            # Apply different filtering rules based on n-gram type
+            if n == 3:  # Trigrams
+                # Only apply minimal filtering for trigrams
                 
-            # Skip if any word is too short
-            if any(len(word) <= 1 for word in ngram_words):
-                continue
-                
-            # Skip if all words are numbers
-            if all(self.is_number(word) for word in ngram_words):
-                continue
-                
-            # For bigrams, check if it's a template pattern
-            if n == 2 and self.is_template_bigram(ngram_words):
-                continue
-                
-            # For trigrams, add additional validation
-            if n == 3:
+                # Skip if any word is too short (1 character or less)
+                if any(len(word) <= 1 for word in ngram_words):
+                    continue
+                    
+                # Skip if all words are numbers
+                if all(self.is_number(word) for word in ngram_words):
+                    continue
+                    
                 # Skip if the words are identical
                 if len(set(ngram_words)) == 1:
                     continue
                     
-                # Skip if it's just repeating pairs
-                if ngram_words[0] == ngram_words[1] or ngram_words[1] == ngram_words[2]:
-                    continue
-                
                 # Create a unique key for this trigram
                 ngram_key = ' '.join(ngram_words)
                 
@@ -335,6 +328,23 @@ class TextAnalyzer:
                     continue
                     
                 seen_ngrams.add(ngram_key)
+                
+            else:  # Unigrams and Bigrams
+                # Use original strict filtering
+                if any(word in self.stopwords for word in ngram_words):
+                    continue
+                    
+                # Skip if any word is too short
+                if any(len(word) <= 1 for word in ngram_words):
+                    continue
+                    
+                # Skip if all words are numbers
+                if all(self.is_number(word) for word in ngram_words):
+                    continue
+                    
+                # For bigrams, check if it's a template pattern
+                if n == 2 and self.is_template_bigram(ngram_words):
+                    continue
             
             ngrams.append(tuple(ngram_words))
         
@@ -346,6 +356,17 @@ class TextAnalyzer:
             
         return ngrams
 
+    def filter_visulization_word(self, words):
+        """Filter out words that are not in the visulization word set"""
+        for word in words:
+            if word in self.visualization_word:
+                if word not in self.stopwords and word not in self.visualization_word:
+                    self.visualization_word.add(word)
+                else:
+                    print("word is in stopword & visualization word so not finnaly shown in the wordcloud")
+        return 
+            
+
     def filter_redundant_unigrams(self):
         """Filter out words that mainly appear as part of n-grams"""
         if not self.word_freq:
@@ -355,6 +376,7 @@ class TextAnalyzer:
         similarity_threshold = 0.95  # Increased threshold
         min_freq_threshold = 3  # Minimum frequency threshold to avoid filtering low-frequency words
         words_to_remove = set()
+        
         
         # Check bigrams
         for bigram, bigram_freq in self.bigram_freq.items():
