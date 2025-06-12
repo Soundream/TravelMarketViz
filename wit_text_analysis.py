@@ -8,6 +8,7 @@ import seaborn as sns
 from pathlib import Path
 import re
 from docx import Document  # Add support for Word documents
+import csv
 
 class TextAnalyzer:
     def __init__(self, input_dir):
@@ -39,15 +40,49 @@ class TextAnalyzer:
             "couldn't", 'didn', "didn't", 'doesn', "doesn't", 'hadn', "hadn't", 'hasn',
             "hasn't", 'haven', "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 'mustn',
             "mustn't", 'needn', "needn't", 'shan', "shan't", 'shouldn', "shouldn't", 'wasn',
-            "wasn't", 'weren', "weren't", 'won', "won't", 'wouldn', "wouldn't"
+            "wasn't", 'weren', "weren't", 'won', "won't", 'wouldn', "wouldn't",
+            # Additional common words to filter
+            'become', 'understand', 'turning', 'world', 'companies',
+            # More words to filter
+            'moment', 'money', 'long'
         })
         # Industry-specific stopwords
         self.stopwords.update({
+            'every', 'whole',
+            
             'web', 'years', 'said', 'says', 'will', 'new', 'also', 'one', 'two', 'may', 'now', 'use',
             'using', 'used', 'can', 'could', 'would', 'should', 'get', 'many', 'much',
             'year', 'month', 'day', 'time', 'way', 'week', 'need', 'make', 'see', 'look',
             'even', 'first', 'last', 'still', 'going', 'however', 'including', 'according',
-            'inc', 'ltd', 'co', 'com', 'org', 'net', 'www'
+            'inc', 'ltd', 'co', 'com', 'org', 'net', 'www',
+            # Additional industry stopwords
+            'company', 'business', 'market', 'industry', 'product', 'service',
+            'customer', 'client', 'user', 'platform', 'solution', 'system',
+            'data', 'information', 'technology', 'digital', 'online', 'mobile',
+            'global', 'local', 'regional', 'international', 'worldwide',
+            'strategy', 'strategic', 'operational', 'management', 'development',
+            'growth', 'success', 'successful', 'experience', 'quality',
+            'innovation', 'innovative', 'future', 'current', 'present', 'past',
+            'team', 'group', 'organization', 'department', 'division',
+            'project', 'process', 'program', 'initiative', 'approach',
+            'result', 'outcome', 'impact', 'effect', 'benefit',
+            'challenge', 'opportunity', 'problem', 'solution', 'issue',
+            'focus', 'focused', 'focusing', 'based', 'level', 'part',
+            'example', 'case', 'instance', 'situation', 'context',
+            'area', 'field', 'sector', 'segment', 'space',
+            'start', 'end', 'begin', 'finish', 'continue',
+            'increase', 'decrease', 'improve', 'enhance', 'reduce',
+            'high', 'low', 'large', 'small', 'big', 'little',
+            'important', 'significant', 'major', 'minor', 'key',
+            'different', 'similar', 'various', 'several', 'multiple',
+            'specific', 'particular', 'certain', 'general', 'common',
+            'unique', 'special', 'standard', 'typical', 'regular',
+            'simple', 'complex', 'easy', 'difficult', 'hard',
+            'early', 'late', 'soon', 'later', 'earlier',
+            'today', 'tomorrow', 'yesterday', 'currently', 'recently',
+            'previously', 'formerly', 'lately', 'nowadays', 'eventually',
+            'finally', 'ultimately', 'eventually', 'gradually', 'quickly',
+            'rapidly', 'slowly', 'steadily', 'constantly', 'continuously'
         })
 
         # Filler words and expressions
@@ -67,14 +102,35 @@ class TextAnalyzer:
             # Additional stopwords
             'around', 'somebody', 'bit', 'quickly',
             # Special characters
-            '...', '…'
+            '...', '…',
+            # Additional filler words
+            'absolutely', 'definitely', 'certainly', 'indeed', 'exactly',
+            'totally', 'completely', 'entirely', 'fully', 'quite',
+            'rather', 'somewhat', 'somehow', 'anyway', 'anyhow',
+            'whatever', 'whenever', 'wherever', 'however', 'moreover',
+            'furthermore', 'therefore', 'thus', 'hence', 'consequently',
+            'nevertheless', 'nonetheless', 'meanwhile', 'afterwards',
+            'besides', 'although', 'though', 'despite', 'yet',
+            'still', 'instead', 'otherwise', 'rather', 'whereas',
+            'while', 'apart', 'except', 'unless', 'whether',
+            'moreover', 'furthermore', 'additionally', 'besides',
+            'anyway', 'anyhow', 'anywhere', 'everywhere', 'somewhere',
+            'nowhere', 'anyone', 'everyone', 'someone', 'nobody',
+            'anything', 'everything', 'something', 'nothing',
+            'always', 'usually', 'often', 'sometimes', 'rarely',
+            'never', 'ever', 'forever', 'whenever', 'wherever'
         })
 
         # Names and related words
         self.stopwords.update({
             'timothy', 'tim', 'neil', 'dunne', 'ross', 'veitch', 'hoon', 'siew',
             'mr', 'mrs', 'ms', 'dr', 'prof', 'sir', 'madam', 'miss',
-            'name', 'names', 'called', 'call', 'calls', 'calling'
+            'name', 'names', 'called', 'call', 'calls', 'calling',
+            # Additional names from transcripts
+            'christine', 'tan', 'rob', 'rosenstein', 'ethan', 'greg', 'schulze',
+            'filip', 'boon', 'sian', 'chai', 'hughes', 'stephan', 'deep', 'kalra',
+            'caesar', 'indra', 'fritz', 'rod', 'cuthbert', 'laura', 'min', 'yoon',
+            'kei', 'shibata', 'morris', 'sim', 'jacinta', 'kp', 'ho'
         })
         
         # Initialize frequency counters
@@ -154,15 +210,140 @@ class TextAnalyzer:
                 filtered.append(word)
         return filtered
 
+    def is_template_bigram(self, bigram):
+        """Check if a bigram appears to be part of a template text or is meaningless
+        
+        Args:
+            bigram (tuple): A tuple of two words forming a bigram
+            
+        Returns:
+            bool: True if the bigram should be filtered out
+        """
+        # Convert bigram to string for easier matching
+        bigram_str = ' '.join(bigram).lower()
+        word1, word2 = bigram
+        
+        # Template text patterns to filter out
+        template_patterns = [
+            # Title/intro template patterns
+            
+            'ripe young', 'young age', 'age bound',
+            'bound collect', 'collect stories', 'stories lessons',
+            'lessons wit', 'wit marks', 'marks 20th', '20th turn',
+            'turn spotlight', 'spotlight community', 'community tribe',
+            'tribe pioneers', 'pioneers leaders', 'leaders tell',
+            'tell stories',
+            # Additional meaningless combinations
+            'stories share', 'share views', 'views evolution',
+            'evolution ask', 'ask reflect', 'reflect pivotal',
+            'pivotal imagine', 'imagine wit', 'wit studio',
+            'studio series', 'series conversations', 'conversations collective',
+            'collective story', 'story wit', 'wit chinese',
+            'chinese saying', 'saying 以古为鉴'
+        ]
+        
+        # Check if it's in template patterns
+        if bigram_str in template_patterns:
+            return True
+            
+        # Check for meaningless combinations
+        meaningless_patterns = [
+            # Common meaningless word combinations
+            'going', 'coming', 'getting', 'making', 'taking', 'looking',
+            'thinking', 'saying', 'trying', 'seeing', 'finding', 'putting',
+            'giving', 'asking', 'telling', 'showing', 'bringing', 'letting',
+            'keeping', 'setting', 'running', 'moving', 'turning', 'pulling',
+            'pushing', 'carrying', 'holding', 'leading', 'following', 'helping',
+            'starting', 'stopping', 'ending', 'continuing', 'beginning',
+            'happening', 'becoming', 'remaining', 'staying', 'leaving',
+            'imagine', 'reflect', 'consider', 'understand', 'remember',
+            'forget', 'realize', 'recognize', 'believe', 'suppose',
+            'decide', 'choose', 'select', 'pick', 'prefer',
+            'studio', 'series', 'episode', 'chapter', 'part',
+            'share', 'views', 'thoughts', 'ideas', 'opinions',
+            'collective', 'together', 'group', 'team', 'community'
+        ]
+        
+        # Check if either word is in meaningless patterns
+        if word1.lower() in meaningless_patterns or word2.lower() in meaningless_patterns:
+            return True
+            
+        # Check for combinations that start with common verbs or prepositions
+        common_starters = ['is', 'are', 'was', 'were', 'be', 'been', 'being',
+                         'have', 'has', 'had', 'having', 'do', 'does', 'did',
+                         'can', 'could', 'will', 'would', 'should', 'must',
+                         'may', 'might', 'shall', 'into', 'onto', 'upon',
+                         'about', 'above', 'across', 'after', 'against',
+                         'along', 'amid', 'among', 'around', 'before',
+                         'behind', 'below', 'beneath', 'beside', 'between',
+                         'beyond', 'during', 'except', 'inside', 'outside',
+                         'through', 'toward', 'under', 'within', 'without']
+                         
+        if word1.lower() in common_starters:
+            return True
+            
+        # Check for combinations that don't make semantic sense
+        if (word1.lower() == word2.lower() or  # Same word repeated
+            len(word1) <= 2 or len(word2) <= 2):  # Too short words
+            return True
+            
+        return False
+
     def get_ngrams(self, words, n):
         """Generate n-gram sequences"""
-        # For n-grams, don't filter numbers to keep combinations like "20 years"
         ngrams = []
+        seen_ngrams = set()  # Track unique ngrams
+        
         for i in range(len(words)-n+1):
-            ngram = tuple(words[i:i+n])
-            # Check if all words in n-gram are stopwords
-            if not all(word in self.stopwords for word in ngram):
-                ngrams.append(ngram)
+            # Get the n consecutive words
+            ngram_words = words[i:i+n]
+            
+            # Convert to lowercase for consistency
+            ngram_words = [w.lower() for w in ngram_words]
+            
+            # Skip if any word in the n-gram is a stopword
+            if any(word in self.stopwords for word in ngram_words):
+                continue
+                
+            # Skip if any word is too short
+            if any(len(word) <= 1 for word in ngram_words):
+                continue
+                
+            # Skip if all words are numbers
+            if all(self.is_number(word) for word in ngram_words):
+                continue
+                
+            # For bigrams, check if it's a template pattern
+            if n == 2 and self.is_template_bigram(ngram_words):
+                continue
+                
+            # For trigrams, add additional validation
+            if n == 3:
+                # Skip if the words are identical
+                if len(set(ngram_words)) == 1:
+                    continue
+                    
+                # Skip if it's just repeating pairs
+                if ngram_words[0] == ngram_words[1] or ngram_words[1] == ngram_words[2]:
+                    continue
+                
+                # Create a unique key for this trigram
+                ngram_key = ' '.join(ngram_words)
+                
+                # Skip if we've seen this trigram before
+                if ngram_key in seen_ngrams:
+                    continue
+                    
+                seen_ngrams.add(ngram_key)
+            
+            ngrams.append(tuple(ngram_words))
+        
+        # Debug information for trigrams
+        if n == 3 and ngrams:
+            print(f"\nDebug: First 5 raw trigrams:")
+            for i, trigram in enumerate(ngrams[:5]):
+                print(f"{i+1}. {' '.join(trigram)}")
+            
         return ngrams
 
     def filter_redundant_unigrams(self):
@@ -249,10 +430,17 @@ class TextAnalyzer:
         self.word_freq = Counter(filtered_words)
         
         # Count bigram frequencies
-        self.bigram_freq = Counter(self.get_ngrams(filtered_words, 2))
+        bigrams = self.get_ngrams(filtered_words, 2)
+        self.bigram_freq = Counter(bigrams)
         
         # Count trigram frequencies
-        self.trigram_freq = Counter(self.get_ngrams(filtered_words, 3))
+        trigrams = self.get_ngrams(filtered_words, 3)
+        self.trigram_freq = Counter(trigrams)
+        
+        # Debug information for trigrams
+        print("\nDebug: Top 10 trigrams before filtering:")
+        for trigram, freq in self.trigram_freq.most_common(10):
+            print(f"Trigram: {' '.join(trigram)}, Frequency: {freq}")
         
         # Filter out redundant words
         self.filter_redundant_unigrams()
@@ -401,29 +589,31 @@ class TextAnalyzer:
         # Add word frequencies
         for word, freq in self.word_freq.most_common():
             all_results.append({
-                'Type': 'Word',
                 'Word/Phrase': word,
+                'Type': 'Word',
                 'Frequency': freq
             })
             
         # Add bigram frequencies
         for word_pair, freq in self.bigram_freq.most_common():
             all_results.append({
-                'Type': 'Bigram',
                 'Word/Phrase': ' '.join(word_pair),
+                'Type': 'Bigram',
                 'Frequency': freq
             })
             
         # Add trigram frequencies
         for word_triplet, freq in self.trigram_freq.most_common():
             all_results.append({
-                'Type': 'Trigram',
                 'Word/Phrase': ' '.join(word_triplet),
+                'Type': 'Trigram',
                 'Frequency': freq
             })
             
         # Create DataFrame and sort by frequency
         df_all = pd.DataFrame(all_results)
+        # Reorder columns to put Type in second position
+        df_all = df_all[['Word/Phrase', 'Type', 'Frequency']]
         df_all = df_all.sort_values('Frequency', ascending=False)
         
         # Save to CSV file
@@ -448,6 +638,9 @@ class TextAnalyzer:
         Args:
             top_n (int): Number of top frequency words/phrases to process
         """
+        if not self.word_freq:
+            self.word_freq, self.bigram_freq, self.trigram_freq = self.analyze_text()
+            
         # Prepare all keywords from word frequencies
         all_results = []
         
@@ -482,83 +675,214 @@ class TextAnalyzer:
         print("\nSearching sentences for all top keywords...")
         # Process each keyword and collect all sentences
         all_sentences = []
-        for _, row in df_all.iterrows():
-            keyword = row['Word/Phrase']
-            print(f"\nProcessing keyword: '{keyword}'")
-            sentences = self.find_sentences_with_keyword(keyword)
-            all_sentences.extend(sentences)
+        
+        # Process each type separately
+        for type_name in ['Word', 'Bigram', 'Trigram']:
+            type_df = df_all[df_all['Type'] == type_name].head(top_n)
+            for _, row in type_df.iterrows():
+                keyword = row['Word/Phrase']
+                freq = row['Frequency']
+                print(f"\nProcessing {type_name.lower()}: '{keyword}' (frequency: {freq})")
+                sentences = self.find_sentences_with_keyword(keyword)
+                
+                # Add type information to sentences
+                for sentence in sentences:
+                    sentence['type'] = type_name
+                    sentence['frequency'] = freq
+                
+                all_sentences.extend(sentences)
         
         # Save all sentences to a single CSV file
         if all_sentences:
             df_sentences = pd.DataFrame(all_sentences)
-            df_sentences = df_sentences[['keyword', 'source_file', 'sentence']]  # Ensure column order
+            df_sentences = df_sentences[['type', 'keyword', 'frequency', 'source_file', 'sentence']]  # Ensure column order
             output_filename = 'all_keyword_sentences.csv'
             df_sentences.to_csv(output_filename, index=False, encoding='utf-8-sig')
             print(f"\nAll sentences saved to {output_filename}")
             print(f"Total sentences found: {len(all_sentences)}")
+            
+            # Print summary statistics
+            print("\nSummary by type:")
+            type_counts = df_sentences['type'].value_counts()
+            for type_name, count in type_counts.items():
+                print(f"{type_name}: {count} sentences")
         else:
             print("\nNo sentences found for any keywords")
 
     def plot_combined_frequencies(self, top_n=20):
-        """Plot combined frequency statistics"""
+        """Plot combined frequency statistics and collect sentences for top keywords"""
         if not self.word_freq:
             self.word_freq, self.bigram_freq, self.trigram_freq = self.analyze_text()
             
-        # Prepare data
+        # Get top words, bigrams and trigrams
+        top_words = self.word_freq.most_common(top_n)
+        top_bigrams = self.bigram_freq.most_common(top_n)
+        top_trigrams = self.trigram_freq.most_common(top_n)
+        
+        # Create DataFrame for plotting
         all_results = []
         
-        # Add word frequencies
-        for word, freq in self.word_freq.most_common(top_n):
+        # Add top N words
+        print("\nTop Words:")
+        for word, freq in top_words:
+            print(f"{word}: {freq}")
             all_results.append({
                 'Type': 'Word',
                 'Word/Phrase': word,
                 'Frequency': freq
             })
             
-        # Add bigram frequencies
-        for word_pair, freq in self.bigram_freq.most_common(top_n):
+        # Add top N bigrams
+        print("\nTop Bigrams:")
+        for word_pair, freq in top_bigrams:
+            bigram_str = ' '.join(word_pair)
+            print(f"{bigram_str}: {freq}")
             all_results.append({
                 'Type': 'Bigram',
-                'Word/Phrase': ' '.join(word_pair),
+                'Word/Phrase': bigram_str,
                 'Frequency': freq
             })
             
-        # Add trigram frequencies
-        for word_triplet, freq in self.trigram_freq.most_common(top_n):
+        # Add top N trigrams
+        print("\nTop Trigrams:")
+        for word_triplet, freq in top_trigrams:
+            trigram_str = ' '.join(word_triplet)
+            print(f"{trigram_str}: {freq}")
             all_results.append({
                 'Type': 'Trigram',
-                'Word/Phrase': ' '.join(word_triplet),
+                'Word/Phrase': trigram_str,
                 'Frequency': freq
             })
             
-        # Create DataFrame and sort by frequency
+        # Create DataFrame
         df_all = pd.DataFrame(all_results)
-        df_all = df_all.sort_values('Frequency', ascending=False)
         
-        # Set chart style
-        try:
-            plt.style.use('seaborn')  # Updated style name
-        except:
-            print("Warning: Could not set seaborn style, using default style")
-            
-        plt.figure(figsize=(15, 10))
+        # Create separate plots for words, bigrams, and trigrams
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(15, 20))
         
-        # Create bar chart
-        sns.barplot(data=df_all.head(top_n), x='Word/Phrase', y='Frequency', hue='Type')
-        plt.xticks(rotation=45, ha='right')
-        plt.title(f'Word Frequency Statistics Top {top_n}')
-        plt.xlabel('Word/Phrase')
-        plt.ylabel('Frequency')
-        plt.legend(title='Type')
+        # Plot words
+        words_df = df_all[df_all['Type'] == 'Word']
+        sns.barplot(data=words_df, x='Word/Phrase', y='Frequency', ax=ax1, color='skyblue')
+        ax1.set_title('Top Words')
+        ax1.tick_params(axis='x', rotation=45)
+        ax1.set_xticklabels(ax1.get_xticklabels(), ha='right')
+        
+        # Plot bigrams
+        bigrams_df = df_all[df_all['Type'] == 'Bigram']
+        sns.barplot(data=bigrams_df, x='Word/Phrase', y='Frequency', ax=ax2, color='lightgreen')
+        ax2.set_title('Top Bigrams')
+        ax2.tick_params(axis='x', rotation=45)
+        ax2.set_xticklabels(ax2.get_xticklabels(), ha='right')
+        
+        # Plot trigrams
+        trigrams_df = df_all[df_all['Type'] == 'Trigram']
+        sns.barplot(data=trigrams_df, x='Word/Phrase', y='Frequency', ax=ax3, color='salmon')
+        ax3.set_title('Top Trigrams')
+        ax3.tick_params(axis='x', rotation=45)
+        ax3.set_xticklabels(ax3.get_xticklabels(), ha='right')
+        
+        # Adjust layout
         plt.tight_layout()
         
         # Save chart
-        plt.savefig('word_frequency_combined.png')
+        plt.savefig('word_frequency_combined.png', bbox_inches='tight', dpi=300)
         plt.close()
-        print(f"Saved combined frequency plot to word_frequency_combined.png")
+        print(f"\nSaved combined frequency plot to word_frequency_combined.png")
         
         # Generate sentence files for all keywords
-        self.save_sentences_for_top_keywords(top_n)
+        print("\nSearching sentences for all top keywords...")
+        all_sentences = []
+        
+        # Process words
+        print("\nProcessing top words:")
+        for word, freq in top_words:
+            print(f"\nProcessing word: '{word}'")
+            sentences = self.find_sentences_with_keyword(word)
+            for sentence in sentences:
+                sentence['type'] = 'Word'
+                sentence['frequency'] = freq
+            all_sentences.extend(sentences)
+        
+        # Process bigrams
+        print("\nProcessing top bigrams:")
+        for word_pair, freq in top_bigrams:
+            bigram_str = ' '.join(word_pair)
+            print(f"\nProcessing bigram: '{bigram_str}'")
+            sentences = self.find_sentences_with_keyword(bigram_str)
+            for sentence in sentences:
+                sentence['type'] = 'Bigram'
+                sentence['frequency'] = freq
+            all_sentences.extend(sentences)
+        
+        # Save all sentences to a single CSV file
+        if all_sentences:
+            df_sentences = pd.DataFrame(all_sentences)
+            # Ensure column order with type and frequency
+            df_sentences = df_sentences[['type', 'keyword', 'frequency', 'source_file', 'sentence']]
+            # Sort by frequency (descending) and then by type
+            df_sentences = df_sentences.sort_values(['frequency', 'type'], ascending=[False, True])
+            output_filename = 'all_keyword_sentences.csv'
+            
+            # Save with proper CSV formatting
+            df_sentences.to_csv(output_filename, index=False, encoding='utf-8-sig',
+                              quoting=csv.QUOTE_NONNUMERIC,  # Quote all non-numeric fields
+                              escapechar='\\')  # Use backslash as escape character
+            
+            print(f"\nAll sentences saved to {output_filename}")
+            print(f"Total sentences found: {len(all_sentences)}")
+            
+            # Print summary statistics
+            print("\nSummary by type:")
+            type_counts = df_sentences['type'].value_counts()
+            for type_name, count in type_counts.items():
+                print(f"{type_name}: {count} sentences")
+            
+            # Print keywords with no sentences found
+            words_with_sentences = set(df_sentences[df_sentences['type'] == 'Word']['keyword'])
+            bigrams_with_sentences = set(df_sentences[df_sentences['type'] == 'Bigram']['keyword'])
+            
+            print("\nKeywords with no sentences found:")
+            print("\nWords:")
+            for word, _ in top_words:
+                if word not in words_with_sentences:
+                    print(f"- {word}")
+            
+            print("\nBigrams:")
+            for word_pair, _ in top_bigrams:
+                bigram_str = ' '.join(word_pair)
+                if bigram_str not in bigrams_with_sentences:
+                    print(f"- {bigram_str}")
+        else:
+            print("\nNo sentences found for any keywords")
+
+    def clean_sentence(self, sentence):
+        """Clean special characters from sentence and ensure CSV compatibility
+        
+        Args:
+            sentence (str): Original sentence
+            
+        Returns:
+            str: Cleaned sentence
+        """
+        # Remove bullet points and other special characters
+        sentence = re.sub(r'[•·⋅‣⁃∙◦⦁⦾⦿]', '', sentence)
+        
+        # Replace ellipsis with three dots
+        sentence = re.sub(r'\.{3,}|…', '...', sentence)
+        
+        # Replace all types of quotes with straight quotes
+        sentence = re.sub(r'[""''‹›«»]', '"', sentence)
+        
+        # Escape existing double quotes by doubling them (CSV standard)
+        sentence = sentence.replace('"', '""')
+        
+        # Replace multiple spaces and newlines with single space
+        sentence = re.sub(r'\s+', ' ', sentence)
+        
+        # Remove any remaining non-printable characters
+        sentence = re.sub(r'[^\x20-\x7E]', '', sentence)
+        
+        return sentence.strip()
 
     def find_sentences_with_keyword(self, keyword, text=None):
         """Find sentences containing keywords
@@ -572,73 +896,84 @@ class TextAnalyzer:
         """
         found_sentences = []
         
-        # Iterate through all txt files in directory
-        for file_path in Path(self.input_dir).rglob('*.txt'):
+        # Search in both txt and Word files
+        for file_path in list(Path(self.input_dir).rglob('*.txt')) + \
+                        list(Path(self.input_dir).rglob('*.doc')) + \
+                        list(Path(self.input_dir).rglob('*.docx')):
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    text = f.read()
-            except UnicodeDecodeError:
-                try:
-                    with open(file_path, 'r', encoding='gbk') as f:
-                        text = f.read()
-                except Exception as e:
-                    print(f"Cannot read file {file_path}: {e}")
-                    continue
+                if file_path.suffix.lower() in ['.doc', '.docx']:
+                    text = self.read_word_doc(file_path)
+                    if not text:  # Skip if no content
+                        continue
+                else:  # txt files
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            text = f.read()
+                    except UnicodeDecodeError:
+                        try:
+                            with open(file_path, 'r', encoding='gbk') as f:
+                                text = f.read()
+                        except Exception as e:
+                            print(f"Cannot read file {file_path}: {e}")
+                            continue
 
-            # Convert keyword to lowercase for case-insensitive search
-            keyword = keyword.lower()
-            
-            # Use regex to split sentences
-            # This pattern splits at periods, question marks, exclamation marks, considering spaces after them
-            sentences = re.split(r'[.!?]+\s*', text)
-            
-            for sentence in sentences:
-                # Clean and normalize sentence
-                cleaned_sentence = sentence.strip()
-                if not cleaned_sentence:  # Skip empty sentences
-                    continue
+                # Convert keyword to lowercase for case-insensitive search
+                keyword = keyword.lower()
+                
+                # Clean the text before splitting into sentences
+                text = self.clean_sentence(text)
+                
+                # Use regex to split sentences
+                # This pattern splits at periods, question marks, exclamation marks, considering spaces after them
+                sentences = re.split(r'[.!?]+\s*', text)
+                
+                for sentence in sentences:
+                    # Clean and normalize sentence
+                    cleaned_sentence = sentence.strip()
+                    if not cleaned_sentence:  # Skip empty sentences
+                        continue
                     
-                # Remove extra whitespace and newlines
-                cleaned_sentence = re.sub(r'\s+', ' ', cleaned_sentence)
-                
-                # If sentence is longer than 150 characters, take context around keyword
-                if len(cleaned_sentence) > 150:
-                    # Find keyword position
-                    keyword_pos = cleaned_sentence.lower().find(keyword)
-                    if keyword_pos != -1:
-                        # Take 50 characters before and after keyword
-                        start = max(0, keyword_pos - 50)
-                        end = min(len(cleaned_sentence), keyword_pos + len(keyword) + 50)
+                    # Create a regex pattern that matches the whole word/phrase only
+                    pattern = r'\b' + re.escape(keyword) + r'\b'
+                    
+                    # Case-insensitive search for the whole word/phrase
+                    if re.search(pattern, cleaned_sentence.lower()):
+                        # If sentence is longer than 150 characters, take context around keyword
+                        if len(cleaned_sentence) > 150:
+                            # Find keyword position (using the actual match)
+                            match = re.search(pattern, cleaned_sentence.lower())
+                            if match:
+                                keyword_pos = match.start()
+                                # Take 50 characters before and after keyword
+                                start = max(0, keyword_pos - 50)
+                                end = min(len(cleaned_sentence), keyword_pos + len(keyword) + 50)
+                                
+                                # Adjust start position to word beginning
+                                while start > 0 and cleaned_sentence[start - 1].isalnum():
+                                    start -= 1
+                                    
+                                # Adjust end position to word ending
+                                while end < len(cleaned_sentence) and cleaned_sentence[end - 1].isalnum():
+                                    end += 1
+                                    
+                                cleaned_sentence = ('...' if start > 0 else '') + \
+                                                cleaned_sentence[start:end] + \
+                                                ('...' if end < len(cleaned_sentence) else '')
                         
-                        # Adjust start position to word beginning
-                        while start > 0 and cleaned_sentence[start - 1].isalnum():
-                            start -= 1
-                            
-                        # Adjust end position to word ending
-                        while end < len(cleaned_sentence) and cleaned_sentence[end - 1].isalnum():
-                            end += 1
-                            
-                        cleaned_sentence = ('...' if start > 0 else '') + \
-                                        cleaned_sentence[start:end] + \
-                                        ('...' if end < len(cleaned_sentence) else '')
-                
-                # Case-insensitive keyword check
-                if keyword in cleaned_sentence.lower():
-                    found_sentences.append({
-                        'keyword': keyword,
-                        'source_file': file_path.name,
-                        'sentence': cleaned_sentence
-                    })
+                        found_sentences.append({
+                            'keyword': keyword,
+                            'source_file': file_path.name,
+                            'sentence': cleaned_sentence
+                        })
+                        
+            except Exception as e:
+                print(f"Error processing file {file_path}: {e}")
+                continue
         
         return found_sentences
 
     def save_keyword_sentences(self, keyword):
-        """Save sentences containing keywords to CSV file
-        
-        Args:
-            keyword (str): Keyword or phrase to search for
-        """
-        # Get sentences containing keyword
+        """Save sentences containing keywords to CSV file"""
         sentences = self.find_sentences_with_keyword(keyword)
         
         if not sentences:
@@ -649,9 +984,12 @@ class TextAnalyzer:
         df = pd.DataFrame(sentences)
         df = df[['keyword', 'source_file', 'sentence']]
         
-        # Save to CSV file
+        # Save to CSV file with proper quoting
         output_filename = f'sentences_with_{keyword.replace(" ", "_")}.csv'
-        df.to_csv(output_filename, index=False, encoding='utf-8-sig')
+        df.to_csv(output_filename, index=False, encoding='utf-8-sig', 
+                 quoting=csv.QUOTE_NONNUMERIC,  # Quote all non-numeric fields
+                 escapechar='\\')  # Use backslash as escape character
+        
         print(f"\nSentences containing keyword '{keyword}' saved to {output_filename}")
         print(f"Found {len(sentences)} sentences containing this keyword")
 
