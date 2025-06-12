@@ -7,16 +7,17 @@ from wordcloud import WordCloud
 import seaborn as sns
 from pathlib import Path
 import re
+from docx import Document  # Add support for Word documents
 
 class TextAnalyzer:
     def __init__(self, input_dir):
         self.input_dir = input_dir
         
-        # 基础中文停用词
+        # Basic Chinese stopwords
         self.stopwords = set({
             
         })
-        # 英文基础停用词
+        # Basic English stopwords
         self.stopwords.update({
             'days', 'started', 'move', 'little', 'away',
             'travel', 'podcasts', 'people', 'thank', 'us', 'go', 'talk', 'today',
@@ -26,8 +27,7 @@ class TextAnalyzer:
             'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves',
             'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those',
             'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had',
-            'having', 'do', 'does', 'did'
-            , 'doing', 'a', 'an', 'the', 'and', 'but', 'if',
+            'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if',
             'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with',
             'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after',
             'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over',
@@ -41,7 +41,7 @@ class TextAnalyzer:
             "mustn't", 'needn', "needn't", 'shan', "shan't", 'shouldn', "shouldn't", 'wasn',
             "wasn't", 'weren', "weren't", 'won', "won't", 'wouldn', "wouldn't"
         })
-        # 行业特定停用词
+        # Industry-specific stopwords
         self.stopwords.update({
             'web', 'years', 'said', 'says', 'will', 'new', 'also', 'one', 'two', 'may', 'now', 'use',
             'using', 'used', 'can', 'could', 'would', 'should', 'get', 'many', 'much',
@@ -50,7 +50,7 @@ class TextAnalyzer:
             'inc', 'ltd', 'co', 'com', 'org', 'net', 'www'
         })
 
-        # 语气词和填充词
+        # Filler words and expressions
         self.stopwords.update({
             'um', 'uh', 'ah', 'oh', 'yeah', 'yes', 'no', 'right', 'okay', 'ok',
             'like', 'sort', 'kind', 'lot', 'lots', 'thing', 'things', 'way', 'ways',
@@ -60,52 +60,74 @@ class TextAnalyzer:
             'want', 'wants', 'wanting', 'wanted', 'look', 'looks', 'looking', 'looked',
             'well', 'good', 'great', 'nice', 'better', 'best', 'sure', 'guess',
             'maybe', 'perhaps', 'probably', 'obviously', 'course', 'etc',
-            # 添加新的通用词
+            # Additional common words
             'able', 'back', 'take', 'say', 'something', 'early', 'next', 'across',
-            # 新增用户指定的停用词
+            # User-specified stopwords
             'different', 'always', 'point', 'build', 'work', 'change',
-            # 新增更多停用词
+            # Additional stopwords
             'around', 'somebody', 'bit', 'quickly',
-            # 特殊字符
+            # Special characters
             '...', '…'
         })
 
-        # 特定人名和相关词
+        # Names and related words
         self.stopwords.update({
             'timothy', 'tim', 'neil', 'dunne', 'ross', 'veitch', 'hoon', 'siew',
             'mr', 'mrs', 'ms', 'dr', 'prof', 'sir', 'madam', 'miss',
             'name', 'names', 'called', 'call', 'calls', 'calling'
         })
         
-        # 初始化词频计数器
+        # Initialize frequency counters
         self.word_freq = None
         self.bigram_freq = None
         self.trigram_freq = None
         
+    def read_word_doc(self, file_path):
+        """Read content from a Word document"""
+        try:
+            doc = Document(file_path)
+            return ' '.join([paragraph.text for paragraph in doc.paragraphs])
+        except Exception as e:
+            print(f"Error reading Word document {file_path}: {e}")
+            return ""
+
     def read_files(self):
-        """读取所有文本文件并合并内容"""
+        """Read all text files and Word documents and combine their content"""
         all_text = []
-        found_files = list(Path(self.input_dir).rglob('*.txt'))  # 只搜索txt文件
+        # Search for both txt and Word files
+        found_files = list(Path(self.input_dir).rglob('*.txt')) + \
+                     list(Path(self.input_dir).rglob('*.doc')) + \
+                     list(Path(self.input_dir).rglob('*.docx'))
         
         if not found_files:
-            raise FileNotFoundError(f"No .txt files found in directory: {self.input_dir}")
+            raise FileNotFoundError(f"No .txt or Word files found in directory: {self.input_dir}")
             
         for file in found_files:
             try:
-                with open(file, 'r', encoding='utf-8') as f:
-                    text = f.read()
-                    all_text.append(text)
-                    print(f"Successfully read {file}")
-            except Exception as e:
-                print(f"Error reading {file}: {e}")
-                try:
-                    # 尝试使用其他编码
-                    with open(file, 'r', encoding='gbk') as f:
-                        text = f.read()
+                if file.suffix.lower() in ['.doc', '.docx']:
+                    text = self.read_word_doc(file)
+                    if text:
                         all_text.append(text)
-                        print(f"Successfully read {file} with GBK encoding")
-                except Exception as e:
-                    print(f"Failed to read {file} with both UTF-8 and GBK encodings")
+                        print(f"Successfully read Word document {file}")
+                else:  # txt files
+                    try:
+                        with open(file, 'r', encoding='utf-8') as f:
+                            text = f.read()
+                            all_text.append(text)
+                            print(f"Successfully read {file}")
+                    except UnicodeDecodeError:
+                        try:
+                            # Try alternative encoding
+                            with open(file, 'r', encoding='gbk') as f:
+                                text = f.read()
+                                all_text.append(text)
+                                print(f"Successfully read {file} with GBK encoding")
+                        except Exception as e:
+                            print(f"Failed to read {file} with both UTF-8 and GBK encodings")
+                            
+            except Exception as e:
+                print(f"Error processing file {file}: {e}")
+                continue
                 
         if not all_text:
             raise ValueError(f"No valid text content found in {self.input_dir}")
@@ -113,87 +135,87 @@ class TextAnalyzer:
         return ' '.join(all_text)
 
     def is_number(self, word):
-        """检查字符串是否为纯数字"""
+        """Check if a string is purely numeric"""
         return word.replace('.', '').isdigit()
 
     def get_filtered_words(self, text):
-        """获取过滤后的词列表"""
-        # 预处理文本，移除省略号
+        """Get filtered word list"""
+        # Preprocess text to remove ellipsis
         text = re.sub(r'\.{3,}|…', ' ', text)
         
-        # 使用jieba分词
+        # Use jieba for word segmentation
         words = list(jieba.cut(text))
-        # 过滤并返回单词列表
+        # Filter and return word list
         filtered = []
         for word in words:
             word = word.strip().lower()
-            # 对于单个词，排除停用词和纯数字
+            # For single words, exclude stopwords and pure numbers
             if word and word not in self.stopwords and len(word) > 1 and not self.is_number(word):
                 filtered.append(word)
         return filtered
 
     def get_ngrams(self, words, n):
-        """生成n-gram序列"""
-        # 对于n-gram，不过滤数字，这样可以保留如"20 years"这样的组合
+        """Generate n-gram sequences"""
+        # For n-grams, don't filter numbers to keep combinations like "20 years"
         ngrams = []
         for i in range(len(words)-n+1):
             ngram = tuple(words[i:i+n])
-            # 检查n-gram中是否所有词都是停用词
+            # Check if all words in n-gram are stopwords
             if not all(word in self.stopwords for word in ngram):
                 ngrams.append(ngram)
         return ngrams
 
     def filter_redundant_unigrams(self):
-        """过滤掉那些主要作为n-gram一部分出现的单词"""
+        """Filter out words that mainly appear as part of n-grams"""
         if not self.word_freq:
             return
             
-        # 设置频率相似度阈值（调整为更严格的条件）
-        similarity_threshold = 0.95  # 提高阈值
-        min_freq_threshold = 3  # 最小频率阈值，避免过滤低频词
+        # Set frequency similarity threshold (adjusted to be more strict)
+        similarity_threshold = 0.95  # Increased threshold
+        min_freq_threshold = 3  # Minimum frequency threshold to avoid filtering low-frequency words
         words_to_remove = set()
         
-        # 检查二元词组
+        # Check bigrams
         for bigram, bigram_freq in self.bigram_freq.items():
-            # 只处理频率达到阈值的词组
+            # Only process word pairs that meet the threshold
             if bigram_freq < min_freq_threshold:
                 continue
                 
             word1, word2 = bigram
-            # 检查这两个词是否总是或几乎总是一起出现
+            # Check if these words always or almost always appear together
             if word1 in self.word_freq and word2 in self.word_freq:
                 word1_freq = self.word_freq[word1]
                 word2_freq = self.word_freq[word2]
                 
-                # 如果两个词的频率非常接近，且接近二元词组的频率
-                if (abs(word1_freq - word2_freq) <= 2 and  # 词频差异不超过2
+                # If both words have very similar frequencies and close to bigram frequency
+                if (abs(word1_freq - word2_freq) <= 2 and  # Word frequency difference not more than 2
                     min(word1_freq, word2_freq) >= bigram_freq * similarity_threshold):
-                    # 检查这些词是否主要出现在这个二元词组中
-                    if (bigram_freq / word1_freq >= 0.8 and  # 80%的出现都是在这个词组中
+                    # Check if these words mainly appear in this bigram
+                    if (bigram_freq / word1_freq >= 0.8 and  # 80% appearances are in this bigram
                         bigram_freq / word2_freq >= 0.8):
                         words_to_remove.add(word1)
                         words_to_remove.add(word2)
         
-        # 检查三元词组
+        # Check trigrams
         for trigram, trigram_freq in self.trigram_freq.items():
-            # 只处理频率达到阈值的词组
+            # Only process word groups that meet the threshold
             if trigram_freq < min_freq_threshold:
                 continue
                 
             word1, word2, word3 = trigram
-            # 检查这三个词是否总是或几乎总是一起出现
+            # Check if these three words always or almost always appear together
             if (word1 in self.word_freq and word2 in self.word_freq and 
                 word3 in self.word_freq):
                 word1_freq = self.word_freq[word1]
                 word2_freq = self.word_freq[word2]
                 word3_freq = self.word_freq[word3]
                 
-                # 如果三个词的频率非常接近，且接近三元词组的频率
+                # If all three words have very similar frequencies and close to trigram frequency
                 if (max(abs(word1_freq - word2_freq), 
                        abs(word2_freq - word3_freq),
-                       abs(word1_freq - word3_freq)) <= 2 and  # 词频差异不超过2
+                       abs(word1_freq - word3_freq)) <= 2 and  # Word frequency difference not more than 2
                     min(word1_freq, word2_freq, word3_freq) >= trigram_freq * similarity_threshold):
-                    # 检查这些词是否主要出现在这个三元词组中
+                    # Check if these words mainly appear in this trigram
                     if (trigram_freq / word1_freq >= 0.8 and
                         trigram_freq / word2_freq >= 0.8 and
                         trigram_freq / word3_freq >= 0.8):
@@ -201,7 +223,7 @@ class TextAnalyzer:
                         words_to_remove.add(word2)
                         words_to_remove.add(word3)
         
-        # 从word_freq中移除这些单词
+        # Remove these words from word_freq
         for word in words_to_remove:
             if word in self.word_freq:
                 del self.word_freq[word]
@@ -209,90 +231,94 @@ class TextAnalyzer:
         print(f"Filtered {len(words_to_remove)} redundant words that mainly appear in n-grams")
 
     def analyze_text(self):
-        """分析文本内容，包括单词、二元组和三元组"""
+        """Analyze text content, including words, bigrams, and trigrams"""
         try:
             text = self.read_files()
         except (FileNotFoundError, ValueError) as e:
             print(f"Error: {e}")
             return Counter(), Counter(), Counter()
             
-        # 获取过滤后的词列表
+        # Get filtered word list
         filtered_words = self.get_filtered_words(text)
         
         if not filtered_words:
             print("Warning: No valid words found after filtering")
             return Counter(), Counter(), Counter()
             
-        # 统计单词频率
+        # Count word frequencies
         self.word_freq = Counter(filtered_words)
         
-        # 统计二元组频率
+        # Count bigram frequencies
         self.bigram_freq = Counter(self.get_ngrams(filtered_words, 2))
         
-        # 统计三元组频率
+        # Count trigram frequencies
         self.trigram_freq = Counter(self.get_ngrams(filtered_words, 3))
         
-        # 过滤掉冗余的单词
+        # Filter out redundant words
         self.filter_redundant_unigrams()
         
         return self.word_freq, self.bigram_freq, self.trigram_freq
 
     def plot_top_words(self, top_n=20, ngram_type='unigram'):
-        """绘制前N个高频词/词组柱状图"""
+        """Plot bar chart of top N frequent words/phrases"""
         if not self.word_freq:
             self.word_freq, self.bigram_freq, self.trigram_freq = self.analyze_text()
             
-        # 选择要展示的n-gram类型
+        # Select n-gram type to display
         if ngram_type == 'unigram':
             freq_data = self.word_freq
-            title = '单词频率统计 (Top {})'.format(top_n)
-            xlabel = '单词'
+            title = 'Word Frequency Statistics (Top {})'.format(top_n)
+            xlabel = 'Word'
         elif ngram_type == 'bigram':
             freq_data = self.bigram_freq
-            title = '双词组频率统计 (Top {})'.format(top_n)
-            xlabel = '词组'
+            title = 'Bigram Frequency Statistics (Top {})'.format(top_n)
+            xlabel = 'Phrase'
         else:  # trigram
             freq_data = self.trigram_freq
-            title = '三词组频率统计 (Top {})'.format(top_n)
-            xlabel = '词组'
+            title = 'Trigram Frequency Statistics (Top {})'.format(top_n)
+            xlabel = 'Phrase'
             
         if not freq_data:
             print(f"No data to plot for {ngram_type}")
             return
             
-        # 获取前N个高频词/词组
+        # Get top N frequent words/phrases
         if ngram_type == 'unigram':
             top_items = pd.DataFrame(
                 [(word, freq) for word, freq in freq_data.most_common(top_n)],
                 columns=['Word', 'Frequency']
             )
         else:
-            # 对于bigram和trigram，将元组转换为字符串
+            # For bigrams and trigrams, convert tuples to strings
             top_items = pd.DataFrame(
                 [(' '.join(k), v) for k, v in freq_data.most_common(top_n)],
                 columns=['Word', 'Frequency']
             )
         
-        # 设置图表风格
-        plt.style.use('seaborn-v0_8')
+        # Set chart style
+        try:
+            plt.style.use('seaborn')  # Updated style name
+        except:
+            print("Warning: Could not set seaborn style, using default style")
+            
         plt.figure(figsize=(15, 8))
         
-        # 创建柱状图
+        # Create bar chart
         sns.barplot(data=top_items, x='Word', y='Frequency')
         plt.xticks(rotation=45, ha='right')
         plt.title(title)
         plt.xlabel(xlabel)
-        plt.ylabel('频率')
+        plt.ylabel('Frequency')
         plt.tight_layout()
         
-        # 保存图表
+        # Save chart
         output_file = f'word_frequency_{ngram_type}.png'
         plt.savefig(output_file)
         plt.close()
         print(f"Saved {ngram_type} plot to {output_file}")
 
     def generate_wordcloud(self):
-        """生成词云图"""
+        """Generate word cloud"""
         if not self.word_freq:
             self.word_freq, self.bigram_freq, self.trigram_freq = self.analyze_text()
             
@@ -300,26 +326,26 @@ class TextAnalyzer:
             print("No data to generate word cloud")
             return
             
-        # 合并单词、二元词和三元词的频率，给予多词组更高的权重
+        # Combine frequencies of words, bigrams, and trigrams with higher weights for multi-word phrases
         combined_freq = self.word_freq.copy()
-        # 添加二元词组，用空格连接，并给予更高权重
+        # Add bigrams with higher weight
         for words, freq in self.bigram_freq.items():
-            combined_freq[' '.join(words)] = freq * 1.2  # 提高二元词组的权重
-        # 添加三元词组，用空格连接，并给予更高权重
+            combined_freq[' '.join(words)] = freq * 1.2
+        # Add trigrams with higher weight
         for words, freq in self.trigram_freq.items():
-            combined_freq[' '.join(words)] = freq * 1.5  # 提高三元词组的权重
+            combined_freq[' '.join(words)] = freq * 1.5
             
-        # 定义可能的字体路径
+        # Define possible font paths
         possible_fonts = [
             '/System/Library/Fonts/PingFang.ttc',  # macOS
             '/System/Library/Fonts/Arial Unicode.ttf',  # macOS
             '/Library/Fonts/Arial Unicode.ttf',  # macOS
             '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',  # Linux
             'C:\\Windows\\Fonts\\arial.ttf',  # Windows
-            'arial'  # 默认回退选项
+            'arial'  # Default fallback
         ]
         
-        # 查找可用的字体
+        # Find available font
         font_path = None
         for font in possible_fonts:
             try:
@@ -333,28 +359,28 @@ class TextAnalyzer:
                 continue
         
         try:
-            # 创建词云对象
+            # Create WordCloud object
             wordcloud = WordCloud(
                 width=1200,
                 height=800,
                 background_color='white',
-                font_path=font_path,  # 使用找到的字体
+                font_path=font_path,
                 max_words=100,
                 collocations=False,
-                prefer_horizontal=0.7  # 70%的词水平显示，提高多词组的可读性
+                prefer_horizontal=0.7
             )
             
-            # 生成词云
+            # Generate word cloud
             wordcloud.generate_from_frequencies(combined_freq)
             
-            # 显示词云图
+            # Display word cloud
             plt.figure(figsize=(15, 10))
             plt.imshow(wordcloud, interpolation='bilinear')
             plt.axis('off')
             plt.title('Word Cloud (Including Words, Bigrams, and Trigrams)')
             plt.tight_layout(pad=0)
             
-            # 保存词云图
+            # Save word cloud
             plt.savefig('wordcloud.png')
             plt.close()
             
@@ -365,124 +391,188 @@ class TextAnalyzer:
             print("Continuing with other visualizations...")
 
     def save_word_frequency(self, ngram_type='all'):
-        """保存词频统计结果到CSV文件"""
+        """Save word frequency statistics to CSV file"""
         if not self.word_freq:
             self.word_freq, self.bigram_freq, self.trigram_freq = self.analyze_text()
             
-        # 创建一个包含所有结果的列表
+        # Create a list containing all results
         all_results = []
         
-        # 添加单词频率
+        # Add word frequencies
         for word, freq in self.word_freq.most_common():
             all_results.append({
-                'Type': '单词',
+                'Type': 'Word',
                 'Word/Phrase': word,
                 'Frequency': freq
             })
             
-        # 添加双词组频率
+        # Add bigram frequencies
         for word_pair, freq in self.bigram_freq.most_common():
             all_results.append({
-                'Type': '双词组',
+                'Type': 'Bigram',
                 'Word/Phrase': ' '.join(word_pair),
                 'Frequency': freq
             })
             
-        # 添加三词组频率
+        # Add trigram frequencies
         for word_triplet, freq in self.trigram_freq.most_common():
             all_results.append({
-                'Type': '三词组',
+                'Type': 'Trigram',
                 'Word/Phrase': ' '.join(word_triplet),
                 'Frequency': freq
             })
             
-        # 创建DataFrame并按频率排序
+        # Create DataFrame and sort by frequency
         df_all = pd.DataFrame(all_results)
         df_all = df_all.sort_values('Frequency', ascending=False)
         
-        # 保存到CSV文件
+        # Save to CSV file
         df_all.to_csv('word_frequency_all.csv', index=False, encoding='utf-8-sig')
-        print("\n词频统计已保存到 word_frequency_all.csv")
+        print("\nWord frequency statistics saved to word_frequency_all.csv")
         
-        # 打印一些统计信息
-        print("\n词频统计摘要:")
-        print(f"单个词总数: {len(self.word_freq)}")
-        print(f"双词组总数: {len(self.bigram_freq)}")
-        print(f"三词组总数: {len(self.trigram_freq)}")
+        # Print some statistics
+        print("\nWord Frequency Summary:")
+        print(f"Total unique words: {len(self.word_freq)}")
+        print(f"Total unique bigrams: {len(self.bigram_freq)}")
+        print(f"Total unique trigrams: {len(self.trigram_freq)}")
         
-        # 打印前20个最常见的词/词组
-        print("\n最常见的20个词/词组:")
+        # Print top 20 most common words/phrases
+        print("\nTop 20 most common words/phrases:")
         top_20 = df_all.head(20)
         for _, row in top_20.iterrows():
             print(f"{row['Type']} - {row['Word/Phrase']}: {row['Frequency']}")
 
-    def plot_combined_frequencies(self, top_n=20):
-        """绘制合并后的词频统计图"""
-        if not self.word_freq:
-            self.word_freq, self.bigram_freq, self.trigram_freq = self.analyze_text()
-            
-        # 准备数据
+    def save_sentences_for_top_keywords(self, top_n=20):
+        """Save sentences for all keywords appearing in the top frequency list into a single CSV file
+        
+        Args:
+            top_n (int): Number of top frequency words/phrases to process
+        """
+        # Prepare all keywords from word frequencies
         all_results = []
         
-        # 添加单词频率
+        # Add word frequencies
         for word, freq in self.word_freq.most_common(top_n):
             all_results.append({
-                'Type': '单词',
+                'Type': 'Word',
                 'Word/Phrase': word,
                 'Frequency': freq
             })
             
-        # 添加双词组频率
+        # Add bigram frequencies
         for word_pair, freq in self.bigram_freq.most_common(top_n):
             all_results.append({
-                'Type': '双词组',
+                'Type': 'Bigram',
                 'Word/Phrase': ' '.join(word_pair),
                 'Frequency': freq
             })
             
-        # 添加三词组频率
+        # Add trigram frequencies
         for word_triplet, freq in self.trigram_freq.most_common(top_n):
             all_results.append({
-                'Type': '三词组',
+                'Type': 'Trigram',
                 'Word/Phrase': ' '.join(word_triplet),
                 'Frequency': freq
             })
             
-        # 创建DataFrame并按频率排序
+        # Sort by frequency and get unique keywords
         df_all = pd.DataFrame(all_results)
         df_all = df_all.sort_values('Frequency', ascending=False)
         
-        # 设置图表风格
-        plt.style.use('seaborn-v0_8')
+        print("\nSearching sentences for all top keywords...")
+        # Process each keyword and collect all sentences
+        all_sentences = []
+        for _, row in df_all.iterrows():
+            keyword = row['Word/Phrase']
+            print(f"\nProcessing keyword: '{keyword}'")
+            sentences = self.find_sentences_with_keyword(keyword)
+            all_sentences.extend(sentences)
+        
+        # Save all sentences to a single CSV file
+        if all_sentences:
+            df_sentences = pd.DataFrame(all_sentences)
+            df_sentences = df_sentences[['keyword', 'source_file', 'sentence']]  # Ensure column order
+            output_filename = 'all_keyword_sentences.csv'
+            df_sentences.to_csv(output_filename, index=False, encoding='utf-8-sig')
+            print(f"\nAll sentences saved to {output_filename}")
+            print(f"Total sentences found: {len(all_sentences)}")
+        else:
+            print("\nNo sentences found for any keywords")
+
+    def plot_combined_frequencies(self, top_n=20):
+        """Plot combined frequency statistics"""
+        if not self.word_freq:
+            self.word_freq, self.bigram_freq, self.trigram_freq = self.analyze_text()
+            
+        # Prepare data
+        all_results = []
+        
+        # Add word frequencies
+        for word, freq in self.word_freq.most_common(top_n):
+            all_results.append({
+                'Type': 'Word',
+                'Word/Phrase': word,
+                'Frequency': freq
+            })
+            
+        # Add bigram frequencies
+        for word_pair, freq in self.bigram_freq.most_common(top_n):
+            all_results.append({
+                'Type': 'Bigram',
+                'Word/Phrase': ' '.join(word_pair),
+                'Frequency': freq
+            })
+            
+        # Add trigram frequencies
+        for word_triplet, freq in self.trigram_freq.most_common(top_n):
+            all_results.append({
+                'Type': 'Trigram',
+                'Word/Phrase': ' '.join(word_triplet),
+                'Frequency': freq
+            })
+            
+        # Create DataFrame and sort by frequency
+        df_all = pd.DataFrame(all_results)
+        df_all = df_all.sort_values('Frequency', ascending=False)
+        
+        # Set chart style
+        try:
+            plt.style.use('seaborn')  # Updated style name
+        except:
+            print("Warning: Could not set seaborn style, using default style")
+            
         plt.figure(figsize=(15, 10))
         
-        # 创建柱状图
+        # Create bar chart
         sns.barplot(data=df_all.head(top_n), x='Word/Phrase', y='Frequency', hue='Type')
         plt.xticks(rotation=45, ha='right')
-        plt.title(f'词频统计 Top {top_n}')
-        plt.xlabel('词/词组')
-        plt.ylabel('频率')
-        plt.legend(title='类型')
+        plt.title(f'Word Frequency Statistics Top {top_n}')
+        plt.xlabel('Word/Phrase')
+        plt.ylabel('Frequency')
+        plt.legend(title='Type')
         plt.tight_layout()
         
-        # 保存图表
+        # Save chart
         plt.savefig('word_frequency_combined.png')
         plt.close()
-        print(f"已保存合并词频统计图到 word_frequency_combined.png")
+        print(f"Saved combined frequency plot to word_frequency_combined.png")
+        
+        # Generate sentence files for all keywords
+        self.save_sentences_for_top_keywords(top_n)
 
     def find_sentences_with_keyword(self, keyword, text=None):
-        """查找包含关键词的句子
+        """Find sentences containing keywords
         
         Args:
-            keyword (str): 要搜索的关键词或词组
-            text (str, optional): 要搜索的文本。如果为None，则会重新读取文件。
+            keyword (str): Keyword or phrase to search for
+            text (str, optional): Text to search in. If None, will read files again.
             
         Returns:
-            list: 包含关键词的句子列表，每个元素是一个字典，包含句子内容和文件名
+            list: List of sentences containing the keyword, each element is a dictionary with sentence content and file name
         """
         found_sentences = []
         
-        # 遍历目录中的所有txt文件
+        # Iterate through all txt files in directory
         for file_path in Path(self.input_dir).rglob('*.txt'):
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
@@ -492,39 +582,39 @@ class TextAnalyzer:
                     with open(file_path, 'r', encoding='gbk') as f:
                         text = f.read()
                 except Exception as e:
-                    print(f"无法读取文件 {file_path}: {e}")
+                    print(f"Cannot read file {file_path}: {e}")
                     continue
 
-            # 将关键词转换为小写以进行不区分大小写的搜索
+            # Convert keyword to lowercase for case-insensitive search
             keyword = keyword.lower()
             
-            # 使用正则表达式分割句子
-            # 这个模式会在句号、问号、感叹号后分割，同时考虑到这些标点符号后可能有空格
+            # Use regex to split sentences
+            # This pattern splits at periods, question marks, exclamation marks, considering spaces after them
             sentences = re.split(r'[.!?]+\s*', text)
             
             for sentence in sentences:
-                # 清理和规范化句子
+                # Clean and normalize sentence
                 cleaned_sentence = sentence.strip()
-                if not cleaned_sentence:  # 跳过空句子
+                if not cleaned_sentence:  # Skip empty sentences
                     continue
                     
-                # 移除多余的空白字符和换行符
+                # Remove extra whitespace and newlines
                 cleaned_sentence = re.sub(r'\s+', ' ', cleaned_sentence)
                 
-                # 如果句子超过150个字符，截取关键词前后的部分
+                # If sentence is longer than 150 characters, take context around keyword
                 if len(cleaned_sentence) > 150:
-                    # 找到关键词的位置
+                    # Find keyword position
                     keyword_pos = cleaned_sentence.lower().find(keyword)
                     if keyword_pos != -1:
-                        # 取关键词前后各50个字符
+                        # Take 50 characters before and after keyword
                         start = max(0, keyword_pos - 50)
                         end = min(len(cleaned_sentence), keyword_pos + len(keyword) + 50)
                         
-                        # 调整开始位置到单词的开始
+                        # Adjust start position to word beginning
                         while start > 0 and cleaned_sentence[start - 1].isalnum():
                             start -= 1
                             
-                        # 调整结束位置到单词的结束
+                        # Adjust end position to word ending
                         while end < len(cleaned_sentence) and cleaned_sentence[end - 1].isalnum():
                             end += 1
                             
@@ -532,7 +622,7 @@ class TextAnalyzer:
                                         cleaned_sentence[start:end] + \
                                         ('...' if end < len(cleaned_sentence) else '')
                 
-                # 不区分大小写地检查关键词
+                # Case-insensitive keyword check
                 if keyword in cleaned_sentence.lower():
                     found_sentences.append({
                         'keyword': keyword,
@@ -543,72 +633,73 @@ class TextAnalyzer:
         return found_sentences
 
     def save_keyword_sentences(self, keyword):
-        """保存包含关键词的句子到CSV文件
+        """Save sentences containing keywords to CSV file
         
         Args:
-            keyword (str): 要搜索的关键词或词组
+            keyword (str): Keyword or phrase to search for
         """
-        # 获取包含关键词的句子
+        # Get sentences containing keyword
         sentences = self.find_sentences_with_keyword(keyword)
         
         if not sentences:
-            print(f"\n未找到包含关键词 '{keyword}' 的句子")
+            print(f"\nNo sentences found containing keyword '{keyword}'")
             return
         
-        # 创建DataFrame并指定列的顺序
+        # Create DataFrame and specify column order
         df = pd.DataFrame(sentences)
-        df = df[['keyword', 'source_file', 'sentence']]  # 重新排序列
+        df = df[['keyword', 'source_file', 'sentence']]
         
-        # 保存到CSV文件
+        # Save to CSV file
         output_filename = f'sentences_with_{keyword.replace(" ", "_")}.csv'
         df.to_csv(output_filename, index=False, encoding='utf-8-sig')
-        print(f"\n包含关键词 '{keyword}' 的句子已保存到 {output_filename}")
-        print(f"找到 {len(sentences)} 个包含该关键词的句子")
+        print(f"\nSentences containing keyword '{keyword}' saved to {output_filename}")
+        print(f"Found {len(sentences)} sentences containing this keyword")
 
 def main():
     try:
-        # 使用正确的文件夹路径
-        input_dir = input("请输入文本文件所在的文件夹路径（按回车使用默认路径）: ").strip()
+        # Use correct folder path
+        input_dir = input("Enter the path to the text files folder (press Enter for default path): ").strip()
         if not input_dir:
-            input_dir = "05.project-word-swarm/WiT Studio Episodes"  # 默认路径
+            input_dir = "05.project-word-swarm/WiT Studio Episodes"  # Default path
             
         analyzer = TextAnalyzer(input_dir)
         
-        # 询问是否要搜索特定关键词
-        keyword = input("\n请输入要搜索的关键词或词组（直接按回车跳过）: ").strip()
+        # Ask if want to search for specific keyword
+        keyword = input("\nEnter keyword or phrase to search (press Enter to skip): ").strip()
         if keyword:
-            print(f"\n正在搜索包含 '{keyword}' 的句子...")
+            print(f"\nSearching for sentences containing '{keyword}'...")
             analyzer.save_keyword_sentences(keyword)
         
-        # 分析文本
-        print("\n正在分析文本...")
+        # Analyze text
+        print("\nAnalyzing text...")
         word_freq, bigram_freq, trigram_freq = analyzer.analyze_text()
         
         if not word_freq and not bigram_freq and not trigram_freq:
-            print("未找到有效的文本数据。请检查输入目录和文件内容。")
+            print("No valid text data found. Please check input directory and file contents.")
             return
         
-        # 保存词频统计结果
-        print("\n正在保存词频统计结果...")
+        # Save word frequency statistics
+        print("\nSaving word frequency statistics...")
         analyzer.save_word_frequency()
         
-        # 生成合并的词频统计图
-        print("\n正在生成词频统计图...")
+        # Generate combined frequency plot and sentence files for all keywords
+        print("\nGenerating frequency plot and searching sentences for all keywords...")
         analyzer.plot_combined_frequencies()
         
-        # 生成词云
-        print("\n正在生成词云...")
+        # Generate word cloud
+        print("\nGenerating word cloud...")
         analyzer.generate_wordcloud()
         
-        print("\n分析完成！请查看以下文件：")
+        print("\nAnalysis complete! Please check the following files:")
         if keyword:
-            print(f"- sentences_with_{keyword.replace(' ', '_')}.csv (包含关键词的句子)")
-        print("- word_frequency_all.csv (词频统计数据)")
-        print("- word_frequency_combined.png (词频统计图)")
-        print("- wordcloud.png (词云图)")
+            print(f"- sentences_with_{keyword.replace(' ', '_')}.csv (Sentences containing user-specified keyword)")
+        print("- word_frequency_all.csv (Word frequency statistics)")
+        print("- word_frequency_combined.png (Frequency plot)")
+        print("- wordcloud.png (Word cloud)")
+        print("- all_keyword_sentences.csv (Sentences for all top keywords)")
         
     except Exception as e:
-        print(f"发生错误: {e}")
+        print(f"An error occurred: {e}")
         raise
 
 if __name__ == "__main__":
