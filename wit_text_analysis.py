@@ -18,6 +18,7 @@ class TextAnalyzer:
         })
         # 英文基础停用词
         self.stopwords.update({
+            'days', 'started', 'move', 'little', 'away',
             'travel', 'podcasts', 'people', 'thank', 'us', 'go', 'talk', 'today',
             'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're", 
             "you've", "you'll", "you'd", 'your', 'yours', 'yourself', 'yourselves', 
@@ -25,7 +26,8 @@ class TextAnalyzer:
             'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves',
             'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those',
             'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had',
-            'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if',
+            'having', 'do', 'does', 'did'
+            , 'doing', 'a', 'an', 'the', 'and', 'but', 'if',
             'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with',
             'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after',
             'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over',
@@ -59,7 +61,13 @@ class TextAnalyzer:
             'well', 'good', 'great', 'nice', 'better', 'best', 'sure', 'guess',
             'maybe', 'perhaps', 'probably', 'obviously', 'course', 'etc',
             # 添加新的通用词
-            'able', 'back', 'take', 'say', 'something', 'early', 'next', 'across'
+            'able', 'back', 'take', 'say', 'something', 'early', 'next', 'across',
+            # 新增用户指定的停用词
+            'different', 'always', 'point', 'build', 'work', 'change',
+            # 新增更多停用词
+            'around', 'somebody', 'bit', 'quickly',
+            # 特殊字符
+            '...', '…'
         })
 
         # 特定人名和相关词
@@ -110,6 +118,9 @@ class TextAnalyzer:
 
     def get_filtered_words(self, text):
         """获取过滤后的词列表"""
+        # 预处理文本，移除省略号
+        text = re.sub(r'\.{3,}|…', ' ', text)
+        
         # 使用jieba分词
         words = list(jieba.cut(text))
         # 过滤并返回单词列表
@@ -469,35 +480,65 @@ class TextAnalyzer:
         Returns:
             list: 包含关键词的句子列表，每个元素是一个字典，包含句子内容和文件名
         """
-        if text is None:
-            try:
-                text = self.read_files()
-            except (FileNotFoundError, ValueError) as e:
-                print(f"Error: {e}")
-                return []
-        
-        # 将关键词转换为小写以进行不区分大小写的搜索
-        keyword = keyword.lower()
-        
-        # 使用正则表达式分割句子
-        # 这个模式会在句号、问号、感叹号后分割，同时考虑到这些标点符号后可能有空格
-        sentences = re.split(r'[.!?]+\s*', text)
-        
-        # 存储找到的句子
         found_sentences = []
         
-        for sentence in sentences:
-            # 清理和规范化句子
-            cleaned_sentence = sentence.strip()
-            if not cleaned_sentence:  # 跳过空句子
-                continue
+        # 遍历目录中的所有txt文件
+        for file_path in Path(self.input_dir).rglob('*.txt'):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    text = f.read()
+            except UnicodeDecodeError:
+                try:
+                    with open(file_path, 'r', encoding='gbk') as f:
+                        text = f.read()
+                except Exception as e:
+                    print(f"无法读取文件 {file_path}: {e}")
+                    continue
+
+            # 将关键词转换为小写以进行不区分大小写的搜索
+            keyword = keyword.lower()
+            
+            # 使用正则表达式分割句子
+            # 这个模式会在句号、问号、感叹号后分割，同时考虑到这些标点符号后可能有空格
+            sentences = re.split(r'[.!?]+\s*', text)
+            
+            for sentence in sentences:
+                # 清理和规范化句子
+                cleaned_sentence = sentence.strip()
+                if not cleaned_sentence:  # 跳过空句子
+                    continue
+                    
+                # 移除多余的空白字符和换行符
+                cleaned_sentence = re.sub(r'\s+', ' ', cleaned_sentence)
                 
-            # 不区分大小写地检查关键词
-            if keyword in cleaned_sentence.lower():
-                found_sentences.append({
-                    'sentence': cleaned_sentence,
-                    'keyword': keyword
-                })
+                # 如果句子超过150个字符，截取关键词前后的部分
+                if len(cleaned_sentence) > 150:
+                    # 找到关键词的位置
+                    keyword_pos = cleaned_sentence.lower().find(keyword)
+                    if keyword_pos != -1:
+                        # 取关键词前后各50个字符
+                        start = max(0, keyword_pos - 50)
+                        end = min(len(cleaned_sentence), keyword_pos + len(keyword) + 50)
+                        
+                        # 调整开始位置到单词的开始
+                        while start > 0 and cleaned_sentence[start - 1].isalnum():
+                            start -= 1
+                            
+                        # 调整结束位置到单词的结束
+                        while end < len(cleaned_sentence) and cleaned_sentence[end - 1].isalnum():
+                            end += 1
+                            
+                        cleaned_sentence = ('...' if start > 0 else '') + \
+                                        cleaned_sentence[start:end] + \
+                                        ('...' if end < len(cleaned_sentence) else '')
+                
+                # 不区分大小写地检查关键词
+                if keyword in cleaned_sentence.lower():
+                    found_sentences.append({
+                        'keyword': keyword,
+                        'source_file': file_path.name,
+                        'sentence': cleaned_sentence
+                    })
         
         return found_sentences
 
@@ -514,8 +555,9 @@ class TextAnalyzer:
             print(f"\n未找到包含关键词 '{keyword}' 的句子")
             return
         
-        # 创建DataFrame
+        # 创建DataFrame并指定列的顺序
         df = pd.DataFrame(sentences)
+        df = df[['keyword', 'source_file', 'sentence']]  # 重新排序列
         
         # 保存到CSV文件
         output_filename = f'sentences_with_{keyword.replace(" ", "_")}.csv'
