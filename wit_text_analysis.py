@@ -295,7 +295,7 @@ class TextAnalyzer:
     def get_ngrams(self, words, n):
         """Generate n-gram sequences"""
         ngrams = []
-        seen_ngrams = set()  # Track unique ngrams
+        seen_ngrams = set()  # Track unique ngrams for bigrams only
         
         for i in range(len(words)-n+1):
             # Get the n consecutive words
@@ -319,15 +319,9 @@ class TextAnalyzer:
                 # Skip if the words are identical
                 if len(set(ngram_words)) == 1:
                     continue
-                    
-                # Create a unique key for this trigram
-                ngram_key = ' '.join(ngram_words)
                 
-                # Skip if we've seen this trigram before
-                if ngram_key in seen_ngrams:
-                    continue
-                    
-                seen_ngrams.add(ngram_key)
+                # For trigrams, we don't use seen_ngrams to allow counting all occurrences
+                ngrams.append(tuple(ngram_words))
                 
             else:  # Unigrams and Bigrams
                 # Use original strict filtering
@@ -343,10 +337,16 @@ class TextAnalyzer:
                     continue
                     
                 # For bigrams, check if it's a template pattern
-                if n == 2 and self.is_template_bigram(ngram_words):
-                    continue
+                if n == 2:
+                    if self.is_template_bigram(ngram_words):
+                        continue
+                    # Create a unique key for bigrams
+                    ngram_key = ' '.join(ngram_words)
+                    if ngram_key in seen_ngrams:
+                        continue
+                    seen_ngrams.add(ngram_key)
             
-            ngrams.append(tuple(ngram_words))
+                ngrams.append(tuple(ngram_words))
         
         # Debug information for trigrams
         if n == 3 and ngrams:

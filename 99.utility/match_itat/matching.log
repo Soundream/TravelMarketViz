@@ -1,0 +1,1712 @@
+
+Processing MENA airlines...
+Using manual mapping for 'American Airlines': AA
+Using manual mapping for 'Delta Air Lines': DL
+Using manual mapping for 'United Airlines': UA
+Matched 'Southwest Airlines' to 'Southwest Airlines' with score 100
+Found ITAT code for 'Southwest Airlines': WN
+Matched 'Alaska Airlines' to 'Era Alaska' with score 100
+Found ITAT code for 'Alaska Airlines': 7H
+Matched 'Spirit Airlines' to 'Asian Spirit' with score 100
+Found ITAT code for 'Spirit Airlines': 6K
+Matched 'JetBlue Airways Corporation' to 'Jetblue Airways' with score 100
+Found ITAT code for 'JetBlue Airways Corporation': B6
+Matched 'Frontier Airlines Inc.' to 'Frontier Flying Service' with score 100
+Found ITAT code for 'Frontier Airlines Inc.': 2F
+Matched 'Allegiant Air LLC' to 'Allegiant Air' with score 100
+Found ITAT code for 'Allegiant Air LLC': G4
+Matched 'Grant Aviation, Inc.' to 'Grant Aviation' with score 100
+Found ITAT code for 'Grant Aviation, Inc.': GS
+Matched 'Hawaiian Airlines' to 'Hawaiian Airlines' with score 100
+Found ITAT code for 'Hawaiian Airlines': HA
+Matched 'Southern Airways Express' to 'LAN Express' with score 90
+Found ITAT code for 'Southern Airways Express': LU
+Using manual mapping for 'Air Canada': AC
+Matched 'Yute Commuter Service' to 'Aero-Service' with score 91
+Found ITAT code for 'Yute Commuter Service': BF
+Matched 'Cape Air' to 'Cape Air' with score 100
+Found ITAT code for 'Cape Air': 9K
+No good match found for 'Breeze Airways'
+Matched 'Sun Country Airlines' to 'Sun Country Airlines' with score 100
+Found ITAT code for 'Sun Country Airlines': SY
+Matched 'Bering Air' to 'Bering Air' with score 100
+Found ITAT code for 'Bering Air': 8E
+No good match found for 'JSX'
+No good match found for 'Contour Airlines'
+Matched 'Wright Air Service' to 'Wright Air Service' with score 100
+Found ITAT code for 'Wright Air Service': 8V
+Matched 'Westjet' to 'Westjet Airlines' with score 100
+Found ITAT code for 'Westjet': WS
+Matched 'Volaris' to 'Volaris' with score 100
+Found ITAT code for 'Volaris': Y4
+Matched 'Avelo Airlines' to 'L' with score 100
+Found ITAT code for 'Avelo Airlines': MJ
+No good match found for 'Air Excursions, LLC'
+Matched 'Alaska Seaplanes' to 'L' with score 100
+Found ITAT code for 'Alaska Seaplanes': MJ
+Matched 'Aeromexico' to 'Aeromexico' with score 100
+Found ITAT code for 'Aeromexico': AM
+Matched 'SILVER AIRWAYS LLC' to 'L' with score 100
+Found ITAT code for 'SILVER AIRWAYS LLC': MJ
+Using manual mapping for 'British Airways': BA
+No good match found for 'San Juan Airlines'
+Matched 'Avianca' to 'Avianca' with score 100
+Found ITAT code for 'Avianca': AV
+Matched 'Key Lime Air dba Denver Air Connection' to 'dba' with score 100
+Found ITAT code for 'Key Lime Air dba Denver Air Connection': DI
+Matched 'Ryan Air' to 'Ryanair' with score 100
+Found ITAT code for 'Ryan Air': FR
+Matched 'Copa Airlines' to 'Copa' with score 100
+Found ITAT code for 'Copa Airlines': CM
+Matched 'Porter Airlines' to 'Porter Airlines' with score 100
+Found ITAT code for 'Porter Airlines': PD
+No good match found for 'Smokey Bay Air'
+Using manual mapping for 'Deutsche Lufthansa AG': LH
+No good match found for 'Advanced Air, LLC'
+Using manual mapping for 'Air France': AF
+Matched 'Virgin Atlantic Airways' to 'Virgin Atlantic' with score 100
+Found ITAT code for 'Virgin Atlantic Airways': VS
+No good match found for 'Kenai Aviation Operations'
+No good match found for 'Vivaaerobus'
+Matched 'LATAM Airlines Group' to 'L' with score 100
+Found ITAT code for 'LATAM Airlines Group': MJ
+Using manual mapping for 'Turkish Airlines': TK
+No good match found for 'Taquan Air'
+Matched 'Aer Lingus' to 'L' with score 100
+Found ITAT code for 'Aer Lingus': MJ
+Matched 'Island Air Service' to 'L' with score 100
+Found ITAT code for 'Island Air Service': MJ
+Matched 'New England Airlines Inc' to 'New England Airlines' with score 100
+Found ITAT code for 'New England Airlines Inc': EJ
+Using manual mapping for 'Japan Airlines': JL
+Using manual mapping for 'Qatar Airways': QR
+Matched 'All Nippon Airways' to 'L' with score 100
+Found ITAT code for 'All Nippon Airways': MJ
+Matched 'New Pacific Airlines' to 'Sabre Pacific' with score 90
+Found ITAT code for 'New Pacific Airlines': 1Z
+No good match found for 'Everts Air'
+Using manual mapping for 'Emirates': EK
+Matched 'Icelandair' to 'Icelandair' with score 100
+Found ITAT code for 'Icelandair': FI
+Using manual mapping for 'Korean Air': KE
+Matched 'Tradewind Aviation' to 'Tradewind Aviation' with score 100
+Found ITAT code for 'Tradewind Aviation': TJ
+No good match found for 'Scott Air LLC'
+Matched 'SAS Scandinavian Airlines' to 'SAS' with score 100
+Found ITAT code for 'SAS Scandinavian Airlines': SK
+No good match found for 'Boutique Air'
+Matched 'Warbelow's Air Ventures Inc.' to 'L' with score 100
+Found ITAT code for 'Warbelow's Air Ventures Inc.': MJ
+Using manual mapping for 'KLM-Royal Dutch Airlines': KL
+Matched 'Kenmore Air' to 'Kenmore Air' with score 100
+Found ITAT code for 'Kenmore Air': M5
+Matched 'SWISS' to 'Swiss' with score 100
+Found ITAT code for 'SWISS': LX
+Matched 'Iberia' to 'Iberia' with score 100
+Found ITAT code for 'Iberia': IB
+Matched 'EVA Airways' to 'Eva Airways' with score 100
+Found ITAT code for 'EVA Airways': BR
+Matched 'TAP Air Portugal' to 'L' with score 100
+Found ITAT code for 'TAP Air Portugal': MJ
+Using manual mapping for 'Singapore Airlines': SQ
+Matched 'Aleutian Airways' to 'L' with score 100
+Found ITAT code for 'Aleutian Airways': MJ
+Matched 'Bahamasair' to 'Bahamasair' with score 100
+Found ITAT code for 'Bahamasair': UP
+Matched 'flyGTA Airlines' to 'L' with score 100
+Found ITAT code for 'flyGTA Airlines': MJ
+Matched 'Cathay Pacific Airways' to 'Cathay Pacific' with score 100
+Found ITAT code for 'Cathay Pacific Airways': CX
+Matched 'Flair Airlines' to 'L' with score 100
+Found ITAT code for 'Flair Airlines': MJ
+Using manual mapping for 'Air India': AI
+Matched 'ITA Airways' to 'Navitaire' with score 100
+Found ITAT code for 'ITA Airways': 1N
+Using manual mapping for 'El Al Israel Airlines': LY
+Matched 'Qantas Airways' to 'QANTAS' with score 100
+Found ITAT code for 'Qantas Airways': QF
+Matched 'Asiana Airlines' to 'Asiana Airlines' with score 100
+Found ITAT code for 'Asiana Airlines': OZ
+Matched 'Caribbean Airlines' to 'Caribbean' with score 100
+Found ITAT code for 'Caribbean Airlines': BW
+No good match found for 'Tropic Ocean Airways'
+Matched 'China Airlines' to 'OneChina' with score 100
+Found ITAT code for 'China Airlines': 1C
+Using manual mapping for 'Etihad Airways': EY
+Matched 'LOT - Polish Airlines' to 'Lot - Polish' with score 100
+Found ITAT code for 'LOT - Polish Airlines': LO
+Matched 'Philippine Airlines' to 'Air Philippines' with score 100
+Found ITAT code for 'Philippine Airlines': 2P
+Matched 'Alaska Air Transit' to 'L' with score 100
+Found ITAT code for 'Alaska Air Transit': MJ
+Matched 'Condor Flugdienst' to 'Condor Flugdienst' with score 100
+Found ITAT code for 'Condor Flugdienst': DE
+Matched 'Austrian Airlines AG dba Austrian' to 'dba' with score 100
+Found ITAT code for 'Austrian Airlines AG dba Austrian': DI
+Matched 'Air New Zealand' to 'New Zealand Air' with score 100
+Found ITAT code for 'Air New Zealand': NZ
+Matched 'Ethiopian Airlines' to 'Ethiopian' with score 100
+Found ITAT code for 'Ethiopian Airlines': ET
+Matched 'Azul Airlines' to 'Azul Linhas' with score 100
+Found ITAT code for 'Azul Airlines': AD
+Matched '40 Mile Air' to 'L' with score 100
+Found ITAT code for '40 Mile Air': MJ
+Matched 'Fly Play' to 'L' with score 100
+Found ITAT code for 'Fly Play': MJ
+Matched 'Norse Atlantic UK' to 'L' with score 100
+Found ITAT code for 'Norse Atlantic UK': MJ
+Matched 'Air Transat A.T.Inc.' to 'Air Transat' with score 100
+Found ITAT code for 'Air Transat A.T.Inc.': TS
+Matched 'ZIPAIR Tokyo Inc.' to 'Zip' with score 100
+Found ITAT code for 'ZIPAIR Tokyo Inc.': 3J
+No good match found for 'EW Discover GmbH'
+Matched 'Volaris El Salvador' to 'L' with score 100
+Found ITAT code for 'Volaris El Salvador': MJ
+Matched 'Western Air' to 'Northwestern Air' with score 100
+Found ITAT code for 'Western Air': J3
+Matched 'Norse Atlantic Airways' to 'L' with score 100
+Found ITAT code for 'Norse Atlantic Airways': MJ
+Matched 'Aztec Airways' to 'Aztec Worldwide Airlines' with score 100
+Found ITAT code for 'Aztec Airways': 7A
+No good match found for 'Bermudair Limited'
+Matched 'Cayman Airways' to 'Cayman Airways' with score 100
+Found ITAT code for 'Cayman Airways': KX
+No good match found for 'French Bee'
+Matched 'LLC Air Company AeroStan' to 'L' with score 100
+Found ITAT code for 'LLC Air Company AeroStan': MJ
+Matched 'ConocoPhillips Aviation Alaska' to 'L' with score 100
+Found ITAT code for 'ConocoPhillips Aviation Alaska': MJ
+Matched 'Finnair' to 'Finnair' with score 100
+Found ITAT code for 'Finnair': AY
+Matched 'GOL Linhas Aereas S.A.' to 'Linhas A' with score 100
+Found ITAT code for 'GOL Linhas Aereas S.A.': LM
+Matched 'Scenic Airlines' to 'SENIC AIRLINES' with score 91
+Found ITAT code for 'Scenic Airlines': YR
+Matched 'Royal Air Maroc' to 'L' with score 100
+Found ITAT code for 'Royal Air Maroc': MJ
+No good match found for 'SATA International-Azores Airlines S.A.'
+Matched 'Iliamna Air Taxi' to 'L' with score 100
+Found ITAT code for 'Iliamna Air Taxi': MJ
+Matched 'Air Tahiti Nui' to 'Tahiti Nui Air' with score 100
+Found ITAT code for 'Air Tahiti Nui': TN
+Using manual mapping for 'Saudi Arabian Airlines': SV
+Using manual mapping for 'Royal Jordanian': RJ
+Matched 'Air China' to 'AIR CHINA INTERNATIONAL' with score 100
+Found ITAT code for 'Air China': CA
+No good match found for 'USAC Airways 695'
+Matched 'STARLUX Airlines' to 'L' with score 100
+Found ITAT code for 'STARLUX Airlines': MJ
+No good match found for 'Air Premia Inc.'
+No good match found for 'Fiji Airways'
+Matched 'Vuela El Salvador' to 'L' with score 100
+Found ITAT code for 'Vuela El Salvador': MJ
+Matched 'Aerolineas Argentinas' to 'Argentinas' with score 100
+Found ITAT code for 'Aerolineas Argentinas': AR
+Matched 'La Compagnie' to 'L' with score 100
+Found ITAT code for 'La Compagnie': MJ
+Using manual mapping for 'Egyptair': MS
+Matched 'China Eastern Airlines' to 'China Eastern' with score 100
+Found ITAT code for 'China Eastern Airlines': MU
+Matched 'RED AIR SRL' to 'Air S' with score 100
+Found ITAT code for 'RED AIR SRL': KY
+Matched 'Air Europa' to 'Europa Air' with score 100
+Found ITAT code for 'Air Europa': UX
+Matched 'Papillon Airways' to 'Papillon Grand Canyon Helicopters' with score 100
+Found ITAT code for 'Papillon Airways': HI
+No good match found for 'Sky High'
+Matched 'China Southern Airlines' to 'China Southern Airlines' with score 100
+Found ITAT code for 'China Southern Airlines': CZ
+Matched 'Brussels Airlines' to 'L' with score 100
+Found ITAT code for 'Brussels Airlines': MJ
+Matched 'Kenya Airways' to 'Kenya Airways' with score 100
+Found ITAT code for 'Kenya Airways': KQ
+Matched 'Air Unlimited Charter Services' to 'L' with score 100
+Found ITAT code for 'Air Unlimited Charter Services': MJ
+Matched 'Boliviana de Aviacion - BoA' to 'L' with score 100
+Found ITAT code for 'Boliviana de Aviacion - BoA': MJ
+No good match found for 'Sky Airlines Peru S.A.C'
+Matched 'TUI Airways' to 'TUIfly (X3)' with score 100
+Found ITAT code for 'TUI Airways': 11
+No good match found for 'Fox Aircraft'
+Matched 'Harbour Air Seaplanes' to 'L' with score 100
+Found ITAT code for 'Harbour Air Seaplanes': MJ
+Matched 'Air Serbia' to 'Air S' with score 100
+Found ITAT code for 'Air Serbia': KY
+Matched 'Hainan Airlines' to 'Hainan Phoenix Information Systems' with score 100
+Found ITAT code for 'Hainan Airlines': 1R
+Matched 'Surinam Airways' to 'Surinam Airways' with score 100
+Found ITAT code for 'Surinam Airways': PY
+Matched 'Lynx Air' to 'SmartLynx Airlines' with score 100
+Found ITAT code for 'Lynx Air': 6Y
+Matched 'Jetstar Airways' to 'Jetstar Asia Airways' with score 100
+Found ITAT code for 'Jetstar Airways': 3K
+Matched 'Makers Air' to 'Maersk' with score 91
+Found ITAT code for 'Makers Air': DM
+Matched 'Edelweiss Air' to 'L' with score 100
+Found ITAT code for 'Edelweiss Air': MJ
+Using manual mapping for 'Kuwait Airways': KU
+No good match found for 'Xiamen Airlines Company'
+Matched 'Volaris Costa Rica' to 'L' with score 100
+Found ITAT code for 'Volaris Costa Rica': MJ
+No good match found for 'Sunrise Airways'
+Matched 'Discover Airlines' to 'Discovery Airways' with score 100
+Found ITAT code for 'Discover Airlines': DH
+No good match found for 'KaiserAir'
+Matched 'Vietnam Airlines' to 'Vietnam' with score 100
+Found ITAT code for 'Vietnam Airlines': VN
+Matched 'Uzbekistan Airways' to 'Uzbekistan' with score 100
+Found ITAT code for 'Uzbekistan Airways': HY
+Matched 'Neos Air' to 'Neos' with score 100
+Found ITAT code for 'Neos Air': NO
+Matched 'Canada Jetlines' to 'L' with score 100
+Found ITAT code for 'Canada Jetlines': MJ
+Matched 'Sichuan Airlines' to 'Sichuan Airlines' with score 100
+Found ITAT code for 'Sichuan Airlines': 3U
+Matched 'IBC Airways' to 'IBC Airways' with score 100
+Found ITAT code for 'IBC Airways': II
+Matched 'HiSky Europe SRL' to 'L' with score 100
+Found ITAT code for 'HiSky Europe SRL': MJ
+Matched 'Aerotransportes Rafilher' to 'L' with score 100
+Found ITAT code for 'Aerotransportes Rafilher': MJ
+Matched 'Northern Pacific Airway dba Ravn Alaska' to 'dba' with score 100
+Found ITAT code for 'Northern Pacific Airway dba Ravn Alaska': DI
+No good match found for 'Meregrass'
+Matched 'Air Senegal' to 'Air S' with score 100
+Found ITAT code for 'Air Senegal': KY
+Matched 'Sunwing Airlines Inc.' to 'Sunwing' with score 100
+Found ITAT code for 'Sunwing Airlines Inc.': WG
+Matched 'World Ticket Ltd' to 'L' with score 100
+Found ITAT code for 'World Ticket Ltd': MJ
+Matched 'Sky High Aviation Services' to 'Chari Aviation Services' with score 90
+Found ITAT code for 'Sky High Aviation Services': S8
+No good match found for 'Iberojet Airlines'
+Matched 'Euroairlines, S.L.' to 'L' with score 100
+Found ITAT code for 'Euroairlines, S.L.': MJ
+Matched 'Mahan Air' to 'Mahan Air' with score 100
+Found ITAT code for 'Mahan Air': W5
+Matched 'Atlantic Airways Faroe Islands' to 'L' with score 100
+Found ITAT code for 'Atlantic Airways Faroe Islands': MJ
+Matched 'Air Marshall Islands' to 'Air Marshall Islands' with score 100
+Found ITAT code for 'Air Marshall Islands': CW
+Matched 'Calm Air Intl Ltd' to 'L' with score 100
+Found ITAT code for 'Calm Air Intl Ltd': MJ
+Matched 'SmartWings' to 'Smartwings' with score 100
+Found ITAT code for 'SmartWings': QS
+Matched 'World2Fly Portugal' to 'L' with score 100
+Found ITAT code for 'World2Fly Portugal': MJ
+
+Processing USA airlines...
+Using manual mapping for 'Saudi Arabian Airlines': SV
+Using manual mapping for 'Qatar Airways': QR
+Using manual mapping for 'Emirates': EK
+Matched 'FLYNAS' to 'L' with score 100
+Found ITAT code for 'FLYNAS': MJ
+Matched 'Flydubai' to 'FLYDUBAI' with score 100
+Found ITAT code for 'Flydubai': FZ
+Using manual mapping for 'Egyptair': MS
+Matched 'Air Algerie' to 'Air Algerie' with score 100
+Found ITAT code for 'Air Algerie': AH
+Matched 'flyadeal' to 'L' with score 100
+Found ITAT code for 'flyadeal': MJ
+Matched 'Air Arabia' to 'Air Arabia' with score 100
+Found ITAT code for 'Air Arabia': G9
+Using manual mapping for 'Etihad Airways': EY
+Matched 'Royal Air Maroc' to 'L' with score 100
+Found ITAT code for 'Royal Air Maroc': MJ
+Using manual mapping for 'Gulf Air': GF
+Matched 'Air Cairo' to 'Air Cal' with score 92
+Found ITAT code for 'Air Cairo': TY
+Matched 'Jazeera Airways' to 'Jazeera Airways' with score 100
+Found ITAT code for 'Jazeera Airways': J9
+Matched 'Oman Air' to 'Euromanx Airways' with score 100
+Found ITAT code for 'Oman Air': 3W
+Using manual mapping for 'Royal Jordanian': RJ
+Matched 'Ryanair' to 'Ryanair' with score 100
+Found ITAT code for 'Ryanair': FR
+Using manual mapping for 'Turkish Airlines': TK
+Using manual mapping for 'Kuwait Airways': KU
+Matched 'IndiGo' to 'Indigo' with score 100
+Found ITAT code for 'IndiGo': I9
+Matched 'Mahan Air' to 'Mahan Air' with score 100
+Found ITAT code for 'Mahan Air': W5
+Matched 'Air India Express' to 'Air India Express' with score 100
+Found ITAT code for 'Air India Express': IX
+Matched 'SalamAir' to 'L' with score 100
+Found ITAT code for 'SalamAir': MJ
+Matched 'Iran Aseman Airlines' to 'Iran Aseman Airlines' with score 100
+Found ITAT code for 'Iran Aseman Airlines': EP
+Using manual mapping for 'El Al Israel Airlines': LY
+Matched 'Iraqi Airways' to 'Iraqi Airways' with score 100
+Found ITAT code for 'Iraqi Airways': IA
+Matched 'Middle East Airlines' to 'Middle East' with score 100
+Found ITAT code for 'Middle East Airlines': ME
+Matched 'Transavia.com France' to 'Transavia France' with score 100
+Found ITAT code for 'Transavia.com France': TO
+Matched 'Iran Air' to 'Iran Aseman Airlines' with score 100
+Found ITAT code for 'Iran Air': EP
+Matched 'Caspian Airlines' to 'Caspian Airlines' with score 100
+Found ITAT code for 'Caspian Airlines': RV
+Matched 'Easyjet' to 'easyJet' with score 100
+Found ITAT code for 'Easyjet': U2
+Matched 'Zagros Airlines' to 'Zagrosjet' with score 100
+Found ITAT code for 'Zagros Airlines': Z4
+Matched 'Tunisair' to 'Tunis Air' with score 94
+Found ITAT code for 'Tunisair': TU
+Matched 'Wizz Air Abu Dhabi' to 'Zz' with score 100
+Found ITAT code for 'Wizz Air Abu Dhabi': ZZ
+Matched 'Air Arabia Abu Dhabi' to 'Air Arabia' with score 100
+Found ITAT code for 'Air Arabia Abu Dhabi': G9
+Matched 'Air Arabia Maroc' to 'Air Arabia Maroc' with score 100
+Found ITAT code for 'Air Arabia Maroc': 3O
+Matched 'Pegasus Airlines' to 'Pegasus' with score 100
+Found ITAT code for 'Pegasus Airlines': PC
+Matched 'Nile Air' to 'L' with score 100
+Found ITAT code for 'Nile Air': MJ
+No good match found for 'Sepehran Airlines'
+Using manual mapping for 'Air France': AF
+No good match found for 'Varesh Airlines'
+Matched 'Pakistan International Airlines' to 'Pakistan' with score 100
+Found ITAT code for 'Pakistan International Airlines': PK
+Matched 'Nouvelair' to 'Nouvelair' with score 100
+Found ITAT code for 'Nouvelair': BJ
+No good match found for 'Iran Airtour Airlines'
+Using manual mapping for 'Air India': AI
+Matched 'Air Arabia Egypt' to 'Air Arabia Egypt' with score 100
+Found ITAT code for 'Air Arabia Egypt': E5
+Matched 'Israir' to 'Israir' with score 100
+Found ITAT code for 'Israir': 6H
+No good match found for 'Nesma Airlines'
+Matched 'Ethiopian Airlines' to 'Ethiopian' with score 100
+Found ITAT code for 'Ethiopian Airlines': ET
+Using manual mapping for 'Deutsche Lufthansa AG': LH
+Using manual mapping for 'British Airways': BA
+Matched 'Yemenia Yemen Airways' to 'Yemenia Yemen' with score 100
+Found ITAT code for 'Yemenia Yemen Airways': IY
+No good match found for 'Berniq Airways'
+Matched 'SmartWings' to 'Smartwings' with score 100
+Found ITAT code for 'SmartWings': QS
+Matched 'Afriqiyah Airways' to 'AFRIQIYAH AIRWAYS' with score 100
+Found ITAT code for 'Afriqiyah Airways': 8U
+Matched 'TUI fly Belgium' to 'I-Fly' with score 100
+Found ITAT code for 'TUI fly Belgium': H5
+Matched 'SpiceJet' to 'Spicejet' with score 100
+Found ITAT code for 'SpiceJet': SG
+Matched 'Airblue' to 'Airblue' with score 100
+Found ITAT code for 'Airblue': ED
+Matched 'Wizz Air Malta' to 'Malta' with score 100
+Found ITAT code for 'Wizz Air Malta': KM
+Matched 'Fly Baghdad Airlines' to 'L' with score 100
+Found ITAT code for 'Fly Baghdad Airlines': MJ
+Matched 'Aeroflot Russian Airlines' to 'RUSSIA' with score 100
+Found ITAT code for 'Aeroflot Russian Airlines': FV
+No good match found for 'Tarco Aviation'
+Matched 'Libyan Wings' to 'L' with score 100
+Found ITAT code for 'Libyan Wings': MJ
+Matched 'Arkia - Israeli Airlines' to 'L' with score 100
+Found ITAT code for 'Arkia - Israeli Airlines': MJ
+No good match found for 'Badr Airlines'
+Matched 'UR Airlines' to 'Samurai Airlines' with score 100
+Found ITAT code for 'UR Airlines': 7
+Matched 'TunisAir Express' to 'Tunis Air' with score 94
+Found ITAT code for 'TunisAir Express': TU
+No good match found for 'Cham Wings Airlines'
+Matched 'Blue Bird Airways' to 'L' with score 100
+Found ITAT code for 'Blue Bird Airways': MJ
+Matched 'Libyan Airlines' to 'Libyan Arab Airlines' with score 100
+Found ITAT code for 'Libyan Airlines': LN
+Matched 'Iberia' to 'Iberia' with score 100
+Found ITAT code for 'Iberia': IB
+Matched 'Neos Air' to 'Neos' with score 100
+Found ITAT code for 'Neos Air': NO
+Matched 'Ryanair UK Ltd' to 'Ryanair' with score 100
+Found ITAT code for 'Ryanair UK Ltd': FR
+Matched 'Biman Bangladesh Airlines' to 'Biman Bangladesh Airlines' with score 100
+Found ITAT code for 'Biman Bangladesh Airlines': BG
+Matched 'Tassili Airlines' to 'L' with score 100
+Found ITAT code for 'Tassili Airlines': MJ
+Matched 'TUI Airways' to 'TUIfly (X3)' with score 100
+Found ITAT code for 'TUI Airways': 11
+Matched 'Aegean Airlines' to 'Aegean Airlines' with score 100
+Found ITAT code for 'Aegean Airlines': A3
+Matched 'Vueling Airlines' to 'L' with score 100
+Found ITAT code for 'Vueling Airlines': MJ
+Matched 'ITA Airways' to 'Navitaire' with score 100
+Found ITAT code for 'ITA Airways': 1N
+Matched 'Wizz Air' to 'Wizz Air Hungary' with score 100
+Found ITAT code for 'Wizz Air': 8Z
+Matched 'Eurowings' to 'Eurowings' with score 100
+Found ITAT code for 'Eurowings': EW
+No good match found for 'Karun Airlines'
+Matched 'US-Bangla Airlines' to 'L' with score 100
+Found ITAT code for 'US-Bangla Airlines': MJ
+Matched 'AJet' to 'Menajet' with score 100
+Found ITAT code for 'AJet': IM
+Matched 'Srilankan Airlines' to 'Srilankan' with score 100
+Found ITAT code for 'Srilankan Airlines': UL
+Matched 'Air Sial' to 'Air S' with score 100
+Found ITAT code for 'Air Sial': KY
+Matched 'Condor Flugdienst' to 'Condor Flugdienst' with score 100
+Found ITAT code for 'Condor Flugdienst': DE
+Matched 'FlyEgypt' to 'L' with score 100
+Found ITAT code for 'FlyEgypt': MJ
+Matched 'Jordan Aviation' to 'Jordan Aviation' with score 100
+Found ITAT code for 'Jordan Aviation': R5
+Matched 'Volotea' to 'Volotea' with score 100
+Found ITAT code for 'Volotea': V7
+No good match found for 'Vistara'
+Matched 'Ata Airlines' to 'Electronic Data Systems' with score 100
+Found ITAT code for 'Ata Airlines': 1C
+No good match found for 'Transavia.com'
+No good match found for 'Serene Air'
+No good match found for 'Corendon Airlines Europe'
+Matched 'Austrian Airlines AG dba Austrian' to 'dba' with score 100
+Found ITAT code for 'Austrian Airlines AG dba Austrian': DI
+Matched 'Azerbaijan Airlines' to 'Azerbaijan' with score 100
+Found ITAT code for 'Azerbaijan Airlines': J2
+Matched 'China Southern Airlines' to 'China Southern Airlines' with score 100
+Found ITAT code for 'China Southern Airlines': CZ
+Matched 'Malaysia Airlines' to 'Malaysia' with score 100
+Found ITAT code for 'Malaysia Airlines': MH
+Matched 'Red Wings Airlines' to 'Red Wings' with score 100
+Found ITAT code for 'Red Wings Airlines': WZ
+Matched 'ASL Airlines France' to 'L' with score 100
+Found ITAT code for 'ASL Airlines France': MJ
+Matched 'Himalaya Airlines' to 'Himalayan Airlines' with score 100
+Found ITAT code for 'Himalaya Airlines': HC
+Matched 'Fly Jinnah' to 'L' with score 100
+Found ITAT code for 'Fly Jinnah': MJ
+Matched 'Kam Air' to 'Kampuchea Airlines' with score 100
+Found ITAT code for 'Kam Air': E2
+Matched 'Euroairlines, S.L.' to 'L' with score 100
+Found ITAT code for 'Euroairlines, S.L.': MJ
+Matched 'Wizz Air UK' to 'Zz' with score 100
+Found ITAT code for 'Wizz Air UK': ZZ
+Matched 'Syrian Arab Airlines' to 'Syrian Arab Airlines' with score 100
+Found ITAT code for 'Syrian Arab Airlines': RB
+Matched 'TUIfly' to 'TUIfly' with score 100
+Found ITAT code for 'TUIfly': X3
+No good match found for 'Medsky Airways'
+Matched 'SWISS' to 'Swiss' with score 100
+Found ITAT code for 'SWISS': LX
+Matched 'Air Astana' to 'Astana' with score 100
+Found ITAT code for 'Air Astana': KC
+Matched 'TAP Air Portugal' to 'L' with score 100
+Found ITAT code for 'TAP Air Portugal': MJ
+Matched 'Finnair' to 'Finnair' with score 100
+Found ITAT code for 'Finnair': AY
+Matched 'Garuda Indonesia' to 'Garuda Indonesia' with score 100
+Found ITAT code for 'Garuda Indonesia': GA
+Matched 'Philippine Airlines' to 'Air Philippines' with score 100
+Found ITAT code for 'Philippine Airlines': 2P
+Matched 'Edelweiss Air' to 'L' with score 100
+Found ITAT code for 'Edelweiss Air': MJ
+Matched 'Lion Air' to 'Black Stallion Airways' with score 100
+Found ITAT code for 'Lion Air': BZ
+Matched 'China Eastern Airlines' to 'China Eastern' with score 100
+Found ITAT code for 'China Eastern Airlines': MU
+Matched 'Uzbekistan Airways' to 'Uzbekistan' with score 100
+Found ITAT code for 'Uzbekistan Airways': HY
+Matched 'Fly Oya' to 'L' with score 100
+Found ITAT code for 'Fly Oya': MJ
+Using manual mapping for 'KLM-Royal Dutch Airlines': KL
+Matched 'Petroleum Air Services' to 'L' with score 100
+Found ITAT code for 'Petroleum Air Services': MJ
+No good match found for 'Chabahar Airlines'
+No good match found for 'Akasa Air'
+Matched 'LOT - Polish Airlines' to 'Lot - Polish' with score 100
+Found ITAT code for 'LOT - Polish Airlines': LO
+No good match found for 'TUS Airways'
+Matched 'Ariana Afghan Airlines' to 'Ariana Afghan Airlines' with score 100
+Found ITAT code for 'Ariana Afghan Airlines': FG
+Matched 'SunExpress' to 'Sun Express' with score 95
+Found ITAT code for 'SunExpress': XQ
+Matched 'Tarom' to 'Tarom - Romanian Transport' with score 100
+Found ITAT code for 'Tarom': RO
+Matched 'Ural Airlines' to 'Ural' with score 100
+Found ITAT code for 'Ural Airlines': U6
+Matched 'Air China' to 'AIR CHINA INTERNATIONAL' with score 100
+Found ITAT code for 'Air China': CA
+No good match found for 'AZIMUTH Airlines'
+Matched 'Luxair' to 'Luxair' with score 100
+Found ITAT code for 'Luxair': LG
+Matched 'Kenya Airways' to 'Kenya Airways' with score 100
+Found ITAT code for 'Kenya Airways': KQ
+Matched 'Belavia' to 'Belavia' with score 100
+Found ITAT code for 'Belavia': B2
+Using manual mapping for 'Air Canada': AC
+Matched 'Skyline Express Airlines' to 'L' with score 100
+Found ITAT code for 'Skyline Express Airlines': MJ
+Using manual mapping for 'United Airlines': UA
+Matched 'RwandAir' to 'Rwandair Limited' with score 100
+Found ITAT code for 'RwandAir': WB
+Matched 'World Ticket Ltd' to 'L' with score 100
+Found ITAT code for 'World Ticket Ltd': MJ
+No good match found for 'Crown Airlines'
+Matched 'Sichuan Airlines' to 'Sichuan Airlines' with score 100
+Found ITAT code for 'Sichuan Airlines': 3U
+Matched 'Cyprus Airways' to 'Cyprus' with score 100
+Found ITAT code for 'Cyprus Airways': CY
+Matched 'Brussels Airlines' to 'L' with score 100
+Found ITAT code for 'Brussels Airlines': MJ
+No good match found for 'SKYUP MT'
+No good match found for 'Marabu Airlines OU'
+Matched 'LLC Qanot Sha' to 'L' with score 100
+Found ITAT code for 'LLC Qanot Sha': MJ
+No good match found for 'AZUR air'
+Matched 'Binter Canarias' to 'Binter Canarias' with score 100
+Found ITAT code for 'Binter Canarias': NT
+Matched 'Smartwings Slovakia s.r.o' to 'L' with score 100
+Found ITAT code for 'Smartwings Slovakia s.r.o': MJ
+Matched 'Nepal Airlines Corporation' to 'L' with score 100
+Found ITAT code for 'Nepal Airlines Corporation': MJ
+No good match found for 'EW Discover GmbH'
+No good match found for 'Xiamen Airlines Company'
+No good match found for 'Beond-Simdi Operations'
+No good match found for 'airHaifa'
+No good match found for 'SundAir'
+Matched 'Somon Air' to 'Somon Air' with score 100
+Found ITAT code for 'Somon Air': SZ
+Matched 'Batik Air Malaysia' to 'Malaysia' with score 100
+Found ITAT code for 'Batik Air Malaysia': MH
+Matched 'Daallo Airlines' to 'Daallo Airlines' with score 100
+Found ITAT code for 'Daallo Airlines': D3
+Matched 'Cebu Pacific Air' to 'Cebu Pacific' with score 100
+Found ITAT code for 'Cebu Pacific Air': 5J
+Matched 'TUI fly Netherlands' to 'I-Fly' with score 100
+Found ITAT code for 'TUI fly Netherlands': H5
+Matched 'Mauritanian Airlines International' to 'TAN' with score 100
+Found ITAT code for 'Mauritanian Airlines International': T8
+No good match found for 'FITS Aviation (Pvt) Ltd'
+Matched 'Bulgaria Air' to 'Bulgaria Air' with score 100
+Found ITAT code for 'Bulgaria Air': FB
+Matched 'Cathay Pacific Airways' to 'Cathay Pacific' with score 100
+Found ITAT code for 'Cathay Pacific Airways': CX
+Matched 'Hainan Airlines' to 'Hainan Phoenix Information Systems' with score 100
+Found ITAT code for 'Hainan Airlines': 1R
+Matched 'Air Baltic Corporation' to 'Baltic Air' with score 100
+Found ITAT code for 'Air Baltic Corporation': BT
+Matched 'Nova Airways' to 'Novair' with score 100
+Found ITAT code for 'Nova Airways': 1I
+Matched 'Royal Brunei Airlines' to 'Royal Brunei' with score 100
+Found ITAT code for 'Royal Brunei Airlines': BI
+Using manual mapping for 'American Airlines': AA
+Using manual mapping for 'Singapore Airlines': SQ
+Using manual mapping for 'Korean Air': KE
+Matched 'Air Senegal' to 'Air S' with score 100
+Found ITAT code for 'Air Senegal': KY
+Matched 'Air Europa' to 'Europa Air' with score 100
+Found ITAT code for 'Air Europa': UX
+Matched 'Smartwings Hungary' to 'Smartwings' with score 100
+Found ITAT code for 'Smartwings Hungary': QS
+Matched 'Smartwings Poland Sp. z o.o.' to 'L' with score 100
+Found ITAT code for 'Smartwings Poland Sp. z o.o.': MJ
+Matched 'S7 Airlines' to 'S7' with score 100
+Found ITAT code for 'S7 Airlines': S7
+No good match found for 'Chair Airlines'
+Matched 'Smartlynx Airlines Ltd' to 'SmartLynx Airlines' with score 100
+Found ITAT code for 'Smartlynx Airlines Ltd': 6Y
+Matched 'Georgian Airways' to 'Georgian Airways' with score 100
+Found ITAT code for 'Georgian Airways': A9
+No good match found for 'My Freighter/Centrum Air'
+Using manual mapping for 'Japan Airlines': JL
+Matched 'UTair Aviation' to 'Utair' with score 100
+Found ITAT code for 'UTair Aviation': UT
+Matched 'Fly One' to 'L' with score 100
+Found ITAT code for 'Fly One': MJ
+No good match found for 'HiSky'
+Matched 'Norwegian' to 'Norwegian Air International' with score 100
+Found ITAT code for 'Norwegian': D8
+Matched 'Turkmenistan Airlines' to 'TAN' with score 100
+Found ITAT code for 'Turkmenistan Airlines': T8
+Matched 'Uganda Airlines' to 'Air Uganda' with score 100
+Found ITAT code for 'Uganda Airlines': U7
+Matched 'Airasia X' to 'AirAsia X' with score 100
+Found ITAT code for 'Airasia X': D7
+Matched 'Alexandria Airlines' to 'L' with score 100
+Found ITAT code for 'Alexandria Airlines': MJ
+Matched 'HiSky Europe SRL' to 'L' with score 100
+Found ITAT code for 'HiSky Europe SRL': MJ
+No good match found for 'Saha Airlines'
+Matched 'Citilink' to 'L' with score 100
+Found ITAT code for 'Citilink': MJ
+No good match found for 'Air Djibouti'
+Matched 'Jet2.com' to 'Jet2.com' with score 100
+Found ITAT code for 'Jet2.com': LS
+No good match found for 'Corendon Airlines'
+Matched 'Al Masria Universal Airlines' to 'L' with score 100
+Found ITAT code for 'Al Masria Universal Airlines': MJ
+No good match found for 'Armenia Airways Aircompany CJSC'
+Matched 'Air Tanzania' to 'Tanzania Air' with score 100
+Found ITAT code for 'Air Tanzania': TC
+No good match found for 'Corendon DUTCH Airlines'
+Matched 'Air Nostrum' to 'Air Nostrum' with score 100
+Found ITAT code for 'Air Nostrum': YW
+No good match found for 'Air Peace'
+Matched 'Scoot' to 'Scoot' with score 100
+Found ITAT code for 'Scoot': TZ
+Matched 'FlexFlight ApS' to 'L' with score 100
+Found ITAT code for 'FlexFlight ApS': MJ
+Matched 'Myanmar Airways International' to 'Myanmar Airways' with score 100
+Found ITAT code for 'Myanmar Airways International': 8M
+No good match found for 'Jubba Airways Ltd'
+Matched 'Virgin Atlantic Airways' to 'Virgin Atlantic' with score 100
+Found ITAT code for 'Virgin Atlantic Airways': VS
+Matched 'Air Cote d'Ivoire' to 'Air Ivoire' with score 100
+Found ITAT code for 'Air Cote d'Ivoire': VU
+Matched 'Discover Airlines' to 'Discovery Airways' with score 100
+Found ITAT code for 'Discover Airlines': DH
+No good match found for 'Red Sea Airlines'
+Matched 'Air Company SCAT' to 'SCAT' with score 100
+Found ITAT code for 'Air Company SCAT': DV
+No good match found for 'Bees Airlines'
+No good match found for 'Southwind Airlines'
+No good match found for 'Marathon Airlines'
+No good match found for 'Fanjet Express'
+No good match found for 'MY FREIGHTER'
+Matched 'Sunclass Airlines' to 'L' with score 100
+Found ITAT code for 'Sunclass Airlines': MJ
+Using manual mapping for 'Delta Air Lines': DL
+Matched 'Norwegian Air Shuttle' to 'L' with score 100
+Found ITAT code for 'Norwegian Air Shuttle': MJ
+Matched 'Flyone Armenia' to 'L' with score 100
+Found ITAT code for 'Flyone Armenia': MJ
+Matched 'Air Transat A.T.Inc.' to 'Air Transat' with score 100
+Found ITAT code for 'Air Transat A.T.Inc.': TS
+Matched 'Enter Air Spolka z.o.o.' to 'L' with score 100
+Found ITAT code for 'Enter Air Spolka z.o.o.': MJ
+Matched 'Buraq Air' to 'El-Buraq Air Transport' with score 100
+Found ITAT code for 'Buraq Air': UZ
+Matched 'Smartlynx Airlines Estonia' to 'L' with score 100
+Found ITAT code for 'Smartlynx Airlines Estonia': MJ
+No good match found for 'Yazd Airways'
+Matched 'TUIfly Nordic AB' to 'TUIfly Nordic' with score 100
+Found ITAT code for 'TUIfly Nordic AB': 6B
+Matched 'Air Seychelles' to 'Air Seychelles' with score 100
+Found ITAT code for 'Air Seychelles': HM
+Matched 'SAS Scandinavian Airlines' to 'SAS' with score 100
+Found ITAT code for 'SAS Scandinavian Airlines': SK
+Matched 'African Express Airways' to 'LAN Express' with score 95
+Found ITAT code for 'African Express Airways': LU
+No good match found for 'A.P.G. Distribution Systems'
+Matched 'FLY LILI' to 'L' with score 100
+Found ITAT code for 'FLY LILI': MJ
+Matched 'Thai Airways International' to 'Thai Sky Airlines' with score 100
+Found ITAT code for 'Thai Airways International': 9I
+No good match found for 'Nord Wind'
+Matched 'Helvetic Airways' to 'Helvetic Airways' with score 100
+Found ITAT code for 'Helvetic Airways': 2L
+Matched 'Avion Express' to 'LAN Express' with score 90
+Found ITAT code for 'Avion Express': LU
+No good match found for 'USC GmbH'
+Matched 'Aer Lingus' to 'L' with score 100
+Found ITAT code for 'Aer Lingus': MJ
+Matched 'Shenzhen Airlines' to 'Shenzhen Airlines' with score 100
+Found ITAT code for 'Shenzhen Airlines': ZH
+Matched 'Daallo Airlines(Somalia)' to 'L' with score 100
+Found ITAT code for 'Daallo Airlines(Somalia)': MJ
+Matched 'Airline GEO SKY LLC' to 'L' with score 100
+Found ITAT code for 'Airline GEO SKY LLC': MJ
+No good match found for 'Anima Wings Aviation'
+Matched 'Asiana Airlines' to 'Asiana Airlines' with score 100
+Found ITAT code for 'Asiana Airlines': OZ
+Matched 'Royal Bhutan Airlines' to 'L' with score 100
+Found ITAT code for 'Royal Bhutan Airlines': MJ
+Matched 'Universal Air Charter and Management' to 'L' with score 100
+Found ITAT code for 'Universal Air Charter and Management': MJ
+Matched 'Aero Contractors Company of Nigeria' to 'Aero Contractors' with score 100
+Found ITAT code for 'Aero Contractors Company of Nigeria': AJ
+Matched 'Fly Play' to 'L' with score 100
+Found ITAT code for 'Fly Play': MJ
+Matched 'Air Serbia' to 'Air S' with score 100
+Found ITAT code for 'Air Serbia': KY
+No good match found for 'Hunnu Air'
+Matched 'Fly Arna' to 'L' with score 100
+Found ITAT code for 'Fly Arna': MJ
+Matched 'Air Corsica' to 'Cosmic Air' with score 86
+Found ITAT code for 'Air Corsica': F5
+No good match found for 'IrAero'
+Matched 'Canada Jetlines' to 'L' with score 100
+Found ITAT code for 'Canada Jetlines': MJ
+Matched 'AeroItalia' to 'L' with score 100
+Found ITAT code for 'AeroItalia': MJ
+Matched 'Avion Express Malta Ltd' to 'Malta' with score 100
+Found ITAT code for 'Avion Express Malta Ltd': KM
+No good match found for 'SATA International-Azores Airlines S.A.'
+
+Matching Summary:
+MENA airlines matched: 143 out of 174
+USA airlines matched: 203 out of 255
+
+Unmatched MENA airlines:
+- Breeze Airways
+- JSX
+- Contour Airlines
+- Air Excursions, LLC
+- San Juan Airlines
+- Smokey Bay Air
+- Advanced Air, LLC
+- Kenai Aviation Operations
+- Vivaaerobus
+- Taquan Air
+- Everts Air
+- Scott Air LLC
+- Boutique Air
+- Tropic Ocean Airways
+- EW Discover GmbH
+- Bermudair Limited
+- French Bee
+- SATA International-Azores Airlines S.A.
+- USAC Airways 695
+- Air Premia Inc.
+- Fiji Airways
+- Sky High
+- Sky Airlines Peru S.A.C
+- Fox Aircraft
+- Xiamen Airlines Company
+- Sunrise Airways
+- KaiserAir
+- Meregrass
+- Iberojet Airlines
+
+Unmatched USA airlines:
+- Sepehran Airlines
+- Varesh Airlines
+- Iran Airtour Airlines
+- Nesma Airlines
+- Berniq Airways
+- Tarco Aviation
+- Badr Airlines
+- Cham Wings Airlines
+- Karun Airlines
+- Vistara
+- Transavia.com
+- Serene Air
+- Corendon Airlines Europe
+- Medsky Airways
+- Chabahar Airlines
+- Akasa Air
+- TUS Airways
+- AZIMUTH Airlines
+- Crown Airlines
+- SKYUP MT
+- Marabu Airlines OU
+- AZUR air
+- EW Discover GmbH
+- Xiamen Airlines Company
+- Beond-Simdi Operations
+- airHaifa
+- SundAir
+- FITS Aviation (Pvt) Ltd
+- Chair Airlines
+- My Freighter/Centrum Air
+- HiSky
+- Saha Airlines
+- Air Djibouti
+- Corendon Airlines
+- Armenia Airways Aircompany CJSC
+- Corendon DUTCH Airlines
+- Air Peace
+- Jubba Airways Ltd
+- Red Sea Airlines
+- Bees Airlines
+- Southwind Airlines
+- Marathon Airlines
+- Fanjet Express
+- MY FREIGHTER
+- Yazd Airways
+- A.P.G. Distribution Systems
+- Nord Wind
+- USC GmbH
+- Anima Wings Aviation
+- Hunnu Air
+- IrAero
+- SATA International-Azores Airlines S.A.
+
+Processing MENA airlines...
+Using manual mapping for 'American Airlines': AA
+Using manual mapping for 'Delta Air Lines': DL
+Using manual mapping for 'United Airlines': UA
+Matched 'Southwest Airlines' to 'Southwest Airlines' with score 100
+Found ITAT code for 'Southwest Airlines': WN
+Matched 'Alaska Airlines' to 'Era Alaska' with score 100
+Found ITAT code for 'Alaska Airlines': 7H
+Matched 'Spirit Airlines' to 'Asian Spirit' with score 100
+Found ITAT code for 'Spirit Airlines': 6K
+Matched 'JetBlue Airways Corporation' to 'Jetblue Airways' with score 100
+Found ITAT code for 'JetBlue Airways Corporation': B6
+Matched 'Frontier Airlines Inc.' to 'Frontier Flying Service' with score 100
+Found ITAT code for 'Frontier Airlines Inc.': 2F
+Matched 'Allegiant Air LLC' to 'Allegiant Air' with score 100
+Found ITAT code for 'Allegiant Air LLC': G4
+Matched 'Grant Aviation, Inc.' to 'Grant Aviation' with score 100
+Found ITAT code for 'Grant Aviation, Inc.': GS
+Matched 'Hawaiian Airlines' to 'Hawaiian Airlines' with score 100
+Found ITAT code for 'Hawaiian Airlines': HA
+Matched 'Southern Airways Express' to 'LAN Express' with score 90
+Found ITAT code for 'Southern Airways Express': LU
+Using manual mapping for 'Air Canada': AC
+Matched 'Yute Commuter Service' to 'Aero-Service' with score 91
+Found ITAT code for 'Yute Commuter Service': BF
+Matched 'Cape Air' to 'Cape Air' with score 100
+Found ITAT code for 'Cape Air': 9K
+No good match found for 'Breeze Airways'
+Matched 'Sun Country Airlines' to 'Sun Country Airlines' with score 100
+Found ITAT code for 'Sun Country Airlines': SY
+Matched 'Bering Air' to 'Bering Air' with score 100
+Found ITAT code for 'Bering Air': 8E
+No good match found for 'JSX'
+No good match found for 'Contour Airlines'
+Matched 'Wright Air Service' to 'Wright Air Service' with score 100
+Found ITAT code for 'Wright Air Service': 8V
+Matched 'Westjet' to 'Westjet Airlines' with score 100
+Found ITAT code for 'Westjet': WS
+Matched 'Volaris' to 'Volaris' with score 100
+Found ITAT code for 'Volaris': Y4
+Matched 'Avelo Airlines' to 'L' with score 100
+Found ITAT code for 'Avelo Airlines': MJ
+No good match found for 'Air Excursions, LLC'
+Matched 'Alaska Seaplanes' to 'L' with score 100
+Found ITAT code for 'Alaska Seaplanes': MJ
+Matched 'Aeromexico' to 'Aeromexico' with score 100
+Found ITAT code for 'Aeromexico': AM
+Matched 'SILVER AIRWAYS LLC' to 'L' with score 100
+Found ITAT code for 'SILVER AIRWAYS LLC': MJ
+Using manual mapping for 'British Airways': BA
+No good match found for 'San Juan Airlines'
+Matched 'Avianca' to 'Avianca' with score 100
+Found ITAT code for 'Avianca': AV
+Matched 'Key Lime Air dba Denver Air Connection' to 'dba' with score 100
+Found ITAT code for 'Key Lime Air dba Denver Air Connection': DI
+Matched 'Ryan Air' to 'Ryanair' with score 100
+Found ITAT code for 'Ryan Air': FR
+Matched 'Copa Airlines' to 'Copa' with score 100
+Found ITAT code for 'Copa Airlines': CM
+Matched 'Porter Airlines' to 'Porter Airlines' with score 100
+Found ITAT code for 'Porter Airlines': PD
+No good match found for 'Smokey Bay Air'
+Using manual mapping for 'Deutsche Lufthansa AG': LH
+No good match found for 'Advanced Air, LLC'
+Using manual mapping for 'Air France': AF
+Matched 'Virgin Atlantic Airways' to 'Virgin Atlantic' with score 100
+Found ITAT code for 'Virgin Atlantic Airways': VS
+No good match found for 'Kenai Aviation Operations'
+No good match found for 'Vivaaerobus'
+Matched 'LATAM Airlines Group' to 'L' with score 100
+Found ITAT code for 'LATAM Airlines Group': MJ
+Using manual mapping for 'Turkish Airlines': TK
+No good match found for 'Taquan Air'
+Matched 'Aer Lingus' to 'L' with score 100
+Found ITAT code for 'Aer Lingus': MJ
+Matched 'Island Air Service' to 'L' with score 100
+Found ITAT code for 'Island Air Service': MJ
+Matched 'New England Airlines Inc' to 'New England Airlines' with score 100
+Found ITAT code for 'New England Airlines Inc': EJ
+Using manual mapping for 'Japan Airlines': JL
+Using manual mapping for 'Qatar Airways': QR
+Matched 'All Nippon Airways' to 'L' with score 100
+Found ITAT code for 'All Nippon Airways': MJ
+Matched 'New Pacific Airlines' to 'Sabre Pacific' with score 90
+Found ITAT code for 'New Pacific Airlines': 1Z
+No good match found for 'Everts Air'
+Using manual mapping for 'Emirates': EK
+Matched 'Icelandair' to 'Icelandair' with score 100
+Found ITAT code for 'Icelandair': FI
+Using manual mapping for 'Korean Air': KE
+Matched 'Tradewind Aviation' to 'Tradewind Aviation' with score 100
+Found ITAT code for 'Tradewind Aviation': TJ
+No good match found for 'Scott Air LLC'
+Matched 'SAS Scandinavian Airlines' to 'SAS' with score 100
+Found ITAT code for 'SAS Scandinavian Airlines': SK
+No good match found for 'Boutique Air'
+Matched 'Warbelow's Air Ventures Inc.' to 'L' with score 100
+Found ITAT code for 'Warbelow's Air Ventures Inc.': MJ
+Using manual mapping for 'KLM-Royal Dutch Airlines': KL
+Matched 'Kenmore Air' to 'Kenmore Air' with score 100
+Found ITAT code for 'Kenmore Air': M5
+Matched 'SWISS' to 'Swiss' with score 100
+Found ITAT code for 'SWISS': LX
+Matched 'Iberia' to 'Iberia' with score 100
+Found ITAT code for 'Iberia': IB
+Matched 'EVA Airways' to 'Eva Airways' with score 100
+Found ITAT code for 'EVA Airways': BR
+Matched 'TAP Air Portugal' to 'L' with score 100
+Found ITAT code for 'TAP Air Portugal': MJ
+Using manual mapping for 'Singapore Airlines': SQ
+Matched 'Aleutian Airways' to 'L' with score 100
+Found ITAT code for 'Aleutian Airways': MJ
+Matched 'Bahamasair' to 'Bahamasair' with score 100
+Found ITAT code for 'Bahamasair': UP
+Matched 'flyGTA Airlines' to 'L' with score 100
+Found ITAT code for 'flyGTA Airlines': MJ
+Matched 'Cathay Pacific Airways' to 'Cathay Pacific' with score 100
+Found ITAT code for 'Cathay Pacific Airways': CX
+Matched 'Flair Airlines' to 'L' with score 100
+Found ITAT code for 'Flair Airlines': MJ
+Using manual mapping for 'Air India': AI
+Matched 'ITA Airways' to 'Navitaire' with score 100
+Found ITAT code for 'ITA Airways': 1N
+Using manual mapping for 'El Al Israel Airlines': LY
+Matched 'Qantas Airways' to 'QANTAS' with score 100
+Found ITAT code for 'Qantas Airways': QF
+Matched 'Asiana Airlines' to 'Asiana Airlines' with score 100
+Found ITAT code for 'Asiana Airlines': OZ
+Matched 'Caribbean Airlines' to 'Caribbean' with score 100
+Found ITAT code for 'Caribbean Airlines': BW
+No good match found for 'Tropic Ocean Airways'
+Matched 'China Airlines' to 'OneChina' with score 100
+Found ITAT code for 'China Airlines': 1C
+Using manual mapping for 'Etihad Airways': EY
+Matched 'LOT - Polish Airlines' to 'Lot - Polish' with score 100
+Found ITAT code for 'LOT - Polish Airlines': LO
+Matched 'Philippine Airlines' to 'Air Philippines' with score 100
+Found ITAT code for 'Philippine Airlines': 2P
+Matched 'Alaska Air Transit' to 'L' with score 100
+Found ITAT code for 'Alaska Air Transit': MJ
+Matched 'Condor Flugdienst' to 'Condor Flugdienst' with score 100
+Found ITAT code for 'Condor Flugdienst': DE
+Matched 'Austrian Airlines AG dba Austrian' to 'dba' with score 100
+Found ITAT code for 'Austrian Airlines AG dba Austrian': DI
+Matched 'Air New Zealand' to 'New Zealand Air' with score 100
+Found ITAT code for 'Air New Zealand': NZ
+Matched 'Ethiopian Airlines' to 'Ethiopian' with score 100
+Found ITAT code for 'Ethiopian Airlines': ET
+Matched 'Azul Airlines' to 'Azul Linhas' with score 100
+Found ITAT code for 'Azul Airlines': AD
+Matched '40 Mile Air' to 'L' with score 100
+Found ITAT code for '40 Mile Air': MJ
+Matched 'Fly Play' to 'L' with score 100
+Found ITAT code for 'Fly Play': MJ
+Matched 'Norse Atlantic UK' to 'L' with score 100
+Found ITAT code for 'Norse Atlantic UK': MJ
+Matched 'Air Transat A.T.Inc.' to 'Air Transat' with score 100
+Found ITAT code for 'Air Transat A.T.Inc.': TS
+Matched 'ZIPAIR Tokyo Inc.' to 'Zip' with score 100
+Found ITAT code for 'ZIPAIR Tokyo Inc.': 3J
+No good match found for 'EW Discover GmbH'
+Matched 'Volaris El Salvador' to 'L' with score 100
+Found ITAT code for 'Volaris El Salvador': MJ
+Matched 'Western Air' to 'Northwestern Air' with score 100
+Found ITAT code for 'Western Air': J3
+Matched 'Norse Atlantic Airways' to 'L' with score 100
+Found ITAT code for 'Norse Atlantic Airways': MJ
+Matched 'Aztec Airways' to 'Aztec Worldwide Airlines' with score 100
+Found ITAT code for 'Aztec Airways': 7A
+No good match found for 'Bermudair Limited'
+Matched 'Cayman Airways' to 'Cayman Airways' with score 100
+Found ITAT code for 'Cayman Airways': KX
+No good match found for 'French Bee'
+Matched 'LLC Air Company AeroStan' to 'L' with score 100
+Found ITAT code for 'LLC Air Company AeroStan': MJ
+Matched 'ConocoPhillips Aviation Alaska' to 'L' with score 100
+Found ITAT code for 'ConocoPhillips Aviation Alaska': MJ
+Matched 'Finnair' to 'Finnair' with score 100
+Found ITAT code for 'Finnair': AY
+Matched 'GOL Linhas Aereas S.A.' to 'Linhas A' with score 100
+Found ITAT code for 'GOL Linhas Aereas S.A.': LM
+Matched 'Scenic Airlines' to 'SENIC AIRLINES' with score 91
+Found ITAT code for 'Scenic Airlines': YR
+Matched 'Royal Air Maroc' to 'L' with score 100
+Found ITAT code for 'Royal Air Maroc': MJ
+No good match found for 'SATA International-Azores Airlines S.A.'
+Matched 'Iliamna Air Taxi' to 'L' with score 100
+Found ITAT code for 'Iliamna Air Taxi': MJ
+Matched 'Air Tahiti Nui' to 'Tahiti Nui Air' with score 100
+Found ITAT code for 'Air Tahiti Nui': TN
+Using manual mapping for 'Saudi Arabian Airlines': SV
+Using manual mapping for 'Royal Jordanian': RJ
+Matched 'Air China' to 'AIR CHINA INTERNATIONAL' with score 100
+Found ITAT code for 'Air China': CA
+No good match found for 'USAC Airways 695'
+Matched 'STARLUX Airlines' to 'L' with score 100
+Found ITAT code for 'STARLUX Airlines': MJ
+No good match found for 'Air Premia Inc.'
+No good match found for 'Fiji Airways'
+Matched 'Vuela El Salvador' to 'L' with score 100
+Found ITAT code for 'Vuela El Salvador': MJ
+Matched 'Aerolineas Argentinas' to 'Argentinas' with score 100
+Found ITAT code for 'Aerolineas Argentinas': AR
+Matched 'La Compagnie' to 'L' with score 100
+Found ITAT code for 'La Compagnie': MJ
+Using manual mapping for 'Egyptair': MS
+Matched 'China Eastern Airlines' to 'China Eastern' with score 100
+Found ITAT code for 'China Eastern Airlines': MU
+Matched 'RED AIR SRL' to 'Air S' with score 100
+Found ITAT code for 'RED AIR SRL': KY
+Matched 'Air Europa' to 'Europa Air' with score 100
+Found ITAT code for 'Air Europa': UX
+Matched 'Papillon Airways' to 'Papillon Grand Canyon Helicopters' with score 100
+Found ITAT code for 'Papillon Airways': HI
+No good match found for 'Sky High'
+Matched 'China Southern Airlines' to 'China Southern Airlines' with score 100
+Found ITAT code for 'China Southern Airlines': CZ
+Matched 'Brussels Airlines' to 'L' with score 100
+Found ITAT code for 'Brussels Airlines': MJ
+Matched 'Kenya Airways' to 'Kenya Airways' with score 100
+Found ITAT code for 'Kenya Airways': KQ
+Matched 'Air Unlimited Charter Services' to 'L' with score 100
+Found ITAT code for 'Air Unlimited Charter Services': MJ
+Matched 'Boliviana de Aviacion - BoA' to 'L' with score 100
+Found ITAT code for 'Boliviana de Aviacion - BoA': MJ
+No good match found for 'Sky Airlines Peru S.A.C'
+Matched 'TUI Airways' to 'TUIfly (X3)' with score 100
+Found ITAT code for 'TUI Airways': 11
+No good match found for 'Fox Aircraft'
+Matched 'Harbour Air Seaplanes' to 'L' with score 100
+Found ITAT code for 'Harbour Air Seaplanes': MJ
+Matched 'Air Serbia' to 'Air S' with score 100
+Found ITAT code for 'Air Serbia': KY
+Matched 'Hainan Airlines' to 'Hainan Phoenix Information Systems' with score 100
+Found ITAT code for 'Hainan Airlines': 1R
+Matched 'Surinam Airways' to 'Surinam Airways' with score 100
+Found ITAT code for 'Surinam Airways': PY
+Matched 'Lynx Air' to 'SmartLynx Airlines' with score 100
+Found ITAT code for 'Lynx Air': 6Y
+Matched 'Jetstar Airways' to 'Jetstar Asia Airways' with score 100
+Found ITAT code for 'Jetstar Airways': 3K
+Matched 'Makers Air' to 'Maersk' with score 91
+Found ITAT code for 'Makers Air': DM
+Matched 'Edelweiss Air' to 'L' with score 100
+Found ITAT code for 'Edelweiss Air': MJ
+Using manual mapping for 'Kuwait Airways': KU
+No good match found for 'Xiamen Airlines Company'
+Matched 'Volaris Costa Rica' to 'L' with score 100
+Found ITAT code for 'Volaris Costa Rica': MJ
+No good match found for 'Sunrise Airways'
+Matched 'Discover Airlines' to 'Discovery Airways' with score 100
+Found ITAT code for 'Discover Airlines': DH
+No good match found for 'KaiserAir'
+Matched 'Vietnam Airlines' to 'Vietnam' with score 100
+Found ITAT code for 'Vietnam Airlines': VN
+Matched 'Uzbekistan Airways' to 'Uzbekistan' with score 100
+Found ITAT code for 'Uzbekistan Airways': HY
+Matched 'Neos Air' to 'Neos' with score 100
+Found ITAT code for 'Neos Air': NO
+Matched 'Canada Jetlines' to 'L' with score 100
+Found ITAT code for 'Canada Jetlines': MJ
+Matched 'Sichuan Airlines' to 'Sichuan Airlines' with score 100
+Found ITAT code for 'Sichuan Airlines': 3U
+Matched 'IBC Airways' to 'IBC Airways' with score 100
+Found ITAT code for 'IBC Airways': II
+Matched 'HiSky Europe SRL' to 'L' with score 100
+Found ITAT code for 'HiSky Europe SRL': MJ
+Matched 'Aerotransportes Rafilher' to 'L' with score 100
+Found ITAT code for 'Aerotransportes Rafilher': MJ
+Matched 'Northern Pacific Airway dba Ravn Alaska' to 'dba' with score 100
+Found ITAT code for 'Northern Pacific Airway dba Ravn Alaska': DI
+No good match found for 'Meregrass'
+Matched 'Air Senegal' to 'Air S' with score 100
+Found ITAT code for 'Air Senegal': KY
+Matched 'Sunwing Airlines Inc.' to 'Sunwing' with score 100
+Found ITAT code for 'Sunwing Airlines Inc.': WG
+Matched 'World Ticket Ltd' to 'L' with score 100
+Found ITAT code for 'World Ticket Ltd': MJ
+Matched 'Sky High Aviation Services' to 'Chari Aviation Services' with score 90
+Found ITAT code for 'Sky High Aviation Services': S8
+No good match found for 'Iberojet Airlines'
+Matched 'Euroairlines, S.L.' to 'L' with score 100
+Found ITAT code for 'Euroairlines, S.L.': MJ
+Matched 'Mahan Air' to 'Mahan Air' with score 100
+Found ITAT code for 'Mahan Air': W5
+Matched 'Atlantic Airways Faroe Islands' to 'L' with score 100
+Found ITAT code for 'Atlantic Airways Faroe Islands': MJ
+Matched 'Air Marshall Islands' to 'Air Marshall Islands' with score 100
+Found ITAT code for 'Air Marshall Islands': CW
+Matched 'Calm Air Intl Ltd' to 'L' with score 100
+Found ITAT code for 'Calm Air Intl Ltd': MJ
+Matched 'SmartWings' to 'Smartwings' with score 100
+Found ITAT code for 'SmartWings': QS
+Matched 'World2Fly Portugal' to 'L' with score 100
+Found ITAT code for 'World2Fly Portugal': MJ
+
+Processing USA airlines...
+Using manual mapping for 'Saudi Arabian Airlines': SV
+Using manual mapping for 'Qatar Airways': QR
+Using manual mapping for 'Emirates': EK
+Matched 'FLYNAS' to 'L' with score 100
+Found ITAT code for 'FLYNAS': MJ
+Matched 'Flydubai' to 'FLYDUBAI' with score 100
+Found ITAT code for 'Flydubai': FZ
+Using manual mapping for 'Egyptair': MS
+Matched 'Air Algerie' to 'Air Algerie' with score 100
+Found ITAT code for 'Air Algerie': AH
+Matched 'flyadeal' to 'L' with score 100
+Found ITAT code for 'flyadeal': MJ
+Matched 'Air Arabia' to 'Air Arabia' with score 100
+Found ITAT code for 'Air Arabia': G9
+Using manual mapping for 'Etihad Airways': EY
+Matched 'Royal Air Maroc' to 'L' with score 100
+Found ITAT code for 'Royal Air Maroc': MJ
+Using manual mapping for 'Gulf Air': GF
+Matched 'Air Cairo' to 'Air Cal' with score 92
+Found ITAT code for 'Air Cairo': TY
+Matched 'Jazeera Airways' to 'Jazeera Airways' with score 100
+Found ITAT code for 'Jazeera Airways': J9
+Matched 'Oman Air' to 'Euromanx Airways' with score 100
+Found ITAT code for 'Oman Air': 3W
+Using manual mapping for 'Royal Jordanian': RJ
+Matched 'Ryanair' to 'Ryanair' with score 100
+Found ITAT code for 'Ryanair': FR
+Using manual mapping for 'Turkish Airlines': TK
+Using manual mapping for 'Kuwait Airways': KU
+Matched 'IndiGo' to 'Indigo' with score 100
+Found ITAT code for 'IndiGo': I9
+Matched 'Mahan Air' to 'Mahan Air' with score 100
+Found ITAT code for 'Mahan Air': W5
+Matched 'Air India Express' to 'Air India Express' with score 100
+Found ITAT code for 'Air India Express': IX
+Matched 'SalamAir' to 'L' with score 100
+Found ITAT code for 'SalamAir': MJ
+Matched 'Iran Aseman Airlines' to 'Iran Aseman Airlines' with score 100
+Found ITAT code for 'Iran Aseman Airlines': EP
+Using manual mapping for 'El Al Israel Airlines': LY
+Matched 'Iraqi Airways' to 'Iraqi Airways' with score 100
+Found ITAT code for 'Iraqi Airways': IA
+Matched 'Middle East Airlines' to 'Middle East' with score 100
+Found ITAT code for 'Middle East Airlines': ME
+Matched 'Transavia.com France' to 'Transavia France' with score 100
+Found ITAT code for 'Transavia.com France': TO
+Matched 'Iran Air' to 'Iran Aseman Airlines' with score 100
+Found ITAT code for 'Iran Air': EP
+Matched 'Caspian Airlines' to 'Caspian Airlines' with score 100
+Found ITAT code for 'Caspian Airlines': RV
+Matched 'Easyjet' to 'easyJet' with score 100
+Found ITAT code for 'Easyjet': U2
+Matched 'Zagros Airlines' to 'Zagrosjet' with score 100
+Found ITAT code for 'Zagros Airlines': Z4
+Matched 'Tunisair' to 'Tunis Air' with score 94
+Found ITAT code for 'Tunisair': TU
+Matched 'Wizz Air Abu Dhabi' to 'Zz' with score 100
+Found ITAT code for 'Wizz Air Abu Dhabi': ZZ
+Matched 'Air Arabia Abu Dhabi' to 'Air Arabia' with score 100
+Found ITAT code for 'Air Arabia Abu Dhabi': G9
+Matched 'Air Arabia Maroc' to 'Air Arabia Maroc' with score 100
+Found ITAT code for 'Air Arabia Maroc': 3O
+Matched 'Pegasus Airlines' to 'Pegasus' with score 100
+Found ITAT code for 'Pegasus Airlines': PC
+Matched 'Nile Air' to 'L' with score 100
+Found ITAT code for 'Nile Air': MJ
+No good match found for 'Sepehran Airlines'
+Using manual mapping for 'Air France': AF
+No good match found for 'Varesh Airlines'
+Matched 'Pakistan International Airlines' to 'Pakistan' with score 100
+Found ITAT code for 'Pakistan International Airlines': PK
+Matched 'Nouvelair' to 'Nouvelair' with score 100
+Found ITAT code for 'Nouvelair': BJ
+No good match found for 'Iran Airtour Airlines'
+Using manual mapping for 'Air India': AI
+Matched 'Air Arabia Egypt' to 'Air Arabia Egypt' with score 100
+Found ITAT code for 'Air Arabia Egypt': E5
+Matched 'Israir' to 'Israir' with score 100
+Found ITAT code for 'Israir': 6H
+No good match found for 'Nesma Airlines'
+Matched 'Ethiopian Airlines' to 'Ethiopian' with score 100
+Found ITAT code for 'Ethiopian Airlines': ET
+Using manual mapping for 'Deutsche Lufthansa AG': LH
+Using manual mapping for 'British Airways': BA
+Matched 'Yemenia Yemen Airways' to 'Yemenia Yemen' with score 100
+Found ITAT code for 'Yemenia Yemen Airways': IY
+No good match found for 'Berniq Airways'
+Matched 'SmartWings' to 'Smartwings' with score 100
+Found ITAT code for 'SmartWings': QS
+Matched 'Afriqiyah Airways' to 'AFRIQIYAH AIRWAYS' with score 100
+Found ITAT code for 'Afriqiyah Airways': 8U
+Matched 'TUI fly Belgium' to 'I-Fly' with score 100
+Found ITAT code for 'TUI fly Belgium': H5
+Matched 'SpiceJet' to 'Spicejet' with score 100
+Found ITAT code for 'SpiceJet': SG
+Matched 'Airblue' to 'Airblue' with score 100
+Found ITAT code for 'Airblue': ED
+Matched 'Wizz Air Malta' to 'Malta' with score 100
+Found ITAT code for 'Wizz Air Malta': KM
+Matched 'Fly Baghdad Airlines' to 'L' with score 100
+Found ITAT code for 'Fly Baghdad Airlines': MJ
+Matched 'Aeroflot Russian Airlines' to 'RUSSIA' with score 100
+Found ITAT code for 'Aeroflot Russian Airlines': FV
+No good match found for 'Tarco Aviation'
+Matched 'Libyan Wings' to 'L' with score 100
+Found ITAT code for 'Libyan Wings': MJ
+Matched 'Arkia - Israeli Airlines' to 'L' with score 100
+Found ITAT code for 'Arkia - Israeli Airlines': MJ
+No good match found for 'Badr Airlines'
+Matched 'UR Airlines' to 'Samurai Airlines' with score 100
+Found ITAT code for 'UR Airlines': 7
+Matched 'TunisAir Express' to 'Tunis Air' with score 94
+Found ITAT code for 'TunisAir Express': TU
+No good match found for 'Cham Wings Airlines'
+Matched 'Blue Bird Airways' to 'L' with score 100
+Found ITAT code for 'Blue Bird Airways': MJ
+Matched 'Libyan Airlines' to 'Libyan Arab Airlines' with score 100
+Found ITAT code for 'Libyan Airlines': LN
+Matched 'Iberia' to 'Iberia' with score 100
+Found ITAT code for 'Iberia': IB
+Matched 'Neos Air' to 'Neos' with score 100
+Found ITAT code for 'Neos Air': NO
+Matched 'Ryanair UK Ltd' to 'Ryanair' with score 100
+Found ITAT code for 'Ryanair UK Ltd': FR
+Matched 'Biman Bangladesh Airlines' to 'Biman Bangladesh Airlines' with score 100
+Found ITAT code for 'Biman Bangladesh Airlines': BG
+Matched 'Tassili Airlines' to 'L' with score 100
+Found ITAT code for 'Tassili Airlines': MJ
+Matched 'TUI Airways' to 'TUIfly (X3)' with score 100
+Found ITAT code for 'TUI Airways': 11
+Matched 'Aegean Airlines' to 'Aegean Airlines' with score 100
+Found ITAT code for 'Aegean Airlines': A3
+Matched 'Vueling Airlines' to 'L' with score 100
+Found ITAT code for 'Vueling Airlines': MJ
+Matched 'ITA Airways' to 'Navitaire' with score 100
+Found ITAT code for 'ITA Airways': 1N
+Matched 'Wizz Air' to 'Wizz Air Hungary' with score 100
+Found ITAT code for 'Wizz Air': 8Z
+Matched 'Eurowings' to 'Eurowings' with score 100
+Found ITAT code for 'Eurowings': EW
+No good match found for 'Karun Airlines'
+Matched 'US-Bangla Airlines' to 'L' with score 100
+Found ITAT code for 'US-Bangla Airlines': MJ
+Matched 'AJet' to 'Menajet' with score 100
+Found ITAT code for 'AJet': IM
+Matched 'Srilankan Airlines' to 'Srilankan' with score 100
+Found ITAT code for 'Srilankan Airlines': UL
+Matched 'Air Sial' to 'Air S' with score 100
+Found ITAT code for 'Air Sial': KY
+Matched 'Condor Flugdienst' to 'Condor Flugdienst' with score 100
+Found ITAT code for 'Condor Flugdienst': DE
+Matched 'FlyEgypt' to 'L' with score 100
+Found ITAT code for 'FlyEgypt': MJ
+Matched 'Jordan Aviation' to 'Jordan Aviation' with score 100
+Found ITAT code for 'Jordan Aviation': R5
+Matched 'Volotea' to 'Volotea' with score 100
+Found ITAT code for 'Volotea': V7
+No good match found for 'Vistara'
+Matched 'Ata Airlines' to 'Electronic Data Systems' with score 100
+Found ITAT code for 'Ata Airlines': 1C
+No good match found for 'Transavia.com'
+No good match found for 'Serene Air'
+No good match found for 'Corendon Airlines Europe'
+Matched 'Austrian Airlines AG dba Austrian' to 'dba' with score 100
+Found ITAT code for 'Austrian Airlines AG dba Austrian': DI
+Matched 'Azerbaijan Airlines' to 'Azerbaijan' with score 100
+Found ITAT code for 'Azerbaijan Airlines': J2
+Matched 'China Southern Airlines' to 'China Southern Airlines' with score 100
+Found ITAT code for 'China Southern Airlines': CZ
+Matched 'Malaysia Airlines' to 'Malaysia' with score 100
+Found ITAT code for 'Malaysia Airlines': MH
+Matched 'Red Wings Airlines' to 'Red Wings' with score 100
+Found ITAT code for 'Red Wings Airlines': WZ
+Matched 'ASL Airlines France' to 'L' with score 100
+Found ITAT code for 'ASL Airlines France': MJ
+Matched 'Himalaya Airlines' to 'Himalayan Airlines' with score 100
+Found ITAT code for 'Himalaya Airlines': HC
+Matched 'Fly Jinnah' to 'L' with score 100
+Found ITAT code for 'Fly Jinnah': MJ
+Matched 'Kam Air' to 'Kampuchea Airlines' with score 100
+Found ITAT code for 'Kam Air': E2
+Matched 'Euroairlines, S.L.' to 'L' with score 100
+Found ITAT code for 'Euroairlines, S.L.': MJ
+Matched 'Wizz Air UK' to 'Zz' with score 100
+Found ITAT code for 'Wizz Air UK': ZZ
+Matched 'Syrian Arab Airlines' to 'Syrian Arab Airlines' with score 100
+Found ITAT code for 'Syrian Arab Airlines': RB
+Matched 'TUIfly' to 'TUIfly' with score 100
+Found ITAT code for 'TUIfly': X3
+No good match found for 'Medsky Airways'
+Matched 'SWISS' to 'Swiss' with score 100
+Found ITAT code for 'SWISS': LX
+Matched 'Air Astana' to 'Astana' with score 100
+Found ITAT code for 'Air Astana': KC
+Matched 'TAP Air Portugal' to 'L' with score 100
+Found ITAT code for 'TAP Air Portugal': MJ
+Matched 'Finnair' to 'Finnair' with score 100
+Found ITAT code for 'Finnair': AY
+Matched 'Garuda Indonesia' to 'Garuda Indonesia' with score 100
+Found ITAT code for 'Garuda Indonesia': GA
+Matched 'Philippine Airlines' to 'Air Philippines' with score 100
+Found ITAT code for 'Philippine Airlines': 2P
+Matched 'Edelweiss Air' to 'L' with score 100
+Found ITAT code for 'Edelweiss Air': MJ
+Matched 'Lion Air' to 'Black Stallion Airways' with score 100
+Found ITAT code for 'Lion Air': BZ
+Matched 'China Eastern Airlines' to 'China Eastern' with score 100
+Found ITAT code for 'China Eastern Airlines': MU
+Matched 'Uzbekistan Airways' to 'Uzbekistan' with score 100
+Found ITAT code for 'Uzbekistan Airways': HY
+Matched 'Fly Oya' to 'L' with score 100
+Found ITAT code for 'Fly Oya': MJ
+Using manual mapping for 'KLM-Royal Dutch Airlines': KL
+Matched 'Petroleum Air Services' to 'L' with score 100
+Found ITAT code for 'Petroleum Air Services': MJ
+No good match found for 'Chabahar Airlines'
+No good match found for 'Akasa Air'
+Matched 'LOT - Polish Airlines' to 'Lot - Polish' with score 100
+Found ITAT code for 'LOT - Polish Airlines': LO
+No good match found for 'TUS Airways'
+Matched 'Ariana Afghan Airlines' to 'Ariana Afghan Airlines' with score 100
+Found ITAT code for 'Ariana Afghan Airlines': FG
+Matched 'SunExpress' to 'Sun Express' with score 95
+Found ITAT code for 'SunExpress': XQ
+Matched 'Tarom' to 'Tarom - Romanian Transport' with score 100
+Found ITAT code for 'Tarom': RO
+Matched 'Ural Airlines' to 'Ural' with score 100
+Found ITAT code for 'Ural Airlines': U6
+Matched 'Air China' to 'AIR CHINA INTERNATIONAL' with score 100
+Found ITAT code for 'Air China': CA
+No good match found for 'AZIMUTH Airlines'
+Matched 'Luxair' to 'Luxair' with score 100
+Found ITAT code for 'Luxair': LG
+Matched 'Kenya Airways' to 'Kenya Airways' with score 100
+Found ITAT code for 'Kenya Airways': KQ
+Matched 'Belavia' to 'Belavia' with score 100
+Found ITAT code for 'Belavia': B2
+Using manual mapping for 'Air Canada': AC
+Matched 'Skyline Express Airlines' to 'L' with score 100
+Found ITAT code for 'Skyline Express Airlines': MJ
+Using manual mapping for 'United Airlines': UA
+Matched 'RwandAir' to 'Rwandair Limited' with score 100
+Found ITAT code for 'RwandAir': WB
+Matched 'World Ticket Ltd' to 'L' with score 100
+Found ITAT code for 'World Ticket Ltd': MJ
+No good match found for 'Crown Airlines'
+Matched 'Sichuan Airlines' to 'Sichuan Airlines' with score 100
+Found ITAT code for 'Sichuan Airlines': 3U
+Matched 'Cyprus Airways' to 'Cyprus' with score 100
+Found ITAT code for 'Cyprus Airways': CY
+Matched 'Brussels Airlines' to 'L' with score 100
+Found ITAT code for 'Brussels Airlines': MJ
+No good match found for 'SKYUP MT'
+No good match found for 'Marabu Airlines OU'
+Matched 'LLC Qanot Sha' to 'L' with score 100
+Found ITAT code for 'LLC Qanot Sha': MJ
+No good match found for 'AZUR air'
+Matched 'Binter Canarias' to 'Binter Canarias' with score 100
+Found ITAT code for 'Binter Canarias': NT
+Matched 'Smartwings Slovakia s.r.o' to 'L' with score 100
+Found ITAT code for 'Smartwings Slovakia s.r.o': MJ
+Matched 'Nepal Airlines Corporation' to 'L' with score 100
+Found ITAT code for 'Nepal Airlines Corporation': MJ
+No good match found for 'EW Discover GmbH'
+No good match found for 'Xiamen Airlines Company'
+No good match found for 'Beond-Simdi Operations'
+No good match found for 'airHaifa'
+No good match found for 'SundAir'
+Matched 'Somon Air' to 'Somon Air' with score 100
+Found ITAT code for 'Somon Air': SZ
+Matched 'Batik Air Malaysia' to 'Malaysia' with score 100
+Found ITAT code for 'Batik Air Malaysia': MH
+Matched 'Daallo Airlines' to 'Daallo Airlines' with score 100
+Found ITAT code for 'Daallo Airlines': D3
+Matched 'Cebu Pacific Air' to 'Cebu Pacific' with score 100
+Found ITAT code for 'Cebu Pacific Air': 5J
+Matched 'TUI fly Netherlands' to 'I-Fly' with score 100
+Found ITAT code for 'TUI fly Netherlands': H5
+Matched 'Mauritanian Airlines International' to 'TAN' with score 100
+Found ITAT code for 'Mauritanian Airlines International': T8
+No good match found for 'FITS Aviation (Pvt) Ltd'
+Matched 'Bulgaria Air' to 'Bulgaria Air' with score 100
+Found ITAT code for 'Bulgaria Air': FB
+Matched 'Cathay Pacific Airways' to 'Cathay Pacific' with score 100
+Found ITAT code for 'Cathay Pacific Airways': CX
+Matched 'Hainan Airlines' to 'Hainan Phoenix Information Systems' with score 100
+Found ITAT code for 'Hainan Airlines': 1R
+Matched 'Air Baltic Corporation' to 'Baltic Air' with score 100
+Found ITAT code for 'Air Baltic Corporation': BT
+Matched 'Nova Airways' to 'Novair' with score 100
+Found ITAT code for 'Nova Airways': 1I
+Matched 'Royal Brunei Airlines' to 'Royal Brunei' with score 100
+Found ITAT code for 'Royal Brunei Airlines': BI
+Using manual mapping for 'American Airlines': AA
+Using manual mapping for 'Singapore Airlines': SQ
+Using manual mapping for 'Korean Air': KE
+Matched 'Air Senegal' to 'Air S' with score 100
+Found ITAT code for 'Air Senegal': KY
+Matched 'Air Europa' to 'Europa Air' with score 100
+Found ITAT code for 'Air Europa': UX
+Matched 'Smartwings Hungary' to 'Smartwings' with score 100
+Found ITAT code for 'Smartwings Hungary': QS
+Matched 'Smartwings Poland Sp. z o.o.' to 'L' with score 100
+Found ITAT code for 'Smartwings Poland Sp. z o.o.': MJ
+Matched 'S7 Airlines' to 'S7' with score 100
+Found ITAT code for 'S7 Airlines': S7
+No good match found for 'Chair Airlines'
+Matched 'Smartlynx Airlines Ltd' to 'SmartLynx Airlines' with score 100
+Found ITAT code for 'Smartlynx Airlines Ltd': 6Y
+Matched 'Georgian Airways' to 'Georgian Airways' with score 100
+Found ITAT code for 'Georgian Airways': A9
+No good match found for 'My Freighter/Centrum Air'
+Using manual mapping for 'Japan Airlines': JL
+Matched 'UTair Aviation' to 'Utair' with score 100
+Found ITAT code for 'UTair Aviation': UT
+Matched 'Fly One' to 'L' with score 100
+Found ITAT code for 'Fly One': MJ
+No good match found for 'HiSky'
+Matched 'Norwegian' to 'Norwegian Air International' with score 100
+Found ITAT code for 'Norwegian': D8
+Matched 'Turkmenistan Airlines' to 'TAN' with score 100
+Found ITAT code for 'Turkmenistan Airlines': T8
+Matched 'Uganda Airlines' to 'Air Uganda' with score 100
+Found ITAT code for 'Uganda Airlines': U7
+Matched 'Airasia X' to 'AirAsia X' with score 100
+Found ITAT code for 'Airasia X': D7
+Matched 'Alexandria Airlines' to 'L' with score 100
+Found ITAT code for 'Alexandria Airlines': MJ
+Matched 'HiSky Europe SRL' to 'L' with score 100
+Found ITAT code for 'HiSky Europe SRL': MJ
+No good match found for 'Saha Airlines'
+Matched 'Citilink' to 'L' with score 100
+Found ITAT code for 'Citilink': MJ
+No good match found for 'Air Djibouti'
+Matched 'Jet2.com' to 'Jet2.com' with score 100
+Found ITAT code for 'Jet2.com': LS
+No good match found for 'Corendon Airlines'
+Matched 'Al Masria Universal Airlines' to 'L' with score 100
+Found ITAT code for 'Al Masria Universal Airlines': MJ
+No good match found for 'Armenia Airways Aircompany CJSC'
+Matched 'Air Tanzania' to 'Tanzania Air' with score 100
+Found ITAT code for 'Air Tanzania': TC
+No good match found for 'Corendon DUTCH Airlines'
+Matched 'Air Nostrum' to 'Air Nostrum' with score 100
+Found ITAT code for 'Air Nostrum': YW
+No good match found for 'Air Peace'
+Matched 'Scoot' to 'Scoot' with score 100
+Found ITAT code for 'Scoot': TZ
+Matched 'FlexFlight ApS' to 'L' with score 100
+Found ITAT code for 'FlexFlight ApS': MJ
+Matched 'Myanmar Airways International' to 'Myanmar Airways' with score 100
+Found ITAT code for 'Myanmar Airways International': 8M
+No good match found for 'Jubba Airways Ltd'
+Matched 'Virgin Atlantic Airways' to 'Virgin Atlantic' with score 100
+Found ITAT code for 'Virgin Atlantic Airways': VS
+Matched 'Air Cote d'Ivoire' to 'Air Ivoire' with score 100
+Found ITAT code for 'Air Cote d'Ivoire': VU
+Matched 'Discover Airlines' to 'Discovery Airways' with score 100
+Found ITAT code for 'Discover Airlines': DH
+No good match found for 'Red Sea Airlines'
+Matched 'Air Company SCAT' to 'SCAT' with score 100
+Found ITAT code for 'Air Company SCAT': DV
+No good match found for 'Bees Airlines'
+No good match found for 'Southwind Airlines'
+No good match found for 'Marathon Airlines'
+No good match found for 'Fanjet Express'
+No good match found for 'MY FREIGHTER'
+Matched 'Sunclass Airlines' to 'L' with score 100
+Found ITAT code for 'Sunclass Airlines': MJ
+Using manual mapping for 'Delta Air Lines': DL
+Matched 'Norwegian Air Shuttle' to 'L' with score 100
+Found ITAT code for 'Norwegian Air Shuttle': MJ
+Matched 'Flyone Armenia' to 'L' with score 100
+Found ITAT code for 'Flyone Armenia': MJ
+Matched 'Air Transat A.T.Inc.' to 'Air Transat' with score 100
+Found ITAT code for 'Air Transat A.T.Inc.': TS
+Matched 'Enter Air Spolka z.o.o.' to 'L' with score 100
+Found ITAT code for 'Enter Air Spolka z.o.o.': MJ
+Matched 'Buraq Air' to 'El-Buraq Air Transport' with score 100
+Found ITAT code for 'Buraq Air': UZ
+Matched 'Smartlynx Airlines Estonia' to 'L' with score 100
+Found ITAT code for 'Smartlynx Airlines Estonia': MJ
+No good match found for 'Yazd Airways'
+Matched 'TUIfly Nordic AB' to 'TUIfly Nordic' with score 100
+Found ITAT code for 'TUIfly Nordic AB': 6B
+Matched 'Air Seychelles' to 'Air Seychelles' with score 100
+Found ITAT code for 'Air Seychelles': HM
+Matched 'SAS Scandinavian Airlines' to 'SAS' with score 100
+Found ITAT code for 'SAS Scandinavian Airlines': SK
+Matched 'African Express Airways' to 'LAN Express' with score 95
+Found ITAT code for 'African Express Airways': LU
+No good match found for 'A.P.G. Distribution Systems'
+Matched 'FLY LILI' to 'L' with score 100
+Found ITAT code for 'FLY LILI': MJ
+Matched 'Thai Airways International' to 'Thai Sky Airlines' with score 100
+Found ITAT code for 'Thai Airways International': 9I
+No good match found for 'Nord Wind'
+Matched 'Helvetic Airways' to 'Helvetic Airways' with score 100
+Found ITAT code for 'Helvetic Airways': 2L
+Matched 'Avion Express' to 'LAN Express' with score 90
+Found ITAT code for 'Avion Express': LU
+No good match found for 'USC GmbH'
+Matched 'Aer Lingus' to 'L' with score 100
+Found ITAT code for 'Aer Lingus': MJ
+Matched 'Shenzhen Airlines' to 'Shenzhen Airlines' with score 100
+Found ITAT code for 'Shenzhen Airlines': ZH
+Matched 'Daallo Airlines(Somalia)' to 'L' with score 100
+Found ITAT code for 'Daallo Airlines(Somalia)': MJ
+Matched 'Airline GEO SKY LLC' to 'L' with score 100
+Found ITAT code for 'Airline GEO SKY LLC': MJ
+No good match found for 'Anima Wings Aviation'
+Matched 'Asiana Airlines' to 'Asiana Airlines' with score 100
+Found ITAT code for 'Asiana Airlines': OZ
+Matched 'Royal Bhutan Airlines' to 'L' with score 100
+Found ITAT code for 'Royal Bhutan Airlines': MJ
+Matched 'Universal Air Charter and Management' to 'L' with score 100
+Found ITAT code for 'Universal Air Charter and Management': MJ
+Matched 'Aero Contractors Company of Nigeria' to 'Aero Contractors' with score 100
+Found ITAT code for 'Aero Contractors Company of Nigeria': AJ
+Matched 'Fly Play' to 'L' with score 100
+Found ITAT code for 'Fly Play': MJ
+Matched 'Air Serbia' to 'Air S' with score 100
+Found ITAT code for 'Air Serbia': KY
+No good match found for 'Hunnu Air'
+Matched 'Fly Arna' to 'L' with score 100
+Found ITAT code for 'Fly Arna': MJ
+Matched 'Air Corsica' to 'Cosmic Air' with score 86
+Found ITAT code for 'Air Corsica': F5
+No good match found for 'IrAero'
+Matched 'Canada Jetlines' to 'L' with score 100
+Found ITAT code for 'Canada Jetlines': MJ
+Matched 'AeroItalia' to 'L' with score 100
+Found ITAT code for 'AeroItalia': MJ
+Matched 'Avion Express Malta Ltd' to 'Malta' with score 100
+Found ITAT code for 'Avion Express Malta Ltd': KM
+No good match found for 'SATA International-Azores Airlines S.A.'
+
+Matching Summary:
+MENA airlines matched: 143 out of 174
+USA airlines matched: 203 out of 255
+
+Unmatched MENA airlines:
+- Breeze Airways
+- JSX
+- Contour Airlines
+- Air Excursions, LLC
+- San Juan Airlines
+- Smokey Bay Air
+- Advanced Air, LLC
+- Kenai Aviation Operations
+- Vivaaerobus
+- Taquan Air
+- Everts Air
+- Scott Air LLC
+- Boutique Air
+- Tropic Ocean Airways
+- EW Discover GmbH
+- Bermudair Limited
+- French Bee
+- SATA International-Azores Airlines S.A.
+- USAC Airways 695
+- Air Premia Inc.
+- Fiji Airways
+- Sky High
+- Sky Airlines Peru S.A.C
+- Fox Aircraft
+- Xiamen Airlines Company
+- Sunrise Airways
+- KaiserAir
+- Meregrass
+- Iberojet Airlines
+
+Unmatched USA airlines:
+- Sepehran Airlines
+- Varesh Airlines
+- Iran Airtour Airlines
+- Nesma Airlines
+- Berniq Airways
+- Tarco Aviation
+- Badr Airlines
+- Cham Wings Airlines
+- Karun Airlines
+- Vistara
+- Transavia.com
+- Serene Air
+- Corendon Airlines Europe
+- Medsky Airways
+- Chabahar Airlines
+- Akasa Air
+- TUS Airways
+- AZIMUTH Airlines
+- Crown Airlines
+- SKYUP MT
+- Marabu Airlines OU
+- AZUR air
+- EW Discover GmbH
+- Xiamen Airlines Company
+- Beond-Simdi Operations
+- airHaifa
+- SundAir
+- FITS Aviation (Pvt) Ltd
+- Chair Airlines
+- My Freighter/Centrum Air
+- HiSky
+- Saha Airlines
+- Air Djibouti
+- Corendon Airlines
+- Armenia Airways Aircompany CJSC
+- Corendon DUTCH Airlines
+- Air Peace
+- Jubba Airways Ltd
+- Red Sea Airlines
+- Bees Airlines
+- Southwind Airlines
+- Marathon Airlines
+- Fanjet Express
+- MY FREIGHTER
+- Yazd Airways
+- A.P.G. Distribution Systems
+- Nord Wind
+- USC GmbH
+- Anima Wings Aviation
+- Hunnu Air
+- IrAero
+- SATA International-Azores Airlines S.A.
+
+Processing MENA airlines...
+
+Processing MENA airlines...
+
+Processing Summary:
+Total random codes generated: 1
+
+Generated codes:
+Generated code: BR
+
+Processing Summary:
+Total random codes generated: 51
+
+Generated codes:
+Generated code: AJ
+Generated code: AM
+Generated code: AN
+Generated code: AZ
+Generated code: BB
+Generated code: BW
+Generated code: BY
+Generated code: CG
+Generated code: CL
+Generated code: DP
+Generated code: GF
+Generated code: GJ
+Generated code: GW
+Generated code: HA
+Generated code: HO
+Generated code: HX
+Generated code: IB
+Generated code: IC
+Generated code: IU
+Generated code: JP
+Generated code: JV
+Generated code: KC
+Generated code: KE
+Generated code: KR
+Generated code: LB
+Generated code: LY
+Generated code: NQ
+Generated code: NT
+Generated code: OF
+Generated code: OJ
+Generated code: OM
+Generated code: OP
+Generated code: OS
+Generated code: OX
+Generated code: PF
+Generated code: PN
+Generated code: PP
+Generated code: PQ
+Generated code: QP
+Generated code: RK
+Generated code: RW
+Generated code: SZ
+Generated code: TA
+Generated code: TR
+Generated code: UP
+Generated code: WW
+Generated code: XB
+Generated code: XC
+Generated code: XS
+Generated code: XU
+Generated code: ZZ
