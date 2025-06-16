@@ -490,32 +490,13 @@ import * as d3 from 'd3';
 import * as XLSX from 'xlsx';
 import { logoMap } from '@/assets/logos'
 
-// Import all logos
-import ABNB_LOGO from '@/assets/logos/ABNB_logo.png'
-import BKNG_LOGO from '@/assets/logos/BKNG_logo.png'
-import EXPE_LOGO from '@/assets/logos/EXPE_logo.png'
-import TCOM_LOGO from '@/assets/logos/TCOM_logo.png'
-import TRIP_LOGO from '@/assets/logos/TRIP_logo.png'
-import TRVG_LOGO from '@/assets/logos/TRVG_logo.png'
-import EDR_LOGO from '@/assets/logos/EDR_logo.png'
-import DESP_LOGO from '@/assets/logos/DESP_logo.png'
-import MMYT_LOGO from '@/assets/logos/MMYT_logo.png'
-import IXIGO_LOGO from '@/assets/logos/IXIGO_logo.png'
-import LMN_LOGO from '@/assets/logos/LMN_logo.png'
-import YTRA_LOGO from '@/assets/logos/YTRA_logo.png'
-import OWW_LOGO from '@/assets/logos/OWW_logo.png'
-import TRAVELOCITY_LOGO from '@/assets/logos/Travelocity_logo.png'
-import EASEMYTRIP_LOGO from '@/assets/logos/EASEMYTRIP_logo.png'
-import WEGO_LOGO from '@/assets/logos/Wego_logo.png'
-import SKYSCANNER_LOGO from '@/assets/logos/Skyscanner_logo.png'
-import ETRAVELI_LOGO from '@/assets/logos/Etraveli_logo.png'
-import KIWI_LOGO from '@/assets/logos/Kiwi_logo.png'
-import CLEARTRIP_LOGO from '@/assets/logos/Cleartrip_logo.png'
-import TRAVELOKA_LOGO from '@/assets/logos/Traveloka_logo.png'
-import FLIGHTCENTRE_LOGO from '@/assets/logos/FlightCentre_logo.png'
-import SEERA_LOGO from '@/assets/logos/SEERA_logo.png'
-import ALMOSAFER_LOGO from '@/assets/logos/Almosafer_logo.png'
-import OTA_LOGO from '@/assets/logos/OTA_logo.png'
+// Define company codes
+const COMPANY_CODES = [
+  'ABNB', 'BKNG', 'EXPE', 'TCOM', 'TRIP', 'TRVG', 'EDR', 'DESP', 'MMYT', 
+  'Ixigo', 'LMN', 'Yatra', 'Orbitz', 'Travelocity', 'EaseMyTrip', 'Wego', 
+  'Skyscanner', 'Etraveli', 'Kiwi', 'Cleartrip', 'Traveloka', 'FLT', 
+  'SEERA', 'Almosafer', 'Webjet OTA'
+];
 
 // Company colors
 const colorDict = {
@@ -548,33 +529,33 @@ const colorDict = {
   'Webjet OTA': '#e74c3c'
 };
 
-// Company logos
+// Use logoMap from our centralized logo management system
 const logoDict = {
-  'ABNB': ABNB_LOGO,
-  'BKNG': BKNG_LOGO,
-  'EXPE': EXPE_LOGO,
-  'TCOM': TCOM_LOGO,
-  'TRIP': TRIP_LOGO,
-  'TRVG': TRVG_LOGO,
-  'EDR': EDR_LOGO,
-  'DESP': DESP_LOGO,
-  'MMYT': MMYT_LOGO,
-  'Ixigo': IXIGO_LOGO,
-  'SEERA': SEERA_LOGO,
-  'LMN': LMN_LOGO,
-  'Yatra': YTRA_LOGO,
-  'Orbitz': OWW_LOGO,
-  'Travelocity': TRAVELOCITY_LOGO,
-  'EaseMyTrip': EASEMYTRIP_LOGO,
-  'Wego': WEGO_LOGO,
-  'Skyscanner': SKYSCANNER_LOGO,
-  'Etraveli': ETRAVELI_LOGO,
-  'Kiwi': KIWI_LOGO,
-  'Cleartrip': CLEARTRIP_LOGO,
-  'Traveloka': TRAVELOKA_LOGO,
-  'FLT': FLIGHTCENTRE_LOGO,
-  'Almosafer': ALMOSAFER_LOGO,
-  'Webjet OTA': OTA_LOGO
+  'ABNB': logoMap['ABNB'],
+  'BKNG': logoMap['BKNG'],
+  'EXPE': logoMap['EXPE'],
+  'TCOM': logoMap['TCOM'],
+  'TRIP': logoMap['TRIP'],
+  'TRVG': logoMap['TRVG'],
+  'EDR': logoMap['EDR'],
+  'DESP': logoMap['DESP'],
+  'MMYT': logoMap['MMYT'],
+  'Ixigo': logoMap['IXIGO'],
+  'SEERA': logoMap['SEERA'],
+  'LMN': logoMap['LMN'],
+  'Yatra': logoMap['YTRA'],
+  'Orbitz': logoMap['OWW'],
+  'Travelocity': logoMap['Travelocity'],
+  'EaseMyTrip': logoMap['EaseMyTrip'],
+  'Wego': logoMap['Wego'],
+  'Skyscanner': logoMap['Skyscanner'],
+  'Etraveli': logoMap['Etraveli'],
+  'Kiwi': logoMap['Kiwi'],
+  'Cleartrip': logoMap['Cleartrip'],
+  'Traveloka': logoMap['Traveloka'],
+  'FLT': logoMap['FLT'],
+  'Almosafer': logoMap['Almosafer'],
+  'Webjet OTA': logoMap['WEB']
 };
 
 // Add company names mapping

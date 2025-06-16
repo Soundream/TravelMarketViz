@@ -220,7 +220,7 @@ import AnimatedBubbleChart from './components/AnimatedBubbleChart.vue'
 import StaticBubbleChart from './components/StaticBubbleChart.vue'
 import BarChart from './components/BarChart.vue'
 import * as XLSX from 'xlsx'
-import { WEGO_LOGO } from '@/assets/logos'
+import { logoMap } from '@/assets/logos'
 import { inject } from '@vercel/analytics'
 import Papa from 'papaparse'
 
@@ -230,6 +230,9 @@ const staticBubbleChartRef = ref(null)
 const mobileMenuOpen = ref(false)
 const excelData = ref([])
 const rawData = ref([])
+
+// Get Wego Logo from logoMap
+const WEGO_LOGO = logoMap['Wego']
 
 // Add company names mapping
 const companyNames = {

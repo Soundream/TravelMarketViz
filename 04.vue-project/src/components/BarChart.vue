@@ -128,34 +128,7 @@ const companyNames = {
 }
 
 // Add new imports for logos
-const logoImports = {
-  'ABNB': new URL('@/assets/logos/ABNB_temp_logo.png', import.meta.url).href,
-  'BKNG': new URL('@/assets/logos/BKNG_temp_logo.png', import.meta.url).href,
-  'EXPE': new URL('@/assets/logos/Expedia2.jpg', import.meta.url).href,
-  'TCOM': new URL('@/assets/logos/TCOM_temp_logo.png', import.meta.url).href,
-  'TRIP': new URL('@/assets/logos/TRIP_temp_logo.png', import.meta.url).href,
-  'TRVG': new URL('@/assets/logos/Trivago1.jpg', import.meta.url).href,
-  'EDR': new URL('@/assets/logos/EDR_temp_logo.png', import.meta.url).href,
-  'DESP': new URL('@/assets/logos/DESP_temp_logo.png', import.meta.url).href,
-  'MMYT': new URL('@/assets/logos/MMYT_temp_logo.png', import.meta.url).href,
-  'Ixigo': new URL('@/assets/logos/Ixigo_temp_logo.png', import.meta.url).href,
-  'SEERA': new URL('@/assets/logos/SEERA_temp_logo.png', import.meta.url).href,
-  'Webjet': new URL('@/assets/logos/Webjet_temp_logo.png', import.meta.url).href,
-  'LMN': new URL('@/assets/logos/LMN_temp_logo.png', import.meta.url).href,
-  'Yatra': new URL('@/assets/logos/Yatra_temp_logo.png', import.meta.url).href,
-  'Orbitz': new URL('@/assets/logos/Orbitz1.png', import.meta.url).href,
-  'Travelocity': new URL('@/assets/logos/Travelocity_logo.png', import.meta.url).href,
-  'EaseMyTrip': new URL('@/assets/logos/EaseMyTrip_temp_logo.png', import.meta.url).href,
-  'Wego': new URL('@/assets/logos/Wego_logo.png', import.meta.url).href,
-  'Skyscanner': new URL('@/assets/logos/Skyscanner_temp_logo.png', import.meta.url).href,
-  'Etraveli': new URL('@/assets/logos/Etraveli_temp_logo.png', import.meta.url).href,
-  'Kiwi': new URL('@/assets/logos/Kiwi_temp_logo.png', import.meta.url).href,
-  'Cleartrip': new URL('@/assets/logos/Cleartrip_temp_logo.png', import.meta.url).href,
-  'FLT': new URL('@/assets/logos/FLT_temp_logo.png', import.meta.url).href,
-  'Almosafer': new URL('@/assets/logos/Almosafer_temp_logo.png', import.meta.url).href,
-  'Webjet OTA': new URL('@/assets/logos/Webjet_OTA_temp_logo.png', import.meta.url).href
-}
-
+// Use logoMap directly from our centralized system instead of local URL imports
 const companyLogos = logoMap
 
 const importFromGoogleSheet = async () => {
@@ -393,7 +366,7 @@ const renderChart = () => {
     .attr('height', logoSize)
     .attr('preserveAspectRatio', 'xMidYMid meet')
     .attr('data-company', d => d.company)
-    .attr('href', d => logoImports[d.company] || '')
+    .attr('href', d => companyLogos[d.company] || '')
     .on('error', function() {
       // If logo fails to load, just remove it
       d3.select(this).remove()
@@ -465,7 +438,7 @@ const saveChart = async () => {
           resolve()
         }
         const company = logo.getAttribute('data-company')
-        img.src = logoImports[company] || ''
+        img.src = companyLogos[company] || ''
       })
       logoPromises.push(logoPromise)
     })
