@@ -1,78 +1,88 @@
-// Define the base path for logos
-const BASE_PATH = '/src/assets/logos';
+// 直接导入所有图片 - 这样Vite会处理这些图片并将其包含在构建中
+import ABNB_IMG from '../../assets/logos/ABNB_logo.png';
+import ALMOSAFER_IMG from '../../assets/logos/Almosafer_logo.png';
+import BKNG_IMG from '../../assets/logos/BKNG_logo.png';
+import CLEARTRIP_IMG from '../../assets/logos/Cleartrip_logo.png';
+import DESP_IMG from '../../assets/logos/DESP_logo.png';
+import EASEMYTRIP_IMG from '../../assets/logos/EASEMYTRIP_logo.png';
+import EDR_IMG from '../../assets/logos/EDR_logo.png';
+import ETRAVELI_IMG from '../../assets/logos/Etraveli_logo.png';
+import EXPE_IMG from '../../assets/logos/EXPE_logo.png';
+import FLT_IMG from '../../assets/logos/FlightCentre_logo.png';
+import IXIGO_IMG from '../../assets/logos/IXIGO_logo.png';
+import KIWI_IMG from '../../assets/logos/Kiwi_logo.png';
+import LMN_IMG from '../../assets/logos/LMN_logo.png';
+import MMYT_IMG from '../../assets/logos/MMYT_logo.png';
+import OWW_IMG from '../../assets/logos/Orbitz_logo.png';
+import PCLN_IMG from '../../assets/logos/PCLN_logo.png';
+import SEERA_IMG from '../../assets/logos/SEERA_logo.png';
+import SKYSCANNER_IMG from '../../assets/logos/Skyscanner_logo.png';
+import TCOM_IMG from '../../assets/logos/TCOM_logo.png';
+import TRAVELOCITY_IMG from '../../assets/logos/Travelocity_logo.png';
+import TRAVELOKA_IMG from '../../assets/logos/Traveloka_logo.png';
+import TRIP_IMG from '../../assets/logos/TRIP_logo.png';
+import TRVG_IMG from '../../assets/logos/TRVG_logo.png';
+import WEB_IMG from '../../assets/logos/Webjet_logo.png';
+import WEGO_IMG from '../../assets/logos/Wego_logo.png';
+import YTRA_IMG from '../../assets/logos/Yatra_logo.png';
 
-// Define a fallback logo URL (you should add a default logo file)
-const DEFAULT_LOGO = new URL('./Wego_logo.png', import.meta.url).href;
-
-// Define company codes and their corresponding logo filenames
-const COMPANY_LOGOS = {
-  'ABNB': 'ABNB_logo.png',
-  'Almosafer': 'Almosafer_logo.png',
-  'BKNG': 'BKNG_logo.png',
-  'Cleartrip': 'Cleartrip_logo.png',
-  'DESP': 'DESP_logo.png',
-  'EaseMyTrip': 'EASEMYTRIP_logo.png',
-  'EDR': 'EDR_logo.png',
-  'Etraveli': 'Etraveli_logo.png',
-  'EXPE': 'EXPE_logo.png',
-  'FLT': 'FlightCentre_logo.png',
-  'IXIGO': 'IXIGO_logo.png',
-  'Kiwi': 'Kiwi_logo.png',
-  'LMN': 'LMN_logo.png',
-  'MMYT': 'MMYT_logo.png',
-  'OWW': 'Orbitz_logo.png',
-  'PCLN': 'PCLN_logo.png',
-  'SEERA': 'SEERA_logo.png',
-  'Skyscanner': 'Skyscanner_logo.png',
-  'TCOM': 'TCOM_logo.png',
-  'Travelocity': 'Travelocity_logo.png',
-  'Traveloka': 'Traveloka_logo.png',
-  'TRIP': 'TRIP_logo.png',
-  'TRVG': 'TRVG_logo.png',
-  'WEB': 'Webjet_logo.png',
-  'Wego': 'Wego_logo.png',
-  'YTRA': 'Yatra_logo.png'
+// 将导入的图片映射到公司代码
+const logoImageMap = {
+  'ABNB': ABNB_IMG,
+  'Almosafer': ALMOSAFER_IMG,
+  'BKNG': BKNG_IMG,
+  'Cleartrip': CLEARTRIP_IMG,
+  'DESP': DESP_IMG,
+  'EaseMyTrip': EASEMYTRIP_IMG,
+  'EDR': EDR_IMG,
+  'Etraveli': ETRAVELI_IMG,
+  'EXPE': EXPE_IMG,
+  'FLT': FLT_IMG,
+  'IXIGO': IXIGO_IMG,
+  'Kiwi': KIWI_IMG,
+  'LMN': LMN_IMG,
+  'MMYT': MMYT_IMG,
+  'OWW': OWW_IMG,
+  'PCLN': PCLN_IMG,
+  'SEERA': SEERA_IMG,
+  'Skyscanner': SKYSCANNER_IMG,
+  'TCOM': TCOM_IMG,
+  'Travelocity': TRAVELOCITY_IMG,
+  'Traveloka': TRAVELOKA_IMG,
+  'TRIP': TRIP_IMG,
+  'TRVG': TRVG_IMG,
+  'WEB': WEB_IMG,
+  'Wego': WEGO_IMG,
+  'YTRA': YTRA_IMG,
 };
 
-// Function to get logo URL
-function getLogoUrl(companyCode) {
-  const filename = COMPANY_LOGOS[companyCode];
-  if (!filename) {
-    console.warn(`No logo filename defined for company code: ${companyCode}`);
-    return '/images/logos/Wego_logo.png'; // Default logo with absolute path
-  }
-  return `/images/logos/${filename}`;
-}
+// 导出个别logo
+export const ABNB_LOGO = logoImageMap['ABNB'];
+export const ALMOSAFER_LOGO = logoImageMap['Almosafer'];
+export const BKNG_LOGO = logoImageMap['BKNG'];
+export const CLEARTRIP_LOGO = logoImageMap['Cleartrip'];
+export const DESP_LOGO = logoImageMap['DESP'];
+export const EASEMYTRIP_LOGO = logoImageMap['EaseMyTrip'];
+export const EDR_LOGO = logoImageMap['EDR'];
+export const ETRAVELI_LOGO = logoImageMap['Etraveli'];
+export const EXPE_LOGO = logoImageMap['EXPE'];
+export const FLT_LOGO = logoImageMap['FLT'];
+export const IXIGO_LOGO = logoImageMap['IXIGO'];
+export const KIWI_LOGO = logoImageMap['Kiwi'];
+export const LMN_LOGO = logoImageMap['LMN'];
+export const MMYT_LOGO = logoImageMap['MMYT'];
+export const OWW_LOGO = logoImageMap['OWW'];
+export const PCLN_LOGO = logoImageMap['PCLN'];
+export const SEERA_LOGO = logoImageMap['SEERA'];
+export const SKYSCANNER_LOGO = logoImageMap['Skyscanner'];
+export const TCOM_LOGO = logoImageMap['TCOM'];
+export const TRAVELOCITY_LOGO = logoImageMap['Travelocity'];
+export const TRAVELOKA_LOGO = logoImageMap['Traveloka'];
+export const TRIP_LOGO = logoImageMap['TRIP'];
+export const TRVG_LOGO = logoImageMap['TRVG'];
+export const WEB_LOGO = logoImageMap['WEB'];
+export const WEGO_LOGO = logoImageMap['Wego'];
+export const YTRA_LOGO = logoImageMap['YTRA'];
 
-// Export individual logo URLs
-export const ABNB_LOGO = getLogoUrl('ABNB');
-export const ALMOSAFER_LOGO = getLogoUrl('Almosafer');
-export const BKNG_LOGO = getLogoUrl('BKNG');
-export const CLEARTRIP_LOGO = getLogoUrl('Cleartrip');
-export const DESP_LOGO = getLogoUrl('DESP');
-export const EASEMYTRIP_LOGO = getLogoUrl('EaseMyTrip');
-export const EDR_LOGO = getLogoUrl('EDR');
-export const ETRAVELI_LOGO = getLogoUrl('Etraveli');
-export const EXPE_LOGO = getLogoUrl('EXPE');
-export const FLT_LOGO = getLogoUrl('FLT');
-export const IXIGO_LOGO = getLogoUrl('IXIGO');
-export const KIWI_LOGO = getLogoUrl('Kiwi');
-export const LMN_LOGO = getLogoUrl('LMN');
-export const MMYT_LOGO = getLogoUrl('MMYT');
-export const OWW_LOGO = getLogoUrl('OWW');
-export const PCLN_LOGO = getLogoUrl('PCLN');
-export const SEERA_LOGO = getLogoUrl('SEERA');
-export const SKYSCANNER_LOGO = getLogoUrl('Skyscanner');
-export const TCOM_LOGO = getLogoUrl('TCOM');
-export const TRAVELOCITY_LOGO = getLogoUrl('Travelocity');
-export const TRAVELOKA_LOGO = getLogoUrl('Traveloka');
-export const TRIP_LOGO = getLogoUrl('TRIP');
-export const TRVG_LOGO = getLogoUrl('TRVG');
-export const WEB_LOGO = getLogoUrl('WEB');
-export const WEGO_LOGO = getLogoUrl('Wego');
-export const YTRA_LOGO = getLogoUrl('YTRA');
-
-// Export the mapping object
-export const logoMap = Object.fromEntries(
-  Object.keys(COMPANY_LOGOS).map(code => [code, getLogoUrl(code)])
-); 
+// 导出映射对象
+export const logoMap = logoImageMap; 
