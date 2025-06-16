@@ -478,14 +478,18 @@ const importFromGoogleSheet = async () => {
     rows.slice(revenueGrowthRowIndex + 1, ebitdaStartIndex).forEach(row => {
       const yearStr = row[0];
       if (isValidQuarter(yearStr)) {
-        if (yearStr !== currentYear) {
-          currentYear = yearStr;
-          quarterCount = 0;
+        // Check if we have data in this row (any cells have values)
+        const hasData = row.slice(1).some(cell => cell !== null && cell !== undefined && cell !== '');
+        if (hasData || yearStr === '2025') { // Always include 2025 rows to ensure 2025Q1 is available
+          if (yearStr !== currentYear) {
+            currentYear = yearStr;
+            quarterCount = 0;
+          }
+          quarterCount++;
+          const quarterStr = `${currentYear}'Q${quarterCount}`;
+          quarters.push(quarterStr);
+          console.log(`Generated quarter: ${quarterStr} from year ${yearStr}, has data: ${hasData}`);
         }
-        quarterCount++;
-        const quarterStr = `${currentYear}'Q${quarterCount}`;
-        quarters.push(quarterStr);
-        console.log(`Generated quarter: ${quarterStr} from year ${yearStr}`);
       }
     });
     
@@ -522,26 +526,34 @@ const importFromGoogleSheet = async () => {
         const quarterData = [...row];
         quarterData[0] = quarters[currentQuarterIndex]; // Replace year with quarter string
 
-        // Check if this is 2025'Q2 or beyond - then we should stop
+        // Check if this is 2025'Q4 or beyond - then we should stop
         if (quarters[currentQuarterIndex].startsWith('2025') && 
             quarters[currentQuarterIndex].includes('Q4')) {
           isDataComplete = true;
           return;
         }
         
-        // Check if the row is empty (only has the quarter value in first column)
-        const hasData = row.slice(1).some(cell => cell !== null && cell !== undefined && cell !== '');
-        if (!hasData) {
+        // Check if the row is completely empty (except for first column)
+        const hasData = row.slice(1).some(cell => {
+          // Check for any non-empty cell value
+          return cell !== null && cell !== undefined && cell !== '' && cell !== 0;
+        });
+        
+        // Include row if it has data OR if it's 2025Q1 (which should always be included)
+        const isQ1_2025 = quarters[currentQuarterIndex] === "2025'Q1";
+        if (hasData || isQ1_2025) {
+          processedRows.push(quarterData);
+        } else if (!hasData && quarterData[0].startsWith('2025')) {
+          // If we found an empty row in 2025, stop processing
           isDataComplete = true;
           return;
         }
         
-        processedRows.push(quarterData);
         currentQuarterIndex++;
       }
     });
 
-    console.log(`Processed ${currentQuarterIndex} quarters of EBITDA data`);
+    console.log(`Processed ${currentQuarterIndex} quarters of EBITDA data, last quarter: ${quarters[currentQuarterIndex-1] || 'none'}`);
     
     // Create workbook
     const workbook = {
