@@ -39,9 +39,9 @@ function getLogoUrl(companyCode) {
   const filename = COMPANY_LOGOS[companyCode];
   if (!filename) {
     console.warn(`No logo filename defined for company code: ${companyCode}`);
-    return '/logos/Wego_logo.png'; // Default logo
+    return './logos/Wego_logo.png'; // Default logo with relative path
   }
-  return `/logos/${filename}`;
+  return `./logos/${filename}`;
 }
 
 // Export individual logo URLs
