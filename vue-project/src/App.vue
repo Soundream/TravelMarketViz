@@ -474,13 +474,31 @@ const importFromGoogleSheet = async () => {
     let currentYear = null;
     let quarterCount = 0;
     const quarters = [];
-    
+
+    // Debug information
+    console.log('=== Year extraction from raw data ===');
+    rows.slice(revenueGrowthRowIndex + 1, ebitdaStartIndex).forEach(row => {
+      const yearStr = row[0];
+      if (yearStr && String(yearStr) === '2025') {
+        console.log('Found 2025 in raw data:', row);
+      }
+    });
+
+    // Create a map to track which years and quarters we've seen
+    const yearQuarterMap = new Map();
+
     rows.slice(revenueGrowthRowIndex + 1, ebitdaStartIndex).forEach(row => {
       const yearStr = row[0];
       if (isValidQuarter(yearStr)) {
+        // Track this year and how many quarters we've seen for it
+        if (!yearQuarterMap.has(yearStr)) {
+          yearQuarterMap.set(yearStr, 0);
+        }
+        yearQuarterMap.set(yearStr, yearQuarterMap.get(yearStr) + 1);
+        
         // Check if we have data in this row (any cells have values)
         const hasData = row.slice(1).some(cell => cell !== null && cell !== undefined && cell !== '');
-        if (hasData || yearStr === '2025') { // Always include 2025 rows to ensure 2025Q1 is available
+        if (hasData || String(yearStr) === '2025') { // Always include 2025 rows to ensure 2025Q1 is available
           if (yearStr !== currentYear) {
             currentYear = yearStr;
             quarterCount = 0;
@@ -492,7 +510,8 @@ const importFromGoogleSheet = async () => {
         }
       }
     });
-    
+
+    console.log('Year-Quarter mapping:', Object.fromEntries(yearQuarterMap));
     console.log('Generated quarters:', quarters);
     
     // Prepare data for workbook
@@ -513,48 +532,73 @@ const importFromGoogleSheet = async () => {
 
     // Add EBITDA margin data
     processedRows.push(['EBITDA Margin % Quarterly']);
-    currentQuarterIndex = 0;
 
-    // Remove TOTAL_QUARTERS limit and check for empty rows instead
-    let isDataComplete = false;
+    // 创建一个单独的数组来特别处理2025年的数据
+    const data2025 = [];
 
-    rows.slice(ebitdaStartIndex + 1).forEach(row => {
-      // Stop if we've already found the last row with data
-      if (isDataComplete) return;
-      
-      if (isValidQuarter(row[0]) && currentQuarterIndex < quarters.length) {
-        const quarterData = [...row];
-        quarterData[0] = quarters[currentQuarterIndex]; // Replace year with quarter string
+    // 使用不同的索引策略，基于年份和季度来匹配
+    let currentEbitdaRowIndex = ebitdaStartIndex + 1;
+    let currentEbitdaYear = null;
+    let yearQuarterIndex = 0;
 
-        // Check if this is 2025'Q4 or beyond - then we should stop
-        if (quarters[currentQuarterIndex].startsWith('2025') && 
-            quarters[currentQuarterIndex].includes('Q4')) {
-          isDataComplete = true;
-          return;
-        }
-        
-        // Check if the row is completely empty (except for first column)
-        const hasData = row.slice(1).some(cell => {
-          // Check for any non-empty cell value
-          return cell !== null && cell !== undefined && cell !== '' && cell !== 0;
-        });
-        
-        // Include row if it has data OR if it's 2025Q1 (which should always be included)
-        const isQ1_2025 = quarters[currentQuarterIndex] === "2025'Q1";
-        if (hasData || isQ1_2025) {
-          processedRows.push(quarterData);
-        } else if (!hasData && quarterData[0].startsWith('2025')) {
-          // If we found an empty row in 2025, stop processing
-          isDataComplete = true;
-          return;
-        }
-        
-        currentQuarterIndex++;
+    console.log('=== Processing EBITDA data with improved mapping ===');
+
+    while (currentEbitdaRowIndex < rows.length) {
+      const row = rows[currentEbitdaRowIndex];
+      if (!row || !row[0]) {
+        currentEbitdaRowIndex++;
+        continue;
       }
+      
+      const yearStr = String(row[0]);
+      
+      // Check if this is a year row
+      if (isValidQuarter(yearStr)) {
+        if (yearStr === '2025') {
+          console.log('Found 2025 EBITDA row:', row);
+          // 特别处理2025年数据，使用Q1作为标识
+          const q1Row = [...row];
+          q1Row[0] = "2025'Q1";
+          data2025.push(q1Row);
+        } else {
+          // Process normal year data
+          if (yearStr !== currentEbitdaYear) {
+            currentEbitdaYear = yearStr;
+            yearQuarterIndex = 0;
+          }
+          
+          yearQuarterIndex++;
+          const quarterStr = `${yearStr}'Q${yearQuarterIndex}`;
+          const quarterRow = [...row];
+          quarterRow[0] = quarterStr;
+          
+          // Add row to processed data
+          processedRows.push(quarterRow);
+          console.log(`Added EBITDA data for ${quarterStr}`);
+        }
+      }
+      
+      currentEbitdaRowIndex++;
+    }
+
+    // 将2025年数据添加到处理后的数据中
+    data2025.forEach(row => {
+      processedRows.push(row);
+      console.log(`Added special 2025 data: ${row[0]}`);
     });
 
-    console.log(`Processed ${currentQuarterIndex} quarters of EBITDA data, last quarter: ${quarters[currentQuarterIndex-1] || 'none'}`);
+    console.log(`Processed EBITDA data with ${processedRows.length - (ebitdaStartIndex + 1)} rows`);
     
+    // Debug final data
+    console.log('=== Final Processed Data ===');
+    console.log('Total rows:', processedRows.length);
+    // Find 2025'Q1 rows
+    const q1_2025_rows = processedRows.filter(row => 
+      row[0] === "2025'Q1"
+    );
+    console.log('2025\'Q1 rows found:', q1_2025_rows.length);
+    console.log('2025\'Q1 data:', q1_2025_rows);
+
     // Create workbook
     const workbook = {
       SheetNames: ['TTM (bounded)'],
@@ -639,6 +683,7 @@ const handleQuartersLoaded = ({ quarters: loadedQuarters, currentIndex }) => {
 // Handle slider change
 const handleSliderChange = () => {
   if (bubbleChartRef.value) {
+    console.log(`App: Slider changed to index ${currentQuarterIndex.value}, quarter: ${quarters.value[currentQuarterIndex.value] || 'unknown'}`);
     bubbleChartRef.value.currentYearIndex = currentQuarterIndex.value;
     bubbleChartRef.value.handleSliderChange();
   }
