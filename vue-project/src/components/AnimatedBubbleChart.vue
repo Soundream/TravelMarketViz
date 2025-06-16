@@ -826,9 +826,9 @@ const processExcelData = (file) => {
         const [year, quarter] = str.split("'");
         const yearNum = parseInt(year);
         
-        // Only accept data between 2016'Q1 and 2024'Q4
-        if (yearNum < 2016 || yearNum > 2024) {
-          console.log(`Quarter ${str} rejected: year ${yearNum} outside range 2016-2024`);
+        // Only accept data between 2016'Q1 and 2025'Q4
+        if (yearNum < 2016 || yearNum > 2025) {
+          console.log(`Quarter ${str} rejected: year ${yearNum} outside range 2016-2025`);
           return false;
         }
         
