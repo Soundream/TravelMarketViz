@@ -55,6 +55,7 @@ import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 import { ChevronDownIcon } from '@heroicons/vue/20/solid'
 import * as d3 from 'd3'
 import Papa from 'papaparse'
+import { logoMap } from '@/assets/logos'
 
 const chartContainer = ref(null)
 const chartData = ref([])
@@ -128,32 +129,34 @@ const companyNames = {
 
 // Add new imports for logos
 const logoImports = {
-  'ABNB': new URL('/logos/ABNB_temp_logo.png', import.meta.url).href,
-  'BKNG': new URL('/logos/BKNG_temp_logo.png', import.meta.url).href,
-  'EXPE': new URL('/logos/Expedia2.jpg', import.meta.url).href,
-  'TCOM': new URL('/logos/TCOM_temp_logo.png', import.meta.url).href,
-  'TRIP': new URL('/logos/TRIP_temp_logo.png', import.meta.url).href,
-  'TRVG': new URL('/logos/Trivago1.jpg', import.meta.url).href,
-  'EDR': new URL('/logos/EDR_temp_logo.png', import.meta.url).href,
-  'DESP': new URL('/logos/DESP_temp_logo.png', import.meta.url).href,
-  'MMYT': new URL('/logos/MMYT_temp_logo.png', import.meta.url).href,
-  'Ixigo': new URL('/logos/Ixigo_temp_logo.png', import.meta.url).href,
-  'SEERA': new URL('/logos/SEERA_temp_logo.png', import.meta.url).href,
-  'Webjet': new URL('/logos/Webjet_temp_logo.png', import.meta.url).href,
-  'LMN': new URL('/logos/LMN_temp_logo.png', import.meta.url).href,
-  'Yatra': new URL('/logos/Yatra_temp_logo.png', import.meta.url).href,
-  'Orbitz': new URL('/logos/Orbitz1.png', import.meta.url).href,
-  'Travelocity': new URL('/logos/Travelocity_logo.png', import.meta.url).href,
-  'EaseMyTrip': new URL('/logos/EaseMyTrip_temp_logo.png', import.meta.url).href,
-  'Wego': new URL('/logos/Wego_logo.png', import.meta.url).href,
-  'Skyscanner': new URL('/logos/Skyscanner_temp_logo.png', import.meta.url).href,
-  'Etraveli': new URL('/logos/Etraveli_temp_logo.png', import.meta.url).href,
-  'Kiwi': new URL('/logos/Kiwi_temp_logo.png', import.meta.url).href,
-  'Cleartrip': new URL('/logos/Cleartrip_temp_logo.png', import.meta.url).href,
-  'FLT': new URL('/logos/FLT_temp_logo.png', import.meta.url).href,
-  'Almosafer': new URL('/logos/Almosafer_temp_logo.png', import.meta.url).href,
-  'Webjet OTA': new URL('/logos/Webjet_OTA_temp_logo.png', import.meta.url).href
+  'ABNB': new URL('@/assets/logos/ABNB_temp_logo.png', import.meta.url).href,
+  'BKNG': new URL('@/assets/logos/BKNG_temp_logo.png', import.meta.url).href,
+  'EXPE': new URL('@/assets/logos/Expedia2.jpg', import.meta.url).href,
+  'TCOM': new URL('@/assets/logos/TCOM_temp_logo.png', import.meta.url).href,
+  'TRIP': new URL('@/assets/logos/TRIP_temp_logo.png', import.meta.url).href,
+  'TRVG': new URL('@/assets/logos/Trivago1.jpg', import.meta.url).href,
+  'EDR': new URL('@/assets/logos/EDR_temp_logo.png', import.meta.url).href,
+  'DESP': new URL('@/assets/logos/DESP_temp_logo.png', import.meta.url).href,
+  'MMYT': new URL('@/assets/logos/MMYT_temp_logo.png', import.meta.url).href,
+  'Ixigo': new URL('@/assets/logos/Ixigo_temp_logo.png', import.meta.url).href,
+  'SEERA': new URL('@/assets/logos/SEERA_temp_logo.png', import.meta.url).href,
+  'Webjet': new URL('@/assets/logos/Webjet_temp_logo.png', import.meta.url).href,
+  'LMN': new URL('@/assets/logos/LMN_temp_logo.png', import.meta.url).href,
+  'Yatra': new URL('@/assets/logos/Yatra_temp_logo.png', import.meta.url).href,
+  'Orbitz': new URL('@/assets/logos/Orbitz1.png', import.meta.url).href,
+  'Travelocity': new URL('@/assets/logos/Travelocity_logo.png', import.meta.url).href,
+  'EaseMyTrip': new URL('@/assets/logos/EaseMyTrip_temp_logo.png', import.meta.url).href,
+  'Wego': new URL('@/assets/logos/Wego_logo.png', import.meta.url).href,
+  'Skyscanner': new URL('@/assets/logos/Skyscanner_temp_logo.png', import.meta.url).href,
+  'Etraveli': new URL('@/assets/logos/Etraveli_temp_logo.png', import.meta.url).href,
+  'Kiwi': new URL('@/assets/logos/Kiwi_temp_logo.png', import.meta.url).href,
+  'Cleartrip': new URL('@/assets/logos/Cleartrip_temp_logo.png', import.meta.url).href,
+  'FLT': new URL('@/assets/logos/FLT_temp_logo.png', import.meta.url).href,
+  'Almosafer': new URL('@/assets/logos/Almosafer_temp_logo.png', import.meta.url).href,
+  'Webjet OTA': new URL('@/assets/logos/Webjet_OTA_temp_logo.png', import.meta.url).href
 }
+
+const companyLogos = logoMap
 
 const importFromGoogleSheet = async () => {
   // Google Sheets ID and GID for bar chart data

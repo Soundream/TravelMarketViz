@@ -220,7 +220,7 @@ import AnimatedBubbleChart from './components/AnimatedBubbleChart.vue'
 import StaticBubbleChart from './components/StaticBubbleChart.vue'
 import BarChart from './components/BarChart.vue'
 import * as XLSX from 'xlsx'
-import WEGO_LOGO from '/logos/Wego_logo.png'
+import { WEGO_LOGO } from '@/assets/logos'
 import { inject } from '@vercel/analytics'
 import Papa from 'papaparse'
 
