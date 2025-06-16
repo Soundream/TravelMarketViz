@@ -11,6 +11,15 @@ output/
 *.tiff
 *.ico
 
+# Exception for logos directory
+!logos/**/*.png
+!logos/**/*.jpg
+!logos/**/*.jpeg
+!logos/**/*.gif
+!logos/**/*.bmp
+!logos/**/*.tiff
+!logos/**/*.ico
+
 # Video files
 *.mp4
 *.mov
