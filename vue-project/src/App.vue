@@ -510,25 +510,38 @@ const importFromGoogleSheet = async () => {
     // Add EBITDA margin data
     processedRows.push(['EBITDA Margin % Quarterly']);
     currentQuarterIndex = 0;
-    
-    // Calculate total quarters from 2016'Q1 to 2024'Q4
-    const TOTAL_QUARTERS = 36; // (2024-2016+1) * 4 quarters per year
-    let processedQuarters = 0;
-    
+
+    // Remove TOTAL_QUARTERS limit and check for empty rows instead
+    let isDataComplete = false;
+
     rows.slice(ebitdaStartIndex + 1).forEach(row => {
-      // Stop processing after we've handled all quarters from 2016'Q1 to 2024'Q4
-      if (processedQuarters >= TOTAL_QUARTERS) return;
+      // Stop if we've already found the last row with data
+      if (isDataComplete) return;
       
       if (isValidQuarter(row[0]) && currentQuarterIndex < quarters.length) {
         const quarterData = [...row];
         quarterData[0] = quarters[currentQuarterIndex]; // Replace year with quarter string
+
+        // Check if this is 2025'Q2 or beyond - then we should stop
+        if (quarters[currentQuarterIndex].startsWith('2025') && 
+            quarters[currentQuarterIndex].includes('Q4')) {
+          isDataComplete = true;
+          return;
+        }
+        
+        // Check if the row is empty (only has the quarter value in first column)
+        const hasData = row.slice(1).some(cell => cell !== null && cell !== undefined && cell !== '');
+        if (!hasData) {
+          isDataComplete = true;
+          return;
+        }
+        
         processedRows.push(quarterData);
         currentQuarterIndex++;
-        processedQuarters++;
       }
     });
-    
-    console.log(`Processed ${processedQuarters} quarters of EBITDA data`);
+
+    console.log(`Processed ${currentQuarterIndex} quarters of EBITDA data`);
     
     // Create workbook
     const workbook = {
