@@ -1,59 +1,34 @@
-// 直接导入所有图片 - 这样Vite会处理这些图片并将其包含在构建中
-import ABNB_IMG from '../../assets/logos/ABNB_logo.png';
-import ALMOSAFER_IMG from '../../assets/logos/Almosafer_logo.png';
-import BKNG_IMG from '../../assets/logos/BKNG_logo.png';
-import CLEARTRIP_IMG from '../../assets/logos/Cleartrip_logo.png';
-import DESP_IMG from '../../assets/logos/DESP_logo.png';
-import EASEMYTRIP_IMG from '../../assets/logos/EASEMYTRIP_logo.png';
-import EDR_IMG from '../../assets/logos/EDR_logo.png';
-import ETRAVELI_IMG from '../../assets/logos/Etraveli_logo.png';
-import EXPE_IMG from '../../assets/logos/EXPE_logo.png';
-import FLT_IMG from '../../assets/logos/FlightCentre_logo.png';
-import IXIGO_IMG from '../../assets/logos/IXIGO_logo.png';
-import KIWI_IMG from '../../assets/logos/Kiwi_logo.png';
-import LMN_IMG from '../../assets/logos/LMN_logo.png';
-import MMYT_IMG from '../../assets/logos/MMYT_logo.png';
-import OWW_IMG from '../../assets/logos/Orbitz_logo.png';
-import PCLN_IMG from '../../assets/logos/PCLN_logo.png';
-import SEERA_IMG from '../../assets/logos/SEERA_logo.png';
-import SKYSCANNER_IMG from '../../assets/logos/Skyscanner_logo.png';
-import TCOM_IMG from '../../assets/logos/TCOM_logo.png';
-import TRAVELOCITY_IMG from '../../assets/logos/Travelocity_logo.png';
-import TRAVELOKA_IMG from '../../assets/logos/Traveloka_logo.png';
-import TRIP_IMG from '../../assets/logos/TRIP_logo.png';
-import TRVG_IMG from '../../assets/logos/TRVG_logo.png';
-import WEB_IMG from '../../assets/logos/Webjet_logo.png';
-import WEGO_IMG from '../../assets/logos/Wego_logo.png';
-import YTRA_IMG from '../../assets/logos/Yatra_logo.png';
+// 定义logo映射，使用绝对路径引用public目录下的文件
+// 在Vercel环境中，这些路径会被正确解析
 
-// 将导入的图片映射到公司代码
+// 将公司代码映射到绝对路径URL
 const logoImageMap = {
-  'ABNB': ABNB_IMG,
-  'Almosafer': ALMOSAFER_IMG,
-  'BKNG': BKNG_IMG,
-  'Cleartrip': CLEARTRIP_IMG,
-  'DESP': DESP_IMG,
-  'EaseMyTrip': EASEMYTRIP_IMG,
-  'EDR': EDR_IMG,
-  'Etraveli': ETRAVELI_IMG,
-  'EXPE': EXPE_IMG,
-  'FLT': FLT_IMG,
-  'IXIGO': IXIGO_IMG,
-  'Kiwi': KIWI_IMG,
-  'LMN': LMN_IMG,
-  'MMYT': MMYT_IMG,
-  'OWW': OWW_IMG,
-  'PCLN': PCLN_IMG,
-  'SEERA': SEERA_IMG,
-  'Skyscanner': SKYSCANNER_IMG,
-  'TCOM': TCOM_IMG,
-  'Travelocity': TRAVELOCITY_IMG,
-  'Traveloka': TRAVELOKA_IMG,
-  'TRIP': TRIP_IMG,
-  'TRVG': TRVG_IMG,
-  'WEB': WEB_IMG,
-  'Wego': WEGO_IMG,
-  'YTRA': YTRA_IMG,
+  'ABNB': '/images/ABNB_logo.png',
+  'Almosafer': '/images/Almosafer_logo.png',
+  'BKNG': '/images/BKNG_logo.png',
+  'Cleartrip': '/images/Cleartrip_logo.png',
+  'DESP': '/images/DESP_logo.png',
+  'EaseMyTrip': '/images/EASEMYTRIP_logo.png',
+  'EDR': '/images/EDR_logo.png',
+  'Etraveli': '/images/Etraveli_logo.png',
+  'EXPE': '/images/EXPE_logo.png',
+  'FLT': '/images/FlightCentre_logo.png',
+  'IXIGO': '/images/IXIGO_logo.png',
+  'Kiwi': '/images/Kiwi_logo.png',
+  'LMN': '/images/LMN_logo.png',
+  'MMYT': '/images/MMYT_logo.png',
+  'OWW': '/images/Orbitz_logo.png',
+  'PCLN': '/images/PCLN_logo.png',
+  'SEERA': '/images/SEERA_logo.png',
+  'Skyscanner': '/images/Skyscanner_logo.png',
+  'TCOM': '/images/TCOM_logo.png',
+  'Travelocity': '/images/Travelocity_logo.png',
+  'Traveloka': '/images/Traveloka_logo.png',
+  'TRIP': '/images/TRIP_logo.png',
+  'TRVG': '/images/TRVG_logo.png',
+  'WEB': '/images/Webjet_logo.png',
+  'Wego': '/images/Wego_logo.png',
+  'YTRA': '/images/Yatra_logo.png',
 };
 
 // 导出个别logo
