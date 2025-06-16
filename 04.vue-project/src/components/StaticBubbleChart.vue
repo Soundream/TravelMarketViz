@@ -68,7 +68,6 @@ import { onMounted, ref } from 'vue';
 import * as d3 from 'd3';
 import * as XLSX from 'xlsx';
 import { logoMap } from '@/assets/logos'
-import { format } from 'date-fns';
 
 // Define company codes
 const COMPANY_CODES = [
