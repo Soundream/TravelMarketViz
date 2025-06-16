@@ -34,22 +34,14 @@ const COMPANY_LOGOS = {
   'YTRA': 'Yatra_logo.png'
 };
 
-// Function to get logo URL with error handling
+// Function to get logo URL
 function getLogoUrl(companyCode) {
-  try {
-    const filename = COMPANY_LOGOS[companyCode];
-    if (!filename) {
-      console.warn(`No logo filename defined for company code: ${companyCode}`);
-      return DEFAULT_LOGO;
-    }
-    
-    // Use dynamic import with vite-ignore to suppress warnings
-    /* @vite-ignore */
-    return new URL(`./${filename}`, import.meta.url).href;
-  } catch (error) {
-    console.error(`Error loading logo for ${companyCode}:`, error);
-    return DEFAULT_LOGO;
+  const filename = COMPANY_LOGOS[companyCode];
+  if (!filename) {
+    console.warn(`No logo filename defined for company code: ${companyCode}`);
+    return '/logos/Wego_logo.png'; // Default logo
   }
+  return `/logos/${filename}`;
 }
 
 // Export individual logo URLs
