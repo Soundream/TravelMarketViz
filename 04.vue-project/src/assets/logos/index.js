@@ -1,87 +1,86 @@
-// Import all logos
-import ABNB_LOGO from './ABNB_logo.png'
-import ALMOSAFER_LOGO from './Almosafer_logo.png'
-import BKNG_LOGO from './BKNG_logo.png'
-import CLEARTRIP_LOGO from './Cleartrip_logo.png'
-import DESP_LOGO from './DESP_logo.png'
-import EASEMYTRIP_LOGO from './EASEMYTRIP_logo.png'
-import EDR_LOGO from './EDR_logo.png'
-import ETRAVELI_LOGO from './Etraveli_logo.png'
-import EXPE_LOGO from './EXPE_logo.png'
-import FLT_LOGO from './FlightCentre_logo.png'
-import IXIGO_LOGO from './IXIGO_logo.png'
-import KIWI_LOGO from './Kiwi_logo.png'
-import LMN_LOGO from './LMN_logo.png'
-import MMYT_LOGO from './MMYT_logo.png'
-import OWW_LOGO from './Orbitz_logo.png'
-import PCLN_LOGO from './PCLN_logo.png'
-import SEERA_LOGO from './SEERA_logo.png'
-import SKYSCANNER_LOGO from './Skyscanner_logo.png'
-import TCOM_LOGO from './TCOM_logo.png'
-import TRAVELOCITY_LOGO from './Travelocity_logo.png'
-import TRAVELOKA_LOGO from './Traveloka_logo.png'
-import TRIP_LOGO from './TRIP_logo.png'
-import TRVG_LOGO from './TRVG_logo.png'
-import WEB_LOGO from './Webjet_logo.png'
-import WEGO_LOGO from './Wego_logo.png'
-import YTRA_LOGO from './Yatra_logo.png'
+// Define the base path for logos
+const BASE_PATH = '/src/assets/logos';
 
-// Export all logos
-export {
-  ABNB_LOGO,
-  ALMOSAFER_LOGO,
-  BKNG_LOGO,
-  CLEARTRIP_LOGO,
-  DESP_LOGO,
-  EASEMYTRIP_LOGO,
-  EDR_LOGO,
-  ETRAVELI_LOGO,
-  EXPE_LOGO,
-  FLT_LOGO,
-  IXIGO_LOGO,
-  KIWI_LOGO,
-  LMN_LOGO,
-  MMYT_LOGO,
-  OWW_LOGO,
-  PCLN_LOGO,
-  SEERA_LOGO,
-  SKYSCANNER_LOGO,
-  TCOM_LOGO,
-  TRAVELOCITY_LOGO,
-  TRAVELOKA_LOGO,
-  TRIP_LOGO,
-  TRVG_LOGO,
-  WEB_LOGO,
-  WEGO_LOGO,
-  YTRA_LOGO,
+// Define a fallback logo URL (you should add a default logo file)
+const DEFAULT_LOGO = new URL('./Wego_logo.png', import.meta.url).href;
+
+// Define company codes and their corresponding logo filenames
+const COMPANY_LOGOS = {
+  'ABNB': 'ABNB_logo.png',
+  'Almosafer': 'Almosafer_logo.png',
+  'BKNG': 'BKNG_logo.png',
+  'Cleartrip': 'Cleartrip_logo.png',
+  'DESP': 'DESP_logo.png',
+  'EaseMyTrip': 'EASEMYTRIP_logo.png',
+  'EDR': 'EDR_logo.png',
+  'Etraveli': 'Etraveli_logo.png',
+  'EXPE': 'EXPE_logo.png',
+  'FLT': 'FlightCentre_logo.png',
+  'IXIGO': 'IXIGO_logo.png',
+  'Kiwi': 'Kiwi_logo.png',
+  'LMN': 'LMN_logo.png',
+  'MMYT': 'MMYT_logo.png',
+  'OWW': 'Orbitz_logo.png',
+  'PCLN': 'PCLN_logo.png',
+  'SEERA': 'SEERA_logo.png',
+  'Skyscanner': 'Skyscanner_logo.png',
+  'TCOM': 'TCOM_logo.png',
+  'Travelocity': 'Travelocity_logo.png',
+  'Traveloka': 'Traveloka_logo.png',
+  'TRIP': 'TRIP_logo.png',
+  'TRVG': 'TRVG_logo.png',
+  'WEB': 'Webjet_logo.png',
+  'Wego': 'Wego_logo.png',
+  'YTRA': 'Yatra_logo.png'
+};
+
+// Function to get logo URL with error handling
+function getLogoUrl(companyCode) {
+  try {
+    const filename = COMPANY_LOGOS[companyCode];
+    if (!filename) {
+      console.warn(`No logo filename defined for company code: ${companyCode}`);
+      return DEFAULT_LOGO;
+    }
+    
+    // Use dynamic import with vite-ignore to suppress warnings
+    /* @vite-ignore */
+    return new URL(`./${filename}`, import.meta.url).href;
+  } catch (error) {
+    console.error(`Error loading logo for ${companyCode}:`, error);
+    return DEFAULT_LOGO;
+  }
 }
 
-// Export a mapping object for easy access
-export const logoMap = {
-  'ABNB': ABNB_LOGO,
-  'Almosafer': ALMOSAFER_LOGO,
-  'BKNG': BKNG_LOGO,
-  'Cleartrip': CLEARTRIP_LOGO,
-  'DESP': DESP_LOGO,
-  'EaseMyTrip': EASEMYTRIP_LOGO,
-  'EDR': EDR_LOGO,
-  'Etraveli': ETRAVELI_LOGO,
-  'EXPE': EXPE_LOGO,
-  'FLT': FLT_LOGO,
-  'IXIGO': IXIGO_LOGO,
-  'Kiwi': KIWI_LOGO,
-  'LMN': LMN_LOGO,
-  'MMYT': MMYT_LOGO,
-  'OWW': OWW_LOGO,
-  'PCLN': PCLN_LOGO,
-  'SEERA': SEERA_LOGO,
-  'Skyscanner': SKYSCANNER_LOGO,
-  'TCOM': TCOM_LOGO,
-  'Travelocity': TRAVELOCITY_LOGO,
-  'Traveloka': TRAVELOKA_LOGO,
-  'TRIP': TRIP_LOGO,
-  'TRVG': TRVG_LOGO,
-  'WEB': WEB_LOGO,
-  'Wego': WEGO_LOGO,
-  'YTRA': YTRA_LOGO,
-} 
+// Export individual logo URLs
+export const ABNB_LOGO = getLogoUrl('ABNB');
+export const ALMOSAFER_LOGO = getLogoUrl('Almosafer');
+export const BKNG_LOGO = getLogoUrl('BKNG');
+export const CLEARTRIP_LOGO = getLogoUrl('Cleartrip');
+export const DESP_LOGO = getLogoUrl('DESP');
+export const EASEMYTRIP_LOGO = getLogoUrl('EaseMyTrip');
+export const EDR_LOGO = getLogoUrl('EDR');
+export const ETRAVELI_LOGO = getLogoUrl('Etraveli');
+export const EXPE_LOGO = getLogoUrl('EXPE');
+export const FLT_LOGO = getLogoUrl('FLT');
+export const IXIGO_LOGO = getLogoUrl('IXIGO');
+export const KIWI_LOGO = getLogoUrl('Kiwi');
+export const LMN_LOGO = getLogoUrl('LMN');
+export const MMYT_LOGO = getLogoUrl('MMYT');
+export const OWW_LOGO = getLogoUrl('OWW');
+export const PCLN_LOGO = getLogoUrl('PCLN');
+export const SEERA_LOGO = getLogoUrl('SEERA');
+export const SKYSCANNER_LOGO = getLogoUrl('Skyscanner');
+export const TCOM_LOGO = getLogoUrl('TCOM');
+export const TRAVELOCITY_LOGO = getLogoUrl('Travelocity');
+export const TRAVELOKA_LOGO = getLogoUrl('Traveloka');
+export const TRIP_LOGO = getLogoUrl('TRIP');
+export const TRVG_LOGO = getLogoUrl('TRVG');
+export const WEB_LOGO = getLogoUrl('WEB');
+export const WEGO_LOGO = getLogoUrl('Wego');
+export const YTRA_LOGO = getLogoUrl('YTRA');
+
+// Export the mapping object
+export const logoMap = Object.fromEntries(
+  Object.keys(COMPANY_LOGOS).map(code => [code, getLogoUrl(code)])
+); 
