@@ -20,6 +20,15 @@ output/
 !logos/**/*.tiff
 !logos/**/*.ico
 
+# Exception for vue-project/logos directory
+!vue-project/logos/**/*.png
+!vue-project/logos/**/*.jpg
+!vue-project/logos/**/*.jpeg
+!vue-project/logos/**/*.gif
+!vue-project/logos/**/*.bmp
+!vue-project/logos/**/*.tiff
+!vue-project/logos/**/*.ico
+
 # Video files
 *.mp4
 *.mov
