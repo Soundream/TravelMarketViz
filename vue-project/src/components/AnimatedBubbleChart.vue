@@ -823,10 +823,11 @@ const processExcelData = (file) => {
         }
         
         // Extract year and quarter
-        const [year, quarter] = str.split("'");
-        const yearNum = parseInt(year);
+        const match = str.match(/^(\d{4})'Q(\d)$/);
+        const yearNum = parseInt(match[1]);
+        const quarterNum = parseInt(match[2]);
         
-        // Only accept data between 2016'Q1 and 2025'Q4
+        // Only accept data between 2016'Q1 and 2025'Q1
         if (yearNum < 2016 || yearNum > 2025) {
           console.log(`Quarter ${str} rejected: year ${yearNum} outside range 2016-2025`);
           return false;
@@ -976,24 +977,6 @@ const processExcelData = (file) => {
                parseInt(quarterA.slice(1)) - parseInt(quarterB.slice(1));
       });
       
-      // Debug quarters
-      console.log('=== All available quarters after sorting ===');
-      console.log('Years array:', years.value);
-      
-      // Check for 2025Q1
-      const has2025Q1 = years.value.includes("2025'Q1");
-      console.log('Contains 2025\'Q1:', has2025Q1);
-      if (has2025Q1) {
-        console.log('2025\'Q1 index:', years.value.indexOf("2025'Q1"));
-      }
-      
-      // Debug all data points for 2025Q1
-      const q1_2025_data = mergedData.value.filter(d => d.quarter === "2025'Q1");
-      console.log('Total 2025\'Q1 data points:', q1_2025_data.length);
-      if (q1_2025_data.length > 0) {
-        console.log('2025\'Q1 data sample:', q1_2025_data.slice(0, 5));
-      }
-      
       if (years.value.length === 0) {
         throw new Error('No valid quarters found after processing');
       }
@@ -1038,17 +1021,9 @@ const currentQuarter = computed(() => {
   return years.value[currentYearIndex.value];
 });
 
-// Add handleSliderChange function
-const handleSliderChange = () => {
-  console.log(`Slider changed to index: ${currentYearIndex.value}, quarter: ${years.value[currentYearIndex.value]}`);
-  
-  // Special check for 2025Q1
-  if (years.value[currentYearIndex.value] === "2025'Q1") {
-    console.log('Switching to 2025\'Q1, checking data:');
-    const q1Data = mergedData.value.filter(d => d.quarter === "2025'Q1");
-    console.log(`Found ${q1Data.length} data points for 2025'Q1`);
-  }
-  
+// Handle slider change
+const handleSliderChange = (event) => {
+  currentYearIndex.value = parseInt(event.target.value);
   if (update) update(currentYearIndex.value);
 };
 
@@ -1212,9 +1187,8 @@ const initChart = () => {
     update = (quarterIndex) => {
       console.log('=== Update Function Start ===');
       console.log('Updating chart for quarter:', years.value[quarterIndex]);
-      console.log('Current quarter index:', quarterIndex, 'out of', years.value.length - 1);
-      console.log('All available quarters:', years.value);
       console.log('Selected companies state:', selectedCompanies.value);
+      console.log('Current mergedData:', mergedData.value);
       
       // Filter data for current quarter and selected companies
       const currentData = mergedData.value.filter(d => {
@@ -1223,13 +1197,7 @@ const initChart = () => {
         return isSelectedQuarter && isSelectedCompany;
       });
       
-      console.log(`Found ${currentData.length} data points for quarter ${years.value[quarterIndex]}`);
-      console.log('Data for this quarter:', currentData);
-      
-      // Filter all data for 2025'Q1 to see if it exists
-      const q1_2025_data = mergedData.value.filter(d => d.quarter === "2025'Q1");
-      console.log('All 2025\'Q1 data points available:', q1_2025_data.length);
-      console.log('2025\'Q1 data sample:', q1_2025_data.slice(0, 3));
+      console.log('Filtered data for rendering:', currentData);
       
       // Emit the current data
       emit('data-update', currentData);
