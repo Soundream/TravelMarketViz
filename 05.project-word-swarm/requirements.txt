@@ -1,9 +1,0 @@
-requests==2.31.0
-beautifulsoup4==4.12.2
-tqdm==4.66.1
-pandas==2.1.4
-numpy==1.26.2
-matplotlib==3.8.2
-seaborn==0.13.0
-ffmpeg-python==0.2.0
-python-docx==0.8.11 
