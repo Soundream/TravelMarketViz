@@ -1,2 +1,0 @@
-# This file ensures git tracks the images in this directory
-# despite global image file exclusions in the root .gitignore 
