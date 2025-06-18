@@ -632,12 +632,12 @@ def update(frame, preview=False):
                     image_path = logos['LMN']
             elif point['Company'] == 'TRIP':
                 if frame < 2020:
-                    image_path = plt.imread(os.path.join(logos_dir, ' TRIP_logo.png'))
+                    image_path = plt.imread(os.path.join(logos_dir, 'TRIP_logo.png'))
                 else:
                     image_path = logos['TRIP']
             elif point['Company'] == 'TCOM':
                 if frame < 2019.50:
-                    image_path = plt.imread(os.path.join(logos_dir, ' TCOM_logo.png'))
+                    image_path = plt.imread(os.path.join(logos_dir, 'TCOM_logo.png'))
                 else:
                     image_path = logos['TCOM']
             else:
