@@ -383,7 +383,7 @@ class ThemeRiverViz:
                     corpus=self.corpus,
                     id2word=self.dictionary,
                     num_topics=n_topics,
-                    passes=10,
+                    passes=13,
                     alpha='auto',
                     eta='auto',
                     random_state=42  # 设置随机种子以获得可重复的结果
@@ -505,34 +505,34 @@ class ThemeRiverViz:
             print("建议: 考虑减少主题数量或调整模型参数以获得更清晰的主题区分")
     
     def create_theme_river_visualization(self, smooth=True, colors=None):
-        """创建主题河流可视化"""
+        """Create theme river visualization"""
         if not self.topic_model or not self.topic_distributions:
-            print("请先运行 build_lda_model() 方法")
+            print("Please run the build_lda_model() method first")
             return
             
-        print("创建主题河流可视化...")
+        print("Creating theme river visualization...")
         
-        # 准备数据
+        # Prepare data
         dates = [datetime.strptime(date, "%Y-%m") for date in self.dates]
         date_nums = mdates.date2num(dates)
         
-        # 获取主题分布数据
+        # Get topic distribution data
         topic_data = np.array([self.topic_distributions[date] for date in self.dates])
         
-        # 创建颜色映射
+        # Create color mapping
         if colors is None:
-            # 使用预定义的颜色方案
+            # Use predefined color scheme
             base_colors = [
                 '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
                 '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
             ]
-            # 如果主题数超过预定义颜色，则循环使用
+            # If the number of topics exceeds predefined colors, use them cyclically
             colors = [base_colors[i % len(base_colors)] for i in range(self.num_topics)]
         
-        # 创建渐变色映射
+        # Create gradient color mapping
         color_maps = []
         for color in colors:
-            # 为每个主题创建从浅到深的渐变
+            # Create a gradient from light to dark for each topic
             cmap = LinearSegmentedColormap.from_list(
                 f"custom_{color}", 
                 [(1, 1, 1), mcolors.hex2color(color)],
@@ -540,48 +540,48 @@ class ThemeRiverViz:
             )
             color_maps.append(cmap)
         
-        # 创建平滑插值（如果启用）
+        # Create smooth interpolation (if enabled)
         if smooth:
-            # 创建更密集的日期点进行插值
+            # Create denser date points for interpolation
             smooth_date_nums = np.linspace(date_nums.min(), date_nums.max(), 200)
             
-            # 对每个主题进行样条插值
+            # Interpolate each topic with a spline
             smooth_topic_data = np.zeros((len(smooth_date_nums), self.num_topics))
             
             for i in range(self.num_topics):
-                # 使用三次样条插值
+                # Use cubic spline interpolation
                 spline = make_interp_spline(date_nums, topic_data[:, i], k=3)
                 smooth_values = spline(smooth_date_nums)
-                # 确保没有负值
+                # Ensure no negative values
                 smooth_values = np.maximum(0, smooth_values)
                 smooth_topic_data[:, i] = smooth_values
                 
-            # 使用平滑后的数据
+            # Use the smoothed data
             plot_date_nums = smooth_date_nums
             plot_topic_data = smooth_topic_data
             
-            # 转换回日期对象用于绘图
+            # Convert back to date objects for plotting
             smooth_dates = mdates.num2date(smooth_date_nums)
         else:
-            # 使用原始数据
+            # Use original data
             plot_date_nums = date_nums
             plot_topic_data = topic_data
             smooth_dates = dates
         
-        # 创建图形
-        plt.figure(figsize=(16, 8))
+        # Create the figure
+        plt.figure(figsize=(28, 10))  # Further increased width from 20 to 28
         ax = plt.gca()
         
-        # 绘制堆叠区域图
+        # Draw the stacked area chart
         layers = []
         labels = []
         
         for i in range(self.num_topics):
-            # 获取主题关键词作为标签
-            topic_label = f"主题 {i+1}: " + ", ".join(self.topic_keywords[i][:5])
+            # Get topic keywords for labels
+            topic_label = f"Topic {i+1}: " + ", ".join(self.topic_keywords[i][:5])
             labels.append(topic_label)
             
-            # 使用自定义颜色映射
+            # Use custom color mapping
             layer = ax.fill_between(
                 plot_date_nums if smooth else date_nums,
                 plot_topic_data[:, i] if i == 0 else plot_topic_data[:, :i].sum(axis=1),
@@ -592,155 +592,210 @@ class ThemeRiverViz:
             )
             layers.append(layer)
         
-        # 设置图表属性
-        ax.set_title("旅游市场主题演变 (2010-2013)", fontsize=16, pad=20)
-        ax.set_xlabel("日期", fontsize=14)
-        ax.set_ylabel("主题强度", fontsize=14)
+        # Set chart properties
+        ax.set_title("Evolution of Travel Market Topics (2010-2025)", fontsize=20, pad=20)
+        ax.set_xlabel("Date", fontsize=16)
+        ax.set_ylabel("Topic Intensity", fontsize=16)
         
-        # 设置x轴日期格式
+        # Set x-axis date format
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
-        ax.xaxis.set_major_locator(mdates.MonthLocator(interval=3))
-        plt.xticks(rotation=45)
+        ax.xaxis.set_major_locator(mdates.YearLocator(1))  # Show every year instead of every 2 years
+        plt.xticks(rotation=45, fontsize=12)
         
-        # 添加图例
+        # Add legend
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
-                  fancybox=True, shadow=True, ncol=2)
+                  fancybox=True, shadow=True, ncol=4, fontsize=12)  # Increased ncol from 3 to 4
         
-        # 添加网格线
+        # Add grid lines
         ax.grid(True, alpha=0.3)
         
-        # 调整布局
+        # Adjust layout
         plt.tight_layout()
         
-        # 保存图像
+        # Save the image
         output_path = os.path.join(self.output_dir, "theme_river.png")
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         
-        # 保存PDF版本
+        # Save PDF version
         pdf_path = os.path.join(self.output_dir, "theme_river.pdf")
         plt.savefig(pdf_path, format='pdf', bbox_inches='tight')
         
-        print(f"主题河流可视化已保存至: {output_path}")
+        print(f"Theme river visualization saved to: {output_path}")
         plt.close()
         
         return output_path
         
     def create_interactive_theme_river(self):
-        """创建交互式主题河流可视化（使用Plotly）"""
+        """Create an interactive theme river visualization using plotly"""
         try:
             import plotly.graph_objects as go
-            import plotly.offline as pyo
             from plotly.subplots import make_subplots
+            import plotly.io as pio
         except ImportError:
-            print("请安装plotly库以创建交互式可视化: pip install plotly")
+            print("Plotly is not installed. Install it with: pip install plotly")
             return None
+            
+        if not self.topic_model or not self.topic_distributions:
+            print("Please run the build_lda_model() method first")
+            return None
+            
+        print("Creating interactive theme river visualization...")
         
-        if not self.topic_distributions or not self.topic_keywords:
-            print("请先运行 build_lda_model() 方法")
-            return
+        # Prepare data
+        dates = [datetime.strptime(date, "%Y-%m") for date in self.dates]
         
-        # 准备数据
-        dates = self.dates
-        date_objects = [datetime.strptime(date, "%Y-%m") for date in dates]
+        # Get topic distribution data
+        topic_data = np.array([self.topic_distributions[date] for date in self.dates])
         
-        # 创建颜色映射
-        colors = plt.cm.viridis(np.linspace(0, 1, self.num_topics))
-        plotly_colors = [f'rgb({int(r*255)}, {int(g*255)}, {int(b*255)})' for r, g, b, _ in colors]
+        # Create color mapping
+        colors = [
+            '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+            '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
+        ]
+        colors = [colors[i % len(colors)] for i in range(self.num_topics)]
         
-        # 创建图形对象
+        # Create smooth interpolation
+        date_nums = mdates.date2num(dates)
+        smooth_date_nums = np.linspace(date_nums.min(), date_nums.max(), 200)
+        smooth_dates = [datetime.fromordinal(int(d)) for d in mdates.num2date(smooth_date_nums)]
+        
+        # Interpolate each topic with a spline
+        smooth_topic_data = np.zeros((len(smooth_date_nums), self.num_topics))
+        
+        for i in range(self.num_topics):
+            # Use cubic spline interpolation
+            spline = make_interp_spline(date_nums, topic_data[:, i], k=3)
+            smooth_values = spline(smooth_date_nums)
+            # Ensure no negative values
+            smooth_values = np.maximum(0, smooth_values)
+            smooth_topic_data[:, i] = smooth_values
+            
+        # Create figure
         fig = go.Figure()
         
-        # 添加主题河流层
+        # Add traces for each topic
         for i in range(self.num_topics):
-            topic_probs = [self.topic_distributions[date][i] for date in dates]
-            topic_label = f"Topic {i+1}: {', '.join(self.topic_keywords[i][:3])}"
+            topic_keywords = ", ".join(self.topic_keywords[i][:5])
+            topic_label = f"Topic {i+1}: {topic_keywords}"
             
             fig.add_trace(go.Scatter(
-                x=date_objects,
-                y=topic_probs,
+                x=smooth_dates,
+                y=smooth_topic_data[:, i] if i == 0 else smooth_topic_data[:, :i+1].sum(axis=1),
                 mode='lines',
-                line=dict(width=0.5, color=plotly_colors[i]),
-                fillcolor=plotly_colors[i],
-                fill='tonexty' if i > 0 else 'tozeroy',
+                line=dict(width=0.5, color=colors[i]),
+                fill='tonexty',
                 name=topic_label,
-                hoverinfo='text+name',
-                text=[f"{', '.join(self.topic_keywords[i][:5])}<br>强度: {prob:.3f}" for prob in topic_probs]
+                hovertemplate=f"{topic_label}<br>Date: %{{x|%Y-%m}}<br>Value: %{{y:.2f}}<extra></extra>"
             ))
-        
-        # 更新布局
+            
+        # Update layout
         fig.update_layout(
-            title="旅游市场主题演变 (2010-2013)",
-            xaxis_title="日期",
-            yaxis_title="主题强度",
-            hovermode='closest',
-            showlegend=True,
+            title="Interactive Theme River: Evolution of Travel Market Topics (2010-2025)",
+            xaxis_title="Date",
+            yaxis_title="Topic Intensity",
+            hovermode="x unified",
             legend=dict(
                 orientation="h",
                 yanchor="bottom",
-                y=-0.2,
+                y=-0.3,
                 xanchor="center",
                 x=0.5
             ),
+            width=1600,  # Increased from 1200 to 1600
             height=700,
-            width=1200
+            margin=dict(l=50, r=50, t=80, b=150)
         )
         
-        # 保存为HTML文件
+        # Save to HTML
         output_path = os.path.join(self.output_dir, "interactive_theme_river.html")
-        pyo.plot(fig, filename=output_path, auto_open=False)
+        fig.write_html(output_path)
         
-        print(f"交互式主题河流图已保存至: {output_path}")
+        print(f"Interactive theme river visualization saved to: {output_path}")
         
         return output_path
 
     def load_sample_data(self):
-        """加载示例数据（当无法找到实际数据时使用）"""
-        print("加载示例文章数据...")
+        """Load sample data (when actual data is not available)"""
+        print("Loading sample article data...")
         
-        # 创建一些示例文章
+        # Create sample articles
         sample_articles = []
         
-        # 设定一些更加差异化的主题和关键词
+        # Define more differentiated topics and keywords
         topics = {
-            "移动技术": ["mobile", "smartphone", "app", "android", "ios", "device", "tablet", "screen", "phone", "touchscreen"],
-            "社交媒体": ["social", "media", "facebook", "twitter", "network", "share", "post", "like", "follow", "engagement"],
-            "在线预订": ["booking", "reservation", "online", "platform", "direct", "channel", "commission", "inventory", "availability", "calendar"],
-            "数据分析": ["data", "analytics", "big data", "insight", "analysis", "predict", "algorithm", "pattern", "visualization", "dashboard"],
-            "旅游体验": ["experience", "guest", "service", "quality", "satisfaction", "personalization", "memory", "authentic", "local", "unique"],
-            "商业模式": ["model", "business", "revenue", "strategy", "growth", "profit", "investment", "startup", "venture", "entrepreneur"]
+            "Mobile Technology": ["mobile", "smartphone", "app", "android", "ios", "device", "tablet", "screen", "phone", "touchscreen"],
+            "Social Media": ["social", "media", "facebook", "twitter", "network", "share", "post", "like", "follow", "engagement"],
+            "Online Booking": ["booking", "reservation", "online", "platform", "direct", "channel", "commission", "inventory", "availability", "calendar"],
+            "Data Analytics": ["data", "analytics", "big data", "insight", "analysis", "predict", "algorithm", "pattern", "visualization", "dashboard"],
+            "Travel Experience": ["experience", "guest", "service", "quality", "satisfaction", "personalization", "memory", "authentic", "local", "unique"],
+            "Business Models": ["model", "business", "revenue", "strategy", "growth", "profit", "investment", "startup", "venture", "entrepreneur"]
         }
         
-        # 为每个月份创建示例文章
+        # Add COVID-19 topic (will be weighted heavily in 2020-2022)
+        topics["COVID-19 Impact"] = ["covid", "pandemic", "coronavirus", "lockdown", "restriction", "safety", "protocol", "health", "virtual", "remote", "crisis", "recovery", "vaccine", "quarantine", "contactless"]
+        
+        # Create sample articles for each month
         start_date = datetime(2010, 1, 1)
-        end_date = datetime(2013, 12, 31)
+        end_date = datetime(2025, 12, 31)  # Extended to 2025
         current_date = start_date
         
         while current_date <= end_date:
             month_str = current_date.strftime("%Y-%m")
+            year = current_date.year
             
-            # 为每个月创建5-10篇文章
+            # Create 5-10 articles for each month
             for _ in range(np.random.randint(5, 11)):
                 content = []
                 
-                # 随机选择主要主题，确保更清晰的主题区分
-                main_topic = np.random.choice(list(topics.keys()))
-                second_topic = np.random.choice([t for t in topics.keys() if t != main_topic])
+                # During 2020-2022, heavily weight COVID-19 topic
+                if 2020 <= year <= 2022:
+                    # The closer to mid-2020, the higher the COVID-19 content
+                    covid_intensity = 0
+                    if year == 2020:
+                        # Increasing intensity throughout 2020
+                        covid_intensity = current_date.month * 3  # 3-36 repetitions
+                    elif year == 2021:
+                        # High intensity throughout 2021
+                        covid_intensity = 30 - current_date.month  # 30-18 repetitions
+                    else:  # 2022
+                        # Decreasing intensity in 2022
+                        covid_intensity = max(5, 20 - current_date.month * 2)  # 18-0 repetitions
+                    
+                    # Add COVID terms with appropriate intensity
+                    for _ in range(covid_intensity):
+                        content.extend(np.random.choice(topics["COVID-19 Impact"], size=np.random.randint(1, 3)))
+                    
+                    # Also include other topics, but less prominently
+                    other_topics = [t for t in topics.keys() if t != "COVID-19 Impact"]
+                    main_topic = np.random.choice(other_topics)
+                    for _ in range(10):  # Reduced from normal 25
+                        content.extend(np.random.choice(topics[main_topic], size=np.random.randint(2, 5)))
+                    
+                    # Add a second topic with even less prominence
+                    second_topic = np.random.choice([t for t in other_topics if t != main_topic])
+                    for _ in range(5):  # Reduced from normal 8
+                        content.extend(np.random.choice(topics[second_topic], size=np.random.randint(1, 3)))
+                else:
+                    # Normal topic distribution for non-COVID years
+                    # Randomly select the main topic, ensure clearer topic differentiation
+                    main_topic = np.random.choice(list(topics.keys()))
+                    second_topic = np.random.choice([t for t in topics.keys() if t != main_topic])
+                    
+                    # Generate article content, with words from the main topic appearing more frequently
+                    for _ in range(25):  # Increase the number of topic words
+                        content.extend(np.random.choice(topics[main_topic], size=np.random.randint(4, 8)))
+                    
+                    for _ in range(8):  # Reduce the proportion of secondary topic words
+                        content.extend(np.random.choice(topics[second_topic], size=np.random.randint(1, 3)))
                 
-                # 生成文章内容，主要主题的词出现频率更高
-                for _ in range(25):  # 增加主题词的数量
-                    content.extend(np.random.choice(topics[main_topic], size=np.random.randint(4, 8)))
-                
-                for _ in range(8):  # 减少次要主题词的比例
-                    content.extend(np.random.choice(topics[second_topic], size=np.random.randint(1, 3)))
-                
-                # 添加一些通用词，但减少数量
+                # Add some general words, but reduce the quantity
                 general_words = ["travel", "industry", "company", "market", "customer", "technology"]
                 content.extend(np.random.choice(general_words, size=np.random.randint(3, 6)))
                 
-                # 打乱顺序
+                # Shuffle the order
                 np.random.shuffle(content)
                 
-                # 创建文章
+                # Create the article
                 article = {
                     "title": f"Sample Article about {main_topic}",
                     "date": current_date.strftime("%B %d, %Y"),
@@ -749,13 +804,13 @@ class ThemeRiverViz:
                 
                 sample_articles.append(article)
                 
-            # 移至下一个月
+            # Move to the next month
             if current_date.month == 12:
                 current_date = datetime(current_date.year + 1, 1, 1)
             else:
                 current_date = datetime(current_date.year, current_date.month + 1, 1)
         
-        print(f"创建了 {len(sample_articles)} 篇示例文章")
+        print(f"Created {len(sample_articles)} sample articles")
         self.articles = sample_articles
         return sample_articles
 
