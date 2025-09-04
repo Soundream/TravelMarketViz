@@ -512,7 +512,8 @@ const importFromGoogleSheet = async () => {
     currentQuarterIndex = 0;
     
     // Calculate total quarters from 2016'Q1 to 2025'Q1
-    const TOTAL_QUARTERS = 37; // (2024-2016+1) * 4 quarters per year + Q1 2025
+    // temperarily change to 40 to include Q1 2025, need to reconstruct the data part for a more robust solution
+    const TOTAL_QUARTERS = 40; // (2024-2016+1) * 4 quarters per year + Q1 2025
     let processedQuarters = 0;
     
     rows.slice(ebitdaStartIndex + 1).forEach(row => {
