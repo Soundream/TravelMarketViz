@@ -517,7 +517,7 @@ import ALMOSAFER_LOGO from '/logos/Almosafer_logo.png'
 import OTA_LOGO from '/logos/OTA_logo.png'
 import KYAK_LOGO from '/logos/KYAK_logo.png'
 import ELONG_LOGO from '/logos/ELONG_logo.png'
-import Tongcheng_LOGO from '/logos/Tongcheng_logo.png'
+import TONGCHENG_LOGO from '/logos/Tongcheng_logo.png'
 
 
 // Company colors
@@ -583,7 +583,7 @@ const logoDict = {
   'Webjet OTA': OTA_LOGO,
   'KYAK': KYAK_LOGO,
   'eLong': ELONG_LOGO,
-  'Tongcheng': Tongcheng_LOGO,
+  'Tongcheng': TONGCHENG_LOGO,
 };
 
 // Add company names mapping
