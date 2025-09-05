@@ -410,25 +410,19 @@ const importFromGoogleSheet = async () => {
     const csvText = await response.text();
     console.log('Received CSV response length:', csvText.length);
     
-    // Parse CSV data using Papa Parse for better handling
-    const parseResult = Papa.parse(csvText, {
-      skipEmptyLines: true,
-      dynamicTyping: true
-    });
-    const rows = parseResult.data;
+    // Parse CSV data
+    const rows = csvText.split('\n').map(row => 
+      row.split(',').map(cell => {
+        // Remove quotes and trim whitespace
+        const cleaned = cell.trim().replace(/^["']|["']$/g, '');
+        // Try to convert to number if possible
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? cleaned : num;
+      })
+    );
     
     console.log('Processed data rows:', rows.length);
-    console.log('Headers length:', rows[0].length);
-    console.log('Last 10 headers:', rows[0].slice(-10));
     console.log('First few processed rows:', rows.slice(0, 3));
-    
-    // 检查是否有列数不一致的行
-    const headerCount = rows[0].length;
-    const rowsWithFewerColumns = rows.filter((row, i) => i > 0 && row.length < headerCount);
-    console.log(`Found ${rowsWithFewerColumns.length} rows with fewer columns than headers`);
-    if (rowsWithFewerColumns.length > 0) {
-      console.log('Sample problematic row:', rowsWithFewerColumns[0]);
-    }
 
     // Function to check if a string is a valid quarter - define it before using it
     const isValidQuarter = (str) => {
