@@ -257,7 +257,11 @@ const companyNames = {
   'Cleartrip': 'Cleartrip',
   'FLT': 'Flight Centre',
   'Almosafer': 'Almosafer',
-  'Webjet OTA': 'Webjet OTA'
+  'Webjet OTA': 'Webjet OTA',
+  'Traveloka': 'Traveloka',
+  'KYAK': 'KYAK',
+  'eLONG': 'eLONG',
+  'Tongcheng': 'Tongcheng',
 };
 
 const navigation = [

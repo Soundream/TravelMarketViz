@@ -515,6 +515,10 @@ import FLIGHTCENTRE_LOGO from '/logos/FlightCentre_logo.png'
 import SEERA_LOGO from '/logos/SEERA_logo.png'
 import ALMOSAFER_LOGO from '/logos/Almosafer_logo.png'
 import OTA_LOGO from '/logos/OTA_logo.png'
+import KYAK_LOGO from '/logos/KYAK_logo.png'
+import ELONG_LOGO from '/logos/ELONG_logo.png'
+import Tongcheng_LOGO from '/logos/Tongcheng_logo.png'
+
 
 // Company colors
 const colorDict = {
@@ -544,7 +548,10 @@ const colorDict = {
   'Cleartrip': '#e74c3c',
   'Traveloka': '#38a0e2',
   'FLT': '#d2b6a8',
-  'Webjet OTA': '#e74c3c'
+  'Webjet OTA': '#e74c3c',
+  'KYAK': '#ff690f',
+  'eLong': '#2141b2',
+  'Tongcheng': '#5b318f',
 };
 
 // Company logos
@@ -573,7 +580,10 @@ const logoDict = {
   'Traveloka': TRAVELOKA_LOGO,
   'FLT': FLIGHTCENTRE_LOGO,
   'Almosafer': ALMOSAFER_LOGO,
-  'Webjet OTA': OTA_LOGO
+  'Webjet OTA': OTA_LOGO,
+  'KYAK': KYAK_LOGO,
+  'eLong': ELONG_LOGO,
+  'Tongcheng': Tongcheng_LOGO,
 };
 
 // Add company names mapping
@@ -602,7 +612,11 @@ const companyNames = {
   'Cleartrip': 'Cleartrip',
   'FLT': 'Flight Centre',
   'Almosafer': 'Almosafer',
-  'Webjet OTA': 'Webjet OTA'
+  'Webjet OTA': 'Webjet OTA',
+  'Traveloka': 'Traveloka',
+  'KYAK': 'KYAK',
+  'eLong': 'eLong',
+  'Tongcheng': 'Tongcheng',
 };
 
 const currentYearIndex = ref(0);
@@ -810,6 +824,12 @@ const processExcelData = (file) => {
       const processedData = [];
       const quarters = new Set();
       
+      // 记录所有数据的最大最小值
+      let globalMinEbitda = globalXDomain[0];
+      let globalMaxEbitda = globalXDomain[1];
+      let globalMinRevenue = globalYDomain[0];
+      let globalMaxRevenue = globalYDomain[1];
+      
       // Function to check if a string is a valid quarter
       const isValidQuarter = (str) => {
         if (!str) return false;
@@ -958,7 +978,43 @@ const processExcelData = (file) => {
       // Filter out incomplete data points
       mergedData.value = processedData.filter(d => d.hasBothQuarters);
       
-      console.log('=== Data Processing Debug ===');
+      // 计算所有数据点的最小和最大值，并与默认值比较，如果超出则扩展范围
+      if (mergedData.value.length > 0) {
+        const ebitdaValues = mergedData.value.map(d => d.ebitdaMargin);
+        const minEbitda = Math.min(...ebitdaValues);
+        const maxEbitda = Math.max(...ebitdaValues);
+        
+        const revenueValues = mergedData.value.map(d => d.revenueGrowth);
+        const minRevenue = Math.min(...revenueValues);
+        const maxRevenue = Math.max(...revenueValues);
+        
+        // 添加10%的边距
+        const ebitdaMargin = (maxEbitda - minEbitda) * 0.1;
+        const revenueMargin = (maxRevenue - minRevenue) * 0.1;
+        
+        // 比较默认值和实际数据范围，取较大范围
+        globalXDomain = [
+          Math.min(globalXDomain[0], minEbitda - ebitdaMargin),
+          Math.max(globalXDomain[1], maxEbitda + ebitdaMargin)
+        ];
+        globalYDomain = [
+          Math.min(globalYDomain[0], minRevenue - revenueMargin),
+          Math.max(globalYDomain[1], maxRevenue + revenueMargin)
+        ];
+        
+        // 更新UI中显示的范围值
+        xAxisRange.value.min = (globalXDomain[0] * 100).toFixed(0);
+        xAxisRange.value.max = (globalXDomain[1] * 100).toFixed(0);
+        yAxisRange.value.min = (globalYDomain[0] * 100).toFixed(0);
+        yAxisRange.value.max = (globalYDomain[1] * 100).toFixed(0);
+        
+        console.log('自动调整后的坐标轴范围:', {
+          xDomain: globalXDomain.map(v => (v*100).toFixed(1) + '%'),
+          yDomain: globalYDomain.map(v => (v*100).toFixed(1) + '%')
+        });
+      }
+      
+      console.log('=== Data Processing Debug ===')
       console.log('Total processed data points before filtering:', processedData.length);
       console.log('Sample of processed data before filtering:', processedData.slice(0, 5));
       console.log('Total merged data points after filtering:', mergedData.value.length);
@@ -1146,11 +1202,13 @@ const initChart = () => {
     
   svg.append("g")
     .attr("transform", `translate(0,${height - margin.bottom})`)
-      .call(xAxis);
+    .attr("class", "x-axis")
+    .call(xAxis);
 
   svg.append("g")
     .attr("transform", `translate(${margin.left},0)`)
-      .call(yAxis);
+    .attr("class", "y-axis")
+    .call(yAxis);
 
   // Add labels
   svg.append("text")
@@ -1198,6 +1256,60 @@ const initChart = () => {
       });
       
       console.log('Filtered data for rendering:', currentData);
+      
+      // 计算当前季度数据的范围，如果超出全局范围则调整
+      if (currentData.length > 0) {
+        // 提取当前季度的数值范围
+        const ebitdaValues = currentData.map(d => d.ebitdaMargin);
+        const minEbitda = Math.min(...ebitdaValues);
+        const maxEbitda = Math.max(...ebitdaValues);
+        
+        const revenueValues = currentData.map(d => d.revenueGrowth);
+        const minRevenue = Math.min(...revenueValues);
+        const maxRevenue = Math.max(...revenueValues);
+        
+        // 添加边距
+        const ebitdaMargin = (maxEbitda - minEbitda) * 0.1;
+        const revenueMargin = (maxRevenue - minRevenue) * 0.1;
+        
+        // 检查当前季度数据是否超出默认范围
+        const defaultXDomain = [-0.5, 0.8]; // 原始默认值
+        const defaultYDomain = [-0.3, 1.1]; // 原始默认值
+        
+        // 使用默认值，除非数据超出范围
+        const currentXDomain = [
+          Math.min(defaultXDomain[0], minEbitda - ebitdaMargin),
+          Math.max(defaultXDomain[1], maxEbitda + ebitdaMargin)
+        ];
+        
+        const currentYDomain = [
+          Math.min(defaultYDomain[0], minRevenue - revenueMargin),
+          Math.max(defaultYDomain[1], maxRevenue + revenueMargin)
+        ];
+        
+        // 更新比例尺
+        xScale.domain(currentXDomain);
+        yScale.domain(currentYDomain);
+        
+        // 更新UI中显示的范围值
+        xAxisRange.value.min = (currentXDomain[0] * 100).toFixed(0);
+        xAxisRange.value.max = (currentXDomain[1] * 100).toFixed(0);
+        yAxisRange.value.min = (currentYDomain[0] * 100).toFixed(0);
+        yAxisRange.value.max = (currentYDomain[1] * 100).toFixed(0);
+        
+        console.log(`季度 ${years.value[quarterIndex]} 调整后的坐标轴范围:`, {
+          xDomain: currentXDomain.map(v => (v*100).toFixed(1) + '%'),
+          yDomain: currentYDomain.map(v => (v*100).toFixed(1) + '%')
+        });
+        
+        // 更新坐标轴
+        svg.select(".x-axis").transition().duration(750).call(
+          d3.axisBottom(xScale).ticks(8).tickFormat(d => (d * 100).toFixed(0) + "%")
+        );
+        svg.select(".y-axis").transition().duration(750).call(
+          d3.axisLeft(yScale).ticks(8).tickFormat(d => (d * 100).toFixed(0) + "%")
+        );
+      }
       
       // Emit the current data
       emit('data-update', currentData);
